@@ -1,8 +1,9 @@
 # Extraction readiness
 
 **Status:** A05 extraction inputs are frozen in CommandFramework PR #16;
-E00 transplanted their tests and fixtures, and E01 copied the source without
-editing the original files. E02 cross-platform parity is in progress.
+E00 transplanted their tests and fixtures, E01 copied the source without
+editing the original files, and E02 extraction parity passed. The E03 local
+alpha package and package-only consumer checks are in progress.
 This file records the handoff evidence for the first source copy. The
 authoritative in-place evidence remains in
 [`Icod.CommandFramework` PR #16](https://github.com/uniblab/Icod.CommandFramework/pull/16).
@@ -17,7 +18,8 @@ authoritative in-place evidence remains in
 | A05 freeze | [Extraction baseline](https://github.com/uniblab/Icod.CommandFramework/blob/docs/icod-expressions-a00-in-situ-inventory/doc/Icod.Expressions-A05-Extraction-Baseline.md): source/test blobs, API, fixtures, known gaps, reference pins, and validation. | Preserve this baseline during E01/E02; no CommandFramework removal or dependency switch. |
 | E00 transplant | Eleven unchanged test C# blobs, the test README, 44-case JSONL, API snapshot, and their unchanged runner/tool sources copied; `tools/verify-frozen-corpus.sh` checks their identities. | Source was deliberately absent in the E00 commit. The tests and tools now run after E01. |
 | E01 source copy | 32 regex C# files and README plus two Text enums retain their A05 blob identities; `tools/verify-frozen-source.sh` checks all 35 paths. One new assembly metadata file grants the new test assembly friend access to inherited internal prepared-input types. | No parser, matcher, option, or source namespace was changed. |
-| E02 parity | [Initial E01 CI](https://github.com/uniblab/Icod.Expressions/actions/runs/39868662807) built all three library targets and passed .NET 10 tests and parity on Windows, Linux, and macOS. Local .NET 10 Staging: 193/193 focused runtime tests, 44-case byte-identical JSONL, and all compiled API member lines identical after omitting the assembly/version header. | Run the unchanged tests and parity corpus on .NET 8 and 9 across the same operating systems; keep packaging disabled until checks pass. |
+| E02 parity | [CI run 39869178425](https://github.com/uniblab/Icod.Expressions/actions/runs/39869178425) passed all five jobs: exactly 193 focused tests and the 44-case byte-identical JSONL on .NET 8, 9, and 10 across Windows, Linux, and macOS; source and fixture blobs and compiled API member lines match A05. | Keep the old implementation as an oracle while later normalization and consumer migration proceed. |
+| E03 package candidate | `0.1.0-alpha.1` can be packed locally; a package-only sample references no CommandFramework package or project and passed on local .NET 10. | Verify the package and sample on all three target frameworks in CI. Do not publish or change CommandFramework ownership until the bridge and downstream migrations are reviewed. |
 
 The source SHA identifies the unchanged **production** engine; the tests and
 audit documents on PR #16 are additive. Its branch head is not the extraction

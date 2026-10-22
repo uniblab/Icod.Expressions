@@ -8,12 +8,19 @@
 		<AssemblyName>Icod.Expressions</AssemblyName>
 		<RootNamespace>Icod.Expressions</RootNamespace>
 		<Version>0.1.0-alpha.1</Version>
+		<Authors>Timothy J. Bruce</Authors>
+		<Description>Managed GNU/POSIX regular-expression foundation with string and authoritative byte matching.</Description>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageTags>regex;regular-expressions;gnu;posix;bre;ere;byte-matching</PackageTags>
 		<PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
 		<RepositoryUrl>https://github.com/uniblab/Icod.Expressions</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
-		<IsPackable>false</IsPackable>
+		<IsPackable>true</IsPackable>
 		<Deterministic>true</Deterministic>
 	</PropertyGroup>
+	<ItemGroup>
+		<None Include="../../README.md" Pack="true" PackagePath="/" />
+	</ItemGroup>
 	<PropertyGroup Condition="'$(Configuration)' == 'Staging'">
 		<DefineConstants>TRACE</DefineConstants>
 		<DebugSymbols>true</DebugSymbols>
