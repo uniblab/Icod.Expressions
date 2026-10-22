@@ -39,7 +39,7 @@ if (result.IsSuccess && result.IsMatch) {
 }
 ```
 
-The [package-only sample](samples/PackageSmoke/Program.cs) also checks source
+The [package-only sample](https://github.com/uniblab/Icod.Expressions/blob/main/samples/PackageSmoke/Program.cs) also checks source
 byte offsets. Its project references the locally built NuGet package, not the
 library project or CommandFramework.
 
@@ -103,7 +103,7 @@ dotnet run --project samples/PackageSmoke/PackageSmoke.csproj -c Staging -f net1
 
 ## COMPATIBILITY AND LIMITS
 
-The [extraction readiness record](doc/EXTRACTION-READINESS.md) links the
+The [extraction readiness record](https://github.com/uniblab/Icod.Expressions/blob/main/doc/EXTRACTION-READINESS.md) links the
 frozen source, API, tests, fixtures, reference revisions, and known gaps.
 The inherited providers are not separate strict POSIX BRE/ERE contracts or
 complete implementations of all Gnulib syntax bits. In particular,
@@ -114,12 +114,14 @@ mechanical move. The `tac` consumer's provider/options mismatch is tracked
 separately in [Icod.CoreUtils #190](https://github.com/uniblab/Icod.CoreUtils/issues/190).
 
 Consumer migration and any removal of CommandFramework's engine require a
-separate review after the new package and bridge are validated. No consumer
-should silently fall back to `System.Text.RegularExpressions` for the
+separate review under the
+[compatibility bridge plan](https://github.com/uniblab/Icod.Expressions/blob/main/doc/E03-Compatibility-Bridge.md).
+No consumer should silently fall back to `System.Text.RegularExpressions` for the
 GNU/POSIX calls owned by this engine.
 
 ## LICENSE
 
 LGPL-3.0-or-later, as recorded in the source project's package metadata.
-The repository includes the [license text](LICENSE); source and test
-provenance is recorded in CommandFramework's A00/A05 audit.
+The repository includes the
+[license text](https://github.com/uniblab/Icod.Expressions/blob/main/LICENSE);
+source and test provenance is recorded in CommandFramework's A00/A05 audit.

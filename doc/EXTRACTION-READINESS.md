@@ -2,8 +2,9 @@
 
 **Status:** A05 extraction inputs are frozen in CommandFramework PR #16;
 E00 transplanted their tests and fixtures, E01 copied the source without
-editing the original files, and E02 extraction parity passed. The E03 local
-alpha package and package-only consumer checks are in progress.
+editing the original files, and E02 extraction parity passed. The E03 alpha
+package-only consumer check passed; the compatibility bridge and downstream
+migrations remain separate work.
 This file records the handoff evidence for the first source copy. The
 authoritative in-place evidence remains in
 [`Icod.CommandFramework` PR #16](https://github.com/uniblab/Icod.CommandFramework/pull/16).
@@ -19,7 +20,7 @@ authoritative in-place evidence remains in
 | E00 transplant | Eleven unchanged test C# blobs, the test README, 44-case JSONL, API snapshot, and their unchanged runner/tool sources copied; `tools/verify-frozen-corpus.sh` checks their identities. | Source was deliberately absent in the E00 commit. The tests and tools now run after E01. |
 | E01 source copy | 32 regex C# files and README plus two Text enums retain their A05 blob identities; `tools/verify-frozen-source.sh` checks all 35 paths. One new assembly metadata file grants the new test assembly friend access to inherited internal prepared-input types. | No parser, matcher, option, or source namespace was changed. |
 | E02 parity | [CI run 39869178425](https://github.com/uniblab/Icod.Expressions/actions/runs/39869178425) passed all five jobs: exactly 193 focused tests and the 44-case byte-identical JSONL on .NET 8, 9, and 10 across Windows, Linux, and macOS; source and fixture blobs and compiled API member lines match A05. | Keep the old implementation as an oracle while later normalization and consumer migration proceed. |
-| E03 package candidate | `0.1.0-alpha.1` can be packed locally; a package-only sample references no CommandFramework package or project and passed on local .NET 10. | Verify the package and sample on all three target frameworks in CI. Do not publish or change CommandFramework ownership until the bridge and downstream migrations are reviewed. |
+| E03 package candidate | [CI run 39869640279](https://github.com/uniblab/Icod.Expressions/actions/runs/39869640279) passed. It packed `0.1.0-alpha.1` and ran an independent package consumer on .NET 8, 9, and 10, with no CommandFramework dependency. | Review the [compatibility bridge](E03-Compatibility-Bridge.md), validate all A03 consumers, and decide the separate CommandFramework ownership change. The package is not published. |
 
 The source SHA identifies the unchanged **production** engine; the tests and
 audit documents on PR #16 are additive. Its branch head is not the extraction
