@@ -8,7 +8,8 @@ strict POSIX conformance claims.
 
 E01 has copied the engine and the two external Text enums, and this project
 is now in `Icod.Expressions.sln`. Its 193 runtime cases passed locally on
-.NET 10 Staging without changing a test expectation. The copied source
+.NET 10 Staging without changing a test expectation. The test project also
+targets .NET 8 and 9 for CI parity checks. The copied source
 temporarily retains its legacy namespaces for exact API and behavioral
 parity. See
 `../../doc/EXTRACTION-READINESS.md` and `../../tools/verify-frozen-corpus.sh`.

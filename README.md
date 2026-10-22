@@ -35,11 +35,10 @@ dotnet restore Icod.Expressions.sln
 dotnet build Icod.Expressions.sln -c Staging --no-restore
 dotnet test Icod.Expressions.sln -c Staging --no-build --no-restore
 dotnet run --project tools/RegularExpressionParityBaseline/RegularExpressionParityBaseline.csproj \
-  -c Staging -- --verify doc/Icod.Expressions-A04-Parity-Baseline.jsonl
+  -c Staging -f net10.0 -- --verify doc/Icod.Expressions-A04-Parity-Baseline.jsonl
 ```
 
-The library targets `net8.0`, `net9.0`, and `net10.0` with C# 13; the focused
-test assembly targets `net10.0`, matching the frozen source baseline. CI
-builds all targets, runs the tests and parity verifier on Windows, Linux, and
-macOS, and checks original Git blob identities on Linux. The package remains
+The library, focused tests, and parity runner target `net8.0`, `net9.0`, and
+`net10.0` with C# 13. CI builds and runs them on Windows, Linux, and macOS,
+and checks original Git blob identities on Linux. The package remains
 disabled pending full E02 validation and consumer migration design.

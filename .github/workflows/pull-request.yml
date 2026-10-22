@@ -40,7 +40,12 @@ jobs:
       - name: Run frozen regex tests
         run: dotnet test Icod.Expressions.sln -c ${{ matrix.configuration }} --no-build --no-restore --logger trx
       - name: Verify exact extraction parity
-        run: dotnet run --project tools/RegularExpressionParityBaseline/RegularExpressionParityBaseline.csproj -c ${{ matrix.configuration }} -- --verify doc/Icod.Expressions-A04-Parity-Baseline.jsonl
+        shell: bash
+        run: |
+          set -e
+          for framework in net8.0 net9.0 net10.0; do
+            dotnet run --project tools/RegularExpressionParityBaseline/RegularExpressionParityBaseline.csproj -c ${{ matrix.configuration }} -f "$framework" -- --verify doc/Icod.Expressions-A04-Parity-Baseline.jsonl
+          done
       - name: Verify frozen test and fixture blobs
         if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Staging'
         run: sh tools/verify-frozen-corpus.sh
