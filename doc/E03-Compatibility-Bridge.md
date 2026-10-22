@@ -26,6 +26,24 @@ Icod.CommandFramework  ->  Icod.Expressions
        forwarding             implementation
 ```
 
+## Isolated binary-forwarding feasibility probe
+
+On Linux with .NET SDK 10.0.402, an out-of-repository probe compiled a client
+against the unchanged `Icod.CommandFramework` 2.2.1.0 assembly. A separate
+test assembly named `Icod.CommandFramework` at version 2.2.1.0 compiled with
+`TypeForwardedTo` attributes for all 24 public regex types and both shared
+Text enums. With this test assembly and `Icod.Expressions` 0.1.0.0 in the
+runtime dependency graph, the client loaded, matched UTF-8 bytes through the
+forwarded provider, returned byte offset 2 and length 2, and reported that
+the provider and `TextDecodingMode` came from `Icod.Expressions`. Before the
+forwarder/dependency setup, the client failed to load the old assembly.
+
+This is a feasibility result for the direction and two exercised type
+identities, not a CommandFramework bridge. The test assembly omitted all
+non-regex CommandFramework APIs, and it did not load the five real consumers
+or verify every forwarded type at runtime. A production bridge requires its
+own old-client compile/load regression in the separate CommandFramework PR.
+
 ## Separate, reviewable bridge sequence
 
 1. Keep the extracted source and its original namespaces in this package

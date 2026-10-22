@@ -30,8 +30,10 @@ unchanged into Expressions after the first checkpoint. They make the current
 focused count **198** on local .NET 10. Their shared blob
 `589a52b42d5e3010e9e678f771cc85b156236e0b` and scope are recorded in
 the [A04 supplement](https://github.com/uniblab/Icod.CommandFramework/blob/docs/icod-expressions-a00-in-situ-inventory/doc/Icod.Expressions-A04-Consumer-Shape-Supplement.md).
-The original 193-test/44-fixture checkpoint is unchanged. The new count still
-needs cross-platform CI; none of the five tests proves full command-level
+The original 193-test/44-fixture checkpoint is unchanged.
+[CI run 39872443907](https://github.com/uniblab/Icod.Expressions/actions/runs/39872443907)
+passed the expanded 198-test gate on each supported framework across all
+three operating systems. None of the five tests proves full command-level
 consumer compatibility.
 
 The source SHA identifies the unchanged **production** engine; the tests and
