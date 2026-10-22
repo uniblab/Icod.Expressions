@@ -1,10 +1,13 @@
 # Extraction readiness
 
-**Status:** A05 extraction inputs are frozen in CommandFramework PR #16;
-E00 transplanted their tests and fixtures, E01 copied the source without
-editing the original files, and E02 extraction parity passed. The E03 alpha
+**Status:** The first copy-time corpus and source identities are pinned in
+CommandFramework PR #16, while formal A05 acceptance remains open. E00
+transplanted that corpus, E01 copied the source without editing the original
+files, and E02 established parity within the pinned corpus. The E03 alpha
 package-only consumer check passed; the compatibility bridge and downstream
-migrations remain separate work.
+migrations remain separate work. The source copy happened before all A01–A04
+audit gates closed; it does not advance the later CommandFramework ownership
+change or a stable release.
 This file records the handoff evidence for the first source copy. The
 authoritative in-place evidence remains in
 [`Icod.CommandFramework` PR #16](https://github.com/uniblab/Icod.CommandFramework/pull/16).
@@ -16,11 +19,20 @@ authoritative in-place evidence remains in
 | A02 GNU syntax | Pinned Gnulib `fb7312fa8d3df29f0ca0678f669b9a5b88a078ec`: 26 syntax bits and 13 named macros mapped. | Resolve profile and option evidence needed for the extraction contract. |
 | A03 consumers | CoreUtils, Grep, ProcPs, DiffUtils, and LineEditor call shapes mapped. | Validate consumer-shaped assertions and preserve command policy outside this library. |
 | A04 characterization | 110 focused declarations, 193 runtime cases and a 44-case JSONL corpus. [Three-platform CI](https://github.com/uniblab/Icod.CommandFramework/actions/runs/39867051683) passed on the characterized test commit. | Standards/profile oracle and full consumer differentials remain explicit gaps for normalization. |
-| A05 freeze | [Extraction baseline](https://github.com/uniblab/Icod.CommandFramework/blob/docs/icod-expressions-a00-in-situ-inventory/doc/Icod.Expressions-A05-Extraction-Baseline.md): source/test blobs, API, fixtures, known gaps, reference pins, and validation. | Preserve this baseline during E01/E02; no CommandFramework removal or dependency switch. |
+| A05 candidate | [Copy-time checkpoint](https://github.com/uniblab/Icod.CommandFramework/blob/docs/icod-expressions-a00-in-situ-inventory/doc/Icod.Expressions-A05-Extraction-Baseline.md): source/test blobs, API, fixtures, known gaps, reference pins, and validation. | Close A01–A04 behavior-or-gap coverage and declare a final A05 corpus. Preserve this first checkpoint; no CommandFramework removal or dependency switch. |
 | E00 transplant | Eleven unchanged test C# blobs, the test README, 44-case JSONL, API snapshot, and their unchanged runner/tool sources copied; `tools/verify-frozen-corpus.sh` checks their identities. | Source was deliberately absent in the E00 commit. The tests and tools now run after E01. |
 | E01 source copy | 32 regex C# files and README plus two Text enums retain their A05 blob identities; `tools/verify-frozen-source.sh` checks all 35 paths. One new assembly metadata file grants the new test assembly friend access to inherited internal prepared-input types. | No parser, matcher, option, or source namespace was changed. |
-| E02 parity | [CI run 39869178425](https://github.com/uniblab/Icod.Expressions/actions/runs/39869178425) passed all five jobs: exactly 193 focused tests and the 44-case byte-identical JSONL on .NET 8, 9, and 10 across Windows, Linux, and macOS; source and fixture blobs and compiled API member lines match A05. | Keep the old implementation as an oracle while later normalization and consumer migration proceed. |
+| E02 copy-time parity | [CI run 39870012051](https://github.com/uniblab/Icod.Expressions/actions/runs/39870012051) passed all five jobs: exactly 193 focused tests and the 44-case byte-identical JSONL on .NET 8, 9, and 10 across Windows, Linux, and macOS; source and fixture blobs and compiled API member lines match the first checkpoint. | Extend the in-situ evidence and rerun exact parity against the final A05 corpus. Keep the old implementation as an oracle while later normalization and consumer migration proceed. |
 | E03 package candidate | [CI run 39869640279](https://github.com/uniblab/Icod.Expressions/actions/runs/39869640279) passed. It packed `0.1.0-alpha.1` and ran an independent package consumer on .NET 8, 9, and 10, with no CommandFramework dependency. | Review the [compatibility bridge](E03-Compatibility-Bridge.md), validate all A03 consumers, and decide the separate CommandFramework ownership change. The package is not published. |
+
+Five additional consumer-shaped tests were added in CommandFramework and copied
+unchanged into Expressions after the first checkpoint. They make the current
+focused count **198** on local .NET 10. Their shared blob
+`589a52b42d5e3010e9e678f771cc85b156236e0b` and scope are recorded in
+the [A04 supplement](https://github.com/uniblab/Icod.CommandFramework/blob/docs/icod-expressions-a00-in-situ-inventory/doc/Icod.Expressions-A04-Consumer-Shape-Supplement.md).
+The original 193-test/44-fixture checkpoint is unchanged. The new count still
+needs cross-platform CI; none of the five tests proves full command-level
+consumer compatibility.
 
 The source SHA identifies the unchanged **production** engine; the tests and
 audit documents on PR #16 are additive. Its branch head is not the extraction

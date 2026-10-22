@@ -89,9 +89,11 @@ sh tools/verify-frozen-source.sh
 ```
 
 The library, focused tests, and parity runner target `net8.0`, `net9.0`, and
-`net10.0` with C# 13. CI requires all 193 frozen tests and the 44-case parity
-fixture on each framework across Windows, Linux, and macOS. The copied
-production files and frozen tests are checked against their A05 Git blobs.
+`net10.0` with C# 13. CI requires 198 focused tests: the original 193-test
+copy-time corpus plus five separately tracked consumer-shaped cases. It also
+checks the original 44-case parity fixture on each framework across Windows,
+Linux, and macOS. The copied production files and original tests retain their
+pinned Git blobs; the supplemental test file has its own identity check.
 
 To inspect a local, unpublished package and its independent consumer:
 
@@ -104,7 +106,8 @@ dotnet run --project samples/PackageSmoke/PackageSmoke.csproj -c Staging -f net1
 ## COMPATIBILITY AND LIMITS
 
 The [extraction readiness record](https://github.com/uniblab/Icod.Expressions/blob/main/doc/EXTRACTION-READINESS.md) links the
-frozen source, API, tests, fixtures, reference revisions, and known gaps.
+copy-time source, API, tests, fixtures, reference revisions, and known gaps.
+Formal A05 acceptance and parity over its final corpus remain open.
 The inherited providers are not separate strict POSIX BRE/ERE contracts or
 complete implementations of all Gnulib syntax bits. In particular,
 multi-scalar collating elements are unsupported; contextual anchors,

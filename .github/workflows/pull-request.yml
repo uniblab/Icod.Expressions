@@ -37,7 +37,7 @@ jobs:
         run: dotnet restore Icod.Expressions.sln
       - name: Build all target frameworks
         run: dotnet build Icod.Expressions.sln -c ${{ matrix.configuration }} --no-restore -p:ContinuousIntegrationBuild=true
-      - name: Run frozen regex tests
+      - name: Run original and supplemental regex tests
         shell: pwsh
         run: |
           foreach ($framework in @('net8.0', 'net9.0', 'net10.0')) {
@@ -46,8 +46,8 @@ jobs:
             $path = Join-Path 'tests/Icod.Expressions.Tests/TestResults' "$framework.trx"
             [xml]$results = Get-Content $path -Raw
             $counters = $results.SelectSingleNode("//*[local-name()='Counters']")
-            if ($null -eq $counters -or [int]$counters.GetAttribute('total') -ne 193 -or [int]$counters.GetAttribute('passed') -ne 193 -or [int]$counters.GetAttribute('failed') -ne 0) {
-              throw "Frozen test count drift: $framework"
+            if ($null -eq $counters -or [int]$counters.GetAttribute('total') -ne 198 -or [int]$counters.GetAttribute('passed') -ne 198 -or [int]$counters.GetAttribute('failed') -ne 0) {
+              throw "Characterization test count drift: $framework"
             }
           }
       - name: Verify exact extraction parity
@@ -60,6 +60,11 @@ jobs:
       - name: Verify frozen test and fixture blobs
         if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Staging'
         run: sh tools/verify-frozen-corpus.sh
+      - name: Verify supplemental consumer-shaped test identity
+        if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Staging'
+        shell: bash
+        run: |
+          test "$(git hash-object tests/Icod.Expressions.Tests/RegularExpressions/IcodExpressionsA04ConsumerShapeTests.cs)" = 589a52b42d5e3010e9e678f771cc85b156236e0b
       - name: Verify unchanged production source blobs
         if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Staging'
         run: sh tools/verify-frozen-source.sh
