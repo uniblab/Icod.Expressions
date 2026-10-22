@@ -1,6 +1,8 @@
 # Extraction readiness
 
-**Status:** preparation only; A05 is not frozen and E00 is not complete.
+**Status:** A05 extraction inputs are frozen in CommandFramework PR #16;
+the E00 test and fixture transplant is complete, with tests quarantined until
+the production source copy.
 This file records the handoff boundary for the first source copy. The
 authoritative in-place evidence remains in
 [`Icod.CommandFramework` PR #16](https://github.com/uniblab/Icod.CommandFramework/pull/16).
@@ -11,15 +13,19 @@ authoritative in-place evidence remains in
 | A01 strict POSIX | Draft BRE/ERE contracts and semantic audit on PR #16. | Close or explicitly record standards and independent oracle gaps. |
 | A02 GNU syntax | Pinned Gnulib `fb7312fa8d3df29f0ca0678f669b9a5b88a078ec`: 26 syntax bits and 13 named macros mapped. | Resolve profile and option evidence needed for the extraction contract. |
 | A03 consumers | CoreUtils, Grep, ProcPs, DiffUtils, and LineEditor call shapes mapped. | Validate consumer-shaped assertions and preserve command policy outside this library. |
-| A04 characterization | 110 focused test declarations; a 44-case JSONL parity corpus and three-platform CI in PR #16. | Classify unresolved differentials and pin the exact final test corpus and oracle identities. |
-| A05 freeze | No approved baseline yet. | Publish source SHA, API, feature/profile matrices, test blobs/counts, fixture identities, known bugs/deviations, reference revisions, and passing CI. |
+| A04 characterization | 110 focused declarations, 193 runtime cases and a 44-case JSONL corpus. [Three-platform CI](https://github.com/uniblab/Icod.CommandFramework/actions/runs/39867051683) passed on the characterized test commit. | Standards/profile oracle and full consumer differentials remain explicit gaps for normalization. |
+| A05 freeze | [Extraction baseline](https://github.com/uniblab/Icod.CommandFramework/blob/docs/icod-expressions-a00-in-situ-inventory/doc/Icod.Expressions-A05-Extraction-Baseline.md): source/test blobs, API, fixtures, known gaps, reference pins, and validation. | Preserve this baseline during E01/E02; no CommandFramework removal or dependency switch. |
+| E00 transplant | Eleven unchanged test C# blobs, the test README, 44-case JSONL, API snapshot, and their unchanged runner/tool sources copied; `tools/verify-frozen-corpus.sh` checks their identities. | The tests and tools are outside the solution until E01. They fail to compile only because the new assembly has no regex or Text types yet. |
 
-The candidate SHA identifies the unchanged **production** engine; the tests and
-audit documents on PR #16 are additive. Its branch head is not the final
-extraction source identity. The project in this repository currently contains
-no copied implementation, API, or tests. The frozen corpus will be
-transplanted before the production source, and test expectations will not be
-rewritten to make the move pass.
+The source SHA identifies the unchanged **production** engine; the tests and
+audit documents on PR #16 are additive. Its branch head is not the extraction
+source identity. This repository contains copied tests and fixtures but no
+production implementation or API. No expectation was rewritten in the
+transplant. The test project and parity runner are deliberately not included
+in the solution until E01; a .NET 10 build produces missing
+`Icod.CommandFramework.RegularExpressions` and `.Text` namespace errors,
+which are the expected absence of source. The project and tool references
+already point at the new assembly.
 
 ## Source dependency closure probe
 
@@ -40,8 +46,8 @@ zero errors, without the rest of CommandFramework or its `Icod.Path` package
 reference. This is a **compile dependency check**, not evidence of public API,
 runtime behavior, multi-target support, extraction parity, or licensing
 closure. The probe links local files from the original checkout and does not
-copy production code into this repository. Re-run it against the final A05
-source identity before the production copy.
+copy production code into this repository. Re-run it against the A05 source
+identity during the production copy.
 
 The current engine's empty-anchor capture participation differs from expected
 registers in pinned Gnulib `tests/test-regex.c`. A separate GNU grep probe

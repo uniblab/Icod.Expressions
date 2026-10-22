@@ -37,3 +37,6 @@ jobs:
         run: dotnet restore Icod.Expressions.sln
       - name: Build all target frameworks
         run: dotnet build Icod.Expressions.sln -c ${{ matrix.configuration }} --no-restore -p:ContinuousIntegrationBuild=true
+      - name: Verify frozen test and fixture blobs
+        if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Staging'
+        run: sh tools/verify-frozen-corpus.sh
