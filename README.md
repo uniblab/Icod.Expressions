@@ -3,10 +3,11 @@
 `Icod.Expressions` is the planned home for the GNU/POSIX regular-expression
 engine currently in
 [`Icod.CommandFramework`](https://github.com/uniblab/Icod.CommandFramework).
-The repository has a buildable project shell and an exact copy of the frozen
-test corpus, but **no regex implementation or usable public API yet**. The
-project is intentionally not packable. The tests are quarantined until the
-mechanical source copy is present.
+The repository now contains a mechanical copy of the frozen GNU/POSIX regex
+engine and its tests. Its public types temporarily retain their original
+`Icod.CommandFramework.RegularExpressions` and `Icod.CommandFramework.Text`
+namespaces so the extraction can be proved without redesigning the API. This
+is a `0.1.0-alpha.1` development assembly and is not yet packable.
 
 ## Extraction sequence
 
@@ -14,8 +15,9 @@ mechanical source copy is present.
    [CommandFramework PR #16](https://github.com/uniblab/Icod.CommandFramework/pull/16).
 2. Verify the frozen tests, API snapshot, and parity fixture already copied
    here with `sh tools/verify-frozen-corpus.sh`.
-3. Copy the engine source into this repository, preserving observable
-   behavior; compare both engines against the same parity corpus.
+3. Verify the copied source blobs with `sh tools/verify-frozen-source.sh`, run
+   the focused tests, and compare both engines against the same 44-case parity
+   corpus and compiled API inventory.
 4. Validate consumer migration before proposing any removal or dependency
    switch in CommandFramework. That later change requires a separate PR.
 
@@ -31,11 +33,13 @@ Install the .NET 8, 9, and 10 SDKs or targeting packs, then run:
 ```sh
 dotnet restore Icod.Expressions.sln
 dotnet build Icod.Expressions.sln -c Staging --no-restore
+dotnet test Icod.Expressions.sln -c Staging --no-build --no-restore
+dotnet run --project tools/RegularExpressionParityBaseline/RegularExpressionParityBaseline.csproj \
+  -c Staging -- --verify doc/Icod.Expressions-A04-Parity-Baseline.jsonl
 ```
 
-The library targets `net8.0`, `net9.0`, and `net10.0` with C# 13. CI builds
-all targets on Windows, Linux, and macOS and checks the frozen corpus blobs.
-The tests and two tools under `tests/` and `tools/RegularExpression*` are not
-in the solution yet: their expected missing-namespace errors will disappear
-only after the audited engine is copied. Semantic and extraction parity have
-not yet been demonstrated in this repository.
+The library targets `net8.0`, `net9.0`, and `net10.0` with C# 13; the focused
+test assembly targets `net10.0`, matching the frozen source baseline. CI
+builds all targets, runs the tests and parity verifier on Windows, Linux, and
+macOS, and checks original Git blob identities on Linux. The package remains
+disabled pending full E02 validation and consumer migration design.

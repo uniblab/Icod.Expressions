@@ -6,9 +6,9 @@ README is copied unchanged as provenance. The original namespace and using
 directives are also unchanged; these are inherited behavior assertions, not
 strict POSIX conformance claims.
 
-This project is intentionally outside `Icod.Expressions.sln` until E01 copies
-the engine and the two external Text enums. Before that copy, compiling the
-project for `net10.0` fails on missing regex/Text namespaces. After E01,
-only mechanical namespace/project changes may be applied; test expectations
-and the JSONL parity fixture must retain their A05 outcomes. See
+E01 has copied the engine and the two external Text enums, and this project
+is now in `Icod.Expressions.sln`. Its 193 runtime cases passed locally on
+.NET 10 Staging without changing a test expectation. The copied source
+temporarily retains its legacy namespaces for exact API and behavioral
+parity. See
 `../../doc/EXTRACTION-READINESS.md` and `../../tools/verify-frozen-corpus.sh`.

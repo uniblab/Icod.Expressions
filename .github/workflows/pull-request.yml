@@ -37,6 +37,19 @@ jobs:
         run: dotnet restore Icod.Expressions.sln
       - name: Build all target frameworks
         run: dotnet build Icod.Expressions.sln -c ${{ matrix.configuration }} --no-restore -p:ContinuousIntegrationBuild=true
+      - name: Run frozen regex tests
+        run: dotnet test Icod.Expressions.sln -c ${{ matrix.configuration }} --no-build --no-restore --logger trx
+      - name: Verify exact extraction parity
+        run: dotnet run --project tools/RegularExpressionParityBaseline/RegularExpressionParityBaseline.csproj -c ${{ matrix.configuration }} -- --verify doc/Icod.Expressions-A04-Parity-Baseline.jsonl
       - name: Verify frozen test and fixture blobs
         if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Staging'
         run: sh tools/verify-frozen-corpus.sh
+      - name: Verify unchanged production source blobs
+        if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Staging'
+        run: sh tools/verify-frozen-source.sh
+      - name: Verify compiled public API members
+        if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Staging'
+        shell: bash
+        run: |
+          dotnet run --project tools/RegularExpressionApiSnapshot/RegularExpressionApiSnapshot.csproj -c Staging > /tmp/icod-expressions-api.txt
+          diff <(tail -n +2 doc/Icod.Expressions-A00-Compiled-API.txt) <(tail -n +2 /tmp/icod-expressions-api.txt)
