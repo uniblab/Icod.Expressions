@@ -1,0 +1,39 @@
+name: pull-request
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            configuration: Debug
+          - os: ubuntu-latest
+            configuration: Staging
+          - os: ubuntu-latest
+            configuration: Release
+          - os: windows-latest
+            configuration: Staging
+          - os: macos-latest
+            configuration: Staging
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+      - name: Restore all target frameworks
+        run: dotnet restore Icod.Expressions.sln
+      - name: Build all target frameworks
+        run: dotnet build Icod.Expressions.sln -c ${{ matrix.configuration }} --no-restore -p:ContinuousIntegrationBuild=true
