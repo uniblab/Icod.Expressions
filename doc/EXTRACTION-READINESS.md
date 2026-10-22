@@ -21,6 +21,28 @@ no copied implementation, API, or tests. The frozen corpus will be
 transplanted before the production source, and test expectations will not be
 rewritten to make the move pass.
 
+## Source dependency closure probe
+
+The in-place regex tree has a direct compile dependency on
+`Icod.CommandFramework.Text.TextDecodingMode` and
+`Icod.CommandFramework.Text.InvalidEncodingPolicy`, which are outside its
+directory. To reproduce a standalone compile check against a local checkout
+of the candidate source commit, run from this repository:
+
+```sh
+dotnet build tools/SourceClosure/SourceClosure.csproj -c Release \
+  -p:CommandFrameworkRoot=/absolute/path/to/Icod.CommandFramework
+```
+
+At source commit `e1e118f18246eed290bee4758325a20e302bfb92`, the 32 regex
+C# files plus these two enums compile with SDK 10.0.402, zero warnings and
+zero errors, without the rest of CommandFramework or its `Icod.Path` package
+reference. This is a **compile dependency check**, not evidence of public API,
+runtime behavior, multi-target support, extraction parity, or licensing
+closure. The probe links local files from the original checkout and does not
+copy production code into this repository. Re-run it against the final A05
+source identity before the production copy.
+
 The current engine's empty-anchor capture participation differs from expected
 registers in pinned Gnulib `tests/test-regex.c`. A separate GNU grep probe
 found an Extended middle-anchor difference. Both remain characterization

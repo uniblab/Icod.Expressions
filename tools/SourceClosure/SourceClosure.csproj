@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<LangVersion>13.0</LangVersion>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+		<IsPackable>false</IsPackable>
+	</PropertyGroup>
+	<Target Name="RequireCommandFrameworkRoot" BeforeTargets="PrepareForBuild">
+		<Error Condition="'$(CommandFrameworkRoot)' == '' Or !Exists('$(CommandFrameworkRoot)/src/RegularExpressions')"
+			Text="Set CommandFrameworkRoot to a local Icod.CommandFramework checkout." />
+	</Target>
+	<ItemGroup Condition="'$(CommandFrameworkRoot)' != ''">
+		<Compile Include="$(CommandFrameworkRoot)/src/RegularExpressions/**/*.cs" />
+		<Compile Include="$(CommandFrameworkRoot)/src/Text/TextDecodingMode.cs" />
+		<Compile Include="$(CommandFrameworkRoot)/src/Text/InvalidEncodingPolicy.cs" />
+	</ItemGroup>
+</Project>
