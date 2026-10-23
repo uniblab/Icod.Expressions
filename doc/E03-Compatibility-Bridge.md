@@ -68,6 +68,28 @@ temporary bridge built from the original non-regex source. A production
 bridge still needs a separate reviewed CommandFramework PR and the complete
 consumer gate.
 
+## Cross-platform CoreUtils `expr` consumer gate
+
+`tools/ConsumerBridgeProbe/run-cross-platform.ps1` fetches the same pinned
+CommandFramework and CoreUtils source commits used by the Linux gate below.
+It builds CoreUtils's unchanged `expr` tests against the published 2.2.1
+dependency, requires 50/50 passes, and builds the **full scratch bridge**
+from CommandFramework's non-regex source and the local Expressions package.
+An old-compiled assembly-origin probe must reject the original regex
+identity and accept the forwarded provider with `CommandContext` still in
+the bridge. The original test binaries then run in a separate output with
+the bridge and candidate package; 50/50 passes are required again. The
+Staging CI matrix runs this on Windows, macOS, and Linux. After packing the
+candidate, it can be run locally with PowerShell:
+
+```powershell
+./tools/ConsumerBridgeProbe/run-cross-platform.ps1 -PackageFeed artifacts
+```
+
+This validates one real non-regex/regex consumer across the three platforms.
+It does not establish that the other four consumer repositories pass outside
+the broader Linux gate, or that the scratch bridge is ready for distribution.
+
 ## Source-pinned CoreUtils `expr` command probe
 
 A second, still isolated Linux/.NET 10 probe used

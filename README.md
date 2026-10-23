@@ -119,6 +119,14 @@ Expressions package. CI runs it on Windows, macOS, and Linux:
 ./tools/ForwardingSmoke/run.ps1 -PackageFeed artifacts
 ```
 
+The cross-platform CoreUtils `expr` probe runs its 50 old-package-compiled
+tests before and after replacing the original CommandFramework DLL with a
+temporary full bridge backed by the local package:
+
+```powershell
+./tools/ConsumerBridgeProbe/run-cross-platform.ps1 -PackageFeed artifacts
+```
+
 On Linux with .NET 10, the source-pinned consumer probe also uses that
 unpublished package. It fetches six pinned public source commits, builds a
 temporary forwarding bridge, and runs the original CoreUtils, ProcPs,
