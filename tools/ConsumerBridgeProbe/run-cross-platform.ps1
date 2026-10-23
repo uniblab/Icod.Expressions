@@ -140,6 +140,17 @@ try {
         $textConsumerOutcomes[$name] = @(Read-PassingTestOutcomes (Join-Path $results 'original.trx') $suite.ExpectedCases)
     }
 
+    # The source-pinned Shared integration test directly passes both forwarded
+    # enum values into TextUnitReader, which remains in CommandFramework.
+    $sharedProject = Join-Path $coreutilsRoot 'tests/Shared.Tests/Icod.CoreUtils.Shared.Tests.csproj'
+    $sharedTestFilter = 'FullyQualifiedName~TextUnitsComposeWithCharacterRangesWithoutReencoding'
+    $sharedOriginalResults = Join-Path $scratch 'CoreUtils.Shared-original-results'
+    Invoke-Checked -Executable 'dotnet' -Arguments @('restore', $sharedProject, '-m:1', '--configfile', $config)
+    Invoke-Checked -Executable 'dotnet' -Arguments @('test', $sharedProject, '-c', 'Staging', '--no-restore',
+        '-m:1', '--filter', $sharedTestFilter,
+        '--logger', 'trx;LogFileName=original.trx', '--results-directory', $sharedOriginalResults)
+    $sharedOriginalOutcomes = @(Read-PassingTestOutcomes (Join-Path $sharedOriginalResults 'original.trx') 1)
+
     $procpsSuites = @(
         @{ Name = 'Pgrep'; ExpectedCases = 11 },
         @{ Name = 'Pkill'; ExpectedCases = 7 },
@@ -272,6 +283,24 @@ try {
         Write-Host "CoreUtils $name shared-Text consumer: $($bridgedOutcomes.Count) identical passing cases."
     }
 
+    $sharedPublishedOutput = Join-Path $coreutilsRoot 'tests/Shared.Tests/bin/Staging/net10.0'
+    $sharedBridgedOutput = Join-Path $scratch 'CoreUtils.Shared.Tests'
+    New-Item -ItemType Directory -Path $sharedBridgedOutput | Out-Null
+    Copy-Item (Join-Path $sharedPublishedOutput '*') -Destination $sharedBridgedOutput -Recurse -Force
+    Copy-Item $bridgeDll -Destination (Join-Path $sharedBridgedOutput 'Icod.CommandFramework.dll') -Force
+    Copy-Item (Join-Path $probeOutput 'Icod.Expressions.dll') -Destination $sharedBridgedOutput -Force
+    $sharedBridgedResults = Join-Path $scratch 'CoreUtils.Shared-bridged-results'
+    Invoke-Checked -Executable 'dotnet' -Arguments @('vstest',
+        (Join-Path $sharedBridgedOutput 'Icod.CoreUtils.Shared.Tests.dll'),
+        "--TestCaseFilter:$sharedTestFilter",
+        '--Logger:trx;LogFileName=bridged.trx', "--ResultsDirectory:$sharedBridgedResults")
+    $sharedBridgedOutcomes = @(Read-PassingTestOutcomes (Join-Path $sharedBridgedResults 'bridged.trx') 1)
+    $sharedDifferences = @(Compare-Object -ReferenceObject $sharedOriginalOutcomes -DifferenceObject $sharedBridgedOutcomes -CaseSensitive)
+    if ($sharedDifferences.Count -ne 0) {
+        throw "CoreUtils Shared direct Text API test identity/outcome changed with the bridge: $($sharedDifferences[0])"
+    }
+    Write-Host 'CoreUtils Shared direct Text API: one identical passing case.'
+
     foreach ($suite in $procpsSuites) {
         $name = $suite.Name
         $publishedOutput = Join-Path $procpsRoot "tests/ProcPs.$name.Tests/bin/Staging/net10.0"
@@ -328,7 +357,7 @@ try {
             '--Logger:trx;LogFileName=bridged.trx', "--ResultsDirectory:$results")
         Assert-PassingTests -TrxPath (Join-Path $results 'bridged.trx') -ExpectedCount $suite.ExpectedCases
     }
-    Write-Host 'All 724 source-pinned consumer cases passed with published and package-backed bridge assemblies, including 113 CoreUtils shared-Text cases.'
+    Write-Host 'All 725 source-pinned consumer cases passed with published and package-backed bridge assemblies, including 114 CoreUtils shared-Text cases.'
 } finally {
     if ($null -eq $previousPackages) {
         Remove-Item Env:NUGET_PACKAGES -ErrorAction SilentlyContinue
