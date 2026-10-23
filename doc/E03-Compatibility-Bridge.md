@@ -44,6 +44,30 @@ non-regex CommandFramework APIs, and it did not load the five real consumers
 or verify every forwarded type at runtime. A production bridge requires its
 own old-client compile/load regression in the separate CommandFramework PR.
 
+## Cross-platform old-client forwarding gate
+
+`tools/ForwardingSmoke/run.ps1` builds an old client against the published
+CommandFramework 2.2.1 package. It also builds a thin assembly with the old
+name and version that forwards the 24 regex types and both shared Text enums
+to the **unpublished local Expressions package**. The two projects restore
+the candidate from an isolated NuGet cache. The script runs the unchanged
+client with the published DLL first, substitutes the thin DLL in a separate
+temporary output, and requires all 26 old-compiled type references to resolve
+from `Icod.Expressions`. It checks leftmost-longest string matching, a
+capture, source-byte offsets, and that removing the new DLL makes the
+forwarded client fail to load it. The Staging CI jobs run this check on
+Windows, macOS, and Linux; locally, after packing the candidate, run:
+
+```powershell
+./tools/ForwardingSmoke/run.ps1 -PackageFeed artifacts
+```
+
+This thin DLL cannot replace CommandFramework for consumers of its other
+APIs. The Linux package-backed gate below tests those consumers with a
+temporary bridge built from the original non-regex source. A production
+bridge still needs a separate reviewed CommandFramework PR and the complete
+consumer gate.
+
 ## Source-pinned CoreUtils `expr` command probe
 
 A second, still isolated Linux/.NET 10 probe used
@@ -153,9 +177,9 @@ forwarding evidence. Each consumer's uncovered options still need audit.
 
 This is an executable gate in the Expressions PR's Linux Staging job. It
 validates five source-pinned consumer families. It is not a distributable
-bridge package or a cross-platform forwarding result. The bridge remains
-subject to a separate CommandFramework review after the remaining A03 and
-A05/E02 gates.
+bridge package or proof of the complete cross-platform consumer graph. The
+bridge remains subject to a separate CommandFramework review after the
+remaining A03 and A05/E02 gates.
 
 ## Separate, reviewable bridge sequence
 

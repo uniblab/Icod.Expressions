@@ -10,12 +10,41 @@ if ( args.Length != 1 || ( args[ 0 ] != "--original" && args[ 0 ] != "--forwarde
 var expectedRegexAssembly = args[ 0 ] == "--forwarded"
 	? "Icod.Expressions"
 	: "Icod.CommandFramework";
-var regexAssembly = typeof( GnuExtendedRegularExpressionProvider ).Assembly.GetName().Name;
-var decodingAssembly = typeof( TextDecodingMode ).Assembly.GetName().Name;
-if ( regexAssembly != expectedRegexAssembly || decodingAssembly != expectedRegexAssembly ) {
-	throw new InvalidOperationException(
-		$"Expected {expectedRegexAssembly}, got regex={regexAssembly}, decoding={decodingAssembly}."
-	);
+Type[] oldPublicTypes = [
+	typeof( CompiledRegularExpressionPreparedInputExtensions ),
+	typeof( GnuBasicRegularExpressionProvider ),
+	typeof( GnuEmacsRegularExpressionProvider ),
+	typeof( GnuExtendedRegularExpressionProvider ),
+	typeof( GnuRegularExpressionSyntax ),
+	typeof( ICompiledRegularExpression ),
+	typeof( IRegularExpressionCharacterClassProvider ),
+	typeof( IRegularExpressionProvider ),
+	typeof( PosixCLocaleRegularExpressionCharacterClassProvider ),
+	typeof( RegularExpressionByteCapture ),
+	typeof( RegularExpressionByteMatch ),
+	typeof( RegularExpressionByteMatchOptions ),
+	typeof( RegularExpressionByteMatchResult ),
+	typeof( RegularExpressionCapture ),
+	typeof( RegularExpressionCompileResult ),
+	typeof( RegularExpressionDiagnostic ),
+	typeof( RegularExpressionDiagnosticCode ),
+	typeof( RegularExpressionInputOptions ),
+	typeof( RegularExpressionMatch ),
+	typeof( RegularExpressionMatchOptions ),
+	typeof( RegularExpressionMatchResult ),
+	typeof( RegularExpressionOptions ),
+	typeof( RegularExpressionPreparedByteInput ),
+	typeof( UnicodeRegularExpressionCharacterClassProvider ),
+	typeof( InvalidEncodingPolicy ),
+	typeof( TextDecodingMode )
+];
+foreach ( var publicType in oldPublicTypes ) {
+	var assemblyName = publicType.Assembly.GetName().Name;
+	if ( assemblyName != expectedRegexAssembly ) {
+		throw new InvalidOperationException(
+			$"Expected {publicType.FullName} in {expectedRegexAssembly}, got {assemblyName}."
+		);
+	}
 }
 
 var provider = new GnuExtendedRegularExpressionProvider(
@@ -40,5 +69,5 @@ if ( !byteMatch.IsSuccess || !byteMatch.IsMatch || byteMatch.Match!.ByteIndex !=
 	throw new InvalidOperationException( "Authoritative byte offsets changed." );
 }
 
-Console.WriteLine( $"{args[ 0 ]}: regex and Text enum from {regexAssembly}; string and bytes passed." );
+Console.WriteLine( $"{args[ 0 ]}: {oldPublicTypes.Length} regex/Text types from {expectedRegexAssembly}; string and bytes passed." );
 return 0;

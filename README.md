@@ -110,6 +110,15 @@ dotnet restore samples/PackageSmoke/PackageSmoke.csproj --source artifacts
 dotnet run --project samples/PackageSmoke/PackageSmoke.csproj -c Staging -f net10.0
 ```
 
+With PowerShell and .NET 10, the old-client forwarding check compiles against
+the published CommandFramework 2.2.1 package, then checks all 26 forwarded
+public identities and representative matches through the unpublished local
+Expressions package. CI runs it on Windows, macOS, and Linux:
+
+```powershell
+./tools/ForwardingSmoke/run.ps1 -PackageFeed artifacts
+```
+
 On Linux with .NET 10, the source-pinned consumer probe also uses that
 unpublished package. It fetches six pinned public source commits, builds a
 temporary forwarding bridge, and runs the original CoreUtils, ProcPs,

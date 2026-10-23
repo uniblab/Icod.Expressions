@@ -13,6 +13,18 @@ $scratch = Join-Path ([System.IO.Path]::GetTempPath()) ('icod-forwarding-' + [gu
 New-Item -ItemType Directory -Path $scratch | Out-Null
 $previousPackages = $env:NUGET_PACKAGES
 $env:NUGET_PACKAGES = Join-Path $scratch 'packages'
+$config = Join-Path $scratch 'NuGet.Config'
+$escapedFeed = [System.Security.SecurityElement]::Escape($feed)
+@"
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <clear />
+    <add key="candidate" value="$escapedFeed" />
+    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+  </packageSources>
+</configuration>
+"@ | Set-Content -Path $config -Encoding UTF8
 
 function Invoke-CheckedDotnet {
     param([string[]]$Arguments)
@@ -24,8 +36,7 @@ try {
     $clientProject = Join-Path $root 'tools/ForwardingSmoke/LegacyClient/LegacyClient.csproj'
     $bridgeProject = Join-Path $root 'tools/ForwardingSmoke/ThinBridge/ThinBridge.csproj'
     foreach ($project in @($clientProject, $bridgeProject)) {
-        Invoke-CheckedDotnet -Arguments @('restore', $project, '-m:1', '--source', $feed,
-            '--source', 'https://api.nuget.org/v3/index.json')
+        Invoke-CheckedDotnet -Arguments @('restore', $project, '-m:1', '--configfile', $config)
         Invoke-CheckedDotnet -Arguments @('build', $project, '-c', 'Staging', '-m:1', '--no-restore')
     }
 
