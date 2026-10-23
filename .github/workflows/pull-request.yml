@@ -93,7 +93,7 @@ jobs:
           for framework in net8.0 net9.0 net10.0; do
             dotnet run --project samples/PackageSmoke/PackageSmoke.csproj -c Staging --no-build --no-restore -f "$framework"
           done
-      - name: Run old CoreUtils DiffUtils and LineEditor binaries with scratch bridge
+      - name: Run source-pinned consumer binaries across platforms with scratch bridge
         if: matrix.configuration == 'Staging'
         shell: pwsh
         run: ./tools/ConsumerBridgeProbe/run-cross-platform.ps1 -PackageFeed artifacts

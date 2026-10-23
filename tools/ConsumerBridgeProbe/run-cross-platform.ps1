@@ -66,9 +66,15 @@ try {
         -Revision 'e1e118f18246eed290bee4758325a20e302bfb92'
     Fetch-PinnedSource -Target $coreutilsRoot -Url 'https://github.com/uniblab/Icod.CoreUtils.git' `
         -Revision '2c47cd67bae490dedf16234d8460c8b9da8d3404'
+    $procpsRoot = Join-Path $scratch 'Icod.ProcPs'
+    Fetch-PinnedSource -Target $procpsRoot -Url 'https://github.com/uniblab/Icod.ProcPs.git' `
+        -Revision 'e802ac03d941b1ba9fbe30e8f9c68fc7efcf3cff'
     $diffutilsRoot = Join-Path $scratch 'Icod.DiffUtils'
     Fetch-PinnedSource -Target $diffutilsRoot -Url 'https://github.com/uniblab/Icod.DiffUtils.git' `
         -Revision '8192ec43e1f6add42bc759b225c814861e18c843'
+    $grepRoot = Join-Path $scratch 'Icod.Grep'
+    Fetch-PinnedSource -Target $grepRoot -Url 'https://github.com/uniblab/Icod.Grep.git' `
+        -Revision '2ef1c11f11b77eb876242eb0c92a88d20857db64'
     $lineEditorRoot = Join-Path $scratch 'Icod.LineEditor'
     Fetch-PinnedSource -Target $lineEditorRoot -Url 'https://github.com/uniblab/Icod.LineEditor.git' `
         -Revision '1705e1dc5107eb2ede6b5ecec5dad7ea18c93061'
@@ -80,6 +86,36 @@ try {
         '-m:1', '--logger', 'trx;LogFileName=original.trx', '--results-directory', $originalResults)
     Assert-PassingTests -TrxPath (Join-Path $originalResults 'original.trx') -ExpectedCount 50
     $originalOutput = Join-Path $coreutilsRoot 'tests/Expr.Tests/bin/Staging/net10.0'
+
+    $coreutilsSuites = @(
+        @{ Name = 'NL'; ExpectedCases = 35 },
+        @{ Name = 'CSplit'; ExpectedCases = 43 },
+        @{ Name = 'Ptx'; ExpectedCases = 46 }
+    )
+    foreach ($suite in $coreutilsSuites) {
+        $name = $suite.Name
+        $project = Join-Path $coreutilsRoot "tests/$name.Tests/Icod.CoreUtils.$name.Tests.csproj"
+        $results = Join-Path $scratch "CoreUtils.$name-original-results"
+        Invoke-Checked -Executable 'dotnet' -Arguments @('restore', $project, '-m:1', '--configfile', $config)
+        Invoke-Checked -Executable 'dotnet' -Arguments @('test', $project, '-c', 'Staging', '--no-restore',
+            '-m:1', '--logger', 'trx;LogFileName=original.trx', '--results-directory', $results)
+        Assert-PassingTests -TrxPath (Join-Path $results 'original.trx') -ExpectedCount $suite.ExpectedCases
+    }
+
+    $procpsSuites = @(
+        @{ Name = 'Pgrep'; ExpectedCases = 11 },
+        @{ Name = 'Pkill'; ExpectedCases = 7 },
+        @{ Name = 'PidWait'; ExpectedCases = 6 }
+    )
+    foreach ($suite in $procpsSuites) {
+        $name = $suite.Name
+        $project = Join-Path $procpsRoot "tests/ProcPs.$name.Tests/Icod.ProcPs.$name.Tests.csproj"
+        $results = Join-Path $scratch "ProcPs.$name-original-results"
+        Invoke-Checked -Executable 'dotnet' -Arguments @('restore', $project, '-m:1', '--configfile', $config)
+        Invoke-Checked -Executable 'dotnet' -Arguments @('test', $project, '-c', 'Staging', '--no-restore',
+            '-m:1', '--logger', 'trx;LogFileName=original.trx', '--results-directory', $results)
+        Assert-PassingTests -TrxPath (Join-Path $results 'original.trx') -ExpectedCount $suite.ExpectedCases
+    }
 
     $diffSuites = @(
         @{ Name = 'Diff'; ExpectedCases = 22 },
@@ -94,6 +130,13 @@ try {
             '-m:1', '--logger', 'trx;LogFileName=original.trx', '--results-directory', $results)
         Assert-PassingTests -TrxPath (Join-Path $results 'original.trx') -ExpectedCount $suite.ExpectedCases
     }
+
+    $grepProject = Join-Path $grepRoot 'tests/Grep.Tests/Icod.Grep.Tests.csproj'
+    $grepOriginalResults = Join-Path $scratch 'Grep-original-results'
+    Invoke-Checked -Executable 'dotnet' -Arguments @('restore', $grepProject, '-m:1', '--configfile', $config)
+    Invoke-Checked -Executable 'dotnet' -Arguments @('test', $grepProject, '-c', 'Staging', '--no-restore',
+        '-m:1', '--logger', 'trx;LogFileName=original.trx', '--results-directory', $grepOriginalResults)
+    Assert-PassingTests -TrxPath (Join-Path $grepOriginalResults 'original.trx') -ExpectedCount 113
 
     $lineEditorSuites = @(
         @{ Name = 'Sed'; ExpectedCases = 116 },
@@ -155,6 +198,36 @@ try {
         '--Logger:trx;LogFileName=bridged.trx', "--ResultsDirectory:$bridgedResults")
     Assert-PassingTests -TrxPath (Join-Path $bridgedResults 'bridged.trx') -ExpectedCount 50
 
+    foreach ($suite in $coreutilsSuites) {
+        $name = $suite.Name
+        $publishedOutput = Join-Path $coreutilsRoot "tests/$name.Tests/bin/Staging/net10.0"
+        $substitutedOutput = Join-Path $scratch "CoreUtils.$name.Tests"
+        New-Item -ItemType Directory -Path $substitutedOutput | Out-Null
+        Copy-Item (Join-Path $publishedOutput '*') -Destination $substitutedOutput -Recurse -Force
+        Copy-Item $bridgeDll -Destination (Join-Path $substitutedOutput 'Icod.CommandFramework.dll') -Force
+        Copy-Item (Join-Path $probeOutput 'Icod.Expressions.dll') -Destination $substitutedOutput -Force
+        $results = Join-Path $scratch "CoreUtils.$name-bridged-results"
+        Invoke-Checked -Executable 'dotnet' -Arguments @('vstest',
+            (Join-Path $substitutedOutput "Icod.CoreUtils.$name.Tests.dll"),
+            '--Logger:trx;LogFileName=bridged.trx', "--ResultsDirectory:$results")
+        Assert-PassingTests -TrxPath (Join-Path $results 'bridged.trx') -ExpectedCount $suite.ExpectedCases
+    }
+
+    foreach ($suite in $procpsSuites) {
+        $name = $suite.Name
+        $publishedOutput = Join-Path $procpsRoot "tests/ProcPs.$name.Tests/bin/Staging/net10.0"
+        $substitutedOutput = Join-Path $scratch "ProcPs.$name.Tests"
+        New-Item -ItemType Directory -Path $substitutedOutput | Out-Null
+        Copy-Item (Join-Path $publishedOutput '*') -Destination $substitutedOutput -Recurse -Force
+        Copy-Item $bridgeDll -Destination (Join-Path $substitutedOutput 'Icod.CommandFramework.dll') -Force
+        Copy-Item (Join-Path $probeOutput 'Icod.Expressions.dll') -Destination $substitutedOutput -Force
+        $results = Join-Path $scratch "ProcPs.$name-bridged-results"
+        Invoke-Checked -Executable 'dotnet' -Arguments @('vstest',
+            (Join-Path $substitutedOutput "Icod.ProcPs.$name.Tests.dll"),
+            '--Logger:trx;LogFileName=bridged.trx', "--ResultsDirectory:$results")
+        Assert-PassingTests -TrxPath (Join-Path $results 'bridged.trx') -ExpectedCount $suite.ExpectedCases
+    }
+
     foreach ($suite in $diffSuites) {
         $name = $suite.Name
         $publishedOutput = Join-Path $diffutilsRoot "tests/$name.Tests/bin/Staging/net10.0"
@@ -170,6 +243,18 @@ try {
         Assert-PassingTests -TrxPath (Join-Path $results 'bridged.trx') -ExpectedCount $suite.ExpectedCases
     }
 
+    $grepPublishedOutput = Join-Path $grepRoot 'tests/Grep.Tests/bin/Staging/net10.0'
+    $grepBridgedOutput = Join-Path $scratch 'Grep.Tests'
+    New-Item -ItemType Directory -Path $grepBridgedOutput | Out-Null
+    Copy-Item (Join-Path $grepPublishedOutput '*') -Destination $grepBridgedOutput -Recurse -Force
+    Copy-Item $bridgeDll -Destination (Join-Path $grepBridgedOutput 'Icod.CommandFramework.dll') -Force
+    Copy-Item (Join-Path $probeOutput 'Icod.Expressions.dll') -Destination $grepBridgedOutput -Force
+    $grepBridgedResults = Join-Path $scratch 'Grep-bridged-results'
+    Invoke-Checked -Executable 'dotnet' -Arguments @('vstest',
+        (Join-Path $grepBridgedOutput 'Icod.Grep.Tests.dll'),
+        '--Logger:trx;LogFileName=bridged.trx', "--ResultsDirectory:$grepBridgedResults")
+    Assert-PassingTests -TrxPath (Join-Path $grepBridgedResults 'bridged.trx') -ExpectedCount 113
+
     foreach ($suite in $lineEditorSuites) {
         $name = $suite.Name
         $publishedOutput = Join-Path $lineEditorRoot "tests/$name.Tests/bin/Staging/net10.0"
@@ -184,7 +269,7 @@ try {
             '--Logger:trx;LogFileName=bridged.trx', "--ResultsDirectory:$results")
         Assert-PassingTests -TrxPath (Join-Path $results 'bridged.trx') -ExpectedCount $suite.ExpectedCases
     }
-    Write-Host 'Original CoreUtils expr (50), DiffUtils diff (22) and sdiff (40), and LineEditor Sed (116), Ed.Shared (68), Ed (26), and Red (28) binaries passed with published and package-backed bridge assemblies.'
+    Write-Host 'All 611 original CoreUtils, ProcPs, DiffUtils, Grep, and LineEditor binaries passed with published and package-backed bridge assemblies.'
 } finally {
     if ($null -eq $previousPackages) {
         Remove-Item Env:NUGET_PACKAGES -ErrorAction SilentlyContinue
