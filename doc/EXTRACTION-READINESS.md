@@ -42,9 +42,13 @@ engine. The C# runner source has identical Git blob
 `bec36b11aa2bd1617e191ac49703244a03dcc10b` in both repositories;
 only its project reference changes. Seven ordinary standards-facing samples
 agree. glibc and the inherited engine both return a participating empty
-capture for two anchor-branch cases where the pinned Gnulib source test
-expects an absent capture. That disagreement remains unresolved; the tool
-is a Linux/glibc observation, not a pinned Gnulib oracle or conformance claim.
+capture for two anchor-branch cases. The pinned Gnulib source table lists an
+absent group but explicitly tolerates a different runtime result. The
+[included Gnulib oracle runner](../tools/GnulibRegexOracle/run.sh) builds
+the exact pinned engine and observes `(0,0)` for both ERE and two analogous
+BRE cases. This resolves the apparent source-table discrepancy for those
+inputs, without establishing strict POSIX conformance or broad GNU profile
+parity.
 
 The source SHA identifies the unchanged **production** engine; the tests and
 audit documents on PR #16 are additive. Its branch head is not the extraction
@@ -78,10 +82,11 @@ establish public API, runtime behavior, multi-target support, extraction
 parity, or licensing closure. The probe still links original local files and
 is separate from the copy now present in the library project.
 
-The current engine's empty-anchor capture participation differs from expected
-registers in pinned Gnulib `tests/test-regex.c`. A separate GNU grep probe
-found an Extended middle-anchor difference. Both remain characterization
-items; E01 preserves and labels the inherited behavior. The
+The pinned Gnulib test table's absent anchor capture is a tolerated expected
+value; the included engine actually agrees with the inherited participating
+empty capture in the four probed cases. A separate GNU grep probe found an
+Extended middle-anchor difference. E01 preserves and labels the inherited
+behavior. The
 `tac` provider/option mismatch is tracked as
 [CoreUtils #190](https://github.com/uniblab/Icod.CoreUtils/issues/190)
 for later correction.
