@@ -91,7 +91,8 @@ The script fetches the exact CommandFramework source commit
 `e1e118f18246eed290bee4758325a20e302bfb92`, CoreUtils commit
 `2c47cd67bae490dedf16234d8460c8b9da8d3404`, and ProcPs commit
 `e802ac03d941b1ba9fbe30e8f9c68fc7efcf3cff`, and DiffUtils commit
-`8192ec43e1f6add42bc759b225c814861e18c843` into temporary directories.
+`8192ec43e1f6add42bc759b225c814861e18c843`, and Grep commit
+`2ef1c11f11b77eb876242eb0c92a88d20857db64` into temporary directories.
 It builds and runs the unchanged CoreUtils `expr` tests against the published
 CommandFramework 2.2.1 package (50 cases). It then uses an isolated NuGet
 cache for the candidate package, so an earlier alpha with the same version
@@ -116,8 +117,19 @@ matching but has no direct `-I` ignored-line case. That consumer follow-up is
 tracked in [DiffUtils #8](https://github.com/uniblab/Icod.DiffUtils/issues/8).
 The copied regex source and original consumer binaries are not edited.
 
+Grep's unchanged test project compiles against published CommandFramework
+2.2.1. It exercises GNU Basic/Extended byte matching, source-byte offsets,
+and prepared-input command paths. The Linux CI gate runs the full original
+suite against the published package and the scratch bridge. One device-policy
+test creates a Unix-domain socket, which this local workspace prohibits. For
+local verification, `GREP_TEST_FILTER` may exclude that one test in both runs;
+the remaining 112 tests passed with the published dependency and bridge. CI
+leaves the filter unset. The test is unrelated to regex forwarding, but the
+full hosted result must still pass before counting this consumer as validated.
+
 This is an executable gate in the Expressions PR's Linux Staging job. It
-validates three source-pinned consumer families, not a distributable bridge
+validates four source-pinned consumer families when the Grep hosted suite passes,
+not a distributable bridge
 package, the remaining consumers, or cross-platform forwarding. The bridge is still
 subject to a separate CommandFramework review after the remaining A03 and
 A05/E02 gates.

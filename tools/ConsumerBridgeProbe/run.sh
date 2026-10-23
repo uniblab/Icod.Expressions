@@ -16,6 +16,7 @@ command_framework_sha=e1e118f18246eed290bee4758325a20e302bfb92
 coreutils_sha=2c47cd67bae490dedf16234d8460c8b9da8d3404
 procps_sha=e802ac03d941b1ba9fbe30e8f9c68fc7efcf3cff
 diffutils_sha=8192ec43e1f6add42bc759b225c814861e18c843
+grep_sha=2ef1c11f11b77eb876242eb0c92a88d20857db64
 
 fetch_source() {
   target=$1
@@ -31,14 +32,17 @@ command_framework_root="$scratch/Icod.CommandFramework"
 coreutils_root="$scratch/Icod.CoreUtils"
 procps_root="$scratch/Icod.ProcPs"
 diffutils_root="$scratch/Icod.DiffUtils"
+grep_root="$scratch/Icod.Grep"
 fetch_source "$command_framework_root" https://github.com/uniblab/Icod.CommandFramework.git "$command_framework_sha"
 fetch_source "$coreutils_root" https://github.com/uniblab/Icod.CoreUtils.git "$coreutils_sha"
 fetch_source "$procps_root" https://github.com/uniblab/Icod.ProcPs.git "$procps_sha"
 fetch_source "$diffutils_root" https://github.com/uniblab/Icod.DiffUtils.git "$diffutils_sha"
+fetch_source "$grep_root" https://github.com/uniblab/Icod.Grep.git "$grep_sha"
 test "$(git -C "$command_framework_root" rev-parse HEAD)" = "$command_framework_sha"
 test "$(git -C "$coreutils_root" rev-parse HEAD)" = "$coreutils_sha"
 test "$(git -C "$procps_root" rev-parse HEAD)" = "$procps_sha"
 test "$(git -C "$diffutils_root" rev-parse HEAD)" = "$diffutils_sha"
+test "$(git -C "$grep_root" rev-parse HEAD)" = "$grep_sha"
 
 original_tests="$coreutils_root/tests/Expr.Tests/Icod.CoreUtils.Expr.Tests.csproj"
 "$dotnet_command" restore "$original_tests" -m:1 --ignore-failed-sources
@@ -60,6 +64,17 @@ for command in Diff SDiff; do
   "$dotnet_command" restore "$project" -m:1 --ignore-failed-sources
   "$dotnet_command" test "$project" -c Staging --no-restore -m:1 -v minimal
 done
+
+grep_tests="$grep_root/tests/Grep.Tests/Icod.Grep.Tests.csproj"
+"$dotnet_command" restore "$grep_tests" -m:1 --ignore-failed-sources
+# Hosted Linux CI runs all 113 tests. GREP_TEST_FILTER is only for local
+# environments that cannot create the Unix socket required by one device test.
+if [ -n "${GREP_TEST_FILTER:-}" ]; then
+  "$dotnet_command" test "$grep_tests" -c Staging --no-restore -m:1 -v minimal \
+    --filter "$GREP_TEST_FILTER"
+else
+  "$dotnet_command" test "$grep_tests" -c Staging --no-restore -m:1 -v minimal
+fi
 
 # Use an isolated package cache so this run cannot reuse a previous alpha
 # package with the same version from a developer's global NuGet cache.
@@ -125,4 +140,18 @@ for command in Diff SDiff; do
   "$dotnet_command" vstest "$bridged_diffutils_output/Icod.DiffUtils.$command.Tests.dll" \
     --Logger:'console;verbosity=minimal'
 done
-echo "Source-pinned CoreUtils, ProcPs, and DiffUtils consumers passed with the package-backed scratch bridge."
+
+original_grep_output="$grep_root/tests/Grep.Tests/bin/Staging/net10.0"
+bridged_grep_output="$scratch/Grep.Tests"
+mkdir -p "$bridged_grep_output"
+cp -a "$original_grep_output/." "$bridged_grep_output/"
+cp "$bridge_output/Icod.CommandFramework.dll" "$bridged_grep_output/"
+cp "$probe_output/Icod.Expressions.dll" "$bridged_grep_output/"
+if [ -n "${GREP_TEST_FILTER:-}" ]; then
+  "$dotnet_command" vstest "$bridged_grep_output/Icod.Grep.Tests.dll" \
+    "--TestCaseFilter:$GREP_TEST_FILTER" --Logger:'console;verbosity=minimal'
+else
+  "$dotnet_command" vstest "$bridged_grep_output/Icod.Grep.Tests.dll" \
+    --Logger:'console;verbosity=minimal'
+fi
+echo "Source-pinned CoreUtils, ProcPs, DiffUtils, and Grep consumers passed with the package-backed scratch bridge."

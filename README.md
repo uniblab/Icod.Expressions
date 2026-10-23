@@ -109,15 +109,20 @@ dotnet restore samples/PackageSmoke/PackageSmoke.csproj --source artifacts
 dotnet run --project samples/PackageSmoke/PackageSmoke.csproj -c Staging -f net10.0
 ```
 
-On Linux with .NET 10, the source-pinned CoreUtils, ProcPs, and DiffUtils
-command probe also uses that unpublished package. It fetches four pinned
+On Linux with .NET 10, the source-pinned CoreUtils, ProcPs, DiffUtils, and
+Grep command probe also uses that unpublished package. It fetches five pinned
 public source commits, builds a temporary forwarding bridge, and runs the
-original `expr`, `pgrep`, `pkill`, `pidwait`, `diff`, and `sdiff` tests against
-both the published CommandFramework dependencies and the scratch bridge:
+original `expr`, `pgrep`, `pkill`, `pidwait`, `diff`, `sdiff`, and `grep` tests
+against both the published CommandFramework dependencies and scratch bridge:
 
 ```sh
 sh tools/ConsumerBridgeProbe/run.sh artifacts
 ```
+
+The Grep suite needs Unix-domain socket creation for a device-policy test.
+On a local environment where that is prohibited, set
+`GREP_TEST_FILTER='FullyQualifiedName!=Icod.Grep.Tests.CommandTests.RecursiveDeviceDefaultsMatchGnuPolicy'`
+for the probe. CI leaves the filter unset and runs the complete suite.
 
 The bridge exists only in the probe output; it is not a shipped package.
 
