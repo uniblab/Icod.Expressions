@@ -133,7 +133,10 @@ bridge backed by the local package. CI runs it on Windows, macOS, and Linux:
 That probe also packs an unpublished scratch CommandFramework bridge and
 restores a fresh client with only the bridge package reference. It verifies
 that NuGet supplies Expressions transitively and that forwarded regex and
-Text enums work with the retained `TextUnitReader`.
+Text enums work with the retained `TextUnitReader`. It then loads an old
+client compiled solely against published CommandFramework 2.2.1 from the
+package-backed output and checks all 26 forwarded types and representative
+matches without copying the published CommandFramework DLL.
 
 On Linux with .NET 10, the source-pinned consumer probe also uses that
 unpublished package. It fetches six pinned public source commits, builds a

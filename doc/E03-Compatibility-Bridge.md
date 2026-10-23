@@ -102,9 +102,14 @@ The same gate also packs a disposable `Icod.CommandFramework`
 `PackagedClient` references **only** that bridge package, restores
 `Icod.Expressions` transitively from the local feed, and checks a regex match
 and `TextUnitReader` with both forwarded Text enums. This checks the NuGet
-dependency graph in addition to the old-binary substitution above. The
-package remains an unpublished scratch artifact; the CommandFramework
-repository and published packages are unchanged.
+dependency graph in addition to the old-binary substitution above. A second
+client, built solely against published CommandFramework 2.2.1, is copied as
+an executable DLL into the package-backed output without copying its original
+CommandFramework DLL. The package client loads and invokes it, confirms the
+old assembly has no direct Expressions reference, and requires all 26
+forwarded type identities plus string and byte matches. The scratch bridge
+package remains unpublished; the CommandFramework repository and published
+packages are unchanged.
 
 This validates the pinned original test corpus across three platforms. The
 tests do not exhaust every regex option or Text API caller, and the scratch
