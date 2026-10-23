@@ -211,6 +211,24 @@ try {
         '--no-restore', '-m:1', $bridgeRootProperty)
     $bridgeDll = Join-Path $root 'tools/ConsumerBridgeProbe/Bridge/bin/Staging/net10.0/Icod.CommandFramework.dll'
 
+    # Pack only this disposable source-pinned bridge. A fresh client references
+    # its one package ID and must restore Expressions as a transitive dependency.
+    $bridgeFeed = Join-Path $scratch 'bridge-feed'
+    Invoke-Checked -Executable 'dotnet' -Arguments @('pack', $bridgeProject, '-c', 'Staging',
+        '--no-build', '--no-restore', '-m:1', $bridgeRootProperty,
+        '-p:IsPackable=true', '-p:PackageVersion=2.2.1-expressions-bridge.1', '-o', $bridgeFeed)
+    if (-not (Test-Path (Join-Path $bridgeFeed 'Icod.CommandFramework.2.2.1-expressions-bridge.1.nupkg'))) {
+        throw 'Scratch CommandFramework bridge package missing.'
+    }
+    $packagedClientProject = Join-Path $root 'tools/ConsumerBridgeProbe/PackagedClient/PackagedClient.csproj'
+    Invoke-Checked -Executable 'dotnet' -Arguments @('restore', $packagedClientProject, '-m:1',
+        '--source', $bridgeFeed, '--source', $feed,
+        '--source', 'https://api.nuget.org/v3/index.json')
+    Invoke-Checked -Executable 'dotnet' -Arguments @('build', $packagedClientProject, '-c', 'Staging',
+        '--no-restore', '-m:1')
+    Invoke-Checked -Executable 'dotnet' -Arguments @(
+        (Join-Path $root 'tools/ConsumerBridgeProbe/PackagedClient/bin/Staging/net10.0/PackagedClient.dll'))
+
     $probeProject = Join-Path $root 'tools/ConsumerBridgeProbe/Probe/Probe.csproj'
     $probeOutputProperty = "-p:OriginalConsumerOutput=$originalOutput"
     Invoke-Checked -Executable 'dotnet' -Arguments @('restore', $probeProject, '-m:1',
