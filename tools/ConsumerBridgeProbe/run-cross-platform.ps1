@@ -69,6 +69,9 @@ try {
     $diffutilsRoot = Join-Path $scratch 'Icod.DiffUtils'
     Fetch-PinnedSource -Target $diffutilsRoot -Url 'https://github.com/uniblab/Icod.DiffUtils.git' `
         -Revision '8192ec43e1f6add42bc759b225c814861e18c843'
+    $lineEditorRoot = Join-Path $scratch 'Icod.LineEditor'
+    Fetch-PinnedSource -Target $lineEditorRoot -Url 'https://github.com/uniblab/Icod.LineEditor.git' `
+        -Revision '1705e1dc5107eb2ede6b5ecec5dad7ea18c93061'
 
     $exprTests = Join-Path $coreutilsRoot 'tests/Expr.Tests/Icod.CoreUtils.Expr.Tests.csproj'
     $originalResults = Join-Path $scratch 'original-results'
@@ -91,6 +94,13 @@ try {
             '-m:1', '--logger', 'trx;LogFileName=original.trx', '--results-directory', $results)
         Assert-PassingTests -TrxPath (Join-Path $results 'original.trx') -ExpectedCount $suite.ExpectedCases
     }
+
+    $sedProject = Join-Path $lineEditorRoot 'tests/Sed.Tests/Icod.LineEditor.Sed.Tests.csproj'
+    $sedOriginalResults = Join-Path $scratch 'Sed-original-results'
+    Invoke-Checked -Executable 'dotnet' -Arguments @('restore', $sedProject, '-m:1', '--configfile', $config)
+    Invoke-Checked -Executable 'dotnet' -Arguments @('test', $sedProject, '-c', 'Staging', '--no-restore',
+        '-m:1', '--logger', 'trx;LogFileName=original.trx', '--results-directory', $sedOriginalResults)
+    Assert-PassingTests -TrxPath (Join-Path $sedOriginalResults 'original.trx') -ExpectedCount 116
 
     $bridgeProject = Join-Path $root 'tools/ConsumerBridgeProbe/Bridge/Bridge.csproj'
     $bridgeRootProperty = "-p:CommandFrameworkRoot=$frameworkRoot"
@@ -150,7 +160,19 @@ try {
             '--Logger:trx;LogFileName=bridged.trx', "--ResultsDirectory:$results")
         Assert-PassingTests -TrxPath (Join-Path $results 'bridged.trx') -ExpectedCount $suite.ExpectedCases
     }
-    Write-Host 'Original CoreUtils expr (50), DiffUtils diff (22), and sdiff (40) binaries passed with published and package-backed bridge assemblies.'
+
+    $sedPublishedOutput = Join-Path $lineEditorRoot 'tests/Sed.Tests/bin/Staging/net10.0'
+    $sedBridgedOutput = Join-Path $scratch 'Sed.Tests'
+    New-Item -ItemType Directory -Path $sedBridgedOutput | Out-Null
+    Copy-Item (Join-Path $sedPublishedOutput '*') -Destination $sedBridgedOutput -Recurse -Force
+    Copy-Item $bridgeDll -Destination (Join-Path $sedBridgedOutput 'Icod.CommandFramework.dll') -Force
+    Copy-Item (Join-Path $probeOutput 'Icod.Expressions.dll') -Destination $sedBridgedOutput -Force
+    $sedBridgedResults = Join-Path $scratch 'Sed-bridged-results'
+    Invoke-Checked -Executable 'dotnet' -Arguments @('vstest',
+        (Join-Path $sedBridgedOutput 'Icod.LineEditor.Sed.Tests.dll'),
+        '--Logger:trx;LogFileName=bridged.trx', "--ResultsDirectory:$sedBridgedResults")
+    Assert-PassingTests -TrxPath (Join-Path $sedBridgedResults 'bridged.trx') -ExpectedCount 116
+    Write-Host 'Original CoreUtils expr (50), DiffUtils diff (22) and sdiff (40), and LineEditor Sed (116) binaries passed with published and package-backed bridge assemblies.'
 } finally {
     if ($null -eq $previousPackages) {
         Remove-Item Env:NUGET_PACKAGES -ErrorAction SilentlyContinue
