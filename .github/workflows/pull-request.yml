@@ -46,7 +46,7 @@ jobs:
             $path = Join-Path 'tests/Icod.Expressions.Tests/TestResults' "$framework.trx"
             [xml]$results = Get-Content $path -Raw
             $counters = $results.SelectSingleNode("//*[local-name()='Counters']")
-            if ($null -eq $counters -or [int]$counters.GetAttribute('total') -ne 198 -or [int]$counters.GetAttribute('passed') -ne 198 -or [int]$counters.GetAttribute('failed') -ne 0) {
+            if ($null -eq $counters -or [int]$counters.GetAttribute('total') -ne 214 -or [int]$counters.GetAttribute('passed') -ne 214 -or [int]$counters.GetAttribute('failed') -ne 0) {
               throw "Characterization test count drift: $framework"
             }
           }
@@ -76,6 +76,11 @@ jobs:
         shell: bash
         run: |
           test "$(git hash-object tests/Icod.Expressions.Tests/RegularExpressions/IcodExpressionsA04ConsumerShapeTests.cs)" = 589a52b42d5e3010e9e678f771cc85b156236e0b
+      - name: Verify additive A02 characterization identity
+        if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Staging'
+        shell: bash
+        run: |
+          test "$(git hash-object tests/Icod.Expressions.Tests/RegularExpressions/IcodExpressionsA02SyntaxOptionCharacterizationTests.cs)" = ef9cd9e358460f412d343c91db228c6179c964ff
       - name: Verify unchanged production source blobs
         if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Staging'
         run: sh tools/verify-frozen-source.sh

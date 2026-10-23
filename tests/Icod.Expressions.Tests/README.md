@@ -13,3 +13,7 @@ targets .NET 8 and 9 for CI parity checks. The copied source
 temporarily retains its legacy namespaces for exact API and behavioral
 parity. See
 `../../doc/EXTRACTION-READINESS.md` and `../../tools/verify-frozen-corpus.sh`.
+
+The directory also includes two separately identified additive files:
+five consumer-shaped cases and 16 A02 syntax-option cases. The current local
+.NET 10 total is 214; the original eleven-file, 193-case corpus is unchanged.

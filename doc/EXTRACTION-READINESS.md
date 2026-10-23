@@ -16,7 +16,7 @@ authoritative in-place evidence remains in
 |---|---|---|
 | A00 source/API | Candidate production SHA `e1e118f18246eed290bee4758325a20e302bfb92`; 32 regex C# files, 10 focused C# test files, two external Text enums; compiled API inventory of 24 top-level public regex types. | Confirm final source SHA and source/test blob manifest. |
 | A01 strict POSIX | Draft BRE/ERE contracts and semantic audit on PR #16. | Close or explicitly record standards and independent oracle gaps. |
-| A02 GNU syntax | Pinned Gnulib `fb7312fa8d3df29f0ca0678f669b9a5b88a078ec`: 26 syntax bits and 13 named macros mapped. | Resolve profile and option evidence needed for the extraction contract. |
+| A02 GNU syntax | Pinned Gnulib `fb7312fa8d3df29f0ca0678f669b9a5b88a078ec`: 26 syntax bits and 13 named macros mapped; 16 additive managed cases exercise selected two-polarity options and coupled behavior. | Resolve remaining profile composition and missing-control evidence. Exact profile implementation is N01, after extraction parity. |
 | A03 consumers | CoreUtils, Grep, ProcPs, DiffUtils, and LineEditor call shapes mapped. The [package-backed consumer gate](E03-Compatibility-Bridge.md#reproducible-package-backed-consumer-gate) reruns 174 CoreUtils, 24 ProcPs, 62 DiffUtils, 113 Grep, and 238 LineEditor original cases on hosted Linux ([CI run 39890569950](https://github.com/uniblab/Icod.Expressions/actions/runs/39890569950), 611 total). | Validate remaining callers; `tac` is deferred to [CoreUtils #190](https://github.com/uniblab/Icod.CoreUtils/issues/190) and direct DiffUtils `diff -I` to [DiffUtils #8](https://github.com/uniblab/Icod.DiffUtils/issues/8). Build a distributable, cross-platform bridge only after final parity and preserve command policy outside this library. |
 | A04 characterization | 110 focused declarations, 193 runtime cases and a 44-case JSONL corpus. [Three-platform CI](https://github.com/uniblab/Icod.CommandFramework/actions/runs/39867051683) passed on the characterized test commit. | Standards/profile oracle and full consumer differentials remain explicit gaps for normalization. |
 | A05 candidate | [Copy-time checkpoint](https://github.com/uniblab/Icod.CommandFramework/blob/docs/icod-expressions-a00-in-situ-inventory/doc/Icod.Expressions-A05-Extraction-Baseline.md): source/test blobs, API, fixtures, known gaps, reference pins, and validation. | Close A01–A04 behavior-or-gap coverage and declare a final A05 corpus. Preserve this first checkpoint; no CommandFramework removal or dependency switch. |
@@ -35,6 +35,13 @@ The original 193-test/44-fixture checkpoint is unchanged.
 passed the expanded 198-test gate on each supported framework across all
 three operating systems. None of the five tests proves full command-level
 consumer compatibility.
+
+Sixteen further A02 syntax-option cases in
+`IcodExpressionsA02SyntaxOptionCharacterizationTests.cs` have the same Git blob
+`ef9cd9e358460f412d343c91db228c6179c964ff` in both repositories.
+Together the focused directory has 214 runtime cases locally on .NET 10.
+The original copy-time corpus and five-case supplement retain their identities.
+These managed cases do not establish exact Gnulib named-profile conformance.
 
 A separate [nine-case Linux/glibc differential](https://github.com/uniblab/Icod.CommandFramework/blob/docs/icod-expressions-a00-in-situ-inventory/doc/Icod.Expressions-A04-POSIX-Glibc-Differential.md)
 compares ASCII BRE/ERE whole matches and capture spans with the inherited
