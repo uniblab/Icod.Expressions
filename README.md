@@ -160,8 +160,9 @@ The bridge DLL and package exist only in disposable probe outputs; neither is sh
 The [extraction readiness record](doc/EXTRACTION-READINESS.md) and
 [A05 final candidate](doc/Icod.Expressions-A05-Final-Candidate.md) link the
 copy-time source, API, tests, fixtures, reference revisions, and known gaps.
-Bounded E02 parity over the final A05 corpus passed. Formal A05 acceptance
-remains open pending review of the classified limits.
+Bounded E02 parity over the final A05 corpus passed. The bounded A05 extraction
+baseline was accepted on 2026-10-23 with its classified limits; this does not
+establish strict standards conformance or an ownership change.
 The inherited providers are not separate strict POSIX BRE/ERE contracts or
 complete implementations of all Gnulib syntax bits. In particular,
 multi-scalar collating elements are unsupported; ERE middle anchors diverge
@@ -171,8 +172,9 @@ pinned Gnulib engine. Those inherited outcomes are preserved during this
 mechanical move. The `tac` consumer's provider/options mismatch is tracked
 separately in [Icod.CoreUtils #190](https://github.com/uniblab/Icod.CoreUtils/issues/190).
 
-Consumer migration and any removal of CommandFramework's engine require a
-separate review under the
+Publish this package, then migrate and validate every known consumer before
+removing or replacing any CommandFramework production regex code. Consumer
+migration and the later ownership change require separate reviews under the
 [compatibility bridge plan](https://github.com/uniblab/Icod.Expressions/blob/main/doc/E03-Compatibility-Bridge.md).
 No consumer should silently fall back to `System.Text.RegularExpressions` for the
 GNU/POSIX calls owned by this engine.

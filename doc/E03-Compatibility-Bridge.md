@@ -228,7 +228,7 @@ forwarding evidence. Each consumer's uncovered options still need audit.
 This Linux gate supplements the three-platform Staging bridge gate above.
 Together they validate five source-pinned consumer families, but they do not
 prove the complete consumer graph or produce a distributable bridge. Formal
-A05 acceptance still requires review of its classified limits. Actual
+A05 was accepted with its classified limits on 2026-10-23. Actual
 consumer migration and a CommandFramework ownership change belong to
 separate, reviewed PRs.
 
@@ -237,9 +237,11 @@ separate, reviewed PRs.
 1. Keep the extracted source and its original namespaces in this package
    while the A05/E02 parity baseline is preserved. Review the alpha package
    and its three-framework package-only smoke tests.
-2. Prepare a **separate** CommandFramework bridge PR that references the
-   validated package, replaces its regex declarations with type forwards for
-   all 24 public regex types, and handles both shared Text enums without
+2. Publish the validated Expressions package. Prepare a **separate draft**
+   CommandFramework bridge change against that package, without applying it
+   to CommandFramework production. The proposed bridge replaces its regex
+   declarations with type forwards for all 24 public regex types, and handles
+   both shared Text enums without
    duplicate definitions. Internal CommandFramework callers and its other
    Text APIs must compile against the forwarded identities. Do not change
    any existing result, diagnostic, or command behavior in that PR.
@@ -252,8 +254,12 @@ separate, reviewed PRs.
    either give the old test assembly explicit friend access plus a direct
    reference to the new library, or retire only its duplicated focused
    tests after the new suite passes. Do not silently drop them.
-4. Validate each consumer against the bridge and new package before merging
-   an ownership change. Use the [A03 call-site matrix in PR #16](https://github.com/uniblab/Icod.CommandFramework/blob/docs/icod-expressions-a00-in-situ-inventory/doc/Icod.Expressions-A03-Consumer-Compatibility-Matrix.md)
+4. Migrate and validate every known consumer against the published package
+   and proposed bridge before merging an ownership change. Keep the existing
+   CommandFramework implementation in production during those migrations;
+   use isolated build outputs or explicit aliasing where duplicate public
+   names make a direct reference ambiguous. Use the
+   [A03 call-site matrix in PR #16](https://github.com/uniblab/Icod.CommandFramework/blob/docs/icod-expressions-a00-in-situ-inventory/doc/Icod.Expressions-A03-Consumer-Compatibility-Matrix.md)
    as the source-pinned inventory. Start with string-only ProcPs and
    DiffUtils, then CoreUtils `expr`/`nl`/`csplit`/`ptx`/`tac`, Grep's byte
    and prepared paths, and LineEditor's Sed/Ed repeated searches and
@@ -266,8 +272,9 @@ separate, reviewed PRs.
    migration and fix its provider/options mismatch separately under
    [CoreUtils #190](https://github.com/uniblab/Icod.CoreUtils/issues/190).
 
-The bridge does not merge until every discovered A03 consumer builds and its
-relevant tests run against the new package, including a package-only path.
-CommandFramework keeps its existing implementation until that separate
-reviewed change is ready. This document records the necessary gate; it does
-not authorize a deletion or dependency switch by itself.
+The bridge does not merge until Expressions is published and every known A03
+consumer has been migrated and validated with its relevant tests against the
+new package, including a package-only path. CommandFramework keeps its
+existing implementation until that separate reviewed change is ready. This
+document records the gate; it does not authorize a deletion or dependency
+switch by itself.

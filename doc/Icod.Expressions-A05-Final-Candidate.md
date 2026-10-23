@@ -1,7 +1,8 @@
-# A05 final extraction corpus candidate
+# A05 accepted extraction corpus
 
-**Status:** Prepared for formal review; bounded extraction parity, not strict
-POSIX/Gnulib conformance or a stable release. The authoritative in-situ
+**Status:** Accepted on 2026-10-23 as the bounded extraction baseline, with
+the classified A01–A04 gaps carried forward. This is not strict POSIX/Gnulib
+conformance, a stable release, or an ownership change. The authoritative in-situ
 [A05 candidate and gap ledger](https://github.com/uniblab/Icod.CommandFramework/blob/docs/icod-expressions-a00-in-situ-inventory/doc/Icod.Expressions-A05-Final-Candidate.md)
 is in CommandFramework PR #16. The first 193-test/44-case copy-time
 checkpoint remains unchanged.
@@ -23,14 +24,17 @@ passed all five jobs with the consolidated verifier, [final same-run E02
 comparison](E02-Final-Parity-Review.md), cross-platform forwarding check, and
 725-case consumer bridge gate on three systems. Its final parity gate also
 rejected scratch manifests with an altered source hash and a missing entry.
-This satisfies the candidate's executable verification gate; its classified
-limits still need formal A05 review.
+This satisfies the executable verification gate. The user accepted the bounded
+A05/E02 review and the classified limits on 2026-10-23; the recorded corpus
+and its source identities stay frozen for later comparisons.
 
 The [A01–A04 ledger in CommandFramework](https://github.com/uniblab/Icod.CommandFramework/blob/docs/icod-expressions-a00-in-situ-inventory/doc/Icod.Expressions-A05-Final-Candidate.md#classified-limits-of-this-extraction-contract)
 classifies the two defined middle-anchor ERE divergences, the missing strict
 BRE/ERE surfaces, incomplete Gnulib bit/profile control, locale/collation
 limits, bounded oracle coverage, and deferred `tac`/`diff -I` fixes. The
 package-backed bridge is a feasibility check; actual consumer migrations and
-a distributable cross-platform bridge remain E03 work. Formal A05 acceptance
-should use this frozen candidate, the [completed bounded E02 review](E02-Final-Parity-Review.md),
-and those explicit limitations. CommandFramework production remains intact.
+a distributable cross-platform bridge remain E03 work. Acceptance uses the
+[completed bounded E02 review](E02-Final-Parity-Review.md) and those explicit
+limitations. Publish Expressions and migrate and validate every known consumer
+before any CommandFramework production regex code is removed or replaced.
+CommandFramework production remains intact.
