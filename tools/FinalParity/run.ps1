@@ -29,6 +29,36 @@ function Read-PassingTests {
     return $outcomes
 }
 
+function Assert-SourceManifest {
+    param([string]$ManifestPath, [string]$OriginalRoot, [string]$ExtractedRoot)
+    $sourceCount = 0
+    foreach ($line in (Get-Content $ManifestPath)) {
+        $parts = $line -split ' ', 2
+        if ($parts.Count -ne 2) { throw "Malformed source manifest line: $line" }
+        $oldPath = $parts[1] -replace '^src/Icod\.Expressions/', 'src/'
+        $oldHash = (& git -C $OriginalRoot rev-parse "HEAD:$oldPath").Trim()
+        $newHash = (& git -C $ExtractedRoot rev-parse "HEAD:$($parts[1])").Trim()
+        if ($LASTEXITCODE -ne 0 -or $oldHash -ne $parts[0] -or $newHash -ne $parts[0]) {
+            throw "A05 production source mismatch: $oldPath"
+        }
+        $sourceCount++
+    }
+    if ($sourceCount -ne 35) { throw "Expected 35 A05 production blobs; found $sourceCount" }
+}
+
+function Assert-RejectsManifest {
+    param([string]$ManifestPath, [string]$ExpectedError,
+        [string]$OriginalRoot, [string]$ExtractedRoot)
+    $rejected = $false
+    try {
+        Assert-SourceManifest $ManifestPath $OriginalRoot $ExtractedRoot
+    } catch {
+        if ($_.Exception.Message -ne $ExpectedError) { throw }
+        $rejected = $true
+    }
+    if (-not $rejected) { throw "Mutated source manifest was accepted: $ManifestPath" }
+}
+
 try {
     $oldRoot = Join-Path $scratch 'Icod.CommandFramework'
     New-Item -ItemType Directory -Path $oldRoot | Out-Null
@@ -47,19 +77,23 @@ try {
     }
 
     $sourceManifest = Join-Path $root 'doc/Icod.Expressions-A05-Source-Blobs.txt'
-    $sourceCount = 0
-    foreach ($line in (Get-Content $sourceManifest)) {
-        $parts = $line -split ' ', 2
-        if ($parts.Count -ne 2) { throw "Malformed source manifest line: $line" }
-        $oldPath = $parts[1] -replace '^src/Icod\.Expressions/', 'src/'
-        $oldHash = (& git -C $oldRoot rev-parse "HEAD:$oldPath").Trim()
-        $newHash = (& git -C $root rev-parse "HEAD:$($parts[1])").Trim()
-        if ($LASTEXITCODE -ne 0 -or $oldHash -ne $parts[0] -or $newHash -ne $parts[0]) {
-            throw "A05 production source mismatch: $oldPath"
-        }
-        $sourceCount++
-    }
-    if ($sourceCount -ne 35) { throw "Expected 35 A05 production blobs; found $sourceCount" }
+    $manifestLines = @(Get-Content $sourceManifest)
+    if ($manifestLines.Count -ne 35) { throw 'The frozen source manifest no longer contains 35 entries' }
+    $firstEntry = $manifestLines[0] -split ' ', 2
+    if ($firstEntry.Count -ne 2) { throw 'The frozen source manifest starts with a malformed entry' }
+    $changedDigit = if ($firstEntry[0][0] -eq '0') { '1' } else { '0' }
+    $badHashLines = [string[]]$manifestLines.Clone()
+    $badHashLines[0] = $changedDigit + $firstEntry[0].Substring(1) + ' ' + $firstEntry[1]
+    $badHashManifest = Join-Path $scratch 'bad-hash-manifest.txt'
+    [System.IO.File]::WriteAllLines($badHashManifest, $badHashLines)
+    $firstOldPath = $firstEntry[1] -replace '^src/Icod\.Expressions/', 'src/'
+    Assert-RejectsManifest $badHashManifest "A05 production source mismatch: $firstOldPath" $oldRoot $root
+
+    $badCountManifest = Join-Path $scratch 'bad-count-manifest.txt'
+    [System.IO.File]::WriteAllLines($badCountManifest, [string[]]$manifestLines[0..33])
+    Assert-RejectsManifest $badCountManifest 'Expected 35 A05 production blobs; found 34' $oldRoot $root
+    Assert-SourceManifest $sourceManifest $oldRoot $root
+    Write-Host 'Source manifest guards rejected scratch hash and count mutations.'
 
     $newTests = Get-ChildItem (Join-Path $root 'tests/Icod.Expressions.Tests/RegularExpressions') -Filter '*.cs'
     if (@($newTests).Count -ne 13) { throw 'Expected 13 focused C# test files' }
