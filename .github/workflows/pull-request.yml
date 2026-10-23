@@ -99,6 +99,6 @@ jobs:
           for framework in net8.0 net9.0 net10.0; do
             dotnet run --project samples/PackageSmoke/PackageSmoke.csproj -c Staging --no-build --no-restore -f "$framework"
           done
-      - name: Run source-pinned CoreUtils expr with package-backed scratch bridge
+      - name: Run source-pinned consumers with package-backed scratch bridge
         if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Staging'
         run: sh tools/ConsumerBridgeProbe/run.sh artifacts
