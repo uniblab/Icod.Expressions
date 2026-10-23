@@ -77,3 +77,4 @@ try {
     }
     Remove-Item $scratch -Recurse -Force -ErrorAction SilentlyContinue
 }
+exit 0
