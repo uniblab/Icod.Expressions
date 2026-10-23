@@ -60,6 +60,9 @@ jobs:
       - name: Compare POSIX ASCII cases with glibc
         if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Staging'
         run: dotnet run --project tools/PosixRegexDifferential/PosixRegexDifferential.csproj -c Staging
+      - name: Run pinned Gnulib included regex oracle
+        if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Staging'
+        run: sh tools/GnulibRegexOracle/run.sh
       - name: Verify differential runner identity
         if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Staging'
         shell: bash
