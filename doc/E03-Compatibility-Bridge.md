@@ -90,7 +90,8 @@ sh tools/ConsumerBridgeProbe/run.sh artifacts
 The script fetches the exact CommandFramework source commit
 `e1e118f18246eed290bee4758325a20e302bfb92`, CoreUtils commit
 `2c47cd67bae490dedf16234d8460c8b9da8d3404`, and ProcPs commit
-`e802ac03d941b1ba9fbe30e8f9c68fc7efcf3cff` into temporary directories.
+`e802ac03d941b1ba9fbe30e8f9c68fc7efcf3cff`, and DiffUtils commit
+`8192ec43e1f6add42bc759b225c814861e18c843` into temporary directories.
 It builds and runs the unchanged CoreUtils `expr` tests against the published
 CommandFramework 2.2.1 package (50 cases). It then uses an isolated NuGet
 cache for the candidate package, so an earlier alpha with the same version
@@ -106,11 +107,16 @@ CommandFramework 2.1.0 dependency, and their 11, 7, and 6 original command
 tests run first with that package and then with the same candidate package
 and temporary 2.2.1.0 forwarding assembly substituted in separate outputs.
 They cover GNU Extended alternation, process matching and no-match paths;
-they do not exhaust regex options or diagnostics. The copied regex source
-and the original consumer binaries are not edited.
+they do not exhaust regex options or diagnostics. DiffUtils's unchanged
+`diff` and `sdiff` projects compile against published CommandFramework 2.1.0;
+their 22 and 40 original command tests run with that package and then with
+the candidate package and scratch bridge. The `sdiff` suite has two `-I`
+ignored-line regex cases; the `diff` suite does not fully characterize its
+`-I` and `-F` regex behavior. The copied regex source and original consumer
+binaries are not edited.
 
 This is an executable gate in the Expressions PR's Linux Staging job. It
-validates two source-pinned consumer families, not a distributable bridge
+validates three source-pinned consumer families, not a distributable bridge
 package, the remaining consumers, or cross-platform forwarding. The bridge is still
 subject to a separate CommandFramework review after the remaining A03 and
 A05/E02 gates.

@@ -109,11 +109,11 @@ dotnet restore samples/PackageSmoke/PackageSmoke.csproj --source artifacts
 dotnet run --project samples/PackageSmoke/PackageSmoke.csproj -c Staging -f net10.0
 ```
 
-On Linux with .NET 10, the source-pinned CoreUtils `expr` and ProcPs command
-probe also uses that unpublished package. It fetches three pinned public
-source commits, builds a temporary forwarding bridge, and runs the original
-`expr`, `pgrep`, `pkill`, and `pidwait` tests against both the published
-CommandFramework dependency and the scratch bridge:
+On Linux with .NET 10, the source-pinned CoreUtils, ProcPs, and DiffUtils
+command probe also uses that unpublished package. It fetches four pinned
+public source commits, builds a temporary forwarding bridge, and runs the
+original `expr`, `pgrep`, `pkill`, `pidwait`, `diff`, and `sdiff` tests against
+both the published CommandFramework dependencies and the scratch bridge:
 
 ```sh
 sh tools/ConsumerBridgeProbe/run.sh artifacts

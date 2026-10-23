@@ -15,6 +15,7 @@ trap 'rm -rf "$scratch"' EXIT HUP INT TERM
 command_framework_sha=e1e118f18246eed290bee4758325a20e302bfb92
 coreutils_sha=2c47cd67bae490dedf16234d8460c8b9da8d3404
 procps_sha=e802ac03d941b1ba9fbe30e8f9c68fc7efcf3cff
+diffutils_sha=8192ec43e1f6add42bc759b225c814861e18c843
 
 fetch_source() {
   target=$1
@@ -29,12 +30,15 @@ fetch_source() {
 command_framework_root="$scratch/Icod.CommandFramework"
 coreutils_root="$scratch/Icod.CoreUtils"
 procps_root="$scratch/Icod.ProcPs"
+diffutils_root="$scratch/Icod.DiffUtils"
 fetch_source "$command_framework_root" https://github.com/uniblab/Icod.CommandFramework.git "$command_framework_sha"
 fetch_source "$coreutils_root" https://github.com/uniblab/Icod.CoreUtils.git "$coreutils_sha"
 fetch_source "$procps_root" https://github.com/uniblab/Icod.ProcPs.git "$procps_sha"
+fetch_source "$diffutils_root" https://github.com/uniblab/Icod.DiffUtils.git "$diffutils_sha"
 test "$(git -C "$command_framework_root" rev-parse HEAD)" = "$command_framework_sha"
 test "$(git -C "$coreutils_root" rev-parse HEAD)" = "$coreutils_sha"
 test "$(git -C "$procps_root" rev-parse HEAD)" = "$procps_sha"
+test "$(git -C "$diffutils_root" rev-parse HEAD)" = "$diffutils_sha"
 
 original_tests="$coreutils_root/tests/Expr.Tests/Icod.CoreUtils.Expr.Tests.csproj"
 "$dotnet_command" restore "$original_tests" -m:1 --ignore-failed-sources
@@ -46,6 +50,13 @@ original_output="$coreutils_root/tests/Expr.Tests/bin/Staging/net10.0"
 # for the later assembly substitution; do not edit their project references.
 for command in Pgrep Pkill PidWait; do
   project="$procps_root/tests/ProcPs.$command.Tests/Icod.ProcPs.$command.Tests.csproj"
+  "$dotnet_command" restore "$project" -m:1 --ignore-failed-sources
+  "$dotnet_command" test "$project" -c Staging --no-restore -m:1 -v minimal
+done
+
+# Diff and SDiff compile GNU Basic call sites against CommandFramework 2.1.0.
+for command in Diff SDiff; do
+  project="$diffutils_root/tests/$command.Tests/Icod.DiffUtils.$command.Tests.csproj"
   "$dotnet_command" restore "$project" -m:1 --ignore-failed-sources
   "$dotnet_command" test "$project" -c Staging --no-restore -m:1 -v minimal
 done
@@ -103,4 +114,15 @@ for command in Pgrep Pkill PidWait; do
   "$dotnet_command" vstest "$bridged_procps_output/Icod.ProcPs.$command.Tests.dll" \
     --Logger:'console;verbosity=minimal'
 done
-echo "Source-pinned CoreUtils expr and ProcPs command consumers passed with the package-backed scratch bridge."
+
+for command in Diff SDiff; do
+  original_diffutils_output="$diffutils_root/tests/$command.Tests/bin/Staging/net10.0"
+  bridged_diffutils_output="$scratch/DiffUtils.$command.Tests"
+  mkdir -p "$bridged_diffutils_output"
+  cp -a "$original_diffutils_output/." "$bridged_diffutils_output/"
+  cp "$bridge_output/Icod.CommandFramework.dll" "$bridged_diffutils_output/"
+  cp "$probe_output/Icod.Expressions.dll" "$bridged_diffutils_output/"
+  "$dotnet_command" vstest "$bridged_diffutils_output/Icod.DiffUtils.$command.Tests.dll" \
+    --Logger:'console;verbosity=minimal'
+done
+echo "Source-pinned CoreUtils, ProcPs, and DiffUtils consumers passed with the package-backed scratch bridge."
