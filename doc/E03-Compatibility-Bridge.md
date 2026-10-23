@@ -1,6 +1,6 @@
 # E03 compatibility bridge and consumer migration
 
-**Status:** bounded E02 extraction parity and the three-platform 724-case
+**Status:** bounded E02 extraction parity and the three-platform 725-case
 scratch bridge gate passed; no CommandFramework production source or consumer
 dependency has changed. The alpha package can be built and used
 independently, but its copied public types still have the legacy
@@ -75,19 +75,21 @@ consumer gate.
 CommandFramework and five consumer source commits used by the Linux gate
 below. It builds unchanged CoreUtils regex callers (174), ProcPs (24),
 DiffUtils (62), Grep (113), and LineEditor (238) tests against their published
-CommandFramework 2.2.1 or 2.1.0 dependencies. A separate 113 CoreUtils cases
-cover `cut` (28), `expand` (18), `unexpand` (20), `fold` (18), and `fmt` (29).
-Those commands use the two shared Text enum identities forwarded from
-CommandFramework into Expressions, even when they do not call regex.
-The gate requires all 724 original passes.
+CommandFramework 2.2.1 or 2.1.0 dependencies. A separate 114 CoreUtils cases
+cover `cut` (28), `expand` (18), `unexpand` (20), `fold` (18), `fmt` (29), and
+one CoreUtils Shared integration case. The commands use the two shared Text
+enum identities forwarded from CommandFramework into Expressions, even when
+they do not call regex. The Shared case passes both enums directly into the
+bridge-owned `TextUnitReader` and checks the resulting UTF-8 bytes. The gate
+requires all 725 original passes.
 It builds the **full scratch bridge** from CommandFramework's non-regex
 source and the local Expressions package. An old-compiled assembly-origin
 probe must reject the original regex identity and accept the forwarded
 provider and Text enums with `CommandContext` and `TextUnitReader` still in
 the bridge. The original test binaries then run in separate outputs with the
-bridge and candidate package; all 724 must pass again. The 113 added cases
+bridge and candidate package; all 725 must pass again. The 114 added cases
 must retain identical test names and outcomes across the original and bridge
-runs. [CI run 40014111537](https://github.com/uniblab/Icod.Expressions/actions/runs/40014111537)
+runs. [CI run 40018021229](https://github.com/uniblab/Icod.Expressions/actions/runs/40018021229)
 passed on Windows, macOS, and Linux. After packing the candidate, run with
 PowerShell:
 
@@ -97,8 +99,8 @@ PowerShell:
 
 This validates the pinned original test corpus across three platforms. The
 tests do not exhaust every regex option or Text API caller, and the scratch
-bridge is not ready for distribution. The CoreUtils Shared test project's
-standalone Text API cases remain outside this 724-case gate. The direct
+bridge is not ready for distribution. Other standalone CoreUtils Shared Text
+API cases remain outside this 725-case gate. The direct
 `diff -I` correction remains deferred to
 [DiffUtils #8](https://github.com/uniblab/Icod.DiffUtils/issues/8).
 
