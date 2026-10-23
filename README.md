@@ -88,6 +88,12 @@ sh tools/verify-frozen-corpus.sh
 sh tools/verify-frozen-source.sh
 ```
 
+On Linux/glibc, run the additional C-locale ASCII differential:
+
+```sh
+dotnet run --project tools/PosixRegexDifferential/PosixRegexDifferential.csproj -c Staging
+```
+
 The library, focused tests, and parity runner target `net8.0`, `net9.0`, and
 `net10.0` with C# 13. CI requires 198 focused tests: the original 193-test
 copy-time corpus plus five separately tracked consumer-shaped cases. It also

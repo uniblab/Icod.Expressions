@@ -36,6 +36,16 @@ passed the expanded 198-test gate on each supported framework across all
 three operating systems. None of the five tests proves full command-level
 consumer compatibility.
 
+A separate [nine-case Linux/glibc differential](https://github.com/uniblab/Icod.CommandFramework/blob/docs/icod-expressions-a00-in-situ-inventory/doc/Icod.Expressions-A04-POSIX-Glibc-Differential.md)
+compares ASCII BRE/ERE whole matches and capture spans with the inherited
+engine. The C# runner source has identical Git blob
+`bec36b11aa2bd1617e191ac49703244a03dcc10b` in both repositories;
+only its project reference changes. Seven ordinary standards-facing samples
+agree. glibc and the inherited engine both return a participating empty
+capture for two anchor-branch cases where the pinned Gnulib source test
+expects an absent capture. That disagreement remains unresolved; the tool
+is a Linux/glibc observation, not a pinned Gnulib oracle or conformance claim.
+
 The source SHA identifies the unchanged **production** engine; the tests and
 audit documents on PR #16 are additive. Its branch head is not the extraction
 source identity. This repository contains copied tests, fixtures, and the
