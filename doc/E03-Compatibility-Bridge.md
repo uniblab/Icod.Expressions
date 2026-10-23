@@ -88,11 +88,12 @@ sh tools/ConsumerBridgeProbe/run.sh artifacts
 ```
 
 The script fetches the exact CommandFramework source commit
-`e1e118f18246eed290bee4758325a20e302bfb92`, CoreUtils commit
-`2c47cd67bae490dedf16234d8460c8b9da8d3404`, and ProcPs commit
-`e802ac03d941b1ba9fbe30e8f9c68fc7efcf3cff`, and DiffUtils commit
-`8192ec43e1f6add42bc759b225c814861e18c843`, and Grep commit
-`2ef1c11f11b77eb876242eb0c92a88d20857db64` into temporary directories.
+`e1e118f18246eed290bee4758325a20e302bfb92`, CoreUtils
+`2c47cd67bae490dedf16234d8460c8b9da8d3404`, ProcPs
+`e802ac03d941b1ba9fbe30e8f9c68fc7efcf3cff`, DiffUtils
+`8192ec43e1f6add42bc759b225c814861e18c843`, Grep
+`2ef1c11f11b77eb876242eb0c92a88d20857db64`, and LineEditor
+`1705e1dc5107eb2ede6b5ecec5dad7ea18c93061` into temporary directories.
 It builds and runs the unchanged CoreUtils `expr` tests against the published
 CommandFramework 2.2.1 package (50 cases). It then uses an isolated NuGet
 cache for the candidate package, so an earlier alpha with the same version
@@ -123,16 +124,22 @@ and prepared-input command paths. The Linux CI gate runs the full original
 suite against the published package and the scratch bridge. One device-policy
 test creates a Unix-domain socket, which this local workspace prohibits. For
 local verification, `GREP_TEST_FILTER` may exclude that one test in both runs;
-the remaining 112 tests passed with the published dependency and bridge. CI
-leaves the filter unset. The test is unrelated to regex forwarding, but the
-full hosted result must still pass before counting this consumer as validated.
+the remaining 112 tests passed with the published dependency and bridge.
+[CI run 39888672536](https://github.com/uniblab/Icod.Expressions/actions/runs/39888672536)
+left the filter unset and passed all 113 Grep cases, including the socket
+test, before and after the scratch bridge substitution.
+
+LineEditor's unchanged Sed, Ed.Shared, Ed, and Red suites compile against
+published CommandFramework 2.1.0. Their 116, 68, 26, and 28 original tests
+exercise substitution, repeated searches, and shared editor regex paths.
+All 238 cases passed locally with the published package and with the scratch
+bridge in separate outputs. The full source-pinned CI gate is pending.
 
 This is an executable gate in the Expressions PR's Linux Staging job. It
-validates four source-pinned consumer families when the Grep hosted suite passes,
-not a distributable bridge
-package, the remaining consumers, or cross-platform forwarding. The bridge is still
-subject to a separate CommandFramework review after the remaining A03 and
-A05/E02 gates.
+validates five source-pinned consumer families after the expanded hosted gate
+passes. It is not a distributable bridge package or a cross-platform
+forwarding result. The bridge remains subject to a separate CommandFramework
+review after the remaining A03 and A05/E02 gates.
 
 ## Separate, reviewable bridge sequence
 

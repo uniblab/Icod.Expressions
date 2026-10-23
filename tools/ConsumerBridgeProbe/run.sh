@@ -17,6 +17,7 @@ coreutils_sha=2c47cd67bae490dedf16234d8460c8b9da8d3404
 procps_sha=e802ac03d941b1ba9fbe30e8f9c68fc7efcf3cff
 diffutils_sha=8192ec43e1f6add42bc759b225c814861e18c843
 grep_sha=2ef1c11f11b77eb876242eb0c92a88d20857db64
+lineeditor_sha=1705e1dc5107eb2ede6b5ecec5dad7ea18c93061
 
 fetch_source() {
   target=$1
@@ -33,16 +34,19 @@ coreutils_root="$scratch/Icod.CoreUtils"
 procps_root="$scratch/Icod.ProcPs"
 diffutils_root="$scratch/Icod.DiffUtils"
 grep_root="$scratch/Icod.Grep"
+lineeditor_root="$scratch/Icod.LineEditor"
 fetch_source "$command_framework_root" https://github.com/uniblab/Icod.CommandFramework.git "$command_framework_sha"
 fetch_source "$coreutils_root" https://github.com/uniblab/Icod.CoreUtils.git "$coreutils_sha"
 fetch_source "$procps_root" https://github.com/uniblab/Icod.ProcPs.git "$procps_sha"
 fetch_source "$diffutils_root" https://github.com/uniblab/Icod.DiffUtils.git "$diffutils_sha"
 fetch_source "$grep_root" https://github.com/uniblab/Icod.Grep.git "$grep_sha"
+fetch_source "$lineeditor_root" https://github.com/uniblab/Icod.LineEditor.git "$lineeditor_sha"
 test "$(git -C "$command_framework_root" rev-parse HEAD)" = "$command_framework_sha"
 test "$(git -C "$coreutils_root" rev-parse HEAD)" = "$coreutils_sha"
 test "$(git -C "$procps_root" rev-parse HEAD)" = "$procps_sha"
 test "$(git -C "$diffutils_root" rev-parse HEAD)" = "$diffutils_sha"
 test "$(git -C "$grep_root" rev-parse HEAD)" = "$grep_sha"
+test "$(git -C "$lineeditor_root" rev-parse HEAD)" = "$lineeditor_sha"
 
 original_tests="$coreutils_root/tests/Expr.Tests/Icod.CoreUtils.Expr.Tests.csproj"
 "$dotnet_command" restore "$original_tests" -m:1 --ignore-failed-sources
@@ -75,6 +79,12 @@ if [ -n "${GREP_TEST_FILTER:-}" ]; then
 else
   "$dotnet_command" test "$grep_tests" -c Staging --no-restore -m:1 -v minimal
 fi
+
+for command in Sed Ed.Shared Ed Red; do
+  project="$lineeditor_root/tests/$command.Tests/Icod.LineEditor.$command.Tests.csproj"
+  "$dotnet_command" restore "$project" -m:1 --ignore-failed-sources
+  "$dotnet_command" test "$project" -c Staging --no-restore -m:1 -v minimal
+done
 
 # Use an isolated package cache so this run cannot reuse a previous alpha
 # package with the same version from a developer's global NuGet cache.
@@ -154,4 +164,15 @@ else
   "$dotnet_command" vstest "$bridged_grep_output/Icod.Grep.Tests.dll" \
     --Logger:'console;verbosity=minimal'
 fi
-echo "Source-pinned CoreUtils, ProcPs, DiffUtils, and Grep consumers passed with the package-backed scratch bridge."
+
+for command in Sed Ed.Shared Ed Red; do
+  original_lineeditor_output="$lineeditor_root/tests/$command.Tests/bin/Staging/net10.0"
+  bridged_lineeditor_output="$scratch/LineEditor.$command.Tests"
+  mkdir -p "$bridged_lineeditor_output"
+  cp -a "$original_lineeditor_output/." "$bridged_lineeditor_output/"
+  cp "$bridge_output/Icod.CommandFramework.dll" "$bridged_lineeditor_output/"
+  cp "$probe_output/Icod.Expressions.dll" "$bridged_lineeditor_output/"
+  "$dotnet_command" vstest "$bridged_lineeditor_output/Icod.LineEditor.$command.Tests.dll" \
+    --Logger:'console;verbosity=minimal'
+done
+echo "Source-pinned CoreUtils, ProcPs, DiffUtils, Grep, and LineEditor consumers passed with the package-backed scratch bridge."
