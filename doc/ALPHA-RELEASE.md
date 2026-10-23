@@ -22,6 +22,8 @@ publishing this package.
    policy to creating `Icod.Expressions` and its versions. In the GitHub
    repository, set the `NUGET_USER` variable to that account's profile name.
    The account owner must perform this setup; the workflow has no stored API key.
+   Follow the [NuGet trusted publishing setup](https://learn.microsoft.com/en-us/nuget/nuget-org/trusted-publishing)
+   for the account and workflow policy.
 3. From `main`, manually dispatch `publish-nuget` with input
    `0.1.0-alpha.1`. The workflow verifies the exact reviewed version, builds
    and tests Release on .NET 8/9/10, verifies frozen source and parity data,
