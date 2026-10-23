@@ -14,8 +14,10 @@ publishing this package.
 ## Publish sequence
 
 1. Merge Expressions PR #1 after its five CI jobs pass at the final head.
-   Check the pack, package-only sample, A05/E02 comparison, and cross-platform
-   725-case scratch bridge gate. Keep CommandFramework PR #16 additive.
+   Wait for the five-job `main` push CI at the merge commit as well: the
+   publication workflow enforces this exact-commit gate. Check the pack,
+   package-only sample, A05/E02 comparison, and cross-platform 725-case
+   scratch bridge gate. Keep CommandFramework PR #16 additive.
 2. In the nuget.org account that will own `Icod.Expressions`, create a trusted
    publishing policy for owner `uniblab`, repository `Icod.Expressions`,
    workflow file `publish-nuget.yml`, and environment `nuget`. Scope the

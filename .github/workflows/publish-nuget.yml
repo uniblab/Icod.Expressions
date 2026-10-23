@@ -17,6 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: nuget
     permissions:
+      actions: read
       contents: read
       id-token: write
     steps:
@@ -41,6 +42,18 @@ jobs:
           if ([string]::IsNullOrWhiteSpace($env:NUGET_USER)) {
             throw 'Set the NUGET_USER repository variable to the nuget.org profile name.'
           }
+      - name: Require five successful CI jobs at this main commit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          run_id="$(gh api --method GET "repos/${GITHUB_REPOSITORY}/actions/workflows/pull-request.yml/runs" \
+            -f branch=main -f event=push -f head_sha="$GITHUB_SHA" -f per_page=100 \
+            | jq -r --arg sha "$GITHUB_SHA" '[.workflow_runs[] | select(.head_sha == $sha and .head_branch == "main" and .event == "push" and .status == "completed" and .conclusion == "success")] | first | .id // empty')"
+          test -n "$run_id" || { echo 'No successful main CI run exists for this exact commit.'; exit 1; }
+          gh api --method GET "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/jobs" -f per_page=100 \
+            | jq -e '(.total_count == 5) and ([.jobs[] | select(.status == "completed" and .conclusion == "success")] | length == 5)' > /dev/null
       - name: Restore and build
         run: |
           dotnet restore Icod.Expressions.sln
@@ -63,7 +76,7 @@ jobs:
           set -e
           sh tools/verify-a05-candidate.sh
           for framework in net8.0 net9.0 net10.0; do
-            dotnet run --project tools/RegularExpressionParityBaseline/RegularExpressionParityBaseline.csproj -c Release -f "$framework" --no-build --no-restore -- --verify doc/Icod.Expressions-A04-Parity-Baseline.jsonl
+            dotnet run --project tools/RegularExpressionParityBaseline/RegularExpressionParityBaseline.csproj -c Release -f "$framework" -- --verify doc/Icod.Expressions-A04-Parity-Baseline.jsonl
           done
       - name: Pack alpha
         run: dotnet pack src/Icod.Expressions/Icod.Expressions.csproj -c Release --no-build --no-restore -o artifacts
@@ -71,6 +84,7 @@ jobs:
         shell: bash
         run: |
           set -e
+          export NUGET_PACKAGES="$RUNNER_TEMP/package-only-cache"
           dotnet restore samples/PackageSmoke/PackageSmoke.csproj --source artifacts
           dotnet build samples/PackageSmoke/PackageSmoke.csproj -c Release --no-restore
           for framework in net8.0 net9.0 net10.0; do
