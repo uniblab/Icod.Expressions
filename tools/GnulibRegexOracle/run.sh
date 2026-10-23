@@ -14,13 +14,24 @@ test "$(git -C "$work/gnulib" rev-parse HEAD)" = "$revision"
 test "$(git -C "$work/gnulib" hash-object tests/test-regex.c)" = "$test_blob"
 
 "$work/gnulib/gnulib-tool" --create-testdir --dir="$work/oracle" regex-tests > "$work/bootstrap.log"
+# The upstream table intentionally tolerates an actual participating capture
+# when the expected register is (-1,-1). Remove that exception from the
+# ephemeral test copy so the anchor-branch comparison is exact.
+test "$(grep -Fc 'if (tests[i].rm[n].rm_so == -1 && tests[i].rm[n].rm_eo == -1)' "$work/oracle/gltests/test-regex.c")" -eq 1
+sed '/if (tests\[i\]\.rm\[n\]\.rm_so == -1 && tests\[i\]\.rm\[n\]\.rm_eo == -1)/,+1d' \
+  "$work/oracle/gltests/test-regex.c" > "$work/strict-test-regex.c"
+test "$(grep -Fc 'if (tests[i].rm[n].rm_so == -1 && tests[i].rm[n].rm_eo == -1)' "$work/strict-test-regex.c" || :)" -eq 0
+cp "$work/strict-test-regex.c" "$work/oracle/gltests/test-regex.c"
 (
   cd "$work/oracle"
   ./configure --with-included-regex > "$work/configure.log"
   make -j2 -C gllib > "$work/gllib.log"
   make -j2 -C gltests test-regex > "$work/test-build.log"
   test -s gllib/regex.o
-  nm gltests/test-regex | grep -Eq ' [TW] regcomp$'
-  printf 'Pinned Gnulib %s; included regex.o linked into test-regex; LC_ALL=C\n' "$revision"
+  regex_symbol=$(nm gllib/regex.o | grep -E ' [TW] [^ ]*regcomp$' | head -n 1)
+  test -n "$regex_symbol"
+  symbol_name=${regex_symbol##* }
+  nm gltests/test-regex | grep -F " $symbol_name" | grep -Eq ' [TW] '
+  printf 'Pinned Gnulib %s; included regex.o linked as %s; LC_ALL=C\n' "$revision" "$symbol_name"
   LC_ALL=C ./gltests/test-regex
 )
