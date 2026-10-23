@@ -220,10 +220,22 @@ try {
     if (-not (Test-Path (Join-Path $bridgeFeed 'Icod.CommandFramework.2.2.1-expressions-bridge.1.nupkg'))) {
         throw 'Scratch CommandFramework bridge package missing.'
     }
+    $packagedClientConfig = Join-Path $scratch 'PackagedClient.NuGet.Config'
+    $escapedBridgeFeed = [System.Security.SecurityElement]::Escape($bridgeFeed)
+    @"
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <clear />
+    <add key="bridge" value="$escapedBridgeFeed" />
+    <add key="candidate" value="$escapedFeed" />
+    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+  </packageSources>
+</configuration>
+"@ | Set-Content -Path $packagedClientConfig -Encoding UTF8
     $packagedClientProject = Join-Path $root 'tools/ConsumerBridgeProbe/PackagedClient/PackagedClient.csproj'
     Invoke-Checked -Executable 'dotnet' -Arguments @('restore', $packagedClientProject, '-m:1',
-        '--source', $bridgeFeed, '--source', $feed,
-        '--source', 'https://api.nuget.org/v3/index.json')
+        '--configfile', $packagedClientConfig)
     Invoke-Checked -Executable 'dotnet' -Arguments @('build', $packagedClientProject, '-c', 'Staging',
         '--no-restore', '-m:1')
     Invoke-Checked -Executable 'dotnet' -Arguments @(
