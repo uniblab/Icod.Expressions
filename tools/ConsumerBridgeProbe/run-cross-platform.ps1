@@ -95,12 +95,21 @@ try {
         Assert-PassingTests -TrxPath (Join-Path $results 'original.trx') -ExpectedCount $suite.ExpectedCases
     }
 
-    $sedProject = Join-Path $lineEditorRoot 'tests/Sed.Tests/Icod.LineEditor.Sed.Tests.csproj'
-    $sedOriginalResults = Join-Path $scratch 'Sed-original-results'
-    Invoke-Checked -Executable 'dotnet' -Arguments @('restore', $sedProject, '-m:1', '--configfile', $config)
-    Invoke-Checked -Executable 'dotnet' -Arguments @('test', $sedProject, '-c', 'Staging', '--no-restore',
-        '-m:1', '--logger', 'trx;LogFileName=original.trx', '--results-directory', $sedOriginalResults)
-    Assert-PassingTests -TrxPath (Join-Path $sedOriginalResults 'original.trx') -ExpectedCount 116
+    $lineEditorSuites = @(
+        @{ Name = 'Sed'; ExpectedCases = 116 },
+        @{ Name = 'Ed.Shared'; ExpectedCases = 68 },
+        @{ Name = 'Ed'; ExpectedCases = 26 },
+        @{ Name = 'Red'; ExpectedCases = 28 }
+    )
+    foreach ($suite in $lineEditorSuites) {
+        $name = $suite.Name
+        $project = Join-Path $lineEditorRoot "tests/$name.Tests/Icod.LineEditor.$name.Tests.csproj"
+        $results = Join-Path $scratch "$name-original-results"
+        Invoke-Checked -Executable 'dotnet' -Arguments @('restore', $project, '-m:1', '--configfile', $config)
+        Invoke-Checked -Executable 'dotnet' -Arguments @('test', $project, '-c', 'Staging', '--no-restore',
+            '-m:1', '--logger', 'trx;LogFileName=original.trx', '--results-directory', $results)
+        Assert-PassingTests -TrxPath (Join-Path $results 'original.trx') -ExpectedCount $suite.ExpectedCases
+    }
 
     $bridgeProject = Join-Path $root 'tools/ConsumerBridgeProbe/Bridge/Bridge.csproj'
     $bridgeRootProperty = "-p:CommandFrameworkRoot=$frameworkRoot"
@@ -161,18 +170,21 @@ try {
         Assert-PassingTests -TrxPath (Join-Path $results 'bridged.trx') -ExpectedCount $suite.ExpectedCases
     }
 
-    $sedPublishedOutput = Join-Path $lineEditorRoot 'tests/Sed.Tests/bin/Staging/net10.0'
-    $sedBridgedOutput = Join-Path $scratch 'Sed.Tests'
-    New-Item -ItemType Directory -Path $sedBridgedOutput | Out-Null
-    Copy-Item (Join-Path $sedPublishedOutput '*') -Destination $sedBridgedOutput -Recurse -Force
-    Copy-Item $bridgeDll -Destination (Join-Path $sedBridgedOutput 'Icod.CommandFramework.dll') -Force
-    Copy-Item (Join-Path $probeOutput 'Icod.Expressions.dll') -Destination $sedBridgedOutput -Force
-    $sedBridgedResults = Join-Path $scratch 'Sed-bridged-results'
-    Invoke-Checked -Executable 'dotnet' -Arguments @('vstest',
-        (Join-Path $sedBridgedOutput 'Icod.LineEditor.Sed.Tests.dll'),
-        '--Logger:trx;LogFileName=bridged.trx', "--ResultsDirectory:$sedBridgedResults")
-    Assert-PassingTests -TrxPath (Join-Path $sedBridgedResults 'bridged.trx') -ExpectedCount 116
-    Write-Host 'Original CoreUtils expr (50), DiffUtils diff (22) and sdiff (40), and LineEditor Sed (116) binaries passed with published and package-backed bridge assemblies.'
+    foreach ($suite in $lineEditorSuites) {
+        $name = $suite.Name
+        $publishedOutput = Join-Path $lineEditorRoot "tests/$name.Tests/bin/Staging/net10.0"
+        $substitutedOutput = Join-Path $scratch "LineEditor.$name.Tests"
+        New-Item -ItemType Directory -Path $substitutedOutput | Out-Null
+        Copy-Item (Join-Path $publishedOutput '*') -Destination $substitutedOutput -Recurse -Force
+        Copy-Item $bridgeDll -Destination (Join-Path $substitutedOutput 'Icod.CommandFramework.dll') -Force
+        Copy-Item (Join-Path $probeOutput 'Icod.Expressions.dll') -Destination $substitutedOutput -Force
+        $results = Join-Path $scratch "$name-bridged-results"
+        Invoke-Checked -Executable 'dotnet' -Arguments @('vstest',
+            (Join-Path $substitutedOutput "Icod.LineEditor.$name.Tests.dll"),
+            '--Logger:trx;LogFileName=bridged.trx', "--ResultsDirectory:$results")
+        Assert-PassingTests -TrxPath (Join-Path $results 'bridged.trx') -ExpectedCount $suite.ExpectedCases
+    }
+    Write-Host 'Original CoreUtils expr (50), DiffUtils diff (22) and sdiff (40), and LineEditor Sed (116), Ed.Shared (68), Ed (26), and Red (28) binaries passed with published and package-backed bridge assemblies.'
 } finally {
     if ($null -eq $previousPackages) {
         Remove-Item Env:NUGET_PACKAGES -ErrorAction SilentlyContinue

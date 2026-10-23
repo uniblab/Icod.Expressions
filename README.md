@@ -120,9 +120,10 @@ Expressions package. CI runs it on Windows, macOS, and Linux:
 ```
 
 The cross-platform consumer probe runs CoreUtils `expr` (50), DiffUtils
-`diff` (22) and `sdiff` (40), and LineEditor Sed (116) old-package-compiled
-tests before and after replacing the original CommandFramework DLL with a
-temporary full bridge backed by the local package (228 cases per run):
+`diff` (22) and `sdiff` (40), and LineEditor Sed (116), Ed.Shared (68), Ed
+(26), and Red (28) old-package-compiled tests before and after replacing
+the original CommandFramework DLL with a temporary full bridge backed by
+the local package (350 cases per run):
 
 ```powershell
 ./tools/ConsumerBridgeProbe/run-cross-platform.ps1 -PackageFeed artifacts
