@@ -1,4 +1,5 @@
 using System.Text;
+using System.Reflection;
 using Icod.CommandFramework.RegularExpressions;
 using Icod.CommandFramework.Text;
 
@@ -29,4 +30,19 @@ if (unit is null || !unit.Value.ToByteArray().AsSpan().SequenceEqual("é"u8)
     throw new InvalidOperationException("Packaged bridge TextUnitReader changed.");
 }
 
-Console.WriteLine("Package-only bridge client resolved transitive Expressions regex/Text identities.");
+if (args is not ["--old-client"]) {
+    throw new ArgumentException("Expected --old-client.");
+}
+var oldClientPath = Path.Combine(AppContext.BaseDirectory, "OldClient.dll");
+var oldClient = Assembly.LoadFrom(oldClientPath);
+var references = oldClient.GetReferencedAssemblies().Select(assembly => assembly.Name).ToArray();
+if (!references.Contains("Icod.CommandFramework") || references.Contains("Icod.Expressions")) {
+    throw new InvalidOperationException("Old client was not compiled solely against published CommandFramework.");
+}
+var entryPoint = oldClient.EntryPoint ?? throw new InvalidOperationException("Old client entry point is missing.");
+var exitCode = entryPoint.Invoke(null, [new[] { "--forwarded" }]);
+if (exitCode is not 0) {
+    throw new InvalidOperationException($"Old client returned {exitCode} through the packaged bridge.");
+}
+
+Console.WriteLine("Package-only bridge and old-package-compiled client resolved transitive Expressions identities.");

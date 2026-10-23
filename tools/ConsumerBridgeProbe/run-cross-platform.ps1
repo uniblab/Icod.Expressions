@@ -238,8 +238,16 @@ try {
         '--configfile', $packagedClientConfig)
     Invoke-Checked -Executable 'dotnet' -Arguments @('build', $packagedClientProject, '-c', 'Staging',
         '--no-restore', '-m:1')
+    $oldClientProject = Join-Path $root 'tools/ConsumerBridgeProbe/OldClient/OldClient.csproj'
+    Invoke-Checked -Executable 'dotnet' -Arguments @('restore', $oldClientProject, '-m:1',
+        '--configfile', $config)
+    Invoke-Checked -Executable 'dotnet' -Arguments @('build', $oldClientProject, '-c', 'Staging',
+        '--no-restore', '-m:1')
+    $packagedClientOutput = Join-Path $root 'tools/ConsumerBridgeProbe/PackagedClient/bin/Staging/net10.0'
+    Copy-Item (Join-Path $root 'tools/ConsumerBridgeProbe/OldClient/bin/Staging/net10.0/OldClient.dll') `
+        -Destination $packagedClientOutput -Force
     Invoke-Checked -Executable 'dotnet' -Arguments @(
-        (Join-Path $root 'tools/ConsumerBridgeProbe/PackagedClient/bin/Staging/net10.0/PackagedClient.dll'))
+        (Join-Path $packagedClientOutput 'PackagedClient.dll'), '--old-client')
 
     $probeProject = Join-Path $root 'tools/ConsumerBridgeProbe/Probe/Probe.csproj'
     $probeOutputProperty = "-p:OriginalConsumerOutput=$originalOutput"
