@@ -20,6 +20,6 @@
 		</PackageReference>
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="../../src/Icod.Expressions/Icod.Expressions.csproj" />
+		<ProjectReference Include="../Icod.Expressions.csproj" />
 	</ItemGroup>
 </Project>
