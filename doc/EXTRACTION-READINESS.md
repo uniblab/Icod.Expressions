@@ -43,12 +43,14 @@ Together the focused directory has 214 runtime cases locally on .NET 10.
 The original copy-time corpus and five-case supplement retain their identities.
 These managed cases do not establish exact Gnulib named-profile conformance.
 
-A separate [nine-case Linux/glibc differential](https://github.com/uniblab/Icod.CommandFramework/blob/docs/icod-expressions-a00-in-situ-inventory/doc/Icod.Expressions-A04-POSIX-Glibc-Differential.md)
+A separate [15-case Linux/glibc differential](https://github.com/uniblab/Icod.CommandFramework/blob/docs/icod-expressions-a00-in-situ-inventory/doc/Icod.Expressions-A04-POSIX-Glibc-Differential.md)
 compares ASCII BRE/ERE whole matches and capture spans with the inherited
 engine. The C# runner source has identical Git blob
-`bec36b11aa2bd1617e191ac49703244a03dcc10b` in both repositories;
-only its project reference changes. Seven ordinary standards-facing samples
-agree. glibc and the inherited engine both return a participating empty
+`59a10c631112307159a0682a493062de4cd82c80` in both repositories;
+only its project reference changes. Thirteen samples agree. Two defined ERE
+middle-anchor cases diverge under Issue 8 §9.4.9: glibc finds no match while
+the inherited Extended parser treats those anchor characters as literals.
+glibc and the inherited engine both return a participating empty
 capture for two anchor-branch cases. The pinned Gnulib source table lists an
 absent group but explicitly tolerates a different runtime result. The
 [included Gnulib oracle runner](../tools/GnulibRegexOracle/run.sh) builds
