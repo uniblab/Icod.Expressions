@@ -72,6 +72,10 @@ jobs:
         run: |
           dotnet run --project tools/RegularExpressionApiSnapshot/RegularExpressionApiSnapshot.csproj -c Staging > /tmp/icod-expressions-api.txt
           diff <(tail -n +2 doc/Icod.Expressions-A00-Compiled-API.txt) <(tail -n +2 /tmp/icod-expressions-api.txt)
+      - name: Compare final A05 corpus with frozen CommandFramework audit commit
+        if: matrix.configuration == 'Staging'
+        shell: pwsh
+        run: ./tools/FinalParity/run.ps1
       - name: Pack alpha candidate
         if: matrix.configuration == 'Staging'
         run: dotnet pack src/Icod.Expressions/Icod.Expressions.csproj -c Staging --no-build --no-restore -o artifacts
