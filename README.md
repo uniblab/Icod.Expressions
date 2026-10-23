@@ -97,10 +97,10 @@ dotnet run --project tools/PosixRegexDifferential/PosixRegexDifferential.csproj 
 The library, focused tests, and parity runner target `net8.0`, `net9.0`, and
 `net10.0` with C# 13. CI requires 214 focused tests: the original 193-test
 copy-time corpus, five consumer-shaped cases, and 16 A02 syntax-option cases.
-It also
-checks the original 44-case parity fixture on each framework across Windows,
-Linux, and macOS. The copied production files and original tests retain their
-pinned Git blobs; each additive test file has its own identity check.
+It also checks the original 44-case parity fixture on each framework across
+Windows, Linux, and macOS. The copied production files and original tests
+retain their pinned Git blobs. Run `sh tools/verify-a05-candidate.sh` to check
+the consolidated source, corpus, and oracle-tool identities.
 
 To inspect a local, unpublished package and its independent consumer:
 
@@ -129,14 +129,16 @@ The bridge exists only in the probe output; it is not a shipped package.
 
 ## COMPATIBILITY AND LIMITS
 
-The [extraction readiness record](https://github.com/uniblab/Icod.Expressions/blob/main/doc/EXTRACTION-READINESS.md) links the
+The [extraction readiness record](doc/EXTRACTION-READINESS.md) and
+[A05 final candidate](doc/Icod.Expressions-A05-Final-Candidate.md) link the
 copy-time source, API, tests, fixtures, reference revisions, and known gaps.
 Formal A05 acceptance and parity over its final corpus remain open.
 The inherited providers are not separate strict POSIX BRE/ERE contracts or
 complete implementations of all Gnulib syntax bits. In particular,
-multi-scalar collating elements are unsupported; contextual anchors,
-pattern-newline alternation, and an empty-anchor capture choice differ from
-specific GNU reference behavior. Those outcomes are preserved during this
+multi-scalar collating elements are unsupported; ERE middle anchors diverge
+from POSIX Issue 8 §9.4.9, and pattern-newline alternation is not a selectable
+GNU syntax control. The probed empty-anchor captures agree with the included
+pinned Gnulib engine. Those inherited outcomes are preserved during this
 mechanical move. The `tac` consumer's provider/options mismatch is tracked
 separately in [Icod.CoreUtils #190](https://github.com/uniblab/Icod.CoreUtils/issues/190).
 
