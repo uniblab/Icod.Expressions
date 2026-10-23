@@ -53,6 +53,12 @@ original_tests="$coreutils_root/tests/Expr.Tests/Icod.CoreUtils.Expr.Tests.cspro
 "$dotnet_command" test "$original_tests" -c Staging --no-restore -m:1 -v minimal
 original_output="$coreutils_root/tests/Expr.Tests/bin/Staging/net10.0"
 
+for command in NL CSplit Ptx; do
+  project="$coreutils_root/tests/$command.Tests/Icod.CoreUtils.$command.Tests.csproj"
+  "$dotnet_command" restore "$project" -m:1 --ignore-failed-sources
+  "$dotnet_command" test "$project" -c Staging --no-restore -m:1 -v minimal
+done
+
 # These three command projects compile the same GNU Extended adapter against
 # the published CommandFramework 2.1.0 package. Keep their original binaries
 # for the later assembly substitution; do not edit their project references.
@@ -128,6 +134,17 @@ cp "$bridge_output/Icod.CommandFramework.dll" "$scratch/ExprTests/"
 cp "$probe_output/Icod.Expressions.dll" "$scratch/ExprTests/"
 "$dotnet_command" vstest "$scratch/ExprTests/Icod.CoreUtils.Expr.Tests.dll" \
   --Logger:'console;verbosity=minimal'
+
+for command in NL CSplit Ptx; do
+  original_coreutils_output="$coreutils_root/tests/$command.Tests/bin/Staging/net10.0"
+  bridged_coreutils_output="$scratch/CoreUtils.$command.Tests"
+  mkdir -p "$bridged_coreutils_output"
+  cp -a "$original_coreutils_output/." "$bridged_coreutils_output/"
+  cp "$bridge_output/Icod.CommandFramework.dll" "$bridged_coreutils_output/"
+  cp "$probe_output/Icod.Expressions.dll" "$bridged_coreutils_output/"
+  "$dotnet_command" vstest "$bridged_coreutils_output/Icod.CoreUtils.$command.Tests.dll" \
+    --Logger:'console;verbosity=minimal'
+done
 
 for command in Pgrep Pkill PidWait; do
   original_procps_output="$procps_root/tests/ProcPs.$command.Tests/bin/Staging/net10.0"
