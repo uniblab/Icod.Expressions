@@ -1,0 +1,214 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  metadata:
+    if: github.repository == 'uniblab/Icod.Expressions'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: version
+        name: Validate tag, project version, and default-branch commit
+        shell: pwsh
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          if ($tag -notmatch '^v(?<version>0\.1\.0-alpha\.1)$') {
+            throw "Only the reviewed v0.1.0-alpha.1 tag is accepted by this release workflow."
+          }
+          $version = $Matches.version
+          [xml]$project = Get-Content src/Icod.Expressions/Icod.Expressions.csproj -Raw
+          $projectVersion = [string]$project.SelectSingleNode('/Project/PropertyGroup/Version').InnerText
+          if ($projectVersion -ne $version) {
+            throw "Tag version $version differs from project version $projectVersion."
+          }
+          git fetch origin main --no-tags
+          if (0 -ne $LASTEXITCODE) { throw 'Could not fetch main.' }
+          git merge-base --is-ancestor $env:GITHUB_SHA origin/main
+          if (0 -ne $LASTEXITCODE) { throw 'The tagged commit must be contained in main.' }
+          "version=$version" >> $env:GITHUB_OUTPUT
+      - name: Require five successful CI jobs at this main commit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          run_id="$(gh api --method GET "repos/${GITHUB_REPOSITORY}/actions/workflows/pull-request.yml/runs" \
+            -f branch=main -f event=push -f head_sha="$GITHUB_SHA" -f per_page=100 \
+            | jq -r --arg sha "$GITHUB_SHA" '[.workflow_runs[] | select(.head_sha == $sha and .head_branch == "main" and .event == "push" and .status == "completed" and .conclusion == "success")] | first | .id // empty')"
+          test -n "$run_id" || { echo 'No successful main CI run exists for this exact commit.'; exit 1; }
+          gh api --method GET "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/jobs" -f per_page=100 \
+            | jq -e '(.total_count == 5) and ([.jobs[] | select(.status == "completed" and .conclusion == "success")] | length == 5)' > /dev/null
+  package:
+    needs: metadata
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+      - name: Restore and build
+        run: |
+          dotnet restore Icod.Expressions.sln
+          dotnet build Icod.Expressions.sln -c Release --no-restore -p:ContinuousIntegrationBuild=true
+      - name: Run focused tests on each target
+        shell: pwsh
+        run: |
+          foreach ($framework in @('net8.0', 'net9.0', 'net10.0')) {
+            dotnet test tests/Icod.Expressions.Tests/Icod.Expressions.Tests.csproj -c Release -f $framework --no-build --no-restore --logger "trx;LogFileName=$framework.trx"
+            if ($LASTEXITCODE -ne 0) { throw "Test run failed: $framework" }
+            [xml]$results = Get-Content "tests/Icod.Expressions.Tests/TestResults/$framework.trx" -Raw
+            $counters = $results.SelectSingleNode("//*[local-name()='Counters']")
+            if ($null -eq $counters -or [int]$counters.GetAttribute('total') -ne 214 -or [int]$counters.GetAttribute('passed') -ne 214 -or [int]$counters.GetAttribute('failed') -ne 0) {
+              throw "Characterization test count drift: $framework"
+            }
+          }
+      - name: Verify frozen extraction and fixture
+        shell: bash
+        run: |
+          set -e
+          sh tools/verify-a05-candidate.sh
+          for framework in net8.0 net9.0 net10.0; do
+            dotnet run --project tools/RegularExpressionParityBaseline/RegularExpressionParityBaseline.csproj -c Release -f "$framework" -- --verify doc/Icod.Expressions-A04-Parity-Baseline.jsonl
+          done
+      - name: Pack the single library project
+        run: dotnet pack src/Icod.Expressions/Icod.Expressions.csproj -c Release --no-build --no-restore -o artifacts
+      - name: Verify exact single package and nuspec version
+        shell: pwsh
+        env:
+          PACKAGE_VERSION: ${{ needs.metadata.outputs.version }}
+        run: |
+          $packages = @(Get-ChildItem -LiteralPath artifacts -Filter '*.nupkg' -File)
+          $expected = "Icod.Expressions.$env:PACKAGE_VERSION.nupkg"
+          if ($packages.Count -ne 1 -or $packages[0].Name -cne $expected) {
+            throw "Expected exactly $expected; found $($packages.Name -join ', ')."
+          }
+          Add-Type -AssemblyName System.IO.Compression
+          $archive = [System.IO.Compression.ZipFile]::OpenRead($packages[0].FullName)
+          try {
+            $entry = @($archive.Entries | Where-Object { $_.FullName -eq 'Icod.Expressions.nuspec' })
+            if ($entry.Count -ne 1) { throw 'Expected one Icod.Expressions.nuspec.' }
+            $reader = [System.IO.StreamReader]::new($entry[0].Open())
+            try { [xml]$nuspec = $reader.ReadToEnd() } finally { $reader.Dispose() }
+            if ($nuspec.package.metadata.id -cne 'Icod.Expressions' -or $nuspec.package.metadata.version -cne $env:PACKAGE_VERSION) {
+              throw 'Package identity or version differs from the release tag.'
+            }
+          } finally { $archive.Dispose() }
+      - name: Verify package-only client
+        shell: bash
+        run: |
+          set -e
+          export NUGET_PACKAGES="$RUNNER_TEMP/package-only-cache"
+          dotnet restore samples/PackageSmoke/PackageSmoke.csproj --source artifacts
+          dotnet build samples/PackageSmoke/PackageSmoke.csproj -c Release --no-restore
+          for framework in net8.0 net9.0 net10.0; do
+            dotnet run --project samples/PackageSmoke/PackageSmoke.csproj -c Release -f "$framework" --no-build --no-restore
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nuget-package
+          path: artifacts/Icod.Expressions.${{ needs.metadata.outputs.version }}.nupkg
+          if-no-files-found: error
+          retention-days: 7
+
+  publish-nuget:
+    needs: [metadata, package]
+    runs-on: ubuntu-latest
+    environment: Release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/download-artifact@v4
+        with:
+          name: nuget-package
+          path: artifacts/package
+      - name: Obtain short-lived NuGet credential
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
+      - name: Publish exact package to NuGet.org
+        env:
+          PACKAGE_VERSION: ${{ needs.metadata.outputs.version }}
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          package="artifacts/package/Icod.Expressions.${PACKAGE_VERSION}.nupkg"
+          test -f "$package"
+          dotnet nuget push "$package" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+  publish-github-packages:
+    needs: [metadata, package]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/download-artifact@v4
+        with:
+          name: nuget-package
+          path: artifacts/package
+      - name: Publish exact package to GitHub Packages
+        env:
+          PACKAGE_VERSION: ${{ needs.metadata.outputs.version }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          package="artifacts/package/Icod.Expressions.${PACKAGE_VERSION}.nupkg"
+          test -f "$package"
+          dotnet nuget push "$package" --api-key "$GITHUB_TOKEN" --source "https://nuget.pkg.github.com/${GITHUB_REPOSITORY_OWNER}/index.json" --skip-duplicate
+
+  github-release:
+    needs: [metadata, package, publish-nuget, publish-github-packages]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: nuget-package
+          path: artifacts/release
+      - name: Create checksum and prerelease
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PACKAGE_VERSION: ${{ needs.metadata.outputs.version }}
+        run: |
+          set -euo pipefail
+          cd artifacts/release
+          package="Icod.Expressions.${PACKAGE_VERSION}.nupkg"
+          test -f "$package"
+          sha256sum "$package" > SHA256SUMS.txt
+          gh release create "$GITHUB_REF_NAME" "$package" SHA256SUMS.txt \
+            --verify-tag --title "Icod.Expressions $PACKAGE_VERSION" \
+            --generate-notes --prerelease --latest=false

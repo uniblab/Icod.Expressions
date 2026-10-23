@@ -13,27 +13,33 @@ publishing this package.
 
 ## Publish sequence
 
-1. Merge Expressions PR #1 after its five CI jobs pass at the final head.
-   Wait for the five-job `main` push CI at the merge commit as well: the
+1. Confirm the five-job `main` push CI passes at the release commit. The
    publication workflow enforces this exact-commit gate. Check the pack,
    package-only sample, A05/E02 comparison, and cross-platform 725-case
-   scratch bridge gate. Keep CommandFramework PR #16 additive.
-2. In the nuget.org account that will own `Icod.Expressions`, create a trusted
-   publishing policy for owner `uniblab`, repository `Icod.Expressions`,
-   workflow file `publish-nuget.yml`, and environment `nuget`. Scope the
-   policy to creating `Icod.Expressions` and its versions. In the GitHub
-   repository, set the `NUGET_USER` variable to that account's profile name.
-   The account owner must perform this setup; the workflow has no stored API key.
-   Follow the [NuGet trusted publishing setup](https://learn.microsoft.com/en-us/nuget/nuget-org/trusted-publishing)
-   for the account and workflow policy.
-3. From `main`, manually dispatch `publish-nuget` with input
-   `0.1.0-alpha.1`. The workflow verifies the exact reviewed version, builds
-   and tests Release on .NET 8/9/10, verifies frozen source and parity data,
-   packs, restores and runs the package-only sample, then requests a short-lived
-   NuGet credential and publishes that exact `.nupkg`.
-4. Confirm the published version is available from NuGet and install it in a
-   clean package-only consumer. Record the package URL and immutable release
-   commit for the migration PRs.
+   scratch bridge gate. CommandFramework's merged audit PR #16 changed no
+   production regex source.
+2. Use the active NuGet trusted publishing policy for package owner
+   `uniblab`, package `Icod.Expressions`, repository owner `uniblab`,
+   repository `Icod.Expressions`, workflow file `release.yaml`, and
+   environment `Release`. The policy allows new packages and versions.
+   The `NUGET_USER` Actions secret holds the publishing profile name. The
+   workflow exchanges its GitHub OIDC token for a short-lived credential;
+   it has no stored NuGet API key. See the
+   [NuGet trusted publishing setup](https://learn.microsoft.com/en-us/nuget/nuget-org/trusted-publishing)
+   for how the short-lived credential is issued.
+3. Tag the validated `main` commit `v0.1.0-alpha.1` and push the tag.
+   The tag starts `release.yaml`. It verifies that the tag matches the
+   project version, belongs to `main`, and has the five passing CI jobs
+   for that exact commit. It then builds and tests Release on .NET 8/9/10,
+   verifies frozen source and parity data, packs exactly one
+   `Icod.Expressions.0.1.0-alpha.1.nupkg`, checks its nuspec, and runs
+   the package-only sample. The same package artifact publishes to
+   NuGet.org and GitHub Packages; when both succeed the workflow creates
+   a GitHub prerelease with a SHA256 checksum. This library has no
+   executable archive path and no multi-package selection.
+4. Confirm the published version is available from NuGet and install it
+   in a clean package-only consumer. Record the package URL and immutable
+   release commit for the migration PRs.
 5. Migrate and validate all known consumers, including CoreUtils, Grep,
    ProcPs, DiffUtils, and LineEditor, before any CommandFramework production
    regex code is removed or replaced. Keep `tac` and direct `diff -I` behavior
