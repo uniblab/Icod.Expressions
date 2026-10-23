@@ -9,7 +9,9 @@ $feed = (Resolve-Path $PackageFeed).Path
 $package = Join-Path $feed 'Icod.Expressions.0.1.0-alpha.1.nupkg'
 if (-not (Test-Path $package)) { throw "Candidate package missing: $package" }
 
-$scratch = Join-Path ([System.IO.Path]::GetTempPath()) ('icod-consumer-bridge-' + [guid]::NewGuid().ToString('N'))
+# macOS aliases /var to /private/var. Keep project restores and builds under
+# one physical checkout path so MSBuild sees the same project references.
+$scratch = Join-Path $root ('artifacts/consumer-bridge-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $scratch | Out-Null
 $previousPackages = $env:NUGET_PACKAGES
 $env:NUGET_PACKAGES = Join-Path $scratch 'packages'
