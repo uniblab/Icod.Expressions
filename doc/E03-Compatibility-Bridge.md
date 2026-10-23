@@ -89,13 +89,22 @@ provider and Text enums with `CommandContext` and `TextUnitReader` still in
 the bridge. The original test binaries then run in separate outputs with the
 bridge and candidate package; all 725 must pass again. The 114 added cases
 must retain identical test names and outcomes across the original and bridge
-runs. [CI run 40018021229](https://github.com/uniblab/Icod.Expressions/actions/runs/40018021229)
+runs. [CI run 40021465552](https://github.com/uniblab/Icod.Expressions/actions/runs/40021465552)
 passed on Windows, macOS, and Linux. After packing the candidate, run with
 PowerShell:
 
 ```powershell
 ./tools/ConsumerBridgeProbe/run-cross-platform.ps1 -PackageFeed artifacts
 ```
+
+The same gate also packs a disposable `Icod.CommandFramework`
+`2.2.1-expressions-bridge.1` from the pinned non-regex source. A fresh
+`PackagedClient` references **only** that bridge package, restores
+`Icod.Expressions` transitively from the local feed, and checks a regex match
+and `TextUnitReader` with both forwarded Text enums. This checks the NuGet
+dependency graph in addition to the old-binary substitution above. The
+package remains an unpublished scratch artifact; the CommandFramework
+repository and published packages are unchanged.
 
 This validates the pinned original test corpus across three platforms. The
 tests do not exhaust every regex option or Text API caller, and the scratch

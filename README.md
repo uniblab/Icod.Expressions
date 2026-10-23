@@ -130,6 +130,11 @@ bridge backed by the local package. CI runs it on Windows, macOS, and Linux:
 ./tools/ConsumerBridgeProbe/run-cross-platform.ps1 -PackageFeed artifacts
 ```
 
+That probe also packs an unpublished scratch CommandFramework bridge and
+restores a fresh client with only the bridge package reference. It verifies
+that NuGet supplies Expressions transitively and that forwarded regex and
+Text enums work with the retained `TextUnitReader`.
+
 On Linux with .NET 10, the source-pinned consumer probe also uses that
 unpublished package. It fetches six pinned public source commits, builds a
 temporary forwarding bridge, and runs the original CoreUtils, ProcPs,
@@ -145,14 +150,15 @@ On a local environment where that is prohibited, set
 `GREP_TEST_FILTER='FullyQualifiedName!=Icod.Grep.Tests.CommandTests.RecursiveDeviceDefaultsMatchGnuPolicy'`
 for the probe. CI leaves the filter unset and runs the complete suite.
 
-The bridge exists only in the probe output; it is not a shipped package.
+The bridge DLL and package exist only in disposable probe outputs; neither is shipped.
 
 ## COMPATIBILITY AND LIMITS
 
 The [extraction readiness record](doc/EXTRACTION-READINESS.md) and
 [A05 final candidate](doc/Icod.Expressions-A05-Final-Candidate.md) link the
 copy-time source, API, tests, fixtures, reference revisions, and known gaps.
-Formal A05 acceptance and parity over its final corpus remain open.
+Bounded E02 parity over the final A05 corpus passed. Formal A05 acceptance
+remains open pending review of the classified limits.
 The inherited providers are not separate strict POSIX BRE/ERE contracts or
 complete implementations of all Gnulib syntax bits. In particular,
 multi-scalar collating elements are unsupported; ERE middle anchors diverge
