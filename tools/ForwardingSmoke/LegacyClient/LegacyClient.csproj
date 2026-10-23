@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>13.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Configurations>Debug;Staging;Release</Configurations>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Icod.CommandFramework" Version="2.2.1" />
+    <!-- Keep the old assembly as the compile-time identity while ensuring
+         the new package is present in the runtime dependency graph. -->
+    <PackageReference Include="Icod.Expressions" Version="0.1.0-alpha.1" Aliases="expr" />
+  </ItemGroup>
+</Project>

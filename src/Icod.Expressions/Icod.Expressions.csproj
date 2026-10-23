@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+		<LangVersion>13.0</LangVersion>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Configurations>Debug;Staging;Release</Configurations>
+		<AssemblyName>Icod.Expressions</AssemblyName>
+		<RootNamespace>Icod.Expressions</RootNamespace>
+		<Version>0.1.0-alpha.1</Version>
+		<Authors>Timothy J. Bruce</Authors>
+		<Description>Managed GNU/POSIX regular-expression foundation with string and authoritative byte matching.</Description>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageTags>regex;regular-expressions;gnu;posix;bre;ere;byte-matching</PackageTags>
+		<PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
+		<RepositoryUrl>https://github.com/uniblab/Icod.Expressions</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<IsPackable>true</IsPackable>
+		<Deterministic>true</Deterministic>
+	</PropertyGroup>
+	<ItemGroup>
+		<None Include="../../README.md" Pack="true" PackagePath="/" />
+	</ItemGroup>
+	<PropertyGroup Condition="'$(Configuration)' == 'Staging'">
+		<DefineConstants>TRACE</DefineConstants>
+		<DebugSymbols>true</DebugSymbols>
+		<DebugType>portable</DebugType>
+		<Optimize>false</Optimize>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)' == 'Release'">
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+	</PropertyGroup>
+</Project>

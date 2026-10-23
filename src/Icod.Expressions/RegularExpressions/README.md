@@ -1,0 +1,167 @@
+# Shared GNU Regular Expressions
+
+`Icod.CommandFramework.RegularExpressions` is the managed, command-neutral GNU regular-expression foundation used across Icod command suites. It is not a pattern translator over `System.Text.RegularExpressions`. The same parser, syntax tree, and leftmost-longest matcher serve BRE, ERE, and the GNU Emacs profile used by `ptx`.
+
+Grep-, Sed-, Ed-, Expr-, and Csplit-specific pattern sourcing, empty-pattern reuse, match iteration, replacement grammar, binary policy, diagnostics presentation, and command state remain in their owning suite or command engines. The shared layer owns compilation, matching semantics, captures, source coordinates, locale/classification policy, cancellation, resource limits, and byte-preserving input behavior.
+
+## Authoritative behavior
+
+The implementation is pinned to:
+
+- GNU Coreutils 9.11 and its associated Gnulib regular-expression implementation for the established `expr` and `ptx` consumers;
+- GNU grep 3.12 and its associated Gnulib behavior for the first full BRE/ERE search consumer;
+- POSIX.1-2024 Issue 8 for Basic and Extended regular expressions, bracket expressions, captures, back-references, locale concepts, and leftmost-longest selection.
+
+The immutable upstream identities and source links belong in `Icod.CoreUtils-Upstream-Version-Ledger.md`.
+
+## Syntax profiles
+
+`RegularExpressionOptions.Syntax` is explicit and defaults to `GnuRegularExpressionSyntax.Basic`, preserving source compatibility for existing callers.
+
+| Provider/profile | Operator spelling | Compatibility policy |
+|---|---|---|
+| `GnuBasicRegularExpressionProvider` | Escaped `\(`, `\)`, `\|`, `\+`, `\?`, and `\{m,n\}` | Strict GNU/POSIX Basic by default; `GnuExprCompatibility` enables the established Coreutils `expr` duplicate/reverse-range behavior |
+| `GnuExtendedRegularExpressionProvider` | Unescaped `(`, `)`, `|`, `+`, `?`, and `{m,n}` | GNU/POSIX Extended; `GnuExtendedCompatibility` retains the permissive invalid-duplicate policy required by search consumers |
+| `GnuEmacsRegularExpressionProvider` | Unescaped `+` and `?`; escaped grouping, alternation, and intervals | Uses the permissive Gnulib Emacs profile required by Coreutils `ptx` |
+
+ERE is parsed directly. Escaped ERE metacharacters are literals, unmatched opening parentheses are diagnosed, and an unmatched closing parenthesis is ordinary outside a subexpression in the GNU profile. GNU-compatible malformed ERE brace text such as `a{` or `a{word}` remains literal; a syntactically recognized interval with invalid bounds still produces `InvalidInterval`.
+
+## Public API
+
+- `IRegularExpressionProvider` compiles patterns through synchronous and TAP-shaped asynchronous methods.
+- `ICompiledRegularExpression` performs reusable string and byte-preserving searches.
+- `RegularExpressionPreparedByteInput` owns an immutable snapshot of authoritative byte input prepared once for repeated matching.
+- `RegularExpressionPreparedByteInput.Prepare(...)` performs the one-time snapshot/decode step under an explicit `RegularExpressionInputOptions` policy.
+- `CompiledRegularExpressionPreparedInputExtensions.Match(...)` and `MatchAsync(...)` reuse a prepared byte input through the public compiled-expression surface without exposing mutable matcher state.
+- `RegularExpressionCompileResult`, `RegularExpressionMatchResult`, and `RegularExpressionByteMatchResult` distinguish successful no-match results from controlled errors.
+- `RegularExpressionDiagnostic` exposes a stable code, message, and UTF-16 pattern index where applicable.
+- `IRegularExpressionCharacterClassProvider` isolates classification, scalar comparison, collation, and case-equivalence policy.
+- `RegularExpressionOptions` controls syntax, case, line sensitivity, the logical line-separator scalar, explicit NUL-dot policy, compatibility policy, nesting limits, and match-state limits.
+- `RegularExpressionMatchOptions` addresses .NET strings by UTF-16 index.
+- `RegularExpressionOptions.LineSeparator` defaults to LF and selects the logical separator used by line-sensitive anchors, dot, and negated bracket expressions. `DotMatchesNull` is an explicit opt-in for consumers such as GNU Sed `--null-data`; multiline mode still excludes NUL when NUL is the selected separator.
+- `RegularExpressionInputOptions` selects byte-valued or UTF-8 decoding and an explicit malformed-input policy.
+- `RegularExpressionByteMatchOptions` addresses authoritative byte input by source-byte offset.
+
+A prepared input owns its byte snapshot. Caller mutation after `Prepare(...)` cannot alter subsequent matches. Matching allocates fresh per-call match context/state, so one prepared input and one compiled expression may be reused concurrently. Returned byte values do not expose the prepared object's private source snapshot for mutation.
+
+The CPU-bound asynchronous members do not call `Task.Run`. They preserve a consistent TAP-facing command API, honor cancellation throughout parsing and matching, and normally return an already-completed `ValueTask`.
+
+## Implemented grammar and matching behavior
+
+| Area | Supported behavior |
+|---|---|
+| Ordinary atoms | Unicode scalars and literal escaped characters |
+| Any-character operator | Basic and Extended exclude NUL by default and exclude the configured logical separator when line-sensitive; consumers may explicitly allow NUL for byte-record modes. GNU Emacs includes NUL by default and always excludes its configured logical separator. |
+| Bracket expressions | Matching and nonmatching lists, literal first `]`, literal first/last `-`, ranges, the 12 standard POSIX named classes, single-scalar collating symbols, and single-scalar equivalence classes; the Emacs profile treats backslash as an ordinary list character |
+| Repetition | BRE `*`, `\+`, `\?`, `\{m,n\}`; ERE `*`, `+`, `?`, `{m,n}`; Emacs hybrid forms; GNU interval limit 32,767; profile-controlled adjacent operators |
+| Grouping and alternation | BRE/Emacs escaped forms and ERE unescaped forms, with opening-order capture numbering |
+| Back-references | GNU `\1` through `\9`; a following digit remains ordinary |
+| Anchors and assertions | Contextual `^` and `$`, GNU whole-input `\`` and `\'`, word boundaries, word starts/ends, and GNU word/space classes |
+| Selection | Leftmost-longest whole match; equal-endpoint paths retain deterministic GNU/Gnulib greedy order |
+| Repeated captures | Last successful register values retained by repeated and nested captures |
+| Locale behavior | Literal, range, class, equivalence, case, and back-reference comparisons use the injected provider |
+| Operational controls | Cancellation during compile/decode/match, bounded syntax nesting, and a controlled match-state limit diagnostic |
+
+## 2.2.0 performance architecture
+
+Version `2.2.0` optimizes the shared matcher without introducing a second semantic engine.
+
+R2.1 adds conservative start-position acceleration. Complete literals and expressions with a provable required literal prefix may skip impossible unanchored start positions. If a required prefix cannot be proven, matching falls back to the ordinary matcher. Finite `MaximumMatchStates` also bypasses the accelerator so resource accounting remains compatible with the existing contract.
+
+R2.2 adds deterministic sequence specialization inside the general matcher. A `SequenceRegexNode` uses a single-state path only when every direct child is proven single-successor and non-capturing and `MaximumMatchStates` is unlimited. The accepted deterministic child classes are:
+
+- `EmptyRegexNode`;
+- `LiteralRegexNode`;
+- `DotRegexNode`;
+- `AssertionRegexNode`;
+- `CharacterClassRegexNode`; and
+- `BracketRegexNode`.
+
+Groups, alternation, repetition, backreferences, finite resource limits, and future unproven node types retain the general collection path at the containing sequence level. Nested deterministic sequences may still optimize independently inside a larger branching or capturing expression.
+
+The deterministic and general paths are implemented as separate iterators with a small non-iterator dispatcher. This separation is intentional: physical R2.2 measurements found that combining both algorithms in one iterator produced a repeatable fallback timing regression. The split implementation eliminated that regression while preserving and improving allocation reductions.
+
+R2.3 introduced the public immutable prepared-byte-input surface. A consumer that performs repeated searches over the same authoritative byte record can pay the snapshot/decode cost once and reuse that prepared representation across all subsequent matches. This is especially important for consumers such as `grep -o`, multi-pattern selection, and other match-iteration loops.
+
+These optimizations do not change the public regex language, match ordering, capture semantics, byte/source coordinates, cancellation contract, or diagnostics. The complete shared regex test suite remains the semantic authority.
+
+See the repository-root R2 performance roadmap and retained Candidate reports for quantitative evidence and benchmark methodology.
+
+## 2.2.1 byte-mode memory architecture
+
+Version `2.2.1` is a compatible implementation optimization of prepared byte-mode input construction.
+
+For `TextDecodingMode.Bytes`, the number of matching units is known exactly before preparation begins: every source byte is one matching unit. Version 2.2.0 constructed full-capacity `List<Rune>`, `List<bool>`, and `List<int>` buffers and then copied those buffers into final arrays. Version 2.2.1 instead allocates the final `Rune[]`, `bool[]`, and source-index `int[]` directly and populates them in one pass.
+
+The UTF-8 path is intentionally unchanged because its scalar count is not known without decoding and because malformed-input handling must preserve the established `PreserveBytes`, `Replace`, and `Throw` contracts.
+
+On the physical Windows reference host, preparing one 1 MiB byte-mode input through the public `RegularExpressionPreparedByteInput.Prepare(...)` API reduced managed allocation from about **19.01 MiB to 10.00 MiB**, a **47.36% reduction**. Both candidate timing passes were also materially faster than the fastest 2.2.0 baseline pass. The retained closure report is `Icod.CommandFramework-2.2.1-Byte-Input-Memory-Closure.md`.
+
+## String and authoritative-byte contract
+
+The two matching surfaces are intentionally distinct.
+
+### .NET string input
+
+String matching decodes input into Unicode scalars for evaluation. Public match and capture indices and lengths remain UTF-16 values so callers can slice the original .NET string. An unpaired UTF-16 code unit is evaluated as U+FFFD, while returned `Value` strings retain the original source code units.
+
+### Byte-preserving input
+
+Byte matching always retains the original `ReadOnlyMemory<byte>` as authoritative data. Public match and capture positions are zero-based source-byte offsets, and `Value` properties are exact slices of the original bytes.
+
+`RegularExpressionInputOptions.DecodingMode` has two modes:
+
+- `Bytes`: every source byte is one matching unit. This is the natural pairing for a C/POSIX byte-locale provider.
+- `Utf8`: valid UTF-8 becomes Unicode-scalar matching units while every unit retains its exact starting and ending byte boundary.
+
+A UTF-8 `StartByteOffset` must fall on one of those boundaries; splitting a multibyte scalar returns `InvalidStartByteOffset`.
+
+Malformed UTF-8 follows `InvalidEncodingPolicy` exactly:
+
+- `PreserveBytes`: each malformed source byte is one opaque matching unit. It can be consumed by dot or a suitable negated expression, but it is not silently converted into U+FFFD. Returned bytes remain exact.
+- `Replace`: each malformed source byte is evaluated as U+FFFD while the public match still returns that original byte.
+- `Throw`: matching throws `DecoderFallbackException` at the first malformed byte, consistent with the Shared text-unit contract.
+
+The regular-expression engine never chooses a locale from the input. Callers explicitly pair byte/UTF-8 decoding with an injected `IRegularExpressionCharacterClassProvider`. `PosixCLocaleRegularExpressionCharacterClassProvider` gives deterministic ASCII classification and ordinal collation; `UnicodeRegularExpressionCharacterClassProvider` gives the selected .NET culture profile.
+
+### Replacement output
+
+R1 does not define a cross-command replacement language. Sed, Ed, and other consumers own replacement parsing, occurrence selection, empty-match iteration, and output-encoding policy. A byte-preserving consumer should copy unmatched source slices verbatim, interpret captures through the exact byte slices returned here, and encode replacement literals according to its own explicit policy. This keeps regex selection common without moving command-specific substitution state into Shared.
+
+## Leftmost-longest and capture policy
+
+The engine does not stop after the first viable whole match. It enumerates viable states for each possible starting unit, selects the earliest start, and selects the greatest ending position at that start. When multiple paths reach the same greatest endpoint, ordered alternation and greedy repetition traversal preserve deterministic register values compatible with the Gnulib `re_match` behavior used by existing consumers.
+
+The matcher operates over one unit sequence regardless of whether those units came from UTF-16 scalars, UTF-8 scalars, byte-valued units, or preserved malformed bytes. Source-coordinate conversion occurs only when constructing the public match result.
+
+## Locale and classification providers
+
+Two fully managed providers are included. Both expose only the 12 standard POSIX bracket-class names (`alnum`, `alpha`, `blank`, `cntrl`, `digit`, `graph`, `lower`, `print`, `punct`, `space`, `upper`, and `xdigit`); GNU `\w` uses the separate word-character method and does not make `[[:word:]]` a valid POSIX class.
+
+- `UnicodeRegularExpressionCharacterClassProvider` uses `Rune` categories and a supplied `CultureInfo.CompareInfo`.
+- `PosixCLocaleRegularExpressionCharacterClassProvider` implements deterministic ASCII classification and ordinal collation.
+
+The BCL does not expose a locale's complete collating-element inventory. Single-scalar collating symbols and equivalence classes are supported. Multi-scalar collating elements produce `UnsupportedCollatingElement` rather than silently changing semantics.
+
+## Differences from `System.Text.RegularExpressions`
+
+1. BRE and ERE have profile-specific operator spelling rather than .NET syntax.
+2. POSIX/GNU requires leftmost-longest selection and observable capture-register behavior.
+3. GNU invalid-duplicate, interval, empty-range, word, and whole-input behavior is profile-driven.
+4. Classification and collation are delegated to an injectable locale policy.
+5. Matching coordinates may be UTF-16 indices or exact authoritative source-byte offsets.
+6. Malformed input policy is explicit and can preserve source bytes.
+7. Compile and match failures use stable diagnostics rather than `RegexParseException` or an exposed internal resource exception.
+8. Perl/.NET-only constructs such as lookaround, lazy quantifiers, inline options, named groups, and replacement syntax are not interpreted as GNU BRE/ERE features.
+
+## LineEditor Phase LE2 validation
+
+Phase LE2 audited this contract against the pinned GNU Sed 4.10 and GNU Ed 1.22.5 requirements. The dedicated `LineEditorRegularExpressionContractTests` acceptance suite verifies syntax separation, ERE operators, leftmost-longest selection, captures, locale injection, line-sensitive anchors, UTF-16 and exact-byte coordinates, malformed-byte preservation, deterministic diagnostics, cancellation, and resource limits.
+
+The audit found no missing cross-suite production contract. Sed-specific BRE/ERE option selection, empty-pattern reuse, address-versus-substitution context, repeated and zero-length match progression, replacement-template parsing, output encoding, and command diagnostics remain in `Icod.LineEditor.Sed`. Ed owns the analogous editor-session policies. See `Icod.LineEditor-LE2-Regex-Contract-Audit.md` for the handoff to Phase LE3.
+
+## Resource, cancellation, and platform policy
+
+`MaximumNestingDepth` bounds parenthesized syntax and nested adjacent repetition. `MaximumMatchStates` bounds one search; exceeding it returns `MatchResourceLimitExceeded`. Cancellation uses the normal `OperationCanceledException` contract during parsing, decoding, state expansion, and back-reference comparison.
+
+The implementation is fully managed and follows the same path on `windows-latest`, `ubuntu-latest`, and `macos-latest`. Native regex libraries are not invoked, and production consumers must surface controlled diagnostics rather than silently substituting another engine.
