@@ -60,15 +60,15 @@ function Assert-PassingTests {
 }
 
 function Read-PassingTestOutcomes {
-    param([string]$TrxPath)
+    param([string]$TrxPath, [int]$ExpectedCount)
     [xml]$results = Get-Content $TrxPath -Raw
     $counters = $results.SelectSingleNode("//*[local-name()='Counters']")
     if ($null -eq $counters) { throw "Missing consumer test counters in $TrxPath" }
     $total = [int]$counters.GetAttribute('total')
-    if ($total -le 0 -or [int]$counters.GetAttribute('passed') -ne $total -or
+    if ($total -ne $ExpectedCount -or [int]$counters.GetAttribute('passed') -ne $total -or
         [int]$counters.GetAttribute('failed') -ne 0 -or
         [int]$counters.GetAttribute('skipped') -ne 0) {
-        throw "Consumer test result changed: expected all cases to pass in $TrxPath"
+        throw "Consumer test result changed: expected $ExpectedCount passes in $TrxPath"
     }
     $outcomes = @($results.SelectNodes("//*[local-name()='UnitTestResult']") |
         ForEach-Object { $_.GetAttribute('testName') + "`t" + $_.GetAttribute('outcome') } |
@@ -122,15 +122,22 @@ try {
 
     # These commands use the two shared Text enums forwarded by the bridge,
     # even though they do not call the extracted regex engine directly.
-    $textConsumerSuites = @('Cut', 'Expand', 'Unexpand', 'Fold', 'Fmt')
+    $textConsumerSuites = @(
+        @{ Name = 'Cut'; ExpectedCases = 28 },
+        @{ Name = 'Expand'; ExpectedCases = 18 },
+        @{ Name = 'Unexpand'; ExpectedCases = 20 },
+        @{ Name = 'Fold'; ExpectedCases = 18 },
+        @{ Name = 'Fmt'; ExpectedCases = 29 }
+    )
     $textConsumerOutcomes = @{}
-    foreach ($name in $textConsumerSuites) {
+    foreach ($suite in $textConsumerSuites) {
+        $name = $suite.Name
         $project = Join-Path $coreutilsRoot "tests/$name.Tests/Icod.CoreUtils.$name.Tests.csproj"
         $results = Join-Path $scratch "CoreUtils.$name-original-results"
         Invoke-Checked -Executable 'dotnet' -Arguments @('restore', $project, '-m:1', '--configfile', $config)
         Invoke-Checked -Executable 'dotnet' -Arguments @('test', $project, '-c', 'Staging', '--no-restore',
             '-m:1', '--logger', 'trx;LogFileName=original.trx', '--results-directory', $results)
-        $textConsumerOutcomes[$name] = @(Read-PassingTestOutcomes (Join-Path $results 'original.trx'))
+        $textConsumerOutcomes[$name] = @(Read-PassingTestOutcomes (Join-Path $results 'original.trx') $suite.ExpectedCases)
     }
 
     $procpsSuites = @(
@@ -244,7 +251,8 @@ try {
         Assert-PassingTests -TrxPath (Join-Path $results 'bridged.trx') -ExpectedCount $suite.ExpectedCases
     }
 
-    foreach ($name in $textConsumerSuites) {
+    foreach ($suite in $textConsumerSuites) {
+        $name = $suite.Name
         $publishedOutput = Join-Path $coreutilsRoot "tests/$name.Tests/bin/Staging/net10.0"
         $substitutedOutput = Join-Path $scratch "CoreUtils.$name.Tests"
         New-Item -ItemType Directory -Path $substitutedOutput | Out-Null
@@ -255,7 +263,7 @@ try {
         Invoke-Checked -Executable 'dotnet' -Arguments @('vstest',
             (Join-Path $substitutedOutput "Icod.CoreUtils.$name.Tests.dll"),
             '--Logger:trx;LogFileName=bridged.trx', "--ResultsDirectory:$results")
-        $bridgedOutcomes = @(Read-PassingTestOutcomes (Join-Path $results 'bridged.trx'))
+        $bridgedOutcomes = @(Read-PassingTestOutcomes (Join-Path $results 'bridged.trx') $suite.ExpectedCases)
         $originalOutcomes = [string[]]$textConsumerOutcomes[$name]
         $differences = @(Compare-Object -ReferenceObject $originalOutcomes -DifferenceObject $bridgedOutcomes -CaseSensitive)
         if ($differences.Count -ne 0) {
@@ -320,7 +328,7 @@ try {
             '--Logger:trx;LogFileName=bridged.trx', "--ResultsDirectory:$results")
         Assert-PassingTests -TrxPath (Join-Path $results 'bridged.trx') -ExpectedCount $suite.ExpectedCases
     }
-    Write-Host 'All 611 regex consumer cases and the additional CoreUtils shared-Text consumer cases passed with published and package-backed bridge assemblies.'
+    Write-Host 'All 724 source-pinned consumer cases passed with published and package-backed bridge assemblies, including 113 CoreUtils shared-Text cases.'
 } finally {
     if ($null -eq $previousPackages) {
         Remove-Item Env:NUGET_PACKAGES -ErrorAction SilentlyContinue
