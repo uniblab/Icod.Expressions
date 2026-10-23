@@ -28,10 +28,15 @@ cp "$work/strict-test-regex.c" "$work/oracle/gltests/test-regex.c"
   make -j2 -C gllib > "$work/gllib.log"
   make -j2 -C gltests test-regex > "$work/test-build.log"
   test -s gllib/regex.o
+  printf 'Compiled object symbols:\n'
+  nm gllib/regex.o | grep regcomp || :
+  printf 'Test binary symbols:\n'
+  nm gltests/test-regex | grep regcomp || :
+  printf 'Exact-capture test output:\n'
+  LC_ALL=C ./gltests/test-regex
   regex_symbol=$(nm gllib/regex.o | grep -E ' [TW] [^ ]*regcomp$' | head -n 1)
   test -n "$regex_symbol"
   symbol_name=${regex_symbol##* }
   nm gltests/test-regex | grep -F " $symbol_name" | grep -Eq ' [TW] '
   printf 'Pinned Gnulib %s; included regex.o linked as %s; LC_ALL=C\n' "$revision" "$symbol_name"
-  LC_ALL=C ./gltests/test-regex
 )
