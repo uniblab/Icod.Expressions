@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>13.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>Icod.CommandFramework</AssemblyName>
+    <Version>2.2.1</Version>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(CommandFrameworkRoot)/src/**/*.cs"
+             Exclude="$(CommandFrameworkRoot)/src/RegularExpressions/**/*.cs;$(CommandFrameworkRoot)/src/Text/InvalidEncodingPolicy.cs;$(CommandFrameworkRoot)/src/Text/TextDecodingMode.cs" />
+    <PackageReference Include="Icod.Expressions" Version="0.1.0-alpha.1" />
+    <PackageReference Include="Icod.Path" Version="1.1.0" />
+  </ItemGroup>
+</Project>

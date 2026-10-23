@@ -109,6 +109,16 @@ dotnet restore samples/PackageSmoke/PackageSmoke.csproj --source artifacts
 dotnet run --project samples/PackageSmoke/PackageSmoke.csproj -c Staging -f net10.0
 ```
 
+On Linux with .NET 10, the source-pinned CoreUtils `expr` command probe also
+uses that unpublished package. It fetches two pinned public source commits,
+builds a temporary forwarding bridge, and runs the original `expr` tests:
+
+```sh
+sh tools/ConsumerBridgeProbe/run.sh artifacts
+```
+
+The bridge exists only in the probe output; it is not a shipped package.
+
 ## COMPATIBILITY AND LIMITS
 
 The [extraction readiness record](https://github.com/uniblab/Icod.Expressions/blob/main/doc/EXTRACTION-READINESS.md) links the
