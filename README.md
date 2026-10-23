@@ -9,15 +9,16 @@ authoritative byte input.
 
 This repository contains the semantics-neutral extraction of the regex engine
 from [`Icod.CommandFramework`](https://github.com/uniblab/Icod.CommandFramework).
-The current `0.1.0-alpha.1` package is a **local development candidate**; it
-has not been published. The copied public types retain their original
+The `0.1.0-alpha.1` package is a **prerelease extraction baseline**. The
+[alpha release gate](https://github.com/uniblab/Icod.Expressions/blob/main/doc/ALPHA-RELEASE.md) records its publication and
+migration sequence. The copied public types retain their original
 `Icod.CommandFramework.RegularExpressions` and `Icod.CommandFramework.Text`
 namespaces while extraction parity and the later compatibility bridge are
 reviewed. Do not reference both assemblies' duplicate type names in one
 consumer without an explicit migration plan.
 
-The existing CommandFramework implementation remains in place. This PR does
-not remove it, redirect consumers, or fix its known behavior differences.
+The existing CommandFramework implementation remains in place. Extraction
+does not remove it, redirect consumers, or fix its known behavior differences.
 
 ## SYNOPSIS
 
@@ -157,8 +158,8 @@ The bridge DLL and package exist only in disposable probe outputs; neither is sh
 
 ## COMPATIBILITY AND LIMITS
 
-The [extraction readiness record](doc/EXTRACTION-READINESS.md) and
-[A05 final candidate](doc/Icod.Expressions-A05-Final-Candidate.md) link the
+The [extraction readiness record](https://github.com/uniblab/Icod.Expressions/blob/main/doc/EXTRACTION-READINESS.md) and
+[accepted A05 baseline](https://github.com/uniblab/Icod.Expressions/blob/main/doc/Icod.Expressions-A05-Final-Candidate.md) link the
 copy-time source, API, tests, fixtures, reference revisions, and known gaps.
 Bounded E02 parity over the final A05 corpus passed. The bounded A05 extraction
 baseline was accepted on 2026-10-23 with its classified limits; this does not

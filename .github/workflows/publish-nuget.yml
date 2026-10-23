@@ -1,0 +1,92 @@
+name: publish-nuget
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Package version already recorded in the project file
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main' && github.repository == 'uniblab/Icod.Expressions'
+    runs-on: ubuntu-latest
+    environment: nuget
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+      - name: Verify requested version
+        shell: pwsh
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+          NUGET_USER: ${{ vars.NUGET_USER }}
+        run: |
+          [xml]$project = Get-Content src/Icod.Expressions/Icod.Expressions.csproj -Raw
+          $version = [string]$project.SelectSingleNode('/Project/PropertyGroup/Version').InnerText
+          if ($version -ne $env:REQUESTED_VERSION -or $version -notmatch '^0\.1\.0-alpha\.1$') {
+            throw "The requested release must match the reviewed alpha version in the project."
+          }
+          if ([string]::IsNullOrWhiteSpace($env:NUGET_USER)) {
+            throw 'Set the NUGET_USER repository variable to the nuget.org profile name.'
+          }
+      - name: Restore and build
+        run: |
+          dotnet restore Icod.Expressions.sln
+          dotnet build Icod.Expressions.sln -c Release --no-restore -p:ContinuousIntegrationBuild=true
+      - name: Run focused tests on each target
+        shell: pwsh
+        run: |
+          foreach ($framework in @('net8.0', 'net9.0', 'net10.0')) {
+            dotnet test tests/Icod.Expressions.Tests/Icod.Expressions.Tests.csproj -c Release -f $framework --no-build --no-restore --logger "trx;LogFileName=$framework.trx"
+            if ($LASTEXITCODE -ne 0) { throw "Test run failed: $framework" }
+            [xml]$results = Get-Content "tests/Icod.Expressions.Tests/TestResults/$framework.trx" -Raw
+            $counters = $results.SelectSingleNode("//*[local-name()='Counters']")
+            if ($null -eq $counters -or [int]$counters.GetAttribute('total') -ne 214 -or [int]$counters.GetAttribute('passed') -ne 214 -or [int]$counters.GetAttribute('failed') -ne 0) {
+              throw "Characterization test count drift: $framework"
+            }
+          }
+      - name: Verify frozen extraction and fixture
+        shell: bash
+        run: |
+          set -e
+          sh tools/verify-a05-candidate.sh
+          for framework in net8.0 net9.0 net10.0; do
+            dotnet run --project tools/RegularExpressionParityBaseline/RegularExpressionParityBaseline.csproj -c Release -f "$framework" --no-build --no-restore -- --verify doc/Icod.Expressions-A04-Parity-Baseline.jsonl
+          done
+      - name: Pack alpha
+        run: dotnet pack src/Icod.Expressions/Icod.Expressions.csproj -c Release --no-build --no-restore -o artifacts
+      - name: Verify package-only client
+        shell: bash
+        run: |
+          set -e
+          dotnet restore samples/PackageSmoke/PackageSmoke.csproj --source artifacts
+          dotnet build samples/PackageSmoke/PackageSmoke.csproj -c Release --no-restore
+          for framework in net8.0 net9.0 net10.0; do
+            dotnet run --project samples/PackageSmoke/PackageSmoke.csproj -c Release -f "$framework" --no-build --no-restore
+          done
+      - name: Obtain short-lived NuGet credential
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ vars.NUGET_USER }}
+      - name: Publish exact package
+        env:
+          PACKAGE_VERSION: ${{ inputs.version }}
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+        shell: bash
+        run: |
+          set -e
+          test -f "artifacts/Icod.Expressions.${PACKAGE_VERSION}.nupkg"
+          dotnet nuget push "artifacts/Icod.Expressions.${PACKAGE_VERSION}.nupkg" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json
