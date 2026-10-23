@@ -140,8 +140,10 @@ The same pinned CoreUtils checkout now adds `nl`, `csplit`, and `ptx` original
 command suites (35, 43, and 46 cases). They exercise GNU Basic line styles,
 regex split controls, and prepared byte input respectively. All 124 cases
 passed locally against the published dependency and in separate scratch
-outputs with the candidate package and temporary bridge. The extended
-source-pinned CI gate is pending. `tac` remains deferred under
+outputs with the candidate package and temporary bridge.
+[CI run 39890569950](https://github.com/uniblab/Icod.Expressions/actions/runs/39890569950)
+passed the full 611-case source-pinned gate, including those commands and
+unfiltered Grep. `tac` remains deferred under
 [CoreUtils #190](https://github.com/uniblab/Icod.CoreUtils/issues/190).
 
 These counts describe the original suites, not the number of regex calls.
@@ -150,10 +152,10 @@ the substituted test-host outputs and assembly-origin probe are the
 forwarding evidence. Each consumer's uncovered options still need audit.
 
 This is an executable gate in the Expressions PR's Linux Staging job. It
-validates five source-pinned consumer families, with the additional CoreUtils
-commands pending hosted CI. It is not a distributable bridge package or a
-cross-platform forwarding result. The bridge remains subject to a separate
-CommandFramework review after the remaining A03 and A05/E02 gates.
+validates five source-pinned consumer families. It is not a distributable
+bridge package or a cross-platform forwarding result. The bridge remains
+subject to a separate CommandFramework review after the remaining A03 and
+A05/E02 gates.
 
 ## Separate, reviewable bridge sequence
 
