@@ -14,6 +14,7 @@ trap 'rm -rf "$scratch"' EXIT HUP INT TERM
 
 command_framework_sha=e1e118f18246eed290bee4758325a20e302bfb92
 coreutils_sha=2c47cd67bae490dedf16234d8460c8b9da8d3404
+procps_sha=e802ac03d941b1ba9fbe30e8f9c68fc7efcf3cff
 
 fetch_source() {
   target=$1
@@ -27,15 +28,27 @@ fetch_source() {
 
 command_framework_root="$scratch/Icod.CommandFramework"
 coreutils_root="$scratch/Icod.CoreUtils"
+procps_root="$scratch/Icod.ProcPs"
 fetch_source "$command_framework_root" https://github.com/uniblab/Icod.CommandFramework.git "$command_framework_sha"
 fetch_source "$coreutils_root" https://github.com/uniblab/Icod.CoreUtils.git "$coreutils_sha"
+fetch_source "$procps_root" https://github.com/uniblab/Icod.ProcPs.git "$procps_sha"
 test "$(git -C "$command_framework_root" rev-parse HEAD)" = "$command_framework_sha"
 test "$(git -C "$coreutils_root" rev-parse HEAD)" = "$coreutils_sha"
+test "$(git -C "$procps_root" rev-parse HEAD)" = "$procps_sha"
 
 original_tests="$coreutils_root/tests/Expr.Tests/Icod.CoreUtils.Expr.Tests.csproj"
 "$dotnet_command" restore "$original_tests" -m:1 --ignore-failed-sources
 "$dotnet_command" test "$original_tests" -c Staging --no-restore -m:1 -v minimal
 original_output="$coreutils_root/tests/Expr.Tests/bin/Staging/net10.0"
+
+# These three command projects compile the same GNU Extended adapter against
+# the published CommandFramework 2.1.0 package. Keep their original binaries
+# for the later assembly substitution; do not edit their project references.
+for command in Pgrep Pkill PidWait; do
+  project="$procps_root/tests/ProcPs.$command.Tests/Icod.ProcPs.$command.Tests.csproj"
+  "$dotnet_command" restore "$project" -m:1 --ignore-failed-sources
+  "$dotnet_command" test "$project" -c Staging --no-restore -m:1 -v minimal
+done
 
 # Use an isolated package cache so this run cannot reuse a previous alpha
 # package with the same version from a developer's global NuGet cache.
@@ -79,4 +92,15 @@ cp "$bridge_output/Icod.CommandFramework.dll" "$scratch/ExprTests/"
 cp "$probe_output/Icod.Expressions.dll" "$scratch/ExprTests/"
 "$dotnet_command" vstest "$scratch/ExprTests/Icod.CoreUtils.Expr.Tests.dll" \
   --Logger:'console;verbosity=minimal'
-echo "Source-pinned CoreUtils expr consumer passed with the package-backed scratch bridge."
+
+for command in Pgrep Pkill PidWait; do
+  original_procps_output="$procps_root/tests/ProcPs.$command.Tests/bin/Staging/net10.0"
+  bridged_procps_output="$scratch/ProcPs.$command.Tests"
+  mkdir -p "$bridged_procps_output"
+  cp -a "$original_procps_output/." "$bridged_procps_output/"
+  cp "$bridge_output/Icod.CommandFramework.dll" "$bridged_procps_output/"
+  cp "$probe_output/Icod.Expressions.dll" "$bridged_procps_output/"
+  "$dotnet_command" vstest "$bridged_procps_output/Icod.ProcPs.$command.Tests.dll" \
+    --Logger:'console;verbosity=minimal'
+done
+echo "Source-pinned CoreUtils expr and ProcPs command consumers passed with the package-backed scratch bridge."

@@ -77,7 +77,7 @@ consumer. By itself it was **not** a package-backed or CI gate, nor proof for
 other consumers, frameworks, platforms, and all forwarded API members. Do
 not merge a CommandFramework bridge based solely on this result.
 
-## Reproducible package-backed `expr` gate
+## Reproducible package-backed consumer gate
 
 `tools/ConsumerBridgeProbe/run.sh` makes the next check repeatable on Linux
 with .NET 10. After packing the unpublished `0.1.0-alpha.1` candidate into
@@ -88,8 +88,9 @@ sh tools/ConsumerBridgeProbe/run.sh artifacts
 ```
 
 The script fetches the exact CommandFramework source commit
-`e1e118f18246eed290bee4758325a20e302bfb92` and CoreUtils commit
-`2c47cd67bae490dedf16234d8460c8b9da8d3404` into temporary directories.
+`e1e118f18246eed290bee4758325a20e302bfb92`, CoreUtils commit
+`2c47cd67bae490dedf16234d8460c8b9da8d3404`, and ProcPs commit
+`e802ac03d941b1ba9fbe30e8f9c68fc7efcf3cff` into temporary directories.
 It builds and runs the unchanged CoreUtils `expr` tests against the published
 CommandFramework 2.2.1 package (50 cases). It then uses an isolated NuGet
 cache for the candidate package, so an earlier alpha with the same version
@@ -99,12 +100,18 @@ type forwards, resolving `Icod.Expressions` from the **local NuGet package**.
 An old-package-compiled probe must reject the unbridged type identity, then
 report the forwarded provider from the package and `CommandContext` from the
 temporary bridge. The original 50 consumer tests run again with those
-assemblies substituted in a temporary test output. The copied regex source
+assemblies substituted in a temporary test output. ProcPs's unchanged
+`pgrep`, `pkill`, and `pidwait` projects compile against their published
+CommandFramework 2.1.0 dependency, and their 11, 7, and 6 original command
+tests run first with that package and then with the same candidate package
+and temporary 2.2.1.0 forwarding assembly substituted in separate outputs.
+They cover GNU Extended alternation, process matching and no-match paths;
+they do not exhaust regex options or diagnostics. The copied regex source
 and the original consumer binaries are not edited.
 
 This is an executable gate in the Expressions PR's Linux Staging job. It
-validates one package-backed consumer path, not a distributable bridge
-package, other consumers, or cross-platform forwarding. The bridge is still
+validates two source-pinned consumer families, not a distributable bridge
+package, the remaining consumers, or cross-platform forwarding. The bridge is still
 subject to a separate CommandFramework review after the remaining A03 and
 A05/E02 gates.
 
