@@ -9,7 +9,10 @@ CommandFramework ownership change remain separate reviews.
 
 The [FinalParity gate](../tools/FinalParity/run.ps1) fetches the in-situ
 CommandFramework audit commit `532850103e69e5d3d09367c64f929ddecaf1fe69`
-into ignored scratch space. Its production regex tree has identity
+into ignored scratch space. The commit is retained by the dedicated
+[CommandFramework audit ref](https://github.com/uniblab/Icod.CommandFramework/tree/audit/icod-expressions-a05-frozen),
+so the gate remains reproducible if PR #16 is squash merged and its working
+branch is later removed. Its production regex tree has identity
 `bfe11d5f5ff6a75d75de68573edea6125706b87e`; the underlying production
 source snapshot remains `e1e118f18246eed290bee4758325a20e302bfb92`.
 The gate verifies all 35 source/README/Text-enum blobs against the extraction
