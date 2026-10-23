@@ -68,31 +68,29 @@ temporary bridge built from the original non-regex source. A production
 bridge still needs a separate reviewed CommandFramework PR and the complete
 consumer gate.
 
-## Cross-platform CoreUtils, DiffUtils, and LineEditor consumer gate
+## Cross-platform pinned consumer gate
 
 `tools/ConsumerBridgeProbe/run-cross-platform.ps1` fetches the same pinned
-CommandFramework, CoreUtils, DiffUtils, and LineEditor source commits used by
-the Linux gate below. It builds the unchanged CoreUtils `expr` (50), DiffUtils
-`diff` (22) and `sdiff` (40), and LineEditor Sed (116), Ed.Shared (68), Ed
-(26), and Red (28) tests against their published CommandFramework 2.2.1
-or 2.1.0 dependencies and requires all 350 passes. It builds the **full
-scratch bridge** from CommandFramework's non-regex source and the local
-Expressions package. An old-compiled assembly-origin probe must reject the
-original regex identity and accept the forwarded provider with
-`CommandContext` still in the bridge. The original test binaries then run in
-separate outputs with the bridge and candidate package; the same 350 passes
-are required again. The Staging CI matrix runs this on Windows,
-macOS, and Linux. After packing the candidate, it can be run locally with
-PowerShell:
+CommandFramework and five consumer source commits used by the Linux gate
+below. It builds unchanged CoreUtils (174), ProcPs (24), DiffUtils (62),
+Grep (113), and LineEditor (238) tests against their published
+CommandFramework 2.2.1 or 2.1.0 dependencies and requires all 611 passes.
+It builds the **full scratch bridge** from CommandFramework's non-regex
+source and the local Expressions package. An old-compiled assembly-origin
+probe must reject the original regex identity and accept the forwarded
+provider with `CommandContext` still in the bridge. The original test
+binaries then run in separate outputs with the bridge and candidate package;
+the same 611 passes are required again. The Staging CI matrix runs this on
+Windows, macOS, and Linux. After packing the candidate, run with PowerShell:
 
 ```powershell
 ./tools/ConsumerBridgeProbe/run-cross-platform.ps1 -PackageFeed artifacts
 ```
 
-This validates CoreUtils `expr`, DiffUtils, and LineEditor across three
-platforms. It does not establish that ProcPs and Grep pass outside the
-broader Linux gate, or that the scratch bridge is ready for distribution.
-The direct `diff -I` correction remains deferred to
+This validates the pinned original test corpus across three platforms. The
+tests do not exhaust every regex option or caller, and the scratch bridge is
+not ready for distribution. The direct `diff -I` correction remains deferred
+to
 [DiffUtils #8](https://github.com/uniblab/Icod.DiffUtils/issues/8).
 
 ## Source-pinned CoreUtils `expr` command probe

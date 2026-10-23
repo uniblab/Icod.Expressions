@@ -119,11 +119,11 @@ Expressions package. CI runs it on Windows, macOS, and Linux:
 ./tools/ForwardingSmoke/run.ps1 -PackageFeed artifacts
 ```
 
-The cross-platform consumer probe runs CoreUtils `expr` (50), DiffUtils
-`diff` (22) and `sdiff` (40), and LineEditor Sed (116), Ed.Shared (68), Ed
-(26), and Red (28) old-package-compiled tests before and after replacing
-the original CommandFramework DLL with a temporary full bridge backed by
-the local package (350 cases per run):
+The cross-platform consumer probe runs 611 old-package-compiled cases from
+CoreUtils (174), ProcPs (24), DiffUtils (62), Grep (113), and LineEditor
+(238) before and after replacing the original CommandFramework DLL with a
+temporary full bridge backed by the local package. CI runs it on Windows,
+macOS, and Linux:
 
 ```powershell
 ./tools/ConsumerBridgeProbe/run-cross-platform.ps1 -PackageFeed artifacts
