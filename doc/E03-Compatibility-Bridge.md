@@ -44,6 +44,39 @@ non-regex CommandFramework APIs, and it did not load the five real consumers
 or verify every forwarded type at runtime. A production bridge requires its
 own old-client compile/load regression in the separate CommandFramework PR.
 
+## Source-pinned CoreUtils `expr` command probe
+
+A second, still isolated Linux/.NET 10 probe used
+[`Icod.CoreUtils` commit `2c47cd67bae490dedf16234d8460c8b9da8d3404`](https://github.com/uniblab/Icod.CoreUtils/tree/2c47cd67bae490dedf16234d8460c8b9da8d3404).
+Its unmodified `expr` project and 50 command tests were compiled against the
+published CommandFramework 2.2.1 package. The ordinary test run passed 50/50.
+In a separate scratch output directory, the compiled binaries were run with
+a temporary `Icod.CommandFramework` 2.2.1.0 bridge assembled from the
+unchanged CommandFramework non-regex source. The bridge excludes all
+`src/RegularExpressions/*.cs` and the original `InvalidEncodingPolicy` and
+`TextDecodingMode` declarations, forwards the 24 public regex types and two
+enums, and references the local `Icod.Expressions` assembly. It compiled with
+zero warnings or errors. No repository source, package, or consumer project
+was edited to make the bridge.
+
+All 50 original `expr` tests passed again under this replacement. They include
+actual command invocation, first-capture and null-capture output, anchored
+match length, invalid-pattern status, and the `match` keyword. A scratch-only
+test compiled against the original package checked that the forwarded
+`GnuBasicRegularExpressionProvider` resolves from the copied
+`Icod.Expressions.dll` in the test output while `CommandContext` remains in
+`Icod.CommandFramework.dll`; the combined run passed 51/51. That extra test
+failed against the original package as intended. Removing the Expressions
+DLL from the bridged output made the extra test fail with
+`FileNotFoundException`, confirming the copy was exercised rather than the
+old regex implementation. The test sources in CoreUtils were not committed.
+
+The probe used a direct project reference to the extracted assembly in the
+temporary bridge and a published package reference in the original consumer;
+it is **not** a package-only bridge, a CI gate, or proof for other consumers,
+frameworks, platforms, and all forwarded API members. Do not merge a
+CommandFramework bridge based solely on this result.
+
 ## Separate, reviewable bridge sequence
 
 1. Keep the extracted source and its original namespaces in this package
