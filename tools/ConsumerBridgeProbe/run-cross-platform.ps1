@@ -59,6 +59,24 @@ function Assert-PassingTests {
     }
 }
 
+function Read-PassingTestOutcomes {
+    param([string]$TrxPath)
+    [xml]$results = Get-Content $TrxPath -Raw
+    $counters = $results.SelectSingleNode("//*[local-name()='Counters']")
+    if ($null -eq $counters) { throw "Missing consumer test counters in $TrxPath" }
+    $total = [int]$counters.GetAttribute('total')
+    if ($total -le 0 -or [int]$counters.GetAttribute('passed') -ne $total -or
+        [int]$counters.GetAttribute('failed') -ne 0 -or
+        [int]$counters.GetAttribute('skipped') -ne 0) {
+        throw "Consumer test result changed: expected all cases to pass in $TrxPath"
+    }
+    $outcomes = @($results.SelectNodes("//*[local-name()='UnitTestResult']") |
+        ForEach-Object { $_.GetAttribute('testName') + "`t" + $_.GetAttribute('outcome') } |
+        Sort-Object -CaseSensitive)
+    if ($outcomes.Count -ne $total) { throw "Missing consumer test identities in $TrxPath" }
+    return $outcomes
+}
+
 try {
     $frameworkRoot = Join-Path $scratch 'Icod.CommandFramework'
     $coreutilsRoot = Join-Path $scratch 'Icod.CoreUtils'
@@ -100,6 +118,19 @@ try {
         Invoke-Checked -Executable 'dotnet' -Arguments @('test', $project, '-c', 'Staging', '--no-restore',
             '-m:1', '--logger', 'trx;LogFileName=original.trx', '--results-directory', $results)
         Assert-PassingTests -TrxPath (Join-Path $results 'original.trx') -ExpectedCount $suite.ExpectedCases
+    }
+
+    # These commands use the two shared Text enums forwarded by the bridge,
+    # even though they do not call the extracted regex engine directly.
+    $textConsumerSuites = @('Cut', 'Expand', 'Unexpand', 'Fold', 'Fmt')
+    $textConsumerOutcomes = @{}
+    foreach ($name in $textConsumerSuites) {
+        $project = Join-Path $coreutilsRoot "tests/$name.Tests/Icod.CoreUtils.$name.Tests.csproj"
+        $results = Join-Path $scratch "CoreUtils.$name-original-results"
+        Invoke-Checked -Executable 'dotnet' -Arguments @('restore', $project, '-m:1', '--configfile', $config)
+        Invoke-Checked -Executable 'dotnet' -Arguments @('test', $project, '-c', 'Staging', '--no-restore',
+            '-m:1', '--logger', 'trx;LogFileName=original.trx', '--results-directory', $results)
+        $textConsumerOutcomes[$name] = @(Read-PassingTestOutcomes (Join-Path $results 'original.trx'))
     }
 
     $procpsSuites = @(
@@ -213,6 +244,26 @@ try {
         Assert-PassingTests -TrxPath (Join-Path $results 'bridged.trx') -ExpectedCount $suite.ExpectedCases
     }
 
+    foreach ($name in $textConsumerSuites) {
+        $publishedOutput = Join-Path $coreutilsRoot "tests/$name.Tests/bin/Staging/net10.0"
+        $substitutedOutput = Join-Path $scratch "CoreUtils.$name.Tests"
+        New-Item -ItemType Directory -Path $substitutedOutput | Out-Null
+        Copy-Item (Join-Path $publishedOutput '*') -Destination $substitutedOutput -Recurse -Force
+        Copy-Item $bridgeDll -Destination (Join-Path $substitutedOutput 'Icod.CommandFramework.dll') -Force
+        Copy-Item (Join-Path $probeOutput 'Icod.Expressions.dll') -Destination $substitutedOutput -Force
+        $results = Join-Path $scratch "CoreUtils.$name-bridged-results"
+        Invoke-Checked -Executable 'dotnet' -Arguments @('vstest',
+            (Join-Path $substitutedOutput "Icod.CoreUtils.$name.Tests.dll"),
+            '--Logger:trx;LogFileName=bridged.trx', "--ResultsDirectory:$results")
+        $bridgedOutcomes = @(Read-PassingTestOutcomes (Join-Path $results 'bridged.trx'))
+        $originalOutcomes = [string[]]$textConsumerOutcomes[$name]
+        $differences = @(Compare-Object -ReferenceObject $originalOutcomes -DifferenceObject $bridgedOutcomes -CaseSensitive)
+        if ($differences.Count -ne 0) {
+            throw "CoreUtils $name test identities/outcomes changed with the bridge: $($differences[0])"
+        }
+        Write-Host "CoreUtils $name shared-Text consumer: $($bridgedOutcomes.Count) identical passing cases."
+    }
+
     foreach ($suite in $procpsSuites) {
         $name = $suite.Name
         $publishedOutput = Join-Path $procpsRoot "tests/ProcPs.$name.Tests/bin/Staging/net10.0"
@@ -269,7 +320,7 @@ try {
             '--Logger:trx;LogFileName=bridged.trx', "--ResultsDirectory:$results")
         Assert-PassingTests -TrxPath (Join-Path $results 'bridged.trx') -ExpectedCount $suite.ExpectedCases
     }
-    Write-Host 'All 611 original CoreUtils, ProcPs, DiffUtils, Grep, and LineEditor binaries passed with published and package-backed bridge assemblies.'
+    Write-Host 'All 611 regex consumer cases and the additional CoreUtils shared-Text consumer cases passed with published and package-backed bridge assemblies.'
 } finally {
     if ($null -eq $previousPackages) {
         Remove-Item Env:NUGET_PACKAGES -ErrorAction SilentlyContinue
