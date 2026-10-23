@@ -160,7 +160,7 @@ jobs:
           set -euo pipefail
           package="artifacts/package/Icod.Expressions.${PACKAGE_VERSION}.nupkg"
           test -f "$package"
-          dotnet nuget push "$package" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json
+          dotnet nuget push "$package" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate
 
   publish-github-packages:
     needs: [metadata, package]
@@ -185,7 +185,7 @@ jobs:
           set -euo pipefail
           package="artifacts/package/Icod.Expressions.${PACKAGE_VERSION}.nupkg"
           test -f "$package"
-          dotnet nuget push "$package" --api-key "$GITHUB_TOKEN" --source "https://nuget.pkg.github.com/${GITHUB_REPOSITORY_OWNER}/index.json"
+          dotnet nuget push "$package" --api-key "$GITHUB_TOKEN" --source "https://nuget.pkg.github.com/${GITHUB_REPOSITORY_OWNER}/index.json" --skip-duplicate
 
   github-release:
     needs: [metadata, package, publish-nuget, publish-github-packages]
