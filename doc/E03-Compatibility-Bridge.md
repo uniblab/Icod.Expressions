@@ -111,9 +111,10 @@ they do not exhaust regex options or diagnostics. DiffUtils's unchanged
 `diff` and `sdiff` projects compile against published CommandFramework 2.1.0;
 their 22 and 40 original command tests run with that package and then with
 the candidate package and scratch bridge. The `sdiff` suite has two `-I`
-ignored-line regex cases; the `diff` suite does not fully characterize its
-`-I` and `-F` regex behavior. The copied regex source and original consumer
-binaries are not edited.
+ignored-line regex cases; the `diff` suite checks `-F` function-context
+matching but has no direct `-I` ignored-line case. That consumer follow-up is
+tracked in [DiffUtils #8](https://github.com/uniblab/Icod.DiffUtils/issues/8).
+The copied regex source and original consumer binaries are not edited.
 
 This is an executable gate in the Expressions PR's Linux Staging job. It
 validates three source-pinned consumer families, not a distributable bridge
