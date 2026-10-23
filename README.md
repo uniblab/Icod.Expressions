@@ -119,9 +119,10 @@ Expressions package. CI runs it on Windows, macOS, and Linux:
 ./tools/ForwardingSmoke/run.ps1 -PackageFeed artifacts
 ```
 
-The cross-platform CoreUtils `expr` probe runs its 50 old-package-compiled
-tests before and after replacing the original CommandFramework DLL with a
-temporary full bridge backed by the local package:
+The cross-platform consumer probe runs CoreUtils `expr` (50), DiffUtils
+`diff` (22), and `sdiff` (40) old-package-compiled tests before and after
+replacing the original CommandFramework DLL with a temporary full bridge
+backed by the local package:
 
 ```powershell
 ./tools/ConsumerBridgeProbe/run-cross-platform.ps1 -PackageFeed artifacts

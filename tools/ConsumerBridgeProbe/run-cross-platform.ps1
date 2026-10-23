@@ -48,14 +48,14 @@ function Fetch-PinnedSource {
     }
 }
 
-function Assert-FiftyPassingTests {
-    param([string]$TrxPath)
+function Assert-PassingTests {
+    param([string]$TrxPath, [int]$ExpectedCount)
     [xml]$results = Get-Content $TrxPath -Raw
     $counters = $results.SelectSingleNode("//*[local-name()='Counters']")
-    if ($null -eq $counters -or [int]$counters.GetAttribute('total') -ne 50 -or
-        [int]$counters.GetAttribute('passed') -ne 50 -or
+    if ($null -eq $counters -or [int]$counters.GetAttribute('total') -ne $ExpectedCount -or
+        [int]$counters.GetAttribute('passed') -ne $ExpectedCount -or
         [int]$counters.GetAttribute('failed') -ne 0) {
-        throw "CoreUtils expr test count or result changed: $TrxPath"
+        throw "Consumer test count or result changed: expected $ExpectedCount passes in $TrxPath"
     }
 }
 
@@ -66,14 +66,31 @@ try {
         -Revision 'e1e118f18246eed290bee4758325a20e302bfb92'
     Fetch-PinnedSource -Target $coreutilsRoot -Url 'https://github.com/uniblab/Icod.CoreUtils.git' `
         -Revision '2c47cd67bae490dedf16234d8460c8b9da8d3404'
+    $diffutilsRoot = Join-Path $scratch 'Icod.DiffUtils'
+    Fetch-PinnedSource -Target $diffutilsRoot -Url 'https://github.com/uniblab/Icod.DiffUtils.git' `
+        -Revision '8192ec43e1f6add42bc759b225c814861e18c843'
 
     $exprTests = Join-Path $coreutilsRoot 'tests/Expr.Tests/Icod.CoreUtils.Expr.Tests.csproj'
     $originalResults = Join-Path $scratch 'original-results'
     Invoke-Checked -Executable 'dotnet' -Arguments @('restore', $exprTests, '-m:1', '--configfile', $config)
     Invoke-Checked -Executable 'dotnet' -Arguments @('test', $exprTests, '-c', 'Staging', '--no-restore',
         '-m:1', '--logger', 'trx;LogFileName=original.trx', '--results-directory', $originalResults)
-    Assert-FiftyPassingTests -TrxPath (Join-Path $originalResults 'original.trx')
+    Assert-PassingTests -TrxPath (Join-Path $originalResults 'original.trx') -ExpectedCount 50
     $originalOutput = Join-Path $coreutilsRoot 'tests/Expr.Tests/bin/Staging/net10.0'
+
+    $diffSuites = @(
+        @{ Name = 'Diff'; ExpectedCases = 22 },
+        @{ Name = 'SDiff'; ExpectedCases = 40 }
+    )
+    foreach ($suite in $diffSuites) {
+        $name = $suite.Name
+        $project = Join-Path $diffutilsRoot "tests/$name.Tests/Icod.DiffUtils.$name.Tests.csproj"
+        $results = Join-Path $scratch "$name-original-results"
+        Invoke-Checked -Executable 'dotnet' -Arguments @('restore', $project, '-m:1', '--configfile', $config)
+        Invoke-Checked -Executable 'dotnet' -Arguments @('test', $project, '-c', 'Staging', '--no-restore',
+            '-m:1', '--logger', 'trx;LogFileName=original.trx', '--results-directory', $results)
+        Assert-PassingTests -TrxPath (Join-Path $results 'original.trx') -ExpectedCount $suite.ExpectedCases
+    }
 
     $bridgeProject = Join-Path $root 'tools/ConsumerBridgeProbe/Bridge/Bridge.csproj'
     $bridgeRootProperty = "-p:CommandFrameworkRoot=$frameworkRoot"
@@ -117,8 +134,23 @@ try {
     Invoke-Checked -Executable 'dotnet' -Arguments @('vstest',
         (Join-Path $bridgedOutput 'Icod.CoreUtils.Expr.Tests.dll'),
         '--Logger:trx;LogFileName=bridged.trx', "--ResultsDirectory:$bridgedResults")
-    Assert-FiftyPassingTests -TrxPath (Join-Path $bridgedResults 'bridged.trx')
-    Write-Host 'Original CoreUtils expr binaries passed 50/50 with published and package-backed bridge assemblies.'
+    Assert-PassingTests -TrxPath (Join-Path $bridgedResults 'bridged.trx') -ExpectedCount 50
+
+    foreach ($suite in $diffSuites) {
+        $name = $suite.Name
+        $publishedOutput = Join-Path $diffutilsRoot "tests/$name.Tests/bin/Staging/net10.0"
+        $substitutedOutput = Join-Path $scratch "$name.Tests"
+        New-Item -ItemType Directory -Path $substitutedOutput | Out-Null
+        Copy-Item (Join-Path $publishedOutput '*') -Destination $substitutedOutput -Recurse -Force
+        Copy-Item $bridgeDll -Destination (Join-Path $substitutedOutput 'Icod.CommandFramework.dll') -Force
+        Copy-Item (Join-Path $probeOutput 'Icod.Expressions.dll') -Destination $substitutedOutput -Force
+        $results = Join-Path $scratch "$name-bridged-results"
+        Invoke-Checked -Executable 'dotnet' -Arguments @('vstest',
+            (Join-Path $substitutedOutput "Icod.DiffUtils.$name.Tests.dll"),
+            '--Logger:trx;LogFileName=bridged.trx', "--ResultsDirectory:$results")
+        Assert-PassingTests -TrxPath (Join-Path $results 'bridged.trx') -ExpectedCount $suite.ExpectedCases
+    }
+    Write-Host 'Original CoreUtils expr (50), DiffUtils diff (22), and sdiff (40) binaries passed with published and package-backed bridge assemblies.'
 } finally {
     if ($null -eq $previousPackages) {
         Remove-Item Env:NUGET_PACKAGES -ErrorAction SilentlyContinue
