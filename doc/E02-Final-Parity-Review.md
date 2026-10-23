@@ -27,12 +27,15 @@ the parity runner independently verifies its output against the same frozen
 captures, offsets, byte surfaces, malformed input, and selected resource
 outcomes without rewriting an expectation.
 
-[CI run 40007473350](https://github.com/uniblab/Icod.Expressions/actions/runs/40007473350)
+[CI run 40011998105](https://github.com/uniblab/Icod.Expressions/actions/runs/40011998105)
 passed all five jobs, including this gate in Staging on Windows, macOS, and
 Linux. The Expressions corpus and JSONL also passed on .NET 8 and 9 in the
 existing matrix; the old CommandFramework focused test project targets only
 .NET 10. The compiled public API member-line comparison passed with the
-intentional assembly identity change.
+intentional assembly identity change. In each Staging job, the gate also
+rejected two scratch copies of the source manifest: one with a changed
+expected Git blob hash and one with only 34 entries. The frozen manifest
+and source files were not edited for those checks.
 
 ## Scope of the decision
 

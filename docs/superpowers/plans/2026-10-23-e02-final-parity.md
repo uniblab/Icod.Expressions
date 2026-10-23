@@ -10,7 +10,7 @@
 
 **Spec:** `doc/Icod.Expressions-A05-Final-Candidate.md` and the approved roadmap, E02 exact extraction parity gate.
 
-**Execution note (2026-10-23):** The gate and review are on PR #1. The 3-platform CI run passed. The old audit commit is retained at `audit/icod-expressions-a05-frozen` in CommandFramework. A deliberately mutated negative control was not run because this environment lacked PowerShell; the predicates were exercised against the real pinned corpus. This is a limit on the gate's self-test evidence, not a parity discrepancy.
+**Execution note (2026-10-23):** The gate and review are on PR #1. [CI run 40011998105](https://github.com/uniblab/Icod.Expressions/actions/runs/40011998105) passed on all three Staging platforms and both other jobs. The old audit commit is retained at `audit/icod-expressions-a05-frozen` in CommandFramework. The gate rejects a scratch copy with the first expected source hash changed and a second copy with only 34 of the 35 expected entries before it verifies the real manifest.
 
 ## Global Constraints
 
@@ -35,7 +35,7 @@
 
 **Interfaces:** `run.ps1` has no parameters. It returns zero only when the pinned old commit's source and 13 focused test hashes match the candidate, both 214-case test runs pass with identical normalized test names/outcomes, and both runners verify the frozen JSONL. CI invokes it in the Staging matrix after building Expressions.
 
-- [ ] Write the identity and count checks before the comparison steps; verify they reject a mismatched expected hash/count through a deliberately altered scratch input in CI or a local PowerShell runtime. (The negative-control portion remains unverified.)
+- [x] Write the identity and count checks before the comparison steps; verify that both a changed expected hash and a missing manifest entry are rejected through scratch inputs in CI.
 - [x] Fetch audit commit `532850103e69e5d3d09367c64f929ddecaf1fe69` and check its 35 mapped source hashes, 13 focused test hashes, and regex tree `bfe11d5f5ff6a75d75de68573edea6125706b87e`.
 - [x] Run the old focused test filter and the new full test project, require 214 passes each, and compare sorted TRX test names/outcomes.
 - [x] Run the old and new JSONL tools with `--verify` against `doc/Icod.Expressions-A04-Parity-Baseline.jsonl`.

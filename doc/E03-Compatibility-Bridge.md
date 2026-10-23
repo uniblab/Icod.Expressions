@@ -1,8 +1,9 @@
 # E03 compatibility bridge and consumer migration
 
-**Status:** integration design after extraction parity; no CommandFramework
-source or consumer dependency has changed. The alpha package can be built and
-used independently, but its copied public types still have the legacy
+**Status:** bounded E02 extraction parity and the three-platform scratch
+bridge gate passed; no CommandFramework production source or consumer
+dependency has changed. The alpha package can be built and used
+independently, but its copied public types still have the legacy
 `Icod.CommandFramework.RegularExpressions` and `.Text` full names.
 
 ## Boundary that needs a bridge
@@ -200,11 +201,12 @@ Some tests launch separate apphosts from their original output directories;
 the substituted test-host outputs and assembly-origin probe are the
 forwarding evidence. Each consumer's uncovered options still need audit.
 
-This is an executable gate in the Expressions PR's Linux Staging job. It
-validates five source-pinned consumer families. It is not a distributable
-bridge package or proof of the complete cross-platform consumer graph. The
-bridge remains subject to a separate CommandFramework review after the
-remaining A03 and A05/E02 gates.
+This Linux gate supplements the three-platform Staging bridge gate above.
+Together they validate five source-pinned consumer families, but they do not
+prove the complete consumer graph or produce a distributable bridge. Formal
+A05 acceptance still requires review of its classified limits. Actual
+consumer migration and a CommandFramework ownership change belong to
+separate, reviewed PRs.
 
 ## Separate, reviewable bridge sequence
 

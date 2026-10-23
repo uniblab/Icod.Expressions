@@ -18,12 +18,13 @@ Run `sh tools/verify-a05-candidate.sh` to check the original and additive
 blobs, source manifest, focused-file count, and oracle-tool identities. CI
 also requires 214 passing focused tests and exact 44-case JSONL on .NET 8,
 9, and 10 across Windows, Linux, and macOS. [CI run
-40007473350](https://github.com/uniblab/Icod.Expressions/actions/runs/40007473350)
+40011998105](https://github.com/uniblab/Icod.Expressions/actions/runs/40011998105)
 passed all five jobs with the consolidated verifier, [final same-run E02
 comparison](E02-Final-Parity-Review.md), cross-platform forwarding check, and
-611-case consumer bridge gate on three systems. This satisfies the candidate's
-executable verification gate; its classified limits still need formal A05
-review.
+611-case consumer bridge gate on three systems. Its final parity gate also
+rejected scratch manifests with an altered source hash and a missing entry.
+This satisfies the candidate's executable verification gate; its classified
+limits still need formal A05 review.
 
 The [A01–A04 ledger in CommandFramework](https://github.com/uniblab/Icod.CommandFramework/blob/docs/icod-expressions-a00-in-situ-inventory/doc/Icod.Expressions-A05-Final-Candidate.md#classified-limits-of-this-extraction-contract)
 classifies the two defined middle-anchor ERE divergences, the missing strict
