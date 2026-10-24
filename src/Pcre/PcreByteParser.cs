@@ -7,6 +7,7 @@ internal sealed class PcreByteParser {
 	private const int MaximumRepeatMarks = 256;
 	private readonly byte[] source;
 	private readonly CancellationToken cancellationToken;
+	private readonly bool utf8;
 	private readonly List<(int Number, int Offset)> backreferences = new();
 	private int index;
 	private int groupCount;
@@ -15,9 +16,10 @@ internal sealed class PcreByteParser {
 	private bool caseless;
 	private bool multiline;
 
-	internal PcreByteParser( byte[] source, bool caseless, CancellationToken cancellationToken ) {
+	internal PcreByteParser( byte[] source, bool caseless, bool utf8, CancellationToken cancellationToken ) {
 		this.source = source;
 		this.caseless = caseless;
+		this.utf8 = utf8;
 		this.cancellationToken = cancellationToken;
 	}
 
@@ -27,6 +29,7 @@ internal sealed class PcreByteParser {
 	internal PcreByteAlternatives Parse() {
 		if ( source.Length >= 4 && source[0] == (byte)'(' && source[1] == (byte)'?'
 			&& ( source[2] is (byte)'s' or (byte)'i' or (byte)'m' ) && source[3] == (byte)')' ) {
+			if ( utf8 && source[2] == (byte)'i' ) { throw Unsupported( 0 ); }
 			index = 4;
 			dotAll = source[2] == (byte)'s';
 			if ( source[2] == (byte)'i' ) { caseless = true; }
@@ -112,6 +115,7 @@ internal sealed class PcreByteParser {
 						&& source[index + 2] is (byte)'=' or (byte)'!';
 					var ahead = index + 1 < source.Length && source[index + 1] is (byte)'=' or (byte)'!';
 					if ( !behind && !ahead ) { throw Unsupported( offset ); }
+						if ( utf8 ) { throw Unsupported( offset ); }
 					if ( depth >= MaximumPatternDepth ) {
 						throw new PcreByteParseException( new(
 							PcreByteDiagnosticCode.PatternDepthLimitExceeded, offset, "pattern nesting limit exceeded"
@@ -152,9 +156,11 @@ internal sealed class PcreByteParser {
 			return multiline ? new PcreByteLineAnchor( false ) : new PcreByteEndBeforeFinalLf();
 		}
 		if ( value == (byte)'.' ) {
-			return new PcreByteClass( dotAll ? PcreByteSet.AllBytes : PcreByteSet.Dot );
+			return utf8 ? new PcreByteAny( dotAll )
+				: new PcreByteClass( dotAll ? PcreByteSet.AllBytes : PcreByteSet.Dot );
 		}
 		if ( value == (byte)'[' ) {
+			if ( utf8 ) { throw Unsupported( offset ); }
 			return ParseBracket( offset );
 		}
 		if ( value == (byte)'\\' ) {
@@ -165,6 +171,11 @@ internal sealed class PcreByteParser {
 		}
 		if ( value is (byte)'{' or (byte)'}' ) {
 			throw Unsupported( offset );
+		}
+		if ( utf8 && value >= 0x80 ) {
+			PcreUtf8.TryRead( source, offset, out var scalar, out var width ); // Validated at compile entry.
+			index = offset + width;
+			return new PcreByteLiteral( scalar );
 		}
 		return new PcreByteLiteral( value );
 	}
@@ -182,7 +193,7 @@ internal sealed class PcreByteParser {
 					throw Unsupported( openingOffset );
 				}
 				if ( escaped is not PcreByteLiteral literal ) { throw Unsupported( openingOffset ); }
-				bytes.Add( literal.Value );
+				bytes.Add( (byte)literal.Value );
 			} else if ( value is (byte)'|' or (byte)'(' or (byte)'[' or (byte)'.'
 				or (byte)'^' or (byte)'$' or (byte)'*' or (byte)'+' or (byte)'?'
 				or (byte)'{' or (byte)'}' ) {
@@ -251,7 +262,7 @@ internal sealed class PcreByteParser {
 			}
 			var escape = ParseEscape( offset );
 			return escape switch {
-				PcreByteLiteral literal => (BracketLiteral( literal.Value ), literal.Value, true),
+				PcreByteLiteral literal => (BracketLiteral( (byte)literal.Value ), (byte)literal.Value, true),
 				PcreByteClass characterClass => (characterClass.Set, null, false),
 				_ => throw Unsupported( offset )
 			};
@@ -341,7 +352,7 @@ internal sealed class PcreByteParser {
 				index++;
 			}
 			if ( count == 0 ) { throw Invalid( offset, "hex escape requires at least one digit" ); }
-			return new PcreByteLiteral( (byte)result );
+			return new PcreByteLiteral( result );
 		}
 		PcreByteSet? characterClass = value switch {
 			(byte)'d' => PcreByteSet.Digit,
@@ -352,7 +363,10 @@ internal sealed class PcreByteParser {
 			(byte)'W' => PcreByteSet.Word.Complement(),
 			_ => (PcreByteSet?)null
 		};
-		if ( characterClass.HasValue ) { return new PcreByteClass( characterClass.Value ); }
+		if ( characterClass.HasValue ) {
+			if ( utf8 ) { throw Unsupported( offset ); }
+			return new PcreByteClass( characterClass.Value );
+		}
 		var escaped = value switch {
 			(byte)'a' => 0x07,
 			(byte)'e' => 0x1B,
@@ -368,6 +382,7 @@ internal sealed class PcreByteParser {
 			or >= (byte)'a' and <= (byte)'z' ) {
 			throw Unsupported( offset );
 		}
+		if ( utf8 && value >= 0x80 ) { throw Unsupported( offset ); }
 		return new PcreByteLiteral( value );
 	}
 

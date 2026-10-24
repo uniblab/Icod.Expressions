@@ -8,6 +8,8 @@ internal enum PcreByteDiagnosticCode {
 	PatternRepeatLimitExceeded,
 	InvalidWorkLimit,
 	InvalidStartOffset,
+	InvalidUtf8Pattern,
+	InvalidUtf8Subject,
 	MatchWorkLimitExceeded,
 	MatchDepthLimitExceeded
 }
