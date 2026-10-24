@@ -133,16 +133,16 @@ public sealed class PcreByteBracketTests {
 	}
 
 	[Theory]
-	[InlineData( "[[:bogus:]]", 1, PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( "[[.ch.]]", 1, PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( "[[=a=]]", 1, PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( "[[:digit]]", 1, PcreByteDiagnosticCode.InvalidSyntax )]
-	[InlineData( "[[:digit:]", 0, PcreByteDiagnosticCode.InvalidSyntax )]
-	[InlineData( "[a-[:digit:]]", 2, PcreByteDiagnosticCode.InvalidSyntax )]
-	[InlineData( "[[:digit:]-a]", 10, PcreByteDiagnosticCode.InvalidSyntax )]
-	public void RejectsUnknownOrMalformedPosixItemOrRange( string pattern, int offset, PcreByteDiagnosticCode code ) {
+	[InlineData( "[[:bogus:]]", 1, (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( "[[.ch.]]", 1, (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( "[[=a=]]", 1, (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( "[[:digit]]", 1, (int)PcreByteDiagnosticCode.InvalidSyntax )]
+	[InlineData( "[[:digit:]", 0, (int)PcreByteDiagnosticCode.InvalidSyntax )]
+	[InlineData( "[a-[:digit:]]", 2, (int)PcreByteDiagnosticCode.InvalidSyntax )]
+	[InlineData( "[[:digit:]-a]", 10, (int)PcreByteDiagnosticCode.InvalidSyntax )]
+	public void RejectsUnknownOrMalformedPosixItemOrRange( string pattern, int offset, int code ) {
 		var result = PcreByteCompiler.Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
-		Assert.Equal( code, result.Diagnostic?.Code );
+		Assert.Equal( (PcreByteDiagnosticCode)code, result.Diagnostic?.Code );
 		Assert.Equal( offset, result.Diagnostic?.ByteOffset );
 	}
 
