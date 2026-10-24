@@ -132,13 +132,15 @@ internal sealed class PcreByteParser {
 		if ( negated ) { index++; }
 		var hasItem = false;
 		var set = default(PcreByteSet);
+		var specialScanCursor = index;
+		var nextClosingBracket = -1;
 		while ( index < source.Length ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			if ( source[index] == (byte)']' && hasItem ) {
 				index++;
 				return new PcreByteClass( negated ? set.Complement() : set );
 			}
-			var item = ParseBracketItem();
+			var item = ParseBracketItem( ref specialScanCursor, ref nextClosingBracket );
 			if ( !item.Value.HasValue && index < source.Length && source[index] == (byte)'-'
 				&& index + 1 < source.Length && source[index + 1] != (byte)']' ) {
 				throw Invalid( index, "a character class cannot start a range" );
@@ -146,7 +148,7 @@ internal sealed class PcreByteParser {
 			if ( item.Value.HasValue && item.MayStartRange && index < source.Length
 				&& source[index] == (byte)'-' && index + 1 < source.Length && source[index + 1] != (byte)']' ) {
 				var hyphenOffset = index++;
-				var end = ParseBracketItem();
+				var end = ParseBracketItem( ref specialScanCursor, ref nextClosingBracket );
 				if ( !end.Value.HasValue || end.Value.Value < item.Value.Value ) {
 					throw Invalid( hyphenOffset, "range endpoints must be ordered literal bytes" );
 				}
@@ -159,12 +161,14 @@ internal sealed class PcreByteParser {
 		throw Invalid( openingOffset, "unclosed bracket class" );
 	}
 
-	private (PcreByteSet Set, byte? Value, bool MayStartRange) ParseBracketItem() {
+	private (PcreByteSet Set, byte? Value, bool MayStartRange) ParseBracketItem(
+		ref int specialScanCursor, ref int nextClosingBracket
+	) {
 		var offset = index;
 		var value = source[index++];
 		if ( value == (byte)'[' && index < source.Length
 			&& ( source[index] is (byte)':' or (byte)'.' or (byte)'=' )
-			&& HasCompleteSpecialClassToken() ) {
+			&& HasCompleteSpecialClassToken( ref specialScanCursor, ref nextClosingBracket ) ) {
 			return ParsePosixItem( offset );
 		}
 		if ( value == (byte)'\\' ) {
@@ -182,16 +186,14 @@ internal sealed class PcreByteParser {
 		return (PcreByteSet.Singleton( value ), value, true);
 	}
 
-	private bool HasCompleteSpecialClassToken() {
+	private bool HasCompleteSpecialClassToken( ref int scanCursor, ref int nextClosingBracket ) {
 		var marker = source[index];
-		for ( var cursor = index + 1; cursor < source.Length; cursor++ ) {
+		while ( nextClosingBracket < index && scanCursor < source.Length ) {
 			cancellationToken.ThrowIfCancellationRequested();
-			if ( source[cursor] == (byte)'\\' ) { cursor++; continue; }
-			if ( source[cursor] == (byte)']' ) {
-				return cursor > index + 1 && source[cursor - 1] == marker;
-			}
+			if ( source[scanCursor] == (byte)'\\' ) { scanCursor = Math.Min( scanCursor + 2, source.Length ); continue; }
+			if ( source[scanCursor++] == (byte)']' ) { nextClosingBracket = scanCursor - 1; }
 		}
-		return false;
+		return nextClosingBracket > index + 1 && source[nextClosingBracket - 1] == marker;
 	}
 
 	private (PcreByteSet Set, byte? Value, bool MayStartRange) ParsePosixItem( int offset ) {

@@ -18,7 +18,7 @@ An unclosed class or descending range is `InvalidSyntax` at the class/range byte
 | Compile class items and POSIX sets to one byte set | Fixed matching cost, natural union/complement and reuse of the existing class opcode; parser must distinguish ranges and POSIX tokens carefully. | Choose. |
 | Add a predicate interpreter per class item | Easier parser, but more work on every byte and more state in the backtracking VM. | Reject. |
 
-The parser builds one set from class elements; class negation complements the final union. `PcreByteSet` gains immutable singleton, inclusive range and union operations. Existing `ParseEscape` remains authoritative for escapes outside classes; inside classes, `\b` means byte 0x08, while outside it remains pending word-boundary syntax. Each parse step checks cancellation. Matching and work accounting are unchanged because every class uses the existing byte-set instruction.
+The parser builds one set from class elements; class negation complements the final union. `PcreByteSet` gains immutable singleton, inclusive range and union operations. Existing `ParseEscape` remains authoritative for escapes outside classes; inside classes, `\b` means byte 0x08, while outside it remains pending word-boundary syntax. Each parse step checks cancellation. POSIX token lookahead reuses a monotonic scan to the next unescaped closing bracket, so repeated incomplete prefixes do not rescan the same bytes. Matching and work accounting are unchanged because every class uses the existing byte-set instruction.
 
 ## Verification and boundaries
 
