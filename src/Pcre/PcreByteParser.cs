@@ -14,8 +14,9 @@ internal sealed class PcreByteParser {
 	private bool dotAll;
 	private bool caseless;
 
-	internal PcreByteParser( byte[] source, CancellationToken cancellationToken ) {
+	internal PcreByteParser( byte[] source, bool caseless, CancellationToken cancellationToken ) {
 		this.source = source;
+		this.caseless = caseless;
 		this.cancellationToken = cancellationToken;
 	}
 
@@ -27,7 +28,7 @@ internal sealed class PcreByteParser {
 			&& ( source[2] is (byte)'s' or (byte)'i' ) && source[3] == (byte)')' ) {
 			index = 4;
 			dotAll = source[2] == (byte)'s';
-			caseless = source[2] == (byte)'i';
+			if ( source[2] == (byte)'i' ) { caseless = true; }
 		}
 		var root = ParseAlternatives( false, 0 );
 		if ( index != source.Length ) {
