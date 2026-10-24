@@ -48,7 +48,7 @@ internal static class PcreByteMatcher {
 					switch ( instruction.Opcode ) {
 						case PcreByteOpcode.Literal:
 							Step(); // Attempted byte comparison.
-							if ( position < input.Length && input.Span[position] == (byte)instruction.First ) {
+							if ( position < input.Length && ByteEquals( input.Span[position], (byte)instruction.First, program.Caseless ) ) {
 								position++;
 								pc++;
 							} else { failed = true; }
@@ -70,7 +70,7 @@ internal static class PcreByteMatcher {
 							for ( var byteIndex = 0; byteIndex < captured.ByteLength; byteIndex++ ) {
 								Step(); // Attempted captured-byte comparison.
 								if ( byteIndex >= input.Length - position
-									|| input.Span[captured.ByteIndex + byteIndex] != input.Span[position + byteIndex] ) {
+									|| !ByteEquals( input.Span[captured.ByteIndex + byteIndex], input.Span[position + byteIndex], program.Caseless ) ) {
 									failed = true;
 									break;
 								}
@@ -101,7 +101,7 @@ internal static class PcreByteMatcher {
 							if ( equals ) {
 								for ( var byteIndex = 0; byteIndex < literal.Length; byteIndex++ ) {
 									Step(); // Attempted assertion byte comparison.
-									if ( input.Span[adjacent + byteIndex] != literal[byteIndex] ) {
+									if ( !ByteEquals( input.Span[adjacent + byteIndex], literal[byteIndex], program.Caseless ) ) {
 										equals = false;
 										break;
 									}
@@ -170,6 +170,14 @@ internal static class PcreByteMatcher {
 		} catch ( MatchLimitException error ) {
 			return new( null, new( error.Code, 0, error.Message ) );
 		}
+	}
+
+	private static bool ByteEquals( byte left, byte right, bool caseless ) {
+		if ( left == right ) { return true; }
+		if ( !caseless ) { return false; }
+		if ( left is >= (byte)'A' and <= (byte)'Z' ) { left = (byte)( left + 32 ); }
+		if ( right is >= (byte)'A' and <= (byte)'Z' ) { right = (byte)( right + 32 ); }
+		return left == right;
 	}
 
 	private sealed record Frame(

@@ -39,6 +39,13 @@ internal readonly record struct PcreByteSet( ulong A, ulong B, ulong C, ulong D 
 
 	internal PcreByteSet Complement() => new( ~A, ~B, ~C, ~D );
 	internal PcreByteSet Union( PcreByteSet other ) => new( A | other.A, B | other.B, C | other.C, D | other.D );
+	internal PcreByteSet AsciiCaseClosure() {
+		var original = this;
+		return FromPredicate( value => original.Contains( value )
+			|| ( value is >= (byte)'A' and <= (byte)'Z' && original.Contains( (byte)( value + 32 ) ) )
+			|| ( value is >= (byte)'a' and <= (byte)'z' && original.Contains( (byte)( value - 32 ) ) )
+		);
+	}
 
 	internal static PcreByteSet Singleton( byte value ) => FromPredicate( candidate => candidate == value );
 	internal static PcreByteSet Range( byte lower, byte upper ) => FromPredicate(

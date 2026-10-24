@@ -23,22 +23,24 @@ internal sealed record PcreByteInstruction(
 	ReadOnlyMemory<byte> Bytes = default
 );
 
-internal sealed record PcreByteProgram( PcreByteInstruction[] Instructions, int MarkCount );
+internal sealed record PcreByteProgram( PcreByteInstruction[] Instructions, int MarkCount, bool Caseless );
 
 /// <summary>Compiles the supported AST into ordered bytecode with explicit backtrack edges.</summary>
 internal sealed class PcreByteProgramCompiler {
 	private readonly List<PcreByteInstruction> instructions = new();
 	private readonly CancellationToken cancellationToken;
+	private readonly bool caseless;
 	private int markCount;
 
-	internal PcreByteProgramCompiler( CancellationToken cancellationToken ) {
+	internal PcreByteProgramCompiler( CancellationToken cancellationToken, bool caseless ) {
 		this.cancellationToken = cancellationToken;
+		this.caseless = caseless;
 	}
 
 	internal PcreByteProgram Compile( PcreByteAlternatives root ) {
 		CompileAlternatives( root );
 		Emit( PcreByteOpcode.Accept );
-		return new( instructions.ToArray(), markCount );
+		return new( instructions.ToArray(), markCount, caseless );
 	}
 
 	private int Emit( PcreByteOpcode opcode, int first = 0, int second = 0, PcreByteSet set = default,

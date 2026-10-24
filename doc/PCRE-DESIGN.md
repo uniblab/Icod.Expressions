@@ -25,6 +25,7 @@ The internal foundation recognizes raw byte literals (including NUL and high byt
 | `\A`, `\Z`, `\z` subject anchors | Implemented internally with LF as the final-newline convention for `\Z`. Existing `^`/`$` behavior remains unchanged pending broader option review. |
 | ASCII byte-mode `\b` and `\B` word boundaries | Implemented internally using the same non-UCP ASCII `\w` definition. Bracket `\b` remains backspace; bracket `\B` is unsupported. |
 | One leading `(?s)` | Implemented internally for 8-bit byte mode; dot matches LF in every top-level alternative. Scoped and mid-pattern flags remain unsupported. |
+| One leading `(?i)` | Implemented internally for 8-bit non-UTF mode with ASCII letter folding for literals, brackets, literal lookarounds, and backreferences; high bytes remain exact. Other placements and flag combinations remain unsupported. |
 | Braced hex, other escapes, `{m,n}`, remaining inline options and other special groups | Explicit compile-time `UnsupportedSyntax` diagnostic. |
 | UTF-8/UCP, broader backreference syntax, general lookaround, atomic groups, possessive repetition, backtracking verbs, recursion and broader PCRE2 syntax | Pending separate implementation and conformance fixtures. |
 
