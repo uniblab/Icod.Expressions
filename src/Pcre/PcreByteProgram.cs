@@ -2,6 +2,7 @@ namespace Icod.Expressions.Pcre;
 
 internal enum PcreByteOpcode {
 	Literal,
+	Class,
 	Start,
 	End,
 	CaptureStart,
@@ -13,7 +14,9 @@ internal enum PcreByteOpcode {
 	Accept
 }
 
-internal sealed record PcreByteInstruction( PcreByteOpcode Opcode, int First = 0, int Second = 0 );
+internal sealed record PcreByteInstruction(
+	PcreByteOpcode Opcode, int First = 0, int Second = 0, PcreByteSet Set = default
+);
 
 internal sealed record PcreByteProgram( PcreByteInstruction[] Instructions, int MarkCount );
 
@@ -33,10 +36,10 @@ internal sealed class PcreByteProgramCompiler {
 		return new( instructions.ToArray(), markCount );
 	}
 
-	private int Emit( PcreByteOpcode opcode, int first = 0, int second = 0 ) {
+	private int Emit( PcreByteOpcode opcode, int first = 0, int second = 0, PcreByteSet set = default ) {
 		cancellationToken.ThrowIfCancellationRequested();
 		var index = instructions.Count;
-		instructions.Add( new( opcode, first, second ) );
+		instructions.Add( new( opcode, first, second, set ) );
 		return index;
 	}
 
@@ -64,6 +67,9 @@ internal sealed class PcreByteProgramCompiler {
 		switch ( node ) {
 			case PcreByteLiteral literal:
 				Emit( PcreByteOpcode.Literal, literal.Value );
+				break;
+			case PcreByteClass characterClass:
+				Emit( PcreByteOpcode.Class, set: characterClass.Set );
 				break;
 			case PcreByteAnchor anchor:
 				Emit( anchor.IsStart ? PcreByteOpcode.Start : PcreByteOpcode.End );
