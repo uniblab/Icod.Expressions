@@ -17,7 +17,7 @@ The internal foundation recognizes raw byte literals (including NUL and high byt
 | Syntax or mode | Status for the draft byte foundation |
 |---|---|
 | Raw bytes, `|`, capturing groups, anchors, `*`, `+`, `?` and their lazy forms | Implemented for the internal API. |
-| Dot excluding LF; `\a`, `\e`, `\f`, `\n`, `\r`, `\t`, `\x` (up to two hex digits), escaped punctuation; ASCII `\d`, `\s`, `\w` and complements | Implemented in the stacked byte-atoms PR for 8-bit non-UTF, non-UCP mode. |
+| Dot excluding LF; `\a`, `\e`, `\f`, `\n`, `\r`, `\t`, `\x` (one or two hex digits), escaped punctuation; ASCII `\d`, `\s`, `\w` and complements | Implemented in the stacked byte-atoms PR for 8-bit non-UTF, non-UCP mode. |
 | Bracket classes, braced hex, other escapes, `{m,n}`, inline options and special groups such as lookaround | Explicit compile-time `UnsupportedSyntax` diagnostic. |
 | UTF-8/UCP, backreferences, lookaround, atomic groups, possessive repetition, backtracking verbs, recursion and broader PCRE2 syntax | Pending separate implementation and conformance fixtures. |
 

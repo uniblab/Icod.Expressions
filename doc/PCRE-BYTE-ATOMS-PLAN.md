@@ -40,7 +40,7 @@
 - Internal `PcreByteSet.Contains(byte)` over four immutable `ulong` words; `PcreByteClass(PcreByteSet Set)` AST node.
 - The existing `PcreByteCompiler.Compile(ReadOnlyMemory<byte>, PcreByteOptions?, CancellationToken)` and compiled `Match(ReadOnlyMemory<byte>, int, CancellationToken)` signatures stay unchanged.
 
-- [ ] Write failing PCRE2-pinned tests for `.`, `\n`, `\t`, `\\`, `\.` and `\|`, `\x`, `\xF`, `\xFF`, `\xFG`, trailing slash, braced hex, `\q`, quantified dot and capture byte spans.
+- [ ] Write failing PCRE2 10.48-pinned tests for `.`, `\n`, `\t`, `\\`, `\.` and `\|`, invalid bare `\x`, `\xF`, `\xFF`, `\xFG`, trailing slash, braced hex, `\q`, quantified dot and capture byte spans.
 - [ ] Push the test-only commit and verify expected failure in the PR CI (local `dotnet` is unavailable in this workspace).
 - [ ] Add the immutable byte set and class instruction; parse dot, non-alphanumeric literal escapes, control escapes and zero-to-two-digit hex. Preserve explicit diagnostics for pending escapes.
 - [ ] Push and verify the focused tests, full suite, frozen 214-case parity, and single-library package checks on all target frameworks/platforms; commit the implementation.

@@ -11,7 +11,7 @@ Supported syntax in this slice:
 - Dot matches any byte except LF (0x0A). It can be quantified and captured like any existing literal.
 - `\d`, `\D`, `\s`, `\S`, `\w`, `\W` use non-UCP ASCII sets and their byte complements. `\d` is `0` through `9`; `\w` is ASCII letters, digits and `_`; `\s` is space, tab, LF, VT, FF and CR.
 - `\a`, `\e`, `\f`, `\n`, `\r`, `\t` produce their ASCII control bytes. Backslash before a non-ASCII-alphanumeric byte produces that literal byte, including escaped metacharacters and backslash.
-- `\x` consumes zero to two following ASCII hex digits and produces one byte; no hex digits means NUL. The braced form `\x{...}` remains explicitly unsupported. A third character stays in the input pattern, so `\xFG` means 0x0F followed by `G`.
+- `\x` requires one or two following ASCII hex digits and produces one byte; zero digits is `InvalidSyntax`. The braced form `\x{...}` remains explicitly unsupported. A third character stays in the input pattern, so `\xFG` means 0x0F followed by `G`. This follows PCRE2 10.48 (the current Grep reference); PCRE2 10.42 treated a bare `\x` as NUL, but PCRE2 10.45 changed that behavior.
 
 An unmatched trailing backslash is `InvalidSyntax` at its byte offset. Other letter/digit escapes remain `UnsupportedSyntax` at the backslash, including backreferences, Unicode properties, `\h`, `\v`, `\R` and octal forms. Bracketed character classes, POSIX classes, UTF/UCP and DOTALL stay in later slices. A valid construct outside this subset must never be silently treated as a literal or handed to another regex runtime.
 
@@ -27,6 +27,6 @@ The parser creates literal or byte-set AST nodes. Bytecode emission adds a class
 
 ## Reference and verification
 
-Pin examples against the PCRE2 standard matcher in 8-bit non-UTF mode with default LF newline before implementing. Test dot against LF, CR and NUL; ASCII shorthand boundaries and high bytes; escaped punctuation; `\x`, `\xF`, `\xFF`, `\xFG`; trailing slash and pending escapes; quantified classes; capture spans; cancellation and work-limit accounting. The reference engine is used only to establish expected fixtures, not at runtime. [PCRE2 syntax](https://www.pcre.org/current/doc/html/pcre2syntax.html) and [pattern semantics](https://www.pcre.org/current/doc/html/pcre2pattern.html) govern this slice.
+Pin examples against PCRE2 10.48 byte-mode semantics with default LF newline before implementing. The installed 10.42 reference library is useful for unchanged behaviors; the published 10.45+ specification governs `\x` without digits. Test dot against LF, CR and NUL; ASCII shorthand boundaries and high bytes; escaped punctuation; invalid bare `\x`, `\xF`, `\xFF`, `\xFG`; trailing slash and pending escapes; quantified classes; capture spans; cancellation and work-limit accounting. The reference engine is used only to establish expected fixtures, not at runtime. [PCRE2 syntax](https://www.pcre.org/current/doc/html/pcre2syntax.html), [pattern semantics](https://www.pcre.org/current/doc/html/pcre2pattern.html) and [release history](https://github.com/PCRE2Project/pcre2/blob/main/NEWS) govern this slice.
 
 CI must pass the full net8/net9/net10 suite on Linux, Windows and macOS, preserve the exact 214-case extraction corpus, and pack one library. Do not publish a PCRE-capable release or migrate Grep based on this subset.

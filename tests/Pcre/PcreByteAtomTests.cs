@@ -18,7 +18,6 @@ public sealed class PcreByteAtomTests {
 	[InlineData( "\\\\", "5C", 0, 1 )]
 	[InlineData( "\\.", "2E", 0, 1 )]
 	[InlineData( "\\|", "7C", 0, 1 )]
-	[InlineData( "\\x", "00", 0, 1 )]
 	[InlineData( "\\xF", "0F", 0, 1 )]
 	[InlineData( "\\xFF", "FF", 0, 1 )]
 	[InlineData( "\\xFG", "0F47", 0, 2 )]
@@ -53,6 +52,15 @@ public sealed class PcreByteAtomTests {
 		var result = PcreByteCompiler.Compile( "a\\"u8.ToArray() );
 		Assert.Equal( PcreByteDiagnosticCode.InvalidSyntax, result.Diagnostic?.Code );
 		Assert.Equal( 1, result.Diagnostic?.ByteOffset );
+	}
+
+	[Theory]
+	[InlineData( "\\x" )]
+	[InlineData( "\\xG" )]
+	public void HexEscapeRequiresAtLeastOneDigitInPcre2_10_48( string pattern ) {
+		var result = PcreByteCompiler.Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
+		Assert.Equal( PcreByteDiagnosticCode.InvalidSyntax, result.Diagnostic?.Code );
+		Assert.Equal( 0, result.Diagnostic?.ByteOffset );
 	}
 
 	[Theory]
