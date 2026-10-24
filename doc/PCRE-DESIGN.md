@@ -20,7 +20,7 @@ The draft foundation currently recognizes raw byte literals (including NUL and h
 | Dot, escapes, character classes, `{m,n}`, inline options and special groups such as lookaround | Explicit compile-time `UnsupportedSyntax` diagnostic. |
 | UTF-8/UCP, backreferences, lookaround, atomic groups, possessive repetition, backtracking verbs, recursion and broader PCRE2 syntax | Pending separate implementation and conformance fixtures. |
 
-The initial parser limits group nesting and total captures to 256 each. The matcher executes ordered bytecode with an explicit stack bounded at 1,024 saved paths and a work budget of 1,000,000 steps by default; long linear matches do not spend stack slots. These limits are provisional and require stress and performance review before a consumer switch.
+The initial parser limits group nesting, total captures, and repeat-state marks to 256 each. The matcher executes ordered bytecode with an explicit stack bounded at 1,024 saved paths and a work budget of 1,000,000 steps by default; long linear matches do not spend stack slots. Empty iterations proceed to the continuation once while retaining captures and alternative paths. These limits are provisional and require stress and performance review before a consumer switch.
 
 ## Approaches
 

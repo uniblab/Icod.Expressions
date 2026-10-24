@@ -4,10 +4,12 @@ namespace Icod.Expressions.Pcre;
 internal sealed class PcreByteParser {
 	private const int MaximumPatternDepth = 256;
 	private const int MaximumCaptureCount = 256;
+	private const int MaximumRepeatMarks = 256;
 	private readonly byte[] source;
 	private readonly CancellationToken cancellationToken;
 	private int index;
 	private int groupCount;
+	private int repeatMarks;
 
 	internal PcreByteParser( byte[] source, CancellationToken cancellationToken ) {
 		this.source = source;
@@ -41,7 +43,14 @@ internal sealed class PcreByteParser {
 					if ( atom is PcreByteAnchor ) {
 						throw Invalid( index, "an anchor cannot be repeated" );
 					}
+					var quantifierOffset = index;
 					var quantifier = source[index++];
+					repeatMarks += quantifier == (byte)'+' ? 2 : quantifier == (byte)'*' ? 1 : 0;
+					if ( repeatMarks > MaximumRepeatMarks ) {
+						throw new PcreByteParseException( new(
+							PcreByteDiagnosticCode.PatternRepeatLimitExceeded, quantifierOffset, "repeat state limit exceeded"
+						) );
+					}
 					var minimum = quantifier == (byte)'+' ? 1 : 0;
 					var maximum = quantifier == (byte)'?' ? 1 : int.MaxValue;
 					var greedy = index >= source.Length || source[index] != (byte)'?';
@@ -73,6 +82,11 @@ internal sealed class PcreByteParser {
 		if ( value == (byte)'(' ) {
 			if ( index < source.Length && source[index] == (byte)'?' ) {
 				throw Unsupported( offset );
+			}
+			if ( depth >= MaximumPatternDepth ) {
+				throw new PcreByteParseException( new(
+					PcreByteDiagnosticCode.PatternDepthLimitExceeded, offset, "pattern nesting limit exceeded"
+				) );
 			}
 			var number = ++groupCount;
 			if ( number > MaximumCaptureCount ) {

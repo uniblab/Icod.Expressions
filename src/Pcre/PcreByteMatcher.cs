@@ -85,7 +85,7 @@ internal static class PcreByteMatcher {
 							pc++;
 							break;
 						case PcreByteOpcode.Progress:
-							if ( position == marks[instruction.First] ) { failed = true; }
+							if ( position == marks[instruction.First] ) { pc = instruction.Second; }
 							else { pc++; }
 							break;
 						case PcreByteOpcode.Accept:

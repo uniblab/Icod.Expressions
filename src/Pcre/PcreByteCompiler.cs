@@ -20,7 +20,7 @@ internal static class PcreByteCompiler {
 		var parser = new PcreByteParser( pattern.ToArray(), cancellationToken );
 		try {
 			var root = parser.Parse();
-			var program = new PcreByteProgramCompiler().Compile( root );
+			var program = new PcreByteProgramCompiler( cancellationToken ).Compile( root );
 			return new(
 				new PcreCompiledBytePattern( program, parser.GroupCount, options.MatchWorkLimit, options.WorkObserver ),
 				null
