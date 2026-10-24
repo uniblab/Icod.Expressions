@@ -7,6 +7,8 @@ internal sealed record PcreByteOptions {
 	public int MatchWorkLimit { get; init; } = DefaultMatchWorkLimit;
 	public bool Caseless { get; init; }
 	public bool Utf8 { get; init; }
+	public bool Ucp { get; init; }
+	public bool AsciiBsD { get; init; }
 
 	/// <summary>Test-only progress hook used to cancel a running match deterministically.</summary>
 	internal Action<int>? WorkObserver { get; init; }

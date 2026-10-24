@@ -85,10 +85,11 @@ internal static class PcreByteMatcher {
 								pc++;
 							} else { failed = true; }
 							break;
-						case PcreByteOpcode.LetterProperty:
-							Step(); // Attempted Unicode property evaluation.
+						case PcreByteOpcode.ScalarClass:
+							Step(); // Attempted scalar class evaluation.
 							if ( PcreUtf8.TryRead( input.Span, position, out var propertyScalar, out var propertyWidth )
-								&& IsLetter( propertyScalar ) != ( instruction.First == 1 ) ) {
+								&& ScalarClassContains( (PcreByteScalarClassKind)instruction.First, propertyScalar )
+									!= ( instruction.Second == 1 ) ) {
 								position += propertyWidth;
 								pc++;
 							} else { failed = true; }
@@ -230,10 +231,18 @@ internal static class PcreByteMatcher {
 		return left == right;
 	}
 
-	private static bool IsLetter( int scalar ) => Rune.GetUnicodeCategory( new Rune( scalar ) ) is
-		UnicodeCategory.UppercaseLetter or UnicodeCategory.LowercaseLetter
-		or UnicodeCategory.TitlecaseLetter or UnicodeCategory.ModifierLetter
-		or UnicodeCategory.OtherLetter;
+	private static bool ScalarClassContains( PcreByteScalarClassKind kind, int scalar ) {
+		if ( kind == PcreByteScalarClassKind.AsciiDigit ) { return scalar is >= '0' and <= '9'; }
+		var category = Rune.GetUnicodeCategory( new Rune( scalar ) );
+		return kind switch {
+			PcreByteScalarClassKind.DecimalDigit => category == UnicodeCategory.DecimalDigitNumber,
+			PcreByteScalarClassKind.Letter => category is
+				UnicodeCategory.UppercaseLetter or UnicodeCategory.LowercaseLetter
+				or UnicodeCategory.TitlecaseLetter or UnicodeCategory.ModifierLetter
+				or UnicodeCategory.OtherLetter,
+			_ => throw new InvalidOperationException( "Compiler produced an unknown PCRE scalar class." )
+		};
+	}
 
 	private sealed record Frame(
 		int Pc, int Position, PcreByteCapture?[] Captures, int[] CaptureStarts, int[] Marks

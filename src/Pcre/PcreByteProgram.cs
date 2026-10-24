@@ -3,7 +3,7 @@ namespace Icod.Expressions.Pcre;
 internal enum PcreByteOpcode {
 	Literal,
 	Any,
-	LetterProperty,
+	ScalarClass,
 	Class,
 	Backreference,
 	WordBoundary,
@@ -85,8 +85,8 @@ internal sealed class PcreByteProgramCompiler {
 			case PcreByteAny any:
 				Emit( PcreByteOpcode.Any, any.DotAll ? 1 : 0 );
 				break;
-			case PcreByteLetterProperty property:
-				Emit( PcreByteOpcode.LetterProperty, property.Negated ? 1 : 0 );
+			case PcreByteScalarClass scalarClass:
+				Emit( PcreByteOpcode.ScalarClass, (int)scalarClass.Kind, scalarClass.Negated ? 1 : 0 );
 				break;
 			case PcreByteClass characterClass:
 				Emit( PcreByteOpcode.Class, set: characterClass.Set );
