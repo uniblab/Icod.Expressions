@@ -112,16 +112,65 @@ internal sealed class PcreByteParser {
 		if ( value == (byte)'.' ) {
 			return new PcreByteClass( PcreByteSet.Dot );
 		}
+		if ( value == (byte)'[' ) {
+			return ParseBracket( offset );
+		}
 		if ( value == (byte)'\\' ) {
 			return ParseEscape( offset );
 		}
 		if ( value is (byte)'*' or (byte)'+' or (byte)'?' ) {
 			throw Invalid( offset, "quantifier without an atom" );
 		}
-		if ( value is (byte)'{' or (byte)'}' or (byte)'[' or (byte)']' ) {
+		if ( value is (byte)'{' or (byte)'}' ) {
 			throw Unsupported( offset );
 		}
 		return new PcreByteLiteral( value );
+	}
+
+	private PcreByteNode ParseBracket( int openingOffset ) {
+		var negated = index < source.Length && source[index] == (byte)'^';
+		if ( negated ) { index++; }
+		var hasItem = false;
+		var set = default(PcreByteSet);
+		while ( index < source.Length ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( source[index] == (byte)']' && hasItem ) {
+				index++;
+				return new PcreByteClass( negated ? set.Complement() : set );
+			}
+			var item = ParseBracketItem();
+			if ( item.Value.HasValue && item.MayStartRange && index < source.Length
+				&& source[index] == (byte)'-' && index + 1 < source.Length && source[index + 1] != (byte)']' ) {
+				var hyphenOffset = index++;
+				var end = ParseBracketItem();
+				if ( !end.Value.HasValue || end.Value.Value < item.Value.Value ) {
+					throw Invalid( hyphenOffset, "range endpoints must be ordered literal bytes" );
+				}
+				set = set.Union( PcreByteSet.Range( item.Value.Value, end.Value.Value ) );
+			} else {
+				set = set.Union( item.Set );
+			}
+			hasItem = true;
+		}
+		throw Invalid( openingOffset, "unclosed bracket class" );
+	}
+
+	private (PcreByteSet Set, byte? Value, bool MayStartRange) ParseBracketItem() {
+		var offset = index;
+		var value = source[index++];
+		if ( value == (byte)'\\' ) {
+			if ( index < source.Length && source[index] == (byte)'b' ) {
+				index++;
+				return (PcreByteSet.Singleton( 0x08 ), 0x08, true);
+			}
+			var escape = ParseEscape( offset );
+			return escape switch {
+				PcreByteLiteral literal => (PcreByteSet.Singleton( literal.Value ), literal.Value, true),
+				PcreByteClass characterClass => (characterClass.Set, null, false),
+				_ => throw Unsupported( offset )
+			};
+		}
+		return (PcreByteSet.Singleton( value ), value, value != (byte)'-');
 	}
 
 	private PcreByteNode ParseEscape( int offset ) {

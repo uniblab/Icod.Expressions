@@ -28,7 +28,8 @@ public sealed class PcreByteBracketTests {
 	public void MatchesOrdinaryByteClassWithPcre2Span( string pattern, string inputHex, int start, int length ) {
 		var match = Compile( pattern ).Match( Convert.FromHexString( inputHex ) );
 		Assert.True( match.IsSuccess, match.Diagnostic?.Message );
-		Assert.Equal( start < 0 ? null : start, match.Match?.ByteIndex );
+		int? expectedStart = start < 0 ? null : start;
+		Assert.Equal( expectedStart, match.Match?.ByteIndex );
 		if ( start >= 0 ) { Assert.Equal( length, match.Match?.ByteLength ); }
 	}
 

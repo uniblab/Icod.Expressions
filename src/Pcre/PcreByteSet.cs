@@ -23,6 +23,12 @@ internal readonly record struct PcreByteSet( ulong A, ulong B, ulong C, ulong D 
 	}
 
 	internal PcreByteSet Complement() => new( ~A, ~B, ~C, ~D );
+	internal PcreByteSet Union( PcreByteSet other ) => new( A | other.A, B | other.B, C | other.C, D | other.D );
+
+	internal static PcreByteSet Singleton( byte value ) => FromPredicate( candidate => candidate == value );
+	internal static PcreByteSet Range( byte lower, byte upper ) => FromPredicate(
+		candidate => candidate >= lower && candidate <= upper
+	);
 
 	internal static PcreByteSet FromPredicate( Func<byte, bool> contains ) {
 		var words = new ulong[4];
