@@ -133,6 +133,9 @@ public sealed class PcreByteBracketTests {
 	[InlineData( "[^[:digit:]]", "35", -1 )]
 	[InlineData( "[[:digit:]\\w]", "41", 0 )]
 	[InlineData( "[[:digit:]-]", "2D", 0 )]
+	[InlineData( "[[:digit:][:alpha:]]", "41", 0 )]
+	[InlineData( "[\\][:digit:]]", "35", 0 )]
+	[InlineData( "[][:digit:]]", "35", 0 )]
 	public void CombinesPosixSetsAndOuterNegation( string pattern, string subjectHex, int expectedStart ) {
 		var match = Compile( pattern ).Match( Convert.FromHexString( subjectHex ) );
 		int? start = expectedStart < 0 ? null : expectedStart;
