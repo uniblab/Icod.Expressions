@@ -13,6 +13,7 @@ internal sealed class PcreByteParser {
 	private int repeatMarks;
 	private bool dotAll;
 	private bool caseless;
+	private bool multiline;
 
 	internal PcreByteParser( byte[] source, bool caseless, CancellationToken cancellationToken ) {
 		this.source = source;
@@ -25,10 +26,11 @@ internal sealed class PcreByteParser {
 
 	internal PcreByteAlternatives Parse() {
 		if ( source.Length >= 4 && source[0] == (byte)'(' && source[1] == (byte)'?'
-			&& ( source[2] is (byte)'s' or (byte)'i' ) && source[3] == (byte)')' ) {
+			&& ( source[2] is (byte)'s' or (byte)'i' or (byte)'m' ) && source[3] == (byte)')' ) {
 			index = 4;
 			dotAll = source[2] == (byte)'s';
 			if ( source[2] == (byte)'i' ) { caseless = true; }
+			multiline = source[2] == (byte)'m';
 		}
 		var root = ParseAlternatives( false, 0 );
 		if ( index != source.Length ) {
@@ -60,7 +62,7 @@ internal sealed class PcreByteParser {
 					if ( atom is PcreByteLiteralAssertion ) {
 						throw Unsupported( index );
 					}
-					if ( atom is PcreByteAnchor or PcreByteEndBeforeFinalLf or PcreByteWordBoundary ) {
+					if ( atom is PcreByteAnchor or PcreByteLineAnchor or PcreByteEndBeforeFinalLf or PcreByteWordBoundary ) {
 						throw Invalid( index, "an anchor cannot be repeated" );
 					}
 					var quantifierOffset = index;
@@ -143,8 +145,12 @@ internal sealed class PcreByteParser {
 			index++;
 			return capturing ? new PcreByteGroup( number, body ) : new PcreByteNoncapturingGroup( body );
 		}
-		if ( value == (byte)'^' ) { return new PcreByteAnchor( true ); }
-		if ( value == (byte)'$' ) { return new PcreByteEndBeforeFinalLf(); }
+		if ( value == (byte)'^' ) {
+			return multiline ? new PcreByteLineAnchor( true ) : new PcreByteAnchor( true );
+		}
+		if ( value == (byte)'$' ) {
+			return multiline ? new PcreByteLineAnchor( false ) : new PcreByteEndBeforeFinalLf();
+		}
 		if ( value == (byte)'.' ) {
 			return new PcreByteClass( dotAll ? PcreByteSet.AllBytes : PcreByteSet.Dot );
 		}
