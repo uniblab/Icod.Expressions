@@ -112,16 +112,124 @@ internal sealed class PcreByteParser {
 		if ( value == (byte)'.' ) {
 			return new PcreByteClass( PcreByteSet.Dot );
 		}
+		if ( value == (byte)'[' ) {
+			return ParseBracket( offset );
+		}
 		if ( value == (byte)'\\' ) {
 			return ParseEscape( offset );
 		}
 		if ( value is (byte)'*' or (byte)'+' or (byte)'?' ) {
 			throw Invalid( offset, "quantifier without an atom" );
 		}
-		if ( value is (byte)'{' or (byte)'}' or (byte)'[' or (byte)']' ) {
+		if ( value is (byte)'{' or (byte)'}' ) {
 			throw Unsupported( offset );
 		}
 		return new PcreByteLiteral( value );
+	}
+
+	private PcreByteNode ParseBracket( int openingOffset ) {
+		var negated = index < source.Length && source[index] == (byte)'^';
+		if ( negated ) { index++; }
+		var hasItem = false;
+		var set = default(PcreByteSet);
+		var specialScanCursor = index;
+		var nextClosingBracket = -1;
+		while ( index < source.Length ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( source[index] == (byte)']' && hasItem ) {
+				index++;
+				return new PcreByteClass( negated ? set.Complement() : set );
+			}
+			var item = ParseBracketItem( ref specialScanCursor, ref nextClosingBracket );
+			if ( !item.Value.HasValue && index < source.Length && source[index] == (byte)'-'
+				&& index + 1 < source.Length && source[index + 1] != (byte)']' ) {
+				throw Invalid( index, "a character class cannot start a range" );
+			}
+			if ( item.Value.HasValue && item.MayStartRange && index < source.Length
+				&& source[index] == (byte)'-' && index + 1 < source.Length && source[index + 1] != (byte)']' ) {
+				var hyphenOffset = index++;
+				var end = ParseBracketItem( ref specialScanCursor, ref nextClosingBracket );
+				if ( !end.Value.HasValue || end.Value.Value < item.Value.Value ) {
+					throw Invalid( hyphenOffset, "range endpoints must be ordered literal bytes" );
+				}
+				set = set.Union( PcreByteSet.Range( item.Value.Value, end.Value.Value ) );
+			} else {
+				set = set.Union( item.Set );
+			}
+			hasItem = true;
+		}
+		throw Invalid( openingOffset, "unclosed bracket class" );
+	}
+
+	private (PcreByteSet Set, byte? Value, bool MayStartRange) ParseBracketItem(
+		ref int specialScanCursor, ref int nextClosingBracket
+	) {
+		var offset = index;
+		var value = source[index++];
+		if ( value == (byte)'[' && index < source.Length
+			&& ( source[index] is (byte)':' or (byte)'.' or (byte)'=' )
+			&& HasCompleteSpecialClassToken( ref specialScanCursor, ref nextClosingBracket ) ) {
+			return ParsePosixItem( offset );
+		}
+		if ( value == (byte)'\\' ) {
+			if ( index < source.Length && source[index] == (byte)'b' ) {
+				index++;
+				return (PcreByteSet.Singleton( 0x08 ), 0x08, true);
+			}
+			var escape = ParseEscape( offset );
+			return escape switch {
+				PcreByteLiteral literal => (PcreByteSet.Singleton( literal.Value ), literal.Value, true),
+				PcreByteClass characterClass => (characterClass.Set, null, false),
+				_ => throw Unsupported( offset )
+			};
+		}
+		return (PcreByteSet.Singleton( value ), value, true);
+	}
+
+	private bool HasCompleteSpecialClassToken( ref int scanCursor, ref int nextClosingBracket ) {
+		var marker = source[index];
+		while ( nextClosingBracket < index && scanCursor < source.Length ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( source[scanCursor] == (byte)'\\' ) { scanCursor = Math.Min( scanCursor + 2, source.Length ); continue; }
+			if ( source[scanCursor++] == (byte)']' ) { nextClosingBracket = scanCursor - 1; }
+		}
+		return nextClosingBracket > index + 1 && source[nextClosingBracket - 1] == marker;
+	}
+
+	private (PcreByteSet Set, byte? Value, bool MayStartRange) ParsePosixItem( int offset ) {
+		if ( source[index] != (byte)':' ) { throw Unsupported( offset ); } // Collating/equivalence elements.
+		index++;
+		var negated = index < source.Length && source[index] == (byte)'^';
+		if ( negated ) { index++; }
+		var nameStart = index;
+		while ( index < source.Length && source[index] is >= (byte)'a' and <= (byte)'z' ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			index++;
+		}
+		if ( index == nameStart || index + 1 >= source.Length
+			|| source[index] != (byte)':' || source[index + 1] != (byte)']' ) {
+			throw Invalid( offset, "malformed POSIX character class" );
+		}
+		var name = System.Text.Encoding.ASCII.GetString( source, nameStart, index - nameStart );
+		var set = name switch {
+			"alnum" => PcreByteSet.Alnum,
+			"alpha" => PcreByteSet.Alpha,
+			"ascii" => PcreByteSet.Ascii,
+			"blank" => PcreByteSet.Blank,
+			"cntrl" => PcreByteSet.Control,
+			"digit" => PcreByteSet.Digit,
+			"graph" => PcreByteSet.Graph,
+			"lower" => PcreByteSet.Lower,
+			"print" => PcreByteSet.Printable,
+			"punct" => PcreByteSet.Punctuation,
+			"space" => PcreByteSet.WhiteSpace,
+			"upper" => PcreByteSet.Upper,
+			"word" => PcreByteSet.Word,
+			"xdigit" => PcreByteSet.HexDigit,
+			_ => throw Unsupported( offset )
+		};
+		index += 2; // The POSIX ':]' belongs to this item; the outer ']' is separate.
+		return (negated ? set.Complement() : set, null, false);
 	}
 
 	private PcreByteNode ParseEscape( int offset ) {
