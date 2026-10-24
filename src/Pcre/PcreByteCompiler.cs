@@ -17,7 +17,7 @@ internal static class PcreByteCompiler {
 			) );
 		}
 
-		var parser = new PcreByteParser( pattern.ToArray(), cancellationToken );
+		var parser = new PcreByteParser( pattern.ToArray(), options.Caseless, cancellationToken );
 		try {
 			var root = parser.Parse();
 			var program = new PcreByteProgramCompiler( cancellationToken, parser.Caseless ).Compile( root );
