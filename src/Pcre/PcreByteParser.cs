@@ -162,7 +162,9 @@ internal sealed class PcreByteParser {
 	private (PcreByteSet Set, byte? Value, bool MayStartRange) ParseBracketItem() {
 		var offset = index;
 		var value = source[index++];
-		if ( value == (byte)'[' && index < source.Length && source[index] is (byte)':' or (byte)'.' or (byte)'=' ) {
+		if ( value == (byte)'[' && index < source.Length
+			&& ( source[index] is (byte)':' or (byte)'.' or (byte)'=' )
+			&& HasCompleteSpecialClassToken() ) {
 			return ParsePosixItem( offset );
 		}
 		if ( value == (byte)'\\' ) {
@@ -177,7 +179,19 @@ internal sealed class PcreByteParser {
 				_ => throw Unsupported( offset )
 			};
 		}
-		return (PcreByteSet.Singleton( value ), value, value != (byte)'-');
+		return (PcreByteSet.Singleton( value ), value, true);
+	}
+
+	private bool HasCompleteSpecialClassToken() {
+		var marker = source[index];
+		for ( var cursor = index + 1; cursor < source.Length; cursor++ ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( source[cursor] == (byte)'\\' ) { cursor++; continue; }
+			if ( source[cursor] == (byte)']' ) {
+				return cursor > index + 1 && source[cursor - 1] == marker;
+			}
+		}
+		return false;
 	}
 
 	private (PcreByteSet Set, byte? Value, bool MayStartRange) ParsePosixItem( int offset ) {
