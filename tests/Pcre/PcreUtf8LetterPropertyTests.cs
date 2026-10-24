@@ -82,11 +82,15 @@ public sealed class PcreUtf8LetterPropertyTests {
 
 	[Fact]
 	public void PropertyEvaluationUsesMatchWorkBudgetAndCancellation() {
-		var limited = Compile( "\\p{L}+"u8.ToArray(), new PcreByteOptions { Utf8 = true, MatchWorkLimit = 4 } );
+		// Validation, candidate and instruction transition consume three steps;
+		// property evaluation is step four, before Accept at step five.
+		var limited = Compile( "\\p{L}"u8.ToArray(), new PcreByteOptions { Utf8 = true, MatchWorkLimit = 4 } );
 		Assert.Equal( PcreByteDiagnosticCode.MatchWorkLimitExceeded,
 			limited.Match( "é"u8.ToArray() ).Diagnostic?.Code );
+		var exact = Compile( "\\p{L}"u8.ToArray(), new PcreByteOptions { Utf8 = true, MatchWorkLimit = 5 } );
+		Assert.Equal( 2, exact.Match( "é"u8.ToArray() ).Match?.ByteLength );
 		using var cancellation = new CancellationTokenSource();
-		var compiled = Compile( "\\p{L}+"u8.ToArray(), new PcreByteOptions {
+		var compiled = Compile( "\\p{L}"u8.ToArray(), new PcreByteOptions {
 			Utf8 = true, WorkObserver = count => { if ( count == 4 ) { cancellation.Cancel(); } }
 		} );
 		Assert.Throws<OperationCanceledException>( () => compiled.Match( "é"u8.ToArray(), cancellationToken: cancellation.Token ) );
