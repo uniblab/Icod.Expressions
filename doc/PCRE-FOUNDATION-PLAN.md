@@ -4,7 +4,7 @@
 
 **Goal:** Add an internal, tested ordered-backtracking PCRE byte-mode foundation without switching Grep or publishing a new package.
 
-**Architecture:** A separate parser compiles byte patterns to immutable nodes/instructions; a matcher searches authoritative bytes from the requested offset, explores alternatives in syntax order, and rolls capture state back with failed paths. GNU BRE/ERE code is untouched. UTF-8/UCP, lookarounds and full Grep migration are later milestones under issue #7.
+**Architecture:** A separate parser compiles byte patterns to immutable ordered bytecode; a matcher searches authoritative bytes from the requested offset using an explicit bounded backtracking stack, and rolls capture state back with failed paths. GNU BRE/ERE code is untouched. UTF-8/UCP, lookarounds and full Grep migration are later milestones under issue #7.
 
 **Tech Stack:** .NET 8/9/10, C# 13, xUnit, existing single `Icod.Expressions` project and test project.
 

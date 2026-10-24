@@ -3,6 +3,7 @@ namespace Icod.Expressions.Pcre;
 /// <summary>Parses only implemented byte-mode constructs, retaining syntax order.</summary>
 internal sealed class PcreByteParser {
 	private const int MaximumPatternDepth = 256;
+	private const int MaximumCaptureCount = 256;
 	private readonly byte[] source;
 	private readonly CancellationToken cancellationToken;
 	private int index;
@@ -31,6 +32,7 @@ internal sealed class PcreByteParser {
 		}
 		var branches = new List<IReadOnlyList<PcreByteNode>>();
 		while ( true ) {
+			cancellationToken.ThrowIfCancellationRequested();
 			var nodes = new List<PcreByteNode>();
 			while ( index < source.Length && source[index] != (byte)'|' && source[index] != (byte)')' ) {
 				cancellationToken.ThrowIfCancellationRequested();
@@ -73,6 +75,11 @@ internal sealed class PcreByteParser {
 				throw Unsupported( offset );
 			}
 			var number = ++groupCount;
+			if ( number > MaximumCaptureCount ) {
+				throw new PcreByteParseException( new(
+					PcreByteDiagnosticCode.PatternCaptureLimitExceeded, offset, "capture count limit exceeded"
+				) );
+			}
 			PcreByteAlternatives body;
 			try {
 				body = ParseAlternatives( true, depth + 1 );

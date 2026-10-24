@@ -4,6 +4,7 @@ internal enum PcreByteDiagnosticCode {
 	UnsupportedSyntax,
 	InvalidSyntax,
 	PatternDepthLimitExceeded,
+	PatternCaptureLimitExceeded,
 	InvalidWorkLimit,
 	InvalidStartOffset,
 	MatchWorkLimitExceeded,

@@ -221,6 +221,13 @@ public sealed class PcreByteFoundationTests {
 	}
 
 	[Fact]
+	public void BoundsCaptureSnapshotsForLargePatterns() {
+		var pattern = System.Text.Encoding.ASCII.GetBytes( string.Concat( Enumerable.Repeat( "(a)", 300 ) ) );
+		var result = PcreByteCompiler.Compile( pattern );
+		Assert.Equal( PcreByteDiagnosticCode.PatternCaptureLimitExceeded, result.Diagnostic?.Code );
+	}
+
+	[Fact]
 	public void BoundsNestedRepeats() {
 		var compiled = Compile( "(a+)+$"u8.ToArray(), new PcreByteOptions { MatchWorkLimit = 100 } );
 		var result = compiled.Match( "aaaaaaaaaaaaaaaaaaaaab"u8.ToArray() );
