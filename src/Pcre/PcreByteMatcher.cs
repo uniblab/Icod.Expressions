@@ -80,6 +80,22 @@ internal static class PcreByteMatcher {
 								pc++;
 							}
 							break;
+						case PcreByteOpcode.AssertLiteral:
+							var literal = instruction.Bytes.Span;
+							var adjacent = instruction.Second == 1 ? position - literal.Length : position;
+							var equals = adjacent >= 0 && literal.Length <= input.Length - adjacent;
+							if ( equals ) {
+								for ( var byteIndex = 0; byteIndex < literal.Length; byteIndex++ ) {
+									Step(); // Attempted assertion byte comparison.
+									if ( input.Span[adjacent + byteIndex] != literal[byteIndex] ) {
+										equals = false;
+										break;
+									}
+								}
+							}
+							if ( equals == ( instruction.First == 1 ) ) { pc++; }
+							else { failed = true; }
+							break;
 						case PcreByteOpcode.Start:
 							if ( position == 0 ) { pc++; } else { failed = true; }
 							break;

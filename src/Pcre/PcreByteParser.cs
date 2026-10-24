@@ -47,6 +47,9 @@ internal sealed class PcreByteParser {
 				cancellationToken.ThrowIfCancellationRequested();
 				var atom = ParseAtom( depth );
 				if ( index < source.Length && source[index] is (byte)'*' or (byte)'+' or (byte)'?' ) {
+					if ( atom is PcreByteLiteralAssertion ) {
+						throw Unsupported( index );
+					}
 					if ( atom is PcreByteAnchor ) {
 						throw Invalid( index, "an anchor cannot be repeated" );
 					}
@@ -89,11 +92,23 @@ internal sealed class PcreByteParser {
 		if ( value == (byte)'(' ) {
 			var capturing = true;
 			if ( index < source.Length && source[index] == (byte)'?' ) {
-				if ( index + 1 >= source.Length || source[index + 1] != (byte)':' ) {
-					throw Unsupported( offset );
+				if ( index + 1 < source.Length && source[index + 1] == (byte)':' ) {
+					index += 2;
+					capturing = false;
+				} else {
+					var behind = index + 2 < source.Length && source[index + 1] == (byte)'<'
+						&& source[index + 2] is (byte)'=' or (byte)'!';
+					var ahead = index + 1 < source.Length && source[index + 1] is (byte)'=' or (byte)'!';
+					if ( !behind && !ahead ) { throw Unsupported( offset ); }
+					if ( depth >= MaximumPatternDepth ) {
+						throw new PcreByteParseException( new(
+							PcreByteDiagnosticCode.PatternDepthLimitExceeded, offset, "pattern nesting limit exceeded"
+						) );
+					}
+					var positive = source[index + (behind ? 2 : 1)] == (byte)'=';
+					index += behind ? 3 : 2;
+					return ParseLiteralAssertion( offset, positive, behind );
 				}
-				index += 2;
-				capturing = false;
 			}
 			if ( depth >= MaximumPatternDepth ) {
 				throw new PcreByteParseException( new(
@@ -137,6 +152,33 @@ internal sealed class PcreByteParser {
 			throw Unsupported( offset );
 		}
 		return new PcreByteLiteral( value );
+	}
+
+	private PcreByteLiteralAssertion ParseLiteralAssertion( int openingOffset, bool positive, bool behind ) {
+		var bytes = new List<byte>();
+		while ( index < source.Length && source[index] != (byte)')' ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			var value = source[index++];
+			if ( value == (byte)'\\' ) {
+				PcreByteNode escaped;
+				try {
+					escaped = ParseEscape( index - 1 );
+				} catch ( PcreByteParseException error ) when ( error.Diagnostic.Code == PcreByteDiagnosticCode.UnsupportedSyntax ) {
+					throw Unsupported( openingOffset );
+				}
+				if ( escaped is not PcreByteLiteral literal ) { throw Unsupported( openingOffset ); }
+				bytes.Add( literal.Value );
+			} else if ( value is (byte)'|' or (byte)'(' or (byte)'[' or (byte)'.'
+				or (byte)'^' or (byte)'$' or (byte)'*' or (byte)'+' or (byte)'?'
+				or (byte)'{' or (byte)'}' ) {
+				throw Unsupported( openingOffset );
+			} else {
+				bytes.Add( value );
+			}
+		}
+		if ( index >= source.Length ) { throw Invalid( openingOffset, "unclosed assertion" ); }
+		index++;
+		return new( bytes.ToArray(), positive, behind );
 	}
 
 	private PcreByteNode ParseBracket( int openingOffset ) {

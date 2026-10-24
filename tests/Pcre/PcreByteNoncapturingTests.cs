@@ -94,7 +94,7 @@ public sealed class PcreByteNoncapturingTests {
 
 	[Theory]
 	[InlineData( "(?i:a)" )]
-	[InlineData( "(?=a)" )]
+	[InlineData( "(?=a|b)" )]
 	[InlineData( "(?|a)" )]
 	public void OtherSpecialGroupsRemainUnsupported( string pattern ) {
 		var result = PcreByteCompiler.Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
