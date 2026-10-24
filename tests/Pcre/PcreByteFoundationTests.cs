@@ -198,6 +198,29 @@ public sealed class PcreByteFoundationTests {
 	}
 
 	[Fact]
+	public void MatchesLongFlatLiteralWithoutUsingBacktrackingDepth() {
+		var bytes = System.Text.Encoding.ASCII.GetBytes( new string( 'a', 300 ) );
+		var result = Compile( bytes ).Match( bytes );
+		Assert.Equal( 300, result.Match?.ByteLength );
+	}
+
+	[Fact]
+	public void MatchesLongFlatRepeatWithoutUsingBacktrackingDepth() {
+		var bytes = System.Text.Encoding.ASCII.GetBytes( new string( 'a', 300 ) );
+		var result = Compile( "a+"u8.ToArray() ).Match( bytes );
+		Assert.Equal( 300, result.Match?.ByteLength );
+	}
+
+	[Fact]
+	public void MatchesLongSequenceOfShallowGroups() {
+		var pattern = System.Text.Encoding.ASCII.GetBytes( string.Concat( Enumerable.Repeat( "(a)", 120 ) ) );
+		var bytes = System.Text.Encoding.ASCII.GetBytes( new string( 'a', 120 ) );
+		var result = Compile( pattern ).Match( bytes );
+		Assert.Equal( 120, result.Match?.ByteLength );
+		Assert.Equal( new PcreByteCapture( 119, 1 ), result.Match?.Captures[120] );
+	}
+
+	[Fact]
 	public void BoundsNestedRepeats() {
 		var compiled = Compile( "(a+)+$"u8.ToArray(), new PcreByteOptions { MatchWorkLimit = 100 } );
 		var result = compiled.Match( "aaaaaaaaaaaaaaaaaaaaab"u8.ToArray() );
