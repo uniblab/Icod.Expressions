@@ -14,7 +14,28 @@ env:
   CONFIGURATION: Staging
 
 jobs:
+  classify:
+    runs-on: ubuntu-latest
+    outputs:
+      full_compatibility: ${{ steps.paths.outputs.full_compatibility }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: paths
+        name: Classify changes for source-pinned compatibility checks
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only --no-renames "$BASE_SHA" HEAD > "$RUNNER_TEMP/changed-paths.txt"
+          full_compatibility="$(sh .github/scripts/classify-pr-changes.sh < "$RUNNER_TEMP/changed-paths.txt")"
+          echo "full_compatibility=$full_compatibility" >> "$GITHUB_OUTPUT"
+          echo "Run source-pinned compatibility checks: $full_compatibility"
+
   build:
+    needs: classify
     strategy:
       fail-fast: false
       matrix:
@@ -80,9 +101,6 @@ jobs:
       - name: Compare POSIX ASCII cases with glibc
         if: matrix.os == 'ubuntu-latest'
         run: dotnet run --project tools/PosixRegexDifferential/PosixRegexDifferential.csproj -c Staging
-      - name: Run pinned Gnulib included regex oracle
-        if: matrix.os == 'ubuntu-latest'
-        run: sh tools/GnulibRegexOracle/run.sh
       - name: Verify A05 candidate corpus identities
         if: matrix.os == 'ubuntu-latest'
         run: sh tools/verify-a05-candidate.sh
@@ -92,17 +110,9 @@ jobs:
         run: |
           dotnet run --project tools/RegularExpressionApiSnapshot/RegularExpressionApiSnapshot.csproj -c Staging > /tmp/icod-expressions-api.txt
           diff <(tail -n +2 doc/Icod.Expressions-A00-Compiled-API.txt) <(tail -n +2 /tmp/icod-expressions-api.txt)
-      - name: Compare final A05 corpus with frozen CommandFramework audit commit
-        if: matrix.arch == 'x64'
-        shell: pwsh
-        run: ./tools/FinalParity/run.ps1
       - name: Pack alpha candidate
-        if: matrix.arch == 'x64'
+        if: matrix.os == 'ubuntu-latest'
         run: dotnet pack Icod.Expressions.csproj -c ${{ env.CONFIGURATION }} --no-build --no-restore -o artifacts
-      - name: Run old-client forwarding smoke
-        if: matrix.arch == 'x64'
-        shell: pwsh
-        run: ./tools/ForwardingSmoke/run.ps1 -PackageFeed artifacts
       - name: Restore package-only consumer
         if: matrix.os == 'ubuntu-latest'
         run: dotnet restore samples/PackageSmoke/PackageSmoke.csproj --source artifacts
@@ -117,10 +127,42 @@ jobs:
           for framework in net8.0 net9.0 net10.0; do
             dotnet run --project samples/PackageSmoke/PackageSmoke.csproj -c Staging --no-build --no-restore -f "$framework"
           done
+
+  compatibility:
+    needs: classify
+    if: needs.classify.outputs.full_compatibility == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            name: Linux x64
+          - os: windows-latest
+            name: Windows x64
+          - os: macos-15-intel
+            name: macOS x64
+    name: Compatibility ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Restore candidate library
+        run: dotnet restore Icod.Expressions.csproj
+      - name: Build candidate library
+        run: dotnet build Icod.Expressions.csproj -c ${{ env.CONFIGURATION }} --no-restore -p:ContinuousIntegrationBuild=true
+      - name: Pack candidate library
+        run: dotnet pack Icod.Expressions.csproj -c ${{ env.CONFIGURATION }} --no-build --no-restore -o artifacts
+      - name: Compare final A05 corpus with frozen CommandFramework audit commit
+        shell: pwsh
+        run: ./tools/FinalParity/run.ps1
+      - name: Run old-client forwarding smoke
+        shell: pwsh
+        run: ./tools/ForwardingSmoke/run.ps1 -PackageFeed artifacts
       - name: Run source-pinned consumer binaries across platforms with scratch bridge
-        if: matrix.arch == 'x64'
         shell: pwsh
         run: ./tools/ConsumerBridgeProbe/run-cross-platform.ps1 -PackageFeed artifacts
-      - name: Run source-pinned consumers with package-backed scratch bridge
+      - name: Run pinned Gnulib included regex oracle
         if: matrix.os == 'ubuntu-latest'
-        run: sh tools/ConsumerBridgeProbe/run.sh artifacts
+        run: sh tools/GnulibRegexOracle/run.sh
