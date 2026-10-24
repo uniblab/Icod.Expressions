@@ -77,7 +77,22 @@ do not offload synchronous matching to a thread pool.
 
 ## BUILD AND TEST
 
-Install the .NET 8, 9, and 10 SDKs or targeting packs and runtimes:
+Install the .NET 8, 9, and 10 SDKs or targeting packs and runtimes.
+The local build scripts follow the shared `uniblab/.github` Debug sequence:
+`clean → restore → build → test → pack → validate`. The package check
+requires exactly one `Icod.Expressions` package containing its README and
+the net8.0, net9.0, and net10.0 library DLLs. Run from the repository root:
+
+```cmd
+build.cmd
+```
+
+```sh
+./build.sh
+```
+
+Pass `clean`, `restore`, `build`, `test`, `pack`, or `validate` as the
+first argument to run one stage. For the Staging parity and consumer probes:
 
 ```sh
 dotnet restore Icod.Expressions.sln
