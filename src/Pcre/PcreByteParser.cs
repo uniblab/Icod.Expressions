@@ -12,6 +12,7 @@ internal sealed class PcreByteParser {
 	private int groupCount;
 	private int repeatMarks;
 	private bool dotAll;
+	private bool caseless;
 
 	internal PcreByteParser( byte[] source, CancellationToken cancellationToken ) {
 		this.source = source;
@@ -19,12 +20,14 @@ internal sealed class PcreByteParser {
 	}
 
 	internal int GroupCount => groupCount;
+	internal bool Caseless => caseless;
 
 	internal PcreByteAlternatives Parse() {
 		if ( source.Length >= 4 && source[0] == (byte)'(' && source[1] == (byte)'?'
-			&& source[2] == (byte)'s' && source[3] == (byte)')' ) {
+			&& ( source[2] is (byte)'s' or (byte)'i' ) && source[3] == (byte)')' ) {
 			index = 4;
-			dotAll = true;
+			dotAll = source[2] == (byte)'s';
+			caseless = source[2] == (byte)'i';
 		}
 		var root = ParseAlternatives( false, 0 );
 		if ( index != source.Length ) {
@@ -212,7 +215,8 @@ internal sealed class PcreByteParser {
 				if ( !end.Value.HasValue || end.Value.Value < item.Value.Value ) {
 					throw Invalid( hyphenOffset, "range endpoints must be ordered literal bytes" );
 				}
-				set = set.Union( PcreByteSet.Range( item.Value.Value, end.Value.Value ) );
+				var range = PcreByteSet.Range( item.Value.Value, end.Value.Value );
+				set = set.Union( caseless ? range.AsciiCaseClosure() : range );
 			} else {
 				set = set.Union( item.Set );
 			}
@@ -241,12 +245,17 @@ internal sealed class PcreByteParser {
 			}
 			var escape = ParseEscape( offset );
 			return escape switch {
-				PcreByteLiteral literal => (PcreByteSet.Singleton( literal.Value ), literal.Value, true),
+				PcreByteLiteral literal => (BracketLiteral( literal.Value ), literal.Value, true),
 				PcreByteClass characterClass => (characterClass.Set, null, false),
 				_ => throw Unsupported( offset )
 			};
 		}
-		return (PcreByteSet.Singleton( value ), value, true);
+		return (BracketLiteral( value ), value, true);
+	}
+
+	private PcreByteSet BracketLiteral( byte value ) {
+		var set = PcreByteSet.Singleton( value );
+		return caseless ? set.AsciiCaseClosure() : set;
 	}
 
 	private bool HasCompleteSpecialClassToken( ref int scanCursor, ref int nextClosingBracket ) {
@@ -292,6 +301,7 @@ internal sealed class PcreByteParser {
 			_ => throw Unsupported( offset )
 		};
 		index += 2; // The POSIX ':]' belongs to this item; the outer ']' is separate.
+		if ( caseless ) { set = set.AsciiCaseClosure(); }
 		return (negated ? set.Complement() : set, null, false);
 	}
 
