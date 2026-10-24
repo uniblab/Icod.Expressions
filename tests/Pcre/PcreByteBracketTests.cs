@@ -18,6 +18,12 @@ public sealed class PcreByteBracketTests {
 	[InlineData( "[]]", "5D", 0, 1 )]
 	[InlineData( "[-a]", "2D", 0, 1 )]
 	[InlineData( "[a-]", "2D", 0, 1 )]
+	[InlineData( "[--0]", "2E", 0, 1 )]
+	[InlineData( "[a-b--0]", "2F", 0, 1 )]
+	[InlineData( "[[:digit]]", "5B5D", 0, 2 )]
+	[InlineData( "[[.ab]", "5B", 0, 1 )]
+	[InlineData( "[[=ab]", "3D", 0, 1 )]
+	[InlineData( "[[:ab]", "3A", 0, 1 )]
 	[InlineData( "[a\\-c]", "2D", 0, 1 )]
 	[InlineData( "[\\dA]", "35", 0, 1 )]
 	[InlineData( "[\\dA]", "41", 0, 1 )]
@@ -80,6 +86,7 @@ public sealed class PcreByteBracketTests {
 	[InlineData( "[a\\", 2 )]
 	[InlineData( "[z-a]", 2 )]
 	[InlineData( "[a-\\d]", 2 )]
+	[InlineData( "[--\\d]", 2 )]
 	[InlineData( "[\\d-a]", 3 )]
 	public void RejectsMalformedOrdinaryClass( string pattern, int offset ) {
 		var result = PcreByteCompiler.Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
@@ -136,7 +143,6 @@ public sealed class PcreByteBracketTests {
 	[InlineData( "[[:bogus:]]", 1, (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
 	[InlineData( "[[.ch.]]", 1, (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
 	[InlineData( "[[=a=]]", 1, (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( "[[:digit]]", 1, (int)PcreByteDiagnosticCode.InvalidSyntax )]
 	[InlineData( "[[:digit:]", 0, (int)PcreByteDiagnosticCode.InvalidSyntax )]
 	[InlineData( "[a-[:digit:]]", 2, (int)PcreByteDiagnosticCode.InvalidSyntax )]
 	[InlineData( "[[:digit:]-a]", 10, (int)PcreByteDiagnosticCode.InvalidSyntax )]
