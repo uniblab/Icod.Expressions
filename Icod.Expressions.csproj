@@ -17,9 +17,11 @@
 		<RepositoryType>git</RepositoryType>
 		<IsPackable>true</IsPackable>
 		<Deterministic>true</Deterministic>
+		<EnableDefaultCompileItems>false</EnableDefaultCompileItems>
 	</PropertyGroup>
 	<ItemGroup>
-		<None Include="../../README.md" Pack="true" PackagePath="/" />
+		<Compile Include="src/**/*.cs" />
+		<None Update="README.md" Pack="true" PackagePath="/" />
 	</ItemGroup>
 	<PropertyGroup Condition="'$(Configuration)' == 'Staging'">
 		<DefineConstants>TRACE</DefineConstants>

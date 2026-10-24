@@ -41,9 +41,9 @@ jobs:
         shell: pwsh
         run: |
           foreach ($framework in @('net8.0', 'net9.0', 'net10.0')) {
-            dotnet test tests/Icod.Expressions.Tests/Icod.Expressions.Tests.csproj -c ${{ matrix.configuration }} -f $framework --no-build --no-restore --logger "trx;LogFileName=$framework.trx"
+            dotnet test tests/Icod.Expressions.Tests.csproj -c ${{ matrix.configuration }} -f $framework --no-build --no-restore --logger "trx;LogFileName=$framework.trx"
             if ($LASTEXITCODE -ne 0) { throw "Test run failed: $framework" }
-            $path = Join-Path 'tests/Icod.Expressions.Tests/TestResults' "$framework.trx"
+            $path = Join-Path 'tests/TestResults' "$framework.trx"
             [xml]$results = Get-Content $path -Raw
             $counters = $results.SelectSingleNode("//*[local-name()='Counters']")
             if ($null -eq $counters -or [int]$counters.GetAttribute('total') -ne 214 -or [int]$counters.GetAttribute('passed') -ne 214 -or [int]$counters.GetAttribute('failed') -ne 0) {
@@ -78,7 +78,7 @@ jobs:
         run: ./tools/FinalParity/run.ps1
       - name: Pack alpha candidate
         if: matrix.configuration == 'Staging'
-        run: dotnet pack src/Icod.Expressions/Icod.Expressions.csproj -c Staging --no-build --no-restore -o artifacts
+        run: dotnet pack Icod.Expressions.csproj -c Staging --no-build --no-restore -o artifacts
       - name: Run old-client forwarding smoke
         if: matrix.configuration == 'Staging'
         shell: pwsh
