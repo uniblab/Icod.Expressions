@@ -4,6 +4,7 @@ internal enum PcreByteOpcode {
 	Literal,
 	Class,
 	Backreference,
+	AssertLiteral,
 	Start,
 	End,
 	CaptureStart,
@@ -16,7 +17,8 @@ internal enum PcreByteOpcode {
 }
 
 internal sealed record PcreByteInstruction(
-	PcreByteOpcode Opcode, int First = 0, int Second = 0, PcreByteSet Set = default
+	PcreByteOpcode Opcode, int First = 0, int Second = 0, PcreByteSet Set = default,
+	ReadOnlyMemory<byte> Bytes = default
 );
 
 internal sealed record PcreByteProgram( PcreByteInstruction[] Instructions, int MarkCount );
@@ -37,10 +39,11 @@ internal sealed class PcreByteProgramCompiler {
 		return new( instructions.ToArray(), markCount );
 	}
 
-	private int Emit( PcreByteOpcode opcode, int first = 0, int second = 0, PcreByteSet set = default ) {
+	private int Emit( PcreByteOpcode opcode, int first = 0, int second = 0, PcreByteSet set = default,
+		ReadOnlyMemory<byte> bytes = default ) {
 		cancellationToken.ThrowIfCancellationRequested();
 		var index = instructions.Count;
-		instructions.Add( new( opcode, first, second, set ) );
+		instructions.Add( new( opcode, first, second, set, bytes ) );
 		return index;
 	}
 
@@ -74,6 +77,10 @@ internal sealed class PcreByteProgramCompiler {
 				break;
 			case PcreByteBackreference reference:
 				Emit( PcreByteOpcode.Backreference, reference.Number );
+				break;
+			case PcreByteLiteralAssertion assertion:
+				Emit( PcreByteOpcode.AssertLiteral, assertion.IsPositive ? 1 : 0,
+					assertion.IsBehind ? 1 : 0, bytes: assertion.Bytes );
 				break;
 			case PcreByteAnchor anchor:
 				Emit( anchor.IsStart ? PcreByteOpcode.Start : PcreByteOpcode.End );
