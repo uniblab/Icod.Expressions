@@ -38,9 +38,9 @@ public sealed class PcreByteDollarFinalLfTests {
 		var atEnd = Compile( "$"u8.ToArray() ).Match( "a\n"u8.ToArray(), startOffset: 2 );
 		Assert.True( atEnd.IsSuccess, atEnd.Diagnostic?.Message );
 		Assert.Equal( 2, atEnd.Match?.ByteIndex );
-		var strict = Compile( "a\\z"u8.ToArray() ).Match( "a\n"u8.ToArray(), startOffset: 1 );
+		var strict = Compile( "\\z"u8.ToArray() ).Match( "a\n"u8.ToArray(), startOffset: 1 );
 		Assert.True( strict.IsSuccess, strict.Diagnostic?.Message );
-		Assert.Null( strict.Match );
+		Assert.Equal( 2, strict.Match?.ByteIndex );
 	}
 
 	[Fact]
