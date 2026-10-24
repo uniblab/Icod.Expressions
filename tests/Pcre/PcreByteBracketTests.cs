@@ -22,7 +22,7 @@ public sealed class PcreByteBracketTests {
 	[InlineData( "[\\dA]", "35", 0, 1 )]
 	[InlineData( "[\\dA]", "41", 0, 1 )]
 	[InlineData( "[\\D]", "FF", 0, 1 )]
-	[InlineData( "[\\S]", "0A", 0, 1 )]
+	[InlineData( "[\\s]", "0A", 0, 1 )]
 	[InlineData( "[\\w]", "5F", 0, 1 )]
 	[InlineData( "]", "5D", 0, 1 )]
 	public void MatchesOrdinaryByteClassWithPcre2Span( string pattern, string inputHex, int start, int length ) {

@@ -139,6 +139,10 @@ internal sealed class PcreByteParser {
 				return new PcreByteClass( negated ? set.Complement() : set );
 			}
 			var item = ParseBracketItem();
+			if ( !item.Value.HasValue && index < source.Length && source[index] == (byte)'-'
+				&& index + 1 < source.Length && source[index + 1] != (byte)']' ) {
+				throw Invalid( index, "a character class cannot start a range" );
+			}
 			if ( item.Value.HasValue && item.MayStartRange && index < source.Length
 				&& source[index] == (byte)'-' && index + 1 < source.Length && source[index + 1] != (byte)']' ) {
 				var hyphenOffset = index++;
