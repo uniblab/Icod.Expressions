@@ -66,6 +66,58 @@ public sealed class PcreByteAtomTests {
 		Assert.Equal( 0, result.Diagnostic?.ByteOffset );
 	}
 
+	[Theory]
+	[InlineData( "\\d+", "413432", 1, 2 )]
+	[InlineData( "\\d", "B2", -1, 0 )]
+	[InlineData( "\\D", "FF", 0, 1 )]
+	[InlineData( "\\D", "00", 0, 1 )]
+	[InlineData( "\\w+", "FF616263", 1, 3 )]
+	[InlineData( "\\w", "5F", 0, 1 )]
+	[InlineData( "\\W", "FF", 0, 1 )]
+	[InlineData( "\\s", "0B", 0, 1 )]
+	[InlineData( "\\s", "A0", -1, 0 )]
+	[InlineData( "\\S", "A0", 0, 1 )]
+	public void MatchesAsciiShorthandWithPcre2Span( string pattern, string inputHex, int index, int length ) {
+		var result = Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) ).Match( Convert.FromHexString( inputHex ) );
+		Assert.True( result.IsSuccess, result.Diagnostic?.Message );
+		if ( index < 0 ) { Assert.Null( result.Match ); }
+		else {
+			Assert.Equal( index, result.Match?.ByteIndex );
+			Assert.Equal( length, result.Match?.ByteLength );
+		}
+	}
+
+	[Fact]
+	public void BacktracksQuantifiedWordClassToSatisfyDigit() {
+		var result = Compile( "(\\w+)\\d"u8.ToArray() ).Match( "AB7"u8.ToArray() );
+		Assert.Equal( 3, result.Match?.ByteLength );
+		Assert.Equal( new PcreByteCapture( 0, 2 ), result.Match?.Captures[1] );
+	}
+
+	[Fact]
+	public void CopiesShorthandPatternBeforeCallerMutation() {
+		var bytes = "\\d"u8.ToArray();
+		var compiled = Compile( bytes );
+		bytes[1] = (byte)'W';
+		Assert.Equal( 0, compiled.Match( "5"u8.ToArray() ).Match?.ByteIndex );
+	}
+
+	[Fact]
+	public void CountsShorthandTransitionsAgainstWorkLimit() {
+		var result = PcreByteCompiler.Compile( "\\d+"u8.ToArray(), new PcreByteOptions { MatchWorkLimit = 6 } );
+		Assert.True( result.IsSuccess );
+		Assert.Equal( PcreByteDiagnosticCode.MatchWorkLimitExceeded,
+			result.Pattern?.Match( "999999"u8.ToArray() ).Diagnostic?.Code );
+	}
+
+	[Theory]
+	[InlineData( "\\h" )]
+	[InlineData( "\\v" )]
+	public void RetainsPendingUnicodeAwareWhitespaceAsUnsupported( string pattern ) {
+		var result = PcreByteCompiler.Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
+		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
+	}
+
 	private static PcreCompiledBytePattern Compile( byte[] pattern ) {
 		var result = PcreByteCompiler.Compile( pattern );
 		Assert.True( result.IsSuccess, result.Diagnostic?.Message );
