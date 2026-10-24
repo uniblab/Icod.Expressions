@@ -109,14 +109,61 @@ internal sealed class PcreByteParser {
 		if ( value == (byte)'^' || value == (byte)'$' ) {
 			return new PcreByteAnchor( value == (byte)'^' );
 		}
+		if ( value == (byte)'.' ) {
+			return new PcreByteClass( PcreByteSet.Dot );
+		}
+		if ( value == (byte)'\\' ) {
+			return ParseEscape( offset );
+		}
 		if ( value is (byte)'*' or (byte)'+' or (byte)'?' ) {
 			throw Invalid( offset, "quantifier without an atom" );
 		}
-		if ( value is (byte)'\\' or (byte)'.' or (byte)'{' or (byte)'}' or (byte)'[' or (byte)']' ) {
+		if ( value is (byte)'{' or (byte)'}' or (byte)'[' or (byte)']' ) {
 			throw Unsupported( offset );
 		}
 		return new PcreByteLiteral( value );
 	}
+
+	private PcreByteNode ParseEscape( int offset ) {
+		if ( index >= source.Length ) {
+			throw Invalid( offset, "trailing backslash" );
+		}
+		var value = source[index++];
+		if ( value == (byte)'x' ) {
+			if ( index < source.Length && source[index] == (byte)'{' ) { throw Unsupported( offset ); }
+			var result = 0;
+			for ( var count = 0; count < 2 && index < source.Length; count++ ) {
+				var digit = HexDigit( source[index] );
+				if ( digit < 0 ) { break; }
+				result = ( result << 4 ) | digit;
+				index++;
+			}
+			return new PcreByteLiteral( (byte)result );
+		}
+		var escaped = value switch {
+			(byte)'a' => 0x07,
+			(byte)'e' => 0x1B,
+			(byte)'f' => 0x0C,
+			(byte)'n' => 0x0A,
+			(byte)'r' => 0x0D,
+			(byte)'t' => 0x09,
+			_ => -1
+		};
+		if ( escaped >= 0 ) { return new PcreByteLiteral( (byte)escaped ); }
+		if ( value is >= (byte)'0' and <= (byte)'9'
+			or >= (byte)'A' and <= (byte)'Z'
+			or >= (byte)'a' and <= (byte)'z' ) {
+			throw Unsupported( offset );
+		}
+		return new PcreByteLiteral( value );
+	}
+
+	private static int HexDigit( byte value ) => value switch {
+		>= (byte)'0' and <= (byte)'9' => value - (byte)'0',
+		>= (byte)'A' and <= (byte)'F' => value - (byte)'A' + 10,
+		>= (byte)'a' and <= (byte)'f' => value - (byte)'a' + 10,
+		_ => -1
+	};
 
 	private static PcreByteParseException Invalid( int offset, string message ) => new(
 		new( PcreByteDiagnosticCode.InvalidSyntax, offset, message )

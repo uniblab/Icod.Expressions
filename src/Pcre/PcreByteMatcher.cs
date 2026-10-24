@@ -53,6 +53,13 @@ internal static class PcreByteMatcher {
 								pc++;
 							} else { failed = true; }
 							break;
+						case PcreByteOpcode.Class:
+							Step(); // Attempted byte set membership.
+							if ( position < input.Length && instruction.Set.Contains( input.Span[position] ) ) {
+								position++;
+								pc++;
+							} else { failed = true; }
+							break;
 						case PcreByteOpcode.Start:
 							if ( position == 0 ) { pc++; } else { failed = true; }
 							break;
