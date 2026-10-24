@@ -37,7 +37,7 @@ public sealed class PcreByteLeadingDotAllTests {
 	[InlineData( "a(?s).", 1 )]
 	[InlineData( "(?s:.)", 0 )]
 	[InlineData( "(?-s).", 0 )]
-	[InlineData( "(?i).", 0 )]
+	[InlineData( "(?m).", 0 )]
 	[InlineData( "(?s)(?s).", 4 )]
 	public void UnsupportedFlagPlacementIsDiagnosed( string pattern, int offset ) {
 		var result = PcreByteCompiler.Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
