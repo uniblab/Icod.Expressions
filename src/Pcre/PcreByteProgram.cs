@@ -2,6 +2,7 @@ namespace Icod.Expressions.Pcre;
 
 internal enum PcreByteOpcode {
 	Literal,
+	Any,
 	Class,
 	Backreference,
 	WordBoundary,
@@ -25,24 +26,26 @@ internal sealed record PcreByteInstruction(
 	ReadOnlyMemory<byte> Bytes = default
 );
 
-internal sealed record PcreByteProgram( PcreByteInstruction[] Instructions, int MarkCount, bool Caseless );
+internal sealed record PcreByteProgram( PcreByteInstruction[] Instructions, int MarkCount, bool Caseless, bool Utf8 );
 
 /// <summary>Compiles the supported AST into ordered bytecode with explicit backtrack edges.</summary>
 internal sealed class PcreByteProgramCompiler {
 	private readonly List<PcreByteInstruction> instructions = new();
 	private readonly CancellationToken cancellationToken;
 	private readonly bool caseless;
+	private readonly bool utf8;
 	private int markCount;
 
-	internal PcreByteProgramCompiler( CancellationToken cancellationToken, bool caseless ) {
+	internal PcreByteProgramCompiler( CancellationToken cancellationToken, bool caseless, bool utf8 ) {
 		this.cancellationToken = cancellationToken;
 		this.caseless = caseless;
+		this.utf8 = utf8;
 	}
 
 	internal PcreByteProgram Compile( PcreByteAlternatives root ) {
 		CompileAlternatives( root );
 		Emit( PcreByteOpcode.Accept );
-		return new( instructions.ToArray(), markCount, caseless );
+		return new( instructions.ToArray(), markCount, caseless, utf8 );
 	}
 
 	private int Emit( PcreByteOpcode opcode, int first = 0, int second = 0, PcreByteSet set = default,
@@ -77,6 +80,9 @@ internal sealed class PcreByteProgramCompiler {
 		switch ( node ) {
 			case PcreByteLiteral literal:
 				Emit( PcreByteOpcode.Literal, literal.Value );
+				break;
+			case PcreByteAny any:
+				Emit( PcreByteOpcode.Any, any.DotAll ? 1 : 0 );
 				break;
 			case PcreByteClass characterClass:
 				Emit( PcreByteOpcode.Class, set: characterClass.Set );
