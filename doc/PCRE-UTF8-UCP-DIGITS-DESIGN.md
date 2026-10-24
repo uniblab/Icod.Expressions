@@ -19,6 +19,7 @@ Cover Grep's existing C.UTF-8 digit fixture in the internal matcher: UCP makes P
 - In UTF mode, `\d` and `\D` consume one scalar; an ASCII restriction recognizes U+0030..U+0039 and rejects non-ASCII decimal digits. Without the restriction under UCP they use the Unicode Nd category. Negation includes every other valid scalar, including non-ASCII letters and emoji. `\p{Nd}`, `\P{Nd}` and their braced `^` forms use Nd independent of UCP and ASCII restrictions. The unbraced `\pN` is a different PCRE category and remains unsupported.
 - Standalone UTF brackets `[[:digit:]]`, `[[:^digit:]]`, `[^[:digit:]]` and `[^[:^digit:]]` use Nd under UCP and ASCII digits otherwise. POSIX and outer negation combine by XOR. Mixed brackets, ranges and other POSIX names in UTF mode remain unsupported, with no bytewise fallback.
 - Preserve ordered backtracking, source-byte match/capture spans, strict UTF validation, cancellation and per-match work accounting. Existing 8-bit byte-mode behavior is unchanged. Category data comes from the target .NET runtime, and PCRE2 Unicode-version parity remains a migration gate.
+- Reject `\b` and `\B` explicitly under UCP: the existing ASCII word-boundary instruction would otherwise produce incorrect Unicode results. UTF mode without UCP retains its current ASCII boundary behavior.
 
 ## Follow-on
 

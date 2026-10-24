@@ -363,6 +363,7 @@ internal sealed class PcreByteParser {
 			return ParseUnicodeProperty( offset, value == (byte)'P' );
 		}
 		if ( value == (byte)'b' || value == (byte)'B' ) {
+			if ( ucp ) { throw Unsupported( offset ); } // Unicode word boundaries require UCP \w semantics.
 			return new PcreByteWordBoundary( value == (byte)'b' );
 		}
 		if ( value is >= (byte)'1' and <= (byte)'9' ) {

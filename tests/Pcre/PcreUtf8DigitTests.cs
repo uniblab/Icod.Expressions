@@ -40,6 +40,7 @@ public sealed class PcreUtf8DigitTests {
 	[InlineData( true, false, "\\D", "٣", -1, 0 )]
 	[InlineData( true, false, "\\D", "😀", 0, 4 )]
 	[InlineData( true, true, "\\p{Nd}", "٣", 0, 2 )]
+	[InlineData( false, false, "\\p{Nd}", "٣", 0, 2 )]
 	[InlineData( true, true, "\\P{Nd}", "é", 0, 2 )]
 	[InlineData( true, false, "(?aD)\\d", "٣", -1, 0 )]
 	[InlineData( true, true, "(?-aD)\\d", "٣", 0, 2 )]
@@ -76,11 +77,20 @@ public sealed class PcreUtf8DigitTests {
 
 	[Fact]
 	public void FailedAsciiDigitPathRestoresCaptureBeforeUnicodePosixAlternative() {
-		var result = Compile( "(\\d+)x|([[:digit:]]+)"u8.ToArray(), GrepOptions ).Match( "٣"u8.ToArray() );
+		var result = Compile( "(\\d+)x|([[:digit:]]+)"u8.ToArray(), GrepOptions ).Match( "3٣"u8.ToArray() );
 		Assert.True( result.IsSuccess, result.Diagnostic?.Message );
-		Assert.Equal( new PcreByteCapture( 0, 2 ), result.Match?.Captures[0] );
+		Assert.Equal( new PcreByteCapture( 0, 3 ), result.Match?.Captures[0] );
 		Assert.Null( result.Match?.Captures[1] );
-		Assert.Equal( new PcreByteCapture( 0, 2 ), result.Match?.Captures[2] );
+		Assert.Equal( new PcreByteCapture( 0, 3 ), result.Match?.Captures[2] );
+	}
+
+	[Fact]
+	public void NegatedDigitAtomsDoNotConsumeEndOfSubject() {
+		foreach ( var pattern in new[] { "\\D", "\\P{Nd}", "[[:^digit:]]" } ) {
+			var result = Compile( Encoding.UTF8.GetBytes( pattern ), GrepOptions ).Match( Array.Empty<byte>() );
+			Assert.True( result.IsSuccess, result.Diagnostic?.Message );
+			Assert.Null( result.Match );
+		}
 	}
 
 	[Theory]
@@ -130,6 +140,11 @@ public sealed class PcreUtf8DigitTests {
 			WorkObserver = count => { if ( count == 4 ) { cancellation.Cancel(); } }
 		} );
 		Assert.Throws<OperationCanceledException>( () => compiled.Match( "٣"u8.ToArray(), cancellationToken: cancellation.Token ) );
+		var longInput = Encoding.UTF8.GetBytes( new string( '٣', 50 ) );
+		var bounded = Compile( "\\p{Nd}+"u8.ToArray(), new PcreByteOptions {
+			Utf8 = true, Ucp = true, MatchWorkLimit = 65
+		} );
+		Assert.Equal( PcreByteDiagnosticCode.MatchWorkLimitExceeded, bounded.Match( longInput ).Diagnostic?.Code );
 	}
 
 	private static PcreCompiledBytePattern Compile( byte[] pattern, PcreByteOptions options ) {
