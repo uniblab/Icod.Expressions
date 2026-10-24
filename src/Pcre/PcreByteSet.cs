@@ -2,6 +2,7 @@ namespace Icod.Expressions.Pcre;
 
 /// <summary>An immutable set over all 256 byte values.</summary>
 internal readonly record struct PcreByteSet( ulong A, ulong B, ulong C, ulong D ) {
+	internal static PcreByteSet AllBytes { get; } = new( ulong.MaxValue, ulong.MaxValue, ulong.MaxValue, ulong.MaxValue );
 	internal static PcreByteSet Dot { get; } = FromPredicate( value => value != (byte)'\n' );
 	internal static PcreByteSet Digit { get; } = FromPredicate(
 		value => value is >= (byte)'0' and <= (byte)'9'

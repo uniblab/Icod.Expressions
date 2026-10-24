@@ -11,6 +11,7 @@ internal sealed class PcreByteParser {
 	private int index;
 	private int groupCount;
 	private int repeatMarks;
+	private bool dotAll;
 
 	internal PcreByteParser( byte[] source, CancellationToken cancellationToken ) {
 		this.source = source;
@@ -20,6 +21,11 @@ internal sealed class PcreByteParser {
 	internal int GroupCount => groupCount;
 
 	internal PcreByteAlternatives Parse() {
+		if ( source.Length >= 4 && source[0] == (byte)'(' && source[1] == (byte)'?'
+			&& source[2] == (byte)'s' && source[3] == (byte)')' ) {
+			index = 4;
+			dotAll = true;
+		}
 		var root = ParseAlternatives( false, 0 );
 		if ( index != source.Length ) {
 			throw Invalid( index, "unmatched closing parenthesis" );
@@ -137,7 +143,7 @@ internal sealed class PcreByteParser {
 			return new PcreByteAnchor( value == (byte)'^' );
 		}
 		if ( value == (byte)'.' ) {
-			return new PcreByteClass( PcreByteSet.Dot );
+			return new PcreByteClass( dotAll ? PcreByteSet.AllBytes : PcreByteSet.Dot );
 		}
 		if ( value == (byte)'[' ) {
 			return ParseBracket( offset );
