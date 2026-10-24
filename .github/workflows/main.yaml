@@ -1,0 +1,119 @@
+name: main
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CONFIGURATION: Release
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            arch: x64
+            name: Linux x64
+          - os: ubuntu-24.04-arm
+            arch: ARM64
+            name: Linux ARM64
+          - os: windows-latest
+            arch: x64
+            name: Windows x64
+          - os: windows-11-arm
+            arch: ARM64
+            name: Windows ARM64
+          - os: macos-15-intel
+            arch: x64
+            name: macOS x64
+          - os: macos-latest
+            arch: ARM64
+            name: macOS ARM64
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+      - name: Restore all target frameworks
+        run: dotnet restore Icod.Expressions.sln
+      - name: Build all target frameworks
+        run: dotnet build Icod.Expressions.sln -c ${{ env.CONFIGURATION }} --no-restore -p:ContinuousIntegrationBuild=true
+      - name: Run full suite and preserve frozen regex corpus
+        shell: pwsh
+        run: |
+          foreach ($framework in @('net8.0', 'net9.0', 'net10.0')) {
+            dotnet test tests/Icod.Expressions.Tests.csproj -c ${{ env.CONFIGURATION }} -f $framework --no-build --no-restore --logger "trx;LogFileName=$framework.full.trx"
+            if ($LASTEXITCODE -ne 0) { throw "Full test run failed: $framework" }
+            [xml]$full = Get-Content "tests/TestResults/$framework.full.trx" -Raw
+            $all = $full.SelectSingleNode("//*[local-name()='Counters']")
+            if ($null -eq $all -or [int]$all.GetAttribute('total') -lt 214 -or [int]$all.GetAttribute('passed') -ne [int]$all.GetAttribute('total') -or [int]$all.GetAttribute('failed') -ne 0) {
+              throw "Full test results are incomplete: $framework"
+            }
+            dotnet test tests/Icod.Expressions.Tests.csproj -c ${{ env.CONFIGURATION }} -f $framework --no-build --no-restore --filter 'FullyQualifiedName~Icod.CommandFramework.Tests' --logger "trx;LogFileName=$framework.frozen.trx"
+            if ($LASTEXITCODE -ne 0) { throw "Frozen test run failed: $framework" }
+            [xml]$frozen = Get-Content "tests/TestResults/$framework.frozen.trx" -Raw
+            $counters = $frozen.SelectSingleNode("//*[local-name()='Counters']")
+            if ($null -eq $counters -or [int]$counters.GetAttribute('total') -ne 214 -or [int]$counters.GetAttribute('passed') -ne 214 -or [int]$counters.GetAttribute('failed') -ne 0) {
+              throw "Frozen characterization test count drift: $framework"
+            }
+          }
+      - name: Verify exact extraction parity
+        shell: bash
+        run: |
+          set -e
+          for framework in net8.0 net9.0 net10.0; do
+            dotnet run --project tools/RegularExpressionParityBaseline/RegularExpressionParityBaseline.csproj -c ${{ env.CONFIGURATION }} -f "$framework" -- --verify doc/Icod.Expressions-A04-Parity-Baseline.jsonl
+          done
+      - name: Compare POSIX ASCII cases with glibc
+        if: matrix.os == 'ubuntu-latest'
+        run: dotnet run --project tools/PosixRegexDifferential/PosixRegexDifferential.csproj -c ${{ env.CONFIGURATION }}
+      - name: Run pinned Gnulib included regex oracle
+        if: matrix.os == 'ubuntu-latest'
+        run: sh tools/GnulibRegexOracle/run.sh
+      - name: Verify A05 candidate corpus identities
+        if: matrix.os == 'ubuntu-latest'
+        run: sh tools/verify-a05-candidate.sh
+      - name: Verify compiled public API members
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          dotnet run --project tools/RegularExpressionApiSnapshot/RegularExpressionApiSnapshot.csproj -c ${{ env.CONFIGURATION }} > /tmp/icod-expressions-api.txt
+          diff <(tail -n +2 doc/Icod.Expressions-A00-Compiled-API.txt) <(tail -n +2 /tmp/icod-expressions-api.txt)
+      - name: Pack the single library project
+        if: matrix.os == 'ubuntu-latest'
+        run: dotnet pack Icod.Expressions.csproj -c ${{ env.CONFIGURATION }} --no-build --no-restore -o artifacts
+      - name: Verify the Release package
+        if: matrix.os == 'ubuntu-latest'
+        shell: pwsh
+        run: |
+          Import-Module ./packaging/RepositoryTools.psm1 -Force
+          $version = Get-MSBuildProperty -ProjectPath Icod.Expressions.csproj -Name Version -Configuration '${{ env.CONFIGURATION }}'
+          ./packaging/VerifyPackageArtifact.ps1 -ArtifactDirectory artifacts -Configuration '${{ env.CONFIGURATION }}' -ExpectedVersion $version -ExpectedId Icod.Expressions -ExpectedPackageCount 1
+      - name: Restore package-only consumer
+        if: matrix.os == 'ubuntu-latest'
+        run: dotnet restore samples/PackageSmoke/PackageSmoke.csproj --source artifacts
+      - name: Build package-only consumer
+        if: matrix.os == 'ubuntu-latest'
+        run: dotnet build samples/PackageSmoke/PackageSmoke.csproj -c ${{ env.CONFIGURATION }} --no-restore
+      - name: Run package-only consumer
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          set -e
+          for framework in net8.0 net9.0 net10.0; do
+            dotnet run --project samples/PackageSmoke/PackageSmoke.csproj -c ${{ env.CONFIGURATION }} --no-build --no-restore -f "$framework"
+          done

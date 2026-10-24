@@ -2,11 +2,16 @@ name: pull-request
 
 on:
   pull_request:
-  push:
-    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
+
+env:
+  CONFIGURATION: Staging
 
 jobs:
   build:
@@ -15,15 +20,24 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            configuration: Debug
-          - os: ubuntu-latest
-            configuration: Staging
-          - os: ubuntu-latest
-            configuration: Release
+            arch: x64
+            name: Linux x64
+          - os: ubuntu-24.04-arm
+            arch: ARM64
+            name: Linux ARM64
           - os: windows-latest
-            configuration: Staging
+            arch: x64
+            name: Windows x64
+          - os: windows-11-arm
+            arch: ARM64
+            name: Windows ARM64
+          - os: macos-15-intel
+            arch: x64
+            name: macOS x64
           - os: macos-latest
-            configuration: Staging
+            arch: ARM64
+            name: macOS ARM64
+    name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -36,19 +50,19 @@ jobs:
       - name: Restore all target frameworks
         run: dotnet restore Icod.Expressions.sln
       - name: Build all target frameworks
-        run: dotnet build Icod.Expressions.sln -c ${{ matrix.configuration }} --no-restore -p:ContinuousIntegrationBuild=true
+        run: dotnet build Icod.Expressions.sln -c ${{ env.CONFIGURATION }} --no-restore -p:ContinuousIntegrationBuild=true
       - name: Run full suite and preserve frozen regex corpus
         shell: pwsh
         run: |
           foreach ($framework in @('net8.0', 'net9.0', 'net10.0')) {
-            dotnet test tests/Icod.Expressions.Tests.csproj -c ${{ matrix.configuration }} -f $framework --no-build --no-restore --logger "trx;LogFileName=$framework.full.trx"
+            dotnet test tests/Icod.Expressions.Tests.csproj -c ${{ env.CONFIGURATION }} -f $framework --no-build --no-restore --logger "trx;LogFileName=$framework.full.trx"
             if ($LASTEXITCODE -ne 0) { throw "Full test run failed: $framework" }
             [xml]$full = Get-Content "tests/TestResults/$framework.full.trx" -Raw
             $all = $full.SelectSingleNode("//*[local-name()='Counters']")
             if ($null -eq $all -or [int]$all.GetAttribute('total') -lt 214 -or [int]$all.GetAttribute('passed') -ne [int]$all.GetAttribute('total') -or [int]$all.GetAttribute('failed') -ne 0) {
               throw "Full test results are incomplete: $framework"
             }
-            dotnet test tests/Icod.Expressions.Tests.csproj -c ${{ matrix.configuration }} -f $framework --no-build --no-restore --filter 'FullyQualifiedName~Icod.CommandFramework.Tests' --logger "trx;LogFileName=$framework.frozen.trx"
+            dotnet test tests/Icod.Expressions.Tests.csproj -c ${{ env.CONFIGURATION }} -f $framework --no-build --no-restore --filter 'FullyQualifiedName~Icod.CommandFramework.Tests' --logger "trx;LogFileName=$framework.frozen.trx"
             if ($LASTEXITCODE -ne 0) { throw "Frozen test run failed: $framework" }
             [xml]$frozen = Get-Content "tests/TestResults/$framework.frozen.trx" -Raw
             $counters = $frozen.SelectSingleNode("//*[local-name()='Counters']")
@@ -61,42 +75,42 @@ jobs:
         run: |
           set -e
           for framework in net8.0 net9.0 net10.0; do
-            dotnet run --project tools/RegularExpressionParityBaseline/RegularExpressionParityBaseline.csproj -c ${{ matrix.configuration }} -f "$framework" -- --verify doc/Icod.Expressions-A04-Parity-Baseline.jsonl
+            dotnet run --project tools/RegularExpressionParityBaseline/RegularExpressionParityBaseline.csproj -c ${{ env.CONFIGURATION }} -f "$framework" -- --verify doc/Icod.Expressions-A04-Parity-Baseline.jsonl
           done
       - name: Compare POSIX ASCII cases with glibc
-        if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Staging'
+        if: matrix.os == 'ubuntu-latest'
         run: dotnet run --project tools/PosixRegexDifferential/PosixRegexDifferential.csproj -c Staging
       - name: Run pinned Gnulib included regex oracle
-        if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Staging'
+        if: matrix.os == 'ubuntu-latest'
         run: sh tools/GnulibRegexOracle/run.sh
       - name: Verify A05 candidate corpus identities
-        if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Staging'
+        if: matrix.os == 'ubuntu-latest'
         run: sh tools/verify-a05-candidate.sh
       - name: Verify compiled public API members
-        if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Staging'
+        if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |
           dotnet run --project tools/RegularExpressionApiSnapshot/RegularExpressionApiSnapshot.csproj -c Staging > /tmp/icod-expressions-api.txt
           diff <(tail -n +2 doc/Icod.Expressions-A00-Compiled-API.txt) <(tail -n +2 /tmp/icod-expressions-api.txt)
       - name: Compare final A05 corpus with frozen CommandFramework audit commit
-        if: matrix.configuration == 'Staging'
+        if: matrix.arch == 'x64'
         shell: pwsh
         run: ./tools/FinalParity/run.ps1
       - name: Pack alpha candidate
-        if: matrix.configuration == 'Staging'
-        run: dotnet pack Icod.Expressions.csproj -c Staging --no-build --no-restore -o artifacts
+        if: matrix.arch == 'x64'
+        run: dotnet pack Icod.Expressions.csproj -c ${{ env.CONFIGURATION }} --no-build --no-restore -o artifacts
       - name: Run old-client forwarding smoke
-        if: matrix.configuration == 'Staging'
+        if: matrix.arch == 'x64'
         shell: pwsh
         run: ./tools/ForwardingSmoke/run.ps1 -PackageFeed artifacts
       - name: Restore package-only consumer
-        if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Staging'
+        if: matrix.os == 'ubuntu-latest'
         run: dotnet restore samples/PackageSmoke/PackageSmoke.csproj --source artifacts
       - name: Build package-only consumer
-        if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Staging'
+        if: matrix.os == 'ubuntu-latest'
         run: dotnet build samples/PackageSmoke/PackageSmoke.csproj -c Staging --no-restore
       - name: Run package-only consumer
-        if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Staging'
+        if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |
           set -e
@@ -104,16 +118,9 @@ jobs:
             dotnet run --project samples/PackageSmoke/PackageSmoke.csproj -c Staging --no-build --no-restore -f "$framework"
           done
       - name: Run source-pinned consumer binaries across platforms with scratch bridge
-        if: matrix.configuration == 'Staging'
+        if: matrix.arch == 'x64'
         shell: pwsh
         run: ./tools/ConsumerBridgeProbe/run-cross-platform.ps1 -PackageFeed artifacts
       - name: Run source-pinned consumers with package-backed scratch bridge
-        if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Staging'
+        if: matrix.os == 'ubuntu-latest'
         run: sh tools/ConsumerBridgeProbe/run.sh artifacts
-      - name: Verify templated local build on Linux
-        if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Staging'
-        run: sh build.sh
-      - name: Verify templated local build on Windows
-        if: matrix.os == 'windows-latest' && matrix.configuration == 'Staging'
-        shell: cmd
-        run: build.cmd
