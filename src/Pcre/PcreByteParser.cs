@@ -160,7 +160,13 @@ internal sealed class PcreByteParser {
 			cancellationToken.ThrowIfCancellationRequested();
 			var value = source[index++];
 			if ( value == (byte)'\\' ) {
-				if ( ParseEscape( index - 1 ) is not PcreByteLiteral literal ) { throw Unsupported( openingOffset ); }
+				PcreByteNode escaped;
+				try {
+					escaped = ParseEscape( index - 1 );
+				} catch ( PcreByteParseException error ) when ( error.Diagnostic.Code == PcreByteDiagnosticCode.UnsupportedSyntax ) {
+					throw Unsupported( openingOffset );
+				}
+				if ( escaped is not PcreByteLiteral literal ) { throw Unsupported( openingOffset ); }
 				bytes.Add( literal.Value );
 			} else if ( value is (byte)'|' or (byte)'(' or (byte)'[' or (byte)'.'
 				or (byte)'^' or (byte)'$' or (byte)'*' or (byte)'+' or (byte)'?'
