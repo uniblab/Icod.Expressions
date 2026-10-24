@@ -116,7 +116,8 @@ try {
     Invoke-Checked 'dotnet' @('test', $oldProject, '-c', 'Staging', '--no-restore', '-m:1',
         '--filter', $filter, '--logger', 'trx;LogFileName=old.trx', '--results-directory', $oldResults)
     Invoke-Checked 'dotnet' @('test', $newProject, '-c', 'Staging', '-f', 'net10.0',
-        '--no-build', '--no-restore', '--logger', 'trx;LogFileName=new.trx',
+        '--no-build', '--no-restore', '--filter', $filter,
+        '--logger', 'trx;LogFileName=new.trx',
         '--results-directory', $newResults)
     $oldOutcomes = @(Read-PassingTests (Join-Path $oldResults 'old.trx'))
     $newOutcomes = @(Read-PassingTests (Join-Path $newResults 'new.trx'))

@@ -16,4 +16,6 @@ parity. See
 
 The directory also includes two separately identified additive files:
 five consumer-shaped cases and 16 A02 syntax-option cases. The current local
-.NET 10 total is 214; the original eleven-file, 193-case corpus is unchanged.
+.NET 10 frozen corpus total is 214; the original eleven-file, 193-case corpus
+is unchanged. New PCRE foundation tests live in `Pcre/` and run alongside the
+frozen corpus in the full suite.

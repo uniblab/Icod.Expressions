@@ -71,16 +71,23 @@ jobs:
         run: |
           dotnet restore Icod.Expressions.sln
           dotnet build Icod.Expressions.sln -c Release --no-restore -p:ContinuousIntegrationBuild=true
-      - name: Run focused tests on each target
+      - name: Run full suite and preserve frozen corpus on each target
         shell: pwsh
         run: |
           foreach ($framework in @('net8.0', 'net9.0', 'net10.0')) {
-            dotnet test tests/Icod.Expressions.Tests.csproj -c Release -f $framework --no-build --no-restore --logger "trx;LogFileName=$framework.trx"
-            if ($LASTEXITCODE -ne 0) { throw "Test run failed: $framework" }
-            [xml]$results = Get-Content "tests/TestResults/$framework.trx" -Raw
-            $counters = $results.SelectSingleNode("//*[local-name()='Counters']")
+            dotnet test tests/Icod.Expressions.Tests.csproj -c Release -f $framework --no-build --no-restore --logger "trx;LogFileName=$framework.full.trx"
+            if ($LASTEXITCODE -ne 0) { throw "Full test run failed: $framework" }
+            [xml]$full = Get-Content "tests/TestResults/$framework.full.trx" -Raw
+            $all = $full.SelectSingleNode("//*[local-name()='Counters']")
+            if ($null -eq $all -or [int]$all.GetAttribute('total') -lt 214 -or [int]$all.GetAttribute('passed') -ne [int]$all.GetAttribute('total') -or [int]$all.GetAttribute('failed') -ne 0) {
+              throw "Full test results are incomplete: $framework"
+            }
+            dotnet test tests/Icod.Expressions.Tests.csproj -c Release -f $framework --no-build --no-restore --filter 'FullyQualifiedName~Icod.CommandFramework.Tests' --logger "trx;LogFileName=$framework.frozen.trx"
+            if ($LASTEXITCODE -ne 0) { throw "Frozen test run failed: $framework" }
+            [xml]$frozen = Get-Content "tests/TestResults/$framework.frozen.trx" -Raw
+            $counters = $frozen.SelectSingleNode("//*[local-name()='Counters']")
             if ($null -eq $counters -or [int]$counters.GetAttribute('total') -ne 214 -or [int]$counters.GetAttribute('passed') -ne 214 -or [int]$counters.GetAttribute('failed') -ne 0) {
-              throw "Characterization test count drift: $framework"
+              throw "Frozen characterization test count drift: $framework"
             }
           }
       - name: Verify frozen extraction and fixture
