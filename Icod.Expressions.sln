@@ -3,13 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Icod.Expressions", "src\Icod.Expressions\Icod.Expressions.csproj", "{91F10758-8B1E-4F3E-A596-EAC18FBB34CC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Icod.Expressions", "Icod.Expressions.csproj", "{91F10758-8B1E-4F3E-A596-EAC18FBB34CC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Icod.Expressions.Tests", "tests\Icod.Expressions.Tests\Icod.Expressions.Tests.csproj", "{B6F43C99-A61D-43E3-8585-17E6ED64FD4A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Icod.Expressions.Tests", "tests\Icod.Expressions.Tests.csproj", "{B6F43C99-A61D-43E3-8585-17E6ED64FD4A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -65,7 +63,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{91F10758-8B1E-4F3E-A596-EAC18FBB34CC} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{B6F43C99-A61D-43E3-8585-17E6ED64FD4A} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal

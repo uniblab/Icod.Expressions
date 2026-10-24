@@ -35,7 +35,7 @@ function Assert-SourceManifest {
     foreach ($line in (Get-Content $ManifestPath)) {
         $parts = $line -split ' ', 2
         if ($parts.Count -ne 2) { throw "Malformed source manifest line: $line" }
-        $oldPath = $parts[1] -replace '^src/Icod\.Expressions/', 'src/'
+        $oldPath = $parts[1]
         $oldHash = (& git -C $OriginalRoot rev-parse "HEAD:$oldPath").Trim()
         $newHash = (& git -C $ExtractedRoot rev-parse "HEAD:$($parts[1])").Trim()
         if ($LASTEXITCODE -ne 0 -or $oldHash -ne $parts[0] -or $newHash -ne $parts[0]) {
@@ -86,7 +86,7 @@ try {
     $badHashLines[0] = $changedDigit + $firstEntry[0].Substring(1) + ' ' + $firstEntry[1]
     $badHashManifest = Join-Path $scratch 'bad-hash-manifest.txt'
     [System.IO.File]::WriteAllLines($badHashManifest, $badHashLines)
-    $firstOldPath = $firstEntry[1] -replace '^src/Icod\.Expressions/', 'src/'
+    $firstOldPath = $firstEntry[1]
     Assert-RejectsManifest $badHashManifest "A05 production source mismatch: $firstOldPath" $oldRoot $root
 
     $badCountManifest = Join-Path $scratch 'bad-count-manifest.txt'
@@ -95,11 +95,11 @@ try {
     Assert-SourceManifest $sourceManifest $oldRoot $root
     Write-Host 'Source manifest guards rejected scratch hash and count mutations.'
 
-    $newTests = Get-ChildItem (Join-Path $root 'tests/Icod.Expressions.Tests/RegularExpressions') -Filter '*.cs'
+    $newTests = Get-ChildItem (Join-Path $root 'tests/RegularExpressions') -Filter '*.cs'
     if (@($newTests).Count -ne 13) { throw 'Expected 13 focused C# test files' }
     foreach ($test in $newTests) {
         $oldPath = "tests/CommandFramework.Tests/src/RegularExpressions/$($test.Name)"
-        $newPath = "tests/Icod.Expressions.Tests/RegularExpressions/$($test.Name)"
+        $newPath = "tests/RegularExpressions/$($test.Name)"
         $oldHash = (& git -C $oldRoot rev-parse "HEAD:$oldPath").Trim()
         $newHash = (& git -C $root rev-parse "HEAD:$newPath").Trim()
         if ($LASTEXITCODE -ne 0 -or $oldHash -ne $newHash) {
@@ -109,7 +109,7 @@ try {
 
     $filter = (($newTests | ForEach-Object { 'FullyQualifiedName~' + $_.BaseName }) -join '|')
     $oldProject = Join-Path $oldRoot 'tests/CommandFramework.Tests/Icod.CommandFramework.Tests.csproj'
-    $newProject = Join-Path $root 'tests/Icod.Expressions.Tests/Icod.Expressions.Tests.csproj'
+    $newProject = Join-Path $root 'tests/Icod.Expressions.Tests.csproj'
     $oldResults = Join-Path $scratch 'old-results'
     $newResults = Join-Path $scratch 'new-results'
     Invoke-Checked 'dotnet' @('restore', $oldProject, '-m:1')

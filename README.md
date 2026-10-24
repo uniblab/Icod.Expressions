@@ -106,7 +106,7 @@ the consolidated source, corpus, and oracle-tool identities.
 To inspect a local, unpublished package and its independent consumer:
 
 ```sh
-dotnet pack src/Icod.Expressions/Icod.Expressions.csproj -c Staging -o artifacts
+dotnet pack Icod.Expressions.csproj -c Staging -o artifacts
 dotnet restore samples/PackageSmoke/PackageSmoke.csproj --source artifacts
 dotnet run --project samples/PackageSmoke/PackageSmoke.csproj -c Staging -f net10.0
 ```
