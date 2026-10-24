@@ -69,7 +69,7 @@ public sealed class PcreUtf8LetterPropertyTests {
 	}
 
 	[Theory]
-	[InlineData( "\\p{Nd}", 0, true )]
+	[InlineData( "\\p{N}", 0, true )]
 	[InlineData( "\\p{Greek}", 0, true )]
 	[InlineData( "[\\p{L}]", 0, true )]
 	[InlineData( "\\p{L}", 0, false )]
