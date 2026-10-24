@@ -1,3 +1,6 @@
+using System.Globalization;
+using System.Text;
+
 namespace Icod.Expressions.Pcre;
 
 /// <summary>Executes ordered bytecode with a bounded explicit backtracking stack.</summary>
@@ -79,6 +82,14 @@ internal static class PcreByteMatcher {
 							if ( PcreUtf8.TryRead( input.Span, position, out var value, out var scalarWidth )
 								&& ( instruction.First == 1 || value != (int)'\n' ) ) {
 								position += scalarWidth;
+								pc++;
+							} else { failed = true; }
+							break;
+						case PcreByteOpcode.LetterProperty:
+							Step(); // Attempted Unicode property evaluation.
+							if ( PcreUtf8.TryRead( input.Span, position, out var propertyScalar, out var propertyWidth )
+								&& IsLetter( propertyScalar ) != ( instruction.First == 1 ) ) {
+								position += propertyWidth;
 								pc++;
 							} else { failed = true; }
 							break;
@@ -218,6 +229,11 @@ internal static class PcreByteMatcher {
 		if ( right is >= (byte)'A' and <= (byte)'Z' ) { right = (byte)( right + 32 ); }
 		return left == right;
 	}
+
+	private static bool IsLetter( int scalar ) => Rune.GetUnicodeCategory( new Rune( scalar ) ) is
+		UnicodeCategory.UppercaseLetter or UnicodeCategory.LowercaseLetter
+		or UnicodeCategory.TitlecaseLetter or UnicodeCategory.ModifierLetter
+		or UnicodeCategory.OtherLetter;
 
 	private sealed record Frame(
 		int Pc, int Position, PcreByteCapture?[] Captures, int[] CaptureStarts, int[] Marks
