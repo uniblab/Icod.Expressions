@@ -34,8 +34,10 @@ public sealed class PcreByteLeadingCaselessTests {
 	[InlineData( "(?i)(a)\\1", "Aa", 2 )]
 	[InlineData( "(a)\\1", "aA", -1 )]
 	public void ReferencesCompareSourceBytesInTheActiveCaseMode( string pattern, string subject, int length ) {
-		var match = Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) )
-			.Match( System.Text.Encoding.ASCII.GetBytes( subject ) ).Match;
+		var result = Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) )
+			.Match( System.Text.Encoding.ASCII.GetBytes( subject ) );
+		Assert.True( result.IsSuccess, result.Diagnostic?.Message );
+		var match = result.Match;
 		Assert.Equal( length < 0 ? null : length, match?.ByteLength );
 		if ( length >= 0 ) { Assert.Equal( new PcreByteCapture( 0, 1 ), match?.Captures[1] ); }
 	}
@@ -45,8 +47,10 @@ public sealed class PcreByteLeadingCaselessTests {
 	[InlineData( "(?i)(?=ab)AB", "aB", 0, 2 )]
 	[InlineData( "(?i)(?!ab)AB", "aB", -1, 0 )]
 	public void FixedLiteralAssertionsCompareAsciiCase( string pattern, string subject, int index, int length ) {
-		var match = Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) )
-			.Match( System.Text.Encoding.ASCII.GetBytes( subject ) ).Match;
+		var result = Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) )
+			.Match( System.Text.Encoding.ASCII.GetBytes( subject ) );
+		Assert.True( result.IsSuccess, result.Diagnostic?.Message );
+		var match = result.Match;
 		Assert.Equal( index < 0 ? null : index, match?.ByteIndex );
 		if ( index >= 0 ) { Assert.Equal( length, match?.ByteLength ); }
 	}
@@ -57,8 +61,10 @@ public sealed class PcreByteLeadingCaselessTests {
 		var match = Compile( pattern ).Match( new byte[] { 0xc0, 0xff, 0, (byte)'A' } ).Match;
 		Assert.Equal( 1, match?.ByteIndex );
 		Assert.Equal( 3, match?.ByteLength );
-		Assert.Null( Compile( new byte[] { (byte)'(', (byte)'?', (byte)'i', (byte)')', 0xc0 } )
-			.Match( new byte[] { 0xe0 } ).Match );
+		var highByteResult = Compile( new byte[] { (byte)'(', (byte)'?', (byte)'i', (byte)')', 0xc0 } )
+			.Match( new byte[] { 0xe0 } );
+		Assert.True( highByteResult.IsSuccess, highByteResult.Diagnostic?.Message );
+		Assert.Null( highByteResult.Match );
 	}
 
 	[Theory]
