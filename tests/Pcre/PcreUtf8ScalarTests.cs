@@ -102,7 +102,7 @@ public sealed class PcreUtf8ScalarTests {
 	}
 
 	[Theory]
-	[InlineData( "\\p{L}", 0 )]
+	[InlineData( "\\p{Nd}", 0 )]
 	[InlineData( "\\d", 0 )]
 	[InlineData( "[é]", 0 )]
 	[InlineData( "(?<=é)x", 0 )]

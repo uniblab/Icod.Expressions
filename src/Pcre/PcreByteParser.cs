@@ -330,6 +330,9 @@ internal sealed class PcreByteParser {
 		if ( value == (byte)'A' ) { return new PcreByteAnchor( true ); }
 		if ( value == (byte)'z' ) { return new PcreByteAnchor( false ); }
 		if ( value == (byte)'Z' ) { return new PcreByteEndBeforeFinalLf(); }
+		if ( value is (byte)'p' or (byte)'P' ) {
+			return ParseLetterProperty( offset, value == (byte)'P' );
+		}
 		if ( value == (byte)'b' || value == (byte)'B' ) {
 			return new PcreByteWordBoundary( value == (byte)'b' );
 		}
@@ -384,6 +387,33 @@ internal sealed class PcreByteParser {
 		}
 		if ( utf8 && value >= 0x80 ) { throw Unsupported( offset ); }
 		return new PcreByteLiteral( value );
+	}
+
+	private PcreByteNode ParseLetterProperty( int offset, bool negated ) {
+		if ( !utf8 ) { throw Unsupported( offset ); }
+		if ( index >= source.Length ) { throw Invalid( offset, "property escape requires a name" ); }
+		if ( source[index] != (byte)'{' ) {
+			if ( source[index] != (byte)'L' ) { throw Unsupported( offset ); }
+			index++;
+			return new PcreByteLetterProperty( negated );
+		}
+		index++;
+		if ( index < source.Length && source[index] == (byte)'^' ) {
+			negated = !negated;
+			index++;
+		}
+		var nameStart = index;
+		while ( index < source.Length && source[index] != (byte)'}' ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			index++;
+		}
+		if ( index >= source.Length || index == nameStart ) {
+			throw Invalid( offset, "malformed property escape" );
+		}
+		var isLetter = index == nameStart + 1 && source[nameStart] == (byte)'L';
+		index++;
+		if ( !isLetter ) { throw Unsupported( offset ); }
+		return new PcreByteLetterProperty( negated );
 	}
 
 	private static int HexDigit( byte value ) => value switch {
