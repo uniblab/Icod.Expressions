@@ -142,9 +142,8 @@ internal sealed class PcreByteParser {
 			index++;
 			return capturing ? new PcreByteGroup( number, body ) : new PcreByteNoncapturingGroup( body );
 		}
-		if ( value == (byte)'^' || value == (byte)'$' ) {
-			return new PcreByteAnchor( value == (byte)'^' );
-		}
+		if ( value == (byte)'^' ) { return new PcreByteAnchor( true ); }
+		if ( value == (byte)'$' ) { return new PcreByteEndBeforeFinalLf(); }
 		if ( value == (byte)'.' ) {
 			return new PcreByteClass( dotAll ? PcreByteSet.AllBytes : PcreByteSet.Dot );
 		}
