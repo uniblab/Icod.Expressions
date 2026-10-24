@@ -21,7 +21,7 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<Compile Include="src/**/*.cs" />
-		<None Update="README.md" Pack="true" PackagePath="/" />
+		<None Include="README.md" Pack="true" PackagePath="/" />
 	</ItemGroup>
 	<PropertyGroup Condition="'$(Configuration)' == 'Staging'">
 		<DefineConstants>TRACE</DefineConstants>
