@@ -22,6 +22,7 @@ The internal foundation recognizes raw byte literals (including NUL and high byt
 | Single-digit numbered, case-sensitive byte backreferences | Implemented in the stacked backreferences PR for 8-bit non-UTF mode. Multi-digit and named forms remain pending. |
 | `(?:...)` noncapturing groups | Implemented for 8-bit non-UTF mode; nested captures retain their numbers. |
 | Fixed literal `(?=...)`, `(?!...)`, `(?<=...)`, `(?<!...)` over authoritative bytes | Implemented internally; zero-width, with no capture allocation and work/cancellation accounting. Nonliteral assertion bodies remain unsupported. |
+| `\A`, `\Z`, `\z` subject anchors | Implemented internally with LF as the final-newline convention for `\Z`. Existing `^`/`$` behavior remains unchanged pending broader option review. |
 | ASCII byte-mode `\b` and `\B` word boundaries | Implemented internally using the same non-UCP ASCII `\w` definition. Bracket `\b` remains backspace; bracket `\B` is unsupported. |
 | One leading `(?s)` | Implemented internally for 8-bit byte mode; dot matches LF in every top-level alternative. Scoped and mid-pattern flags remain unsupported. |
 | Braced hex, other escapes, `{m,n}`, remaining inline options and other special groups | Explicit compile-time `UnsupportedSyntax` diagnostic. |

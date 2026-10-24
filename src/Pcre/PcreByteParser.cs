@@ -56,7 +56,7 @@ internal sealed class PcreByteParser {
 					if ( atom is PcreByteLiteralAssertion ) {
 						throw Unsupported( index );
 					}
-					if ( atom is PcreByteAnchor or PcreByteWordBoundary ) {
+					if ( atom is PcreByteAnchor or PcreByteEndBeforeFinalLf or PcreByteWordBoundary ) {
 						throw Invalid( index, "an anchor cannot be repeated" );
 					}
 					var quantifierOffset = index;
@@ -300,6 +300,9 @@ internal sealed class PcreByteParser {
 			throw Invalid( offset, "trailing backslash" );
 		}
 		var value = source[index++];
+		if ( value == (byte)'A' ) { return new PcreByteAnchor( true ); }
+		if ( value == (byte)'z' ) { return new PcreByteAnchor( false ); }
+		if ( value == (byte)'Z' ) { return new PcreByteEndBeforeFinalLf(); }
 		if ( value == (byte)'b' || value == (byte)'B' ) {
 			return new PcreByteWordBoundary( value == (byte)'b' );
 		}
