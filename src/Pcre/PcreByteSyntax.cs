@@ -12,6 +12,8 @@ internal sealed record PcreByteAnchor( bool IsStart ) : PcreByteNode;
 
 internal sealed record PcreByteEndBeforeFinalLf : PcreByteNode;
 
+internal sealed record PcreByteWordBoundary( bool IsBoundary ) : PcreByteNode;
+
 internal sealed record PcreByteGroup( int Number, PcreByteAlternatives Body ) : PcreByteNode;
 
 internal sealed record PcreByteNoncapturingGroup( PcreByteAlternatives Body ) : PcreByteNode;

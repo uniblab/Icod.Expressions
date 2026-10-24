@@ -4,6 +4,7 @@ internal enum PcreByteOpcode {
 	Literal,
 	Class,
 	Backreference,
+	WordBoundary,
 	AssertLiteral,
 	Start,
 	End,
@@ -78,6 +79,9 @@ internal sealed class PcreByteProgramCompiler {
 				break;
 			case PcreByteBackreference reference:
 				Emit( PcreByteOpcode.Backreference, reference.Number );
+				break;
+			case PcreByteWordBoundary boundary:
+				Emit( PcreByteOpcode.WordBoundary, boundary.IsBoundary ? 1 : 0 );
 				break;
 			case PcreByteLiteralAssertion assertion:
 				Emit( PcreByteOpcode.AssertLiteral, assertion.IsPositive ? 1 : 0,
