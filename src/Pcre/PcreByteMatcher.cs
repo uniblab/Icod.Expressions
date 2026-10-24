@@ -116,6 +116,16 @@ internal static class PcreByteMatcher {
 						case PcreByteOpcode.End:
 							if ( position == input.Length ) { pc++; } else { failed = true; }
 							break;
+						case PcreByteOpcode.StartLine:
+							if ( position == 0 || ( position < input.Length && input.Span[position - 1] == (byte)'\n' ) ) {
+								pc++;
+							} else { failed = true; }
+							break;
+						case PcreByteOpcode.EndLine:
+							if ( position == input.Length || input.Span[position] == (byte)'\n' ) {
+								pc++;
+							} else { failed = true; }
+							break;
 						case PcreByteOpcode.EndBeforeFinalLf:
 							if ( position == input.Length || ( position == input.Length - 1 && input.Span[position] == (byte)'\n' ) ) {
 								pc++;

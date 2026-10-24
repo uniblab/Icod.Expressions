@@ -10,6 +10,8 @@ internal sealed record PcreByteBackreference( int Number ) : PcreByteNode;
 
 internal sealed record PcreByteAnchor( bool IsStart ) : PcreByteNode;
 
+internal sealed record PcreByteLineAnchor( bool IsStart ) : PcreByteNode;
+
 internal sealed record PcreByteEndBeforeFinalLf : PcreByteNode;
 
 internal sealed record PcreByteWordBoundary( bool IsBoundary ) : PcreByteNode;

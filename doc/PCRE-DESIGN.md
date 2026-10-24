@@ -23,10 +23,11 @@ The internal foundation recognizes raw byte literals (including NUL and high byt
 | `(?:...)` noncapturing groups | Implemented for 8-bit non-UTF mode; nested captures retain their numbers. |
 | Fixed literal `(?=...)`, `(?!...)`, `(?<=...)`, `(?<!...)` over authoritative bytes | Implemented internally; zero-width, with no capture allocation and work/cancellation accounting. Nonliteral assertion bodies remain unsupported. |
 | `\A`, `\Z`, `\z` subject anchors | Implemented internally with LF as the final-newline convention for `\Z`; `\A` and `\z` remain strict subject edges. |
-| Default `^` and `$` | `^` tests absolute start; `$` tests absolute end or before one final LF. Multiline and option-dependent behavior remains pending. |
+| Default `^` and `$` | `^` tests absolute start; `$` tests absolute end or before one final LF. Other option-dependent behavior remains pending. |
 | ASCII byte-mode `\b` and `\B` word boundaries | Implemented internally using the same non-UCP ASCII `\w` definition. Bracket `\b` remains backspace; bracket `\B` is unsupported. |
 | One leading `(?s)` | Implemented internally for 8-bit byte mode; dot matches LF in every top-level alternative. Scoped and mid-pattern flags remain unsupported. |
 | One leading `(?i)` | Implemented internally for 8-bit non-UTF mode with ASCII letter folding for literals, brackets, literal lookarounds, and backreferences; high bytes remain exact. Other placements and flag combinations remain unsupported. |
+| One leading `(?m)` | Implemented internally with LF line anchors: `^` matches subject start and after internal LF; `$` matches before any LF or at subject end. Absolute subject escapes remain unchanged. Scoped and combined flags remain unsupported. |
 | Internal `PcreByteOptions.Caseless` | Caller-supplied ASCII caseless compile option uses the same byte behavior as leading `(?i)`; a leading `(?s)` preserves it. Grep `-i` integration remains pending. |
 | Braced hex, other escapes, `{m,n}`, remaining inline options and other special groups | Explicit compile-time `UnsupportedSyntax` diagnostic. |
 | UTF-8/UCP, broader backreference syntax, general lookaround, atomic groups, possessive repetition, backtracking verbs, recursion and broader PCRE2 syntax | Pending separate implementation and conformance fixtures. |
