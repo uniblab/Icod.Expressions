@@ -57,15 +57,15 @@ public sealed class PcreByteLookaroundTests {
 	}
 
 	[Theory]
-	[InlineData( "(?<=a+)b", PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( "(?=a|b)c", PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( "(?<=a(b))c", PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( "(?=\\w)b", PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( "(?<=a", PcreByteDiagnosticCode.InvalidSyntax )]
-	[InlineData( "(?=a", PcreByteDiagnosticCode.InvalidSyntax )]
-	public void DiagnosesBodiesOutsideTheLiteralSubset( string pattern, PcreByteDiagnosticCode code ) {
+	[InlineData( "(?<=a+)b", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( "(?=a|b)c", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( "(?<=a(b))c", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( "(?=\\w)b", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( "(?<=a", (int)PcreByteDiagnosticCode.InvalidSyntax )]
+	[InlineData( "(?=a", (int)PcreByteDiagnosticCode.InvalidSyntax )]
+	public void DiagnosesBodiesOutsideTheLiteralSubset( string pattern, int code ) {
 		var result = PcreByteCompiler.Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
-		Assert.Equal( code, result.Diagnostic?.Code );
+		Assert.Equal( (PcreByteDiagnosticCode)code, result.Diagnostic?.Code );
 		Assert.Equal( 0, result.Diagnostic?.ByteOffset );
 	}
 
