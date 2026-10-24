@@ -15,6 +15,20 @@ internal readonly record struct PcreByteSet( ulong A, ulong B, ulong C, ulong D 
 			or >= (byte)'a' and <= (byte)'z'
 			or (byte)'_'
 	);
+	internal static PcreByteSet Upper { get; } = Range( (byte)'A', (byte)'Z' );
+	internal static PcreByteSet Lower { get; } = Range( (byte)'a', (byte)'z' );
+	internal static PcreByteSet Alpha { get; } = Upper.Union( Lower );
+	internal static PcreByteSet Alnum { get; } = Alpha.Union( Digit );
+	internal static PcreByteSet Ascii { get; } = Range( 0x00, 0x7F );
+	internal static PcreByteSet Blank { get; } = Singleton( 0x09 ).Union( Singleton( (byte)' ' ) );
+	internal static PcreByteSet Control { get; } = Range( 0x00, 0x1F ).Union( Singleton( 0x7F ) );
+	internal static PcreByteSet Graph { get; } = Range( (byte)'!', (byte)'~' );
+	internal static PcreByteSet Printable { get; } = Range( (byte)' ', (byte)'~' );
+	internal static PcreByteSet Punctuation { get; } = FromPredicate(
+		value => Graph.Contains( value ) && !Alnum.Contains( value )
+	);
+	internal static PcreByteSet HexDigit { get; } = Digit.Union( Range( (byte)'A', (byte)'F' ) )
+		.Union( Range( (byte)'a', (byte)'f' ) );
 
 	internal bool Contains( byte value ) {
 		var word = value >> 6;

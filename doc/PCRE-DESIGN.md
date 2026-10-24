@@ -12,13 +12,14 @@ This is an alpha design. The current package's legacy namespaces and any experim
 
 ## Internal byte foundation status
 
-The internal foundation recognizes raw byte literals (including NUL and high bytes), ordered `|`, capturing parentheses, `^` and `$` at whole-input boundaries, and greedy/lazy `*`, `+`, and `?`. A stacked syntax slice adds dot, selected literal/control/hex escapes, and non-UCP ASCII `\d`, `\s`, `\w` with their complements. Numbered capture spans include group zero. Compile-time diagnostics reject malformed groups and quantifiers. Backtracking has per-match work and saved-path limits with distinct diagnostics, and cancellation can interrupt it. This internal subset is not a public PCRE feature claim.
+The internal foundation recognizes raw byte literals (including NUL and high bytes), ordered `|`, capturing parentheses, `^` and `$` at whole-input boundaries, and greedy/lazy `*`, `+`, and `?`. Stacked syntax slices add dot, selected literal/control/hex escapes, non-UCP ASCII `\d`, `\s`, `\w` with complements, and ordinary byte brackets with fourteen ASCII POSIX class names. Numbered capture spans include group zero. Compile-time diagnostics reject malformed groups, quantifiers and classes. Backtracking has per-match work and saved-path limits with distinct diagnostics, and cancellation can interrupt it. This internal subset is not a public PCRE feature claim.
 
 | Syntax or mode | Status for the draft byte foundation |
 |---|---|
 | Raw bytes, `|`, capturing groups, anchors, `*`, `+`, `?` and their lazy forms | Implemented for the internal API. |
 | Dot excluding LF; `\a`, `\e`, `\f`, `\n`, `\r`, `\t`, `\x` (one or two hex digits), escaped punctuation; ASCII `\d`, `\s`, `\w` and complements | Implemented in the stacked byte-atoms PR for 8-bit non-UTF, non-UCP mode. |
-| Bracket classes, braced hex, other escapes, `{m,n}`, inline options and special groups such as lookaround | Explicit compile-time `UnsupportedSyntax` diagnostic. |
+| Ordinary bracket ranges, negation, escaped byte items, shorthand unions and fourteen non-UCP ASCII POSIX names | Implemented in the stacked byte-classes PR for 8-bit non-UTF mode. |
+| Braced hex, other escapes, `{m,n}`, inline options and special groups such as lookaround | Explicit compile-time `UnsupportedSyntax` diagnostic. |
 | UTF-8/UCP, backreferences, lookaround, atomic groups, possessive repetition, backtracking verbs, recursion and broader PCRE2 syntax | Pending separate implementation and conformance fixtures. |
 
 The initial parser limits group nesting, total captures, and repeat-state marks to 256 each. The matcher executes ordered bytecode with an explicit stack bounded at 1,024 saved paths and a work budget of 1,000,000 steps by default; long linear matches do not spend stack slots. Empty iterations proceed to the continuation once while retaining captures and alternative paths. These limits are provisional and require stress and performance review before a consumer switch.

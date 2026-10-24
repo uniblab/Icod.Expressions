@@ -162,6 +162,9 @@ internal sealed class PcreByteParser {
 	private (PcreByteSet Set, byte? Value, bool MayStartRange) ParseBracketItem() {
 		var offset = index;
 		var value = source[index++];
+		if ( value == (byte)'[' && index < source.Length && source[index] is (byte)':' or (byte)'.' or (byte)'=' ) {
+			return ParsePosixItem( offset );
+		}
 		if ( value == (byte)'\\' ) {
 			if ( index < source.Length && source[index] == (byte)'b' ) {
 				index++;
@@ -175,6 +178,42 @@ internal sealed class PcreByteParser {
 			};
 		}
 		return (PcreByteSet.Singleton( value ), value, value != (byte)'-');
+	}
+
+	private (PcreByteSet Set, byte? Value, bool MayStartRange) ParsePosixItem( int offset ) {
+		if ( source[index] != (byte)':' ) { throw Unsupported( offset ); } // Collating/equivalence elements.
+		index++;
+		var negated = index < source.Length && source[index] == (byte)'^';
+		if ( negated ) { index++; }
+		var nameStart = index;
+		while ( index < source.Length && source[index] is >= (byte)'a' and <= (byte)'z' ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			index++;
+		}
+		if ( index == nameStart || index + 1 >= source.Length
+			|| source[index] != (byte)':' || source[index + 1] != (byte)']' ) {
+			throw Invalid( offset, "malformed POSIX character class" );
+		}
+		var name = System.Text.Encoding.ASCII.GetString( source, nameStart, index - nameStart );
+		var set = name switch {
+			"alnum" => PcreByteSet.Alnum,
+			"alpha" => PcreByteSet.Alpha,
+			"ascii" => PcreByteSet.Ascii,
+			"blank" => PcreByteSet.Blank,
+			"cntrl" => PcreByteSet.Control,
+			"digit" => PcreByteSet.Digit,
+			"graph" => PcreByteSet.Graph,
+			"lower" => PcreByteSet.Lower,
+			"print" => PcreByteSet.Printable,
+			"punct" => PcreByteSet.Punctuation,
+			"space" => PcreByteSet.WhiteSpace,
+			"upper" => PcreByteSet.Upper,
+			"word" => PcreByteSet.Word,
+			"xdigit" => PcreByteSet.HexDigit,
+			_ => throw Unsupported( offset )
+		};
+		index += 2; // The POSIX ':]' belongs to this item; the outer ']' is separate.
+		return (negated ? set.Complement() : set, null, false);
 	}
 
 	private PcreByteNode ParseEscape( int offset ) {
