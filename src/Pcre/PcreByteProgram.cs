@@ -41,6 +41,7 @@ internal sealed class PcreByteProgramCompiler {
 	}
 
 	private void Patch( int index, int first, int second = 0 ) {
+		cancellationToken.ThrowIfCancellationRequested();
 		instructions[index] = instructions[index] with { First = first, Second = second };
 	}
 

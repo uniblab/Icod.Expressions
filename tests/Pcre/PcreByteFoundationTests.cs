@@ -178,6 +178,13 @@ public sealed class PcreByteFoundationTests {
 	}
 
 	[Fact]
+	public void EmptyFirstBranchCanCompleteMandatoryRepeat() {
+		var result = Compile( "(|a)+"u8.ToArray() ).Match( "a"u8.ToArray() );
+		Assert.Equal( 0, result.Match?.ByteLength );
+		Assert.Equal( new PcreByteCapture( 0, 0 ), result.Match?.Captures[1] );
+	}
+
+	[Fact]
 	public void CanBacktrackFromAnEmptyIterationToAConsumingBranch() {
 		var result = Compile( "(|a)*b"u8.ToArray() ).Match( "ab"u8.ToArray() );
 		Assert.Equal( 2, result.Match?.ByteLength );
@@ -255,6 +262,21 @@ public sealed class PcreByteFoundationTests {
 		var pattern = System.Text.Encoding.ASCII.GetBytes( string.Concat( Enumerable.Repeat( "a*", 300 ) ) );
 		var result = PcreByteCompiler.Compile( pattern );
 		Assert.Equal( PcreByteDiagnosticCode.PatternRepeatLimitExceeded, result.Diagnostic?.Code );
+	}
+
+	[Fact]
+	public void AcceptsTheCaptureLimitBoundary() {
+		var pattern = System.Text.Encoding.ASCII.GetBytes( string.Concat( Enumerable.Repeat( "(a)", 256 ) ) );
+		var bytes = System.Text.Encoding.ASCII.GetBytes( new string( 'a', 256 ) );
+		var result = Compile( pattern ).Match( bytes );
+		Assert.Equal( new PcreByteCapture( 255, 1 ), result.Match?.Captures[256] );
+	}
+
+	[Fact]
+	public void AcceptsTheRepeatStateLimitBoundary() {
+		var pattern = System.Text.Encoding.ASCII.GetBytes( string.Concat( Enumerable.Repeat( "a*", 256 ) ) );
+		var result = Compile( pattern ).Match( ReadOnlyMemory<byte>.Empty );
+		Assert.Equal( 0, result.Match?.ByteLength );
 	}
 
 	[Fact]
