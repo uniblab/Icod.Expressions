@@ -8,6 +8,7 @@ public sealed class PcreByteNoncapturingTests {
 	[Theory]
 	[InlineData( "(?:a|ab)c", "abc", 3 )]
 	[InlineData( "(?:a|ab)c", "ac", 2 )]
+	[InlineData( "(?:a|ab)", "ab", 1 )]
 	[InlineData( "(?:ab)+", "abab", 4 )]
 	[InlineData( "(?:a)?b", "b", 1 )]
 	[InlineData( "(?:|a)b", "b", 1 )]
@@ -35,6 +36,38 @@ public sealed class PcreByteNoncapturingTests {
 		var match = Compile( "(?:(a)|b)+\\1"u8.ToArray() ).Match( "aba"u8.ToArray() ).Match;
 		Assert.Equal( 3, match?.ByteLength );
 		Assert.Equal( new PcreByteCapture( 0, 1 ), match?.Captures[1] );
+	}
+
+	[Fact]
+	public void AbandonedAlternativeRollsBackNestedCapture() {
+		var match = Compile( "(?:(a)x|(ab)c)"u8.ToArray() ).Match( "abc"u8.ToArray() ).Match;
+		Assert.Equal( 3, match?.ByteLength );
+		Assert.Equal( 3, match?.Captures.Count );
+		Assert.Null( match?.Captures[1] );
+		Assert.Equal( new PcreByteCapture( 0, 2 ), match?.Captures[2] );
+	}
+
+	[Fact]
+	public void NoncapturingGroupsDoNotSpendCaptureSlots() {
+		var pattern = System.Text.Encoding.ASCII.GetBytes(
+			string.Concat( Enumerable.Repeat( "(?:a)", 256 ) ) + "(b)"
+		);
+		var match = Compile( pattern ).Match(
+			System.Text.Encoding.ASCII.GetBytes( new string( 'a', 256 ) + "b" )
+		).Match;
+		Assert.Equal( 257, match?.ByteLength );
+		Assert.Equal( 2, match?.Captures.Count );
+		Assert.Equal( new PcreByteCapture( 256, 1 ), match?.Captures[1] );
+	}
+
+	[Fact]
+	public void NoncapturingGroupsStillCountTowardNestingLimit() {
+		var pattern = System.Text.Encoding.ASCII.GetBytes(
+			string.Concat( Enumerable.Repeat( "(?:", 257 ) ) + "a" + new string( ')', 257 )
+		);
+		var result = PcreByteCompiler.Compile( pattern );
+		Assert.Equal( PcreByteDiagnosticCode.PatternDepthLimitExceeded, result.Diagnostic?.Code );
+		Assert.Equal( 3 * 256, result.Diagnostic?.ByteOffset );
 	}
 
 	[Fact]
