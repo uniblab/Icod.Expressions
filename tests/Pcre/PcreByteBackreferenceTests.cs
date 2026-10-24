@@ -9,6 +9,7 @@ public sealed class PcreByteBackreferenceTests {
 	[InlineData( @"^(\w+)\s+\1$", "same same", 9 )]
 	[InlineData( @"(a|ab)\1", "abab", 4 )]
 	[InlineData( @"(a|b\1)+", "aba", 3 )]
+	[InlineData( @"^(\1a|a)+$", "aaa", 3 )]
 	[InlineData( @"(a)\1", "aa", 2 )]
 	[InlineData( @"()\1", "", 0 )]
 	public void MatchesLastCapturedBytesWithPcre2Span( string pattern, string subject, int length ) {
@@ -24,6 +25,7 @@ public sealed class PcreByteBackreferenceTests {
 	[InlineData( @"(a)?b\1", "b" )]
 	[InlineData( @"(a)\1", "ab" )]
 	[InlineData( @"\1(a)", "a" )]
+	[InlineData( @"^((a)|ab)\2$", "aba" )]
 	public void UnsetOrDifferentCaptureDoesNotMatch( string pattern, string subject ) {
 		Assert.Null( Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) )
 			.Match( System.Text.Encoding.ASCII.GetBytes( subject ) ).Match );
@@ -33,6 +35,13 @@ public sealed class PcreByteBackreferenceTests {
 	public void BacktracksCaptureBeforeComparingReference() {
 		var match = Compile( "(a|ab)\\1"u8.ToArray() ).Match( "abab"u8.ToArray() ).Match;
 		Assert.Equal( new PcreByteCapture( 0, 2 ), match?.Captures[1] );
+	}
+
+	[Fact]
+	public void RetainsEarlierNestedCaptureWhenLaterIterationSkipsIt() {
+		var match = Compile( "^((a)?b)+\\2$"u8.ToArray() ).Match( "abba"u8.ToArray() ).Match;
+		Assert.Equal( 4, match?.ByteLength );
+		Assert.Equal( new PcreByteCapture( 0, 1 ), match?.Captures[2] );
 	}
 
 	[Fact]

@@ -36,7 +36,7 @@
 
 **Interfaces:**
 - `PcreByteBackreference(int Number)` is a syntax node; `PcreByteOpcode.Backreference` carries its group number in `First`.
-- `PcreByteParser.Parse()` validates recorded (number, byteOffset, priorGroupCount) references after the whole pattern is parsed. Forward single-digit references are allowed if the final capture count contains that number.
+- `PcreByteParser.Parse()` validates recorded (number, byteOffset) references after the whole pattern is parsed. Forward single-digit references are allowed if the final capture count contains that number.
 - `PcreByteMatcher.Match(...)` checks `captures[number]` and compares every referenced byte through `Step()`; unset captures fail, empty captures succeed.
 
 - [ ] Write failing PCRE2-pinned tests for the Grep fixture, alternation rollback, unset/empty captures, last repeated capture, forward validation and numeric ambiguity.
