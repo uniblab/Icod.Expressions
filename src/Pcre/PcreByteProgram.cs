@@ -7,6 +7,7 @@ internal enum PcreByteOpcode {
 	AssertLiteral,
 	Start,
 	End,
+	EndBeforeFinalLf,
 	CaptureStart,
 	CaptureEnd,
 	Split,
@@ -84,6 +85,9 @@ internal sealed class PcreByteProgramCompiler {
 				break;
 			case PcreByteAnchor anchor:
 				Emit( anchor.IsStart ? PcreByteOpcode.Start : PcreByteOpcode.End );
+				break;
+			case PcreByteEndBeforeFinalLf:
+				Emit( PcreByteOpcode.EndBeforeFinalLf );
 				break;
 			case PcreByteGroup group:
 				Emit( PcreByteOpcode.CaptureStart, group.Number );

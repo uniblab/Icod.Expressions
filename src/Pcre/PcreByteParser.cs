@@ -56,7 +56,7 @@ internal sealed class PcreByteParser {
 					if ( atom is PcreByteLiteralAssertion ) {
 						throw Unsupported( index );
 					}
-					if ( atom is PcreByteAnchor ) {
+					if ( atom is PcreByteAnchor or PcreByteEndBeforeFinalLf ) {
 						throw Invalid( index, "an anchor cannot be repeated" );
 					}
 					var quantifierOffset = index;
@@ -300,6 +300,9 @@ internal sealed class PcreByteParser {
 			throw Invalid( offset, "trailing backslash" );
 		}
 		var value = source[index++];
+		if ( value == (byte)'A' ) { return new PcreByteAnchor( true ); }
+		if ( value == (byte)'z' ) { return new PcreByteAnchor( false ); }
+		if ( value == (byte)'Z' ) { return new PcreByteEndBeforeFinalLf(); }
 		if ( value is >= (byte)'1' and <= (byte)'9' ) {
 			if ( index < source.Length && source[index] is >= (byte)'0' and <= (byte)'9' ) {
 				throw Unsupported( offset ); // Multi-digit references and octal ambiguity are pending.
