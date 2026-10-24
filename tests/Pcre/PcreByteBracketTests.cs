@@ -96,6 +96,56 @@ public sealed class PcreByteBracketTests {
 		Assert.Equal( 1, result.Diagnostic?.ByteOffset );
 	}
 
+	[Theory]
+	[InlineData( "alnum", "41", "FF" )]
+	[InlineData( "alpha", "7A", "37" )]
+	[InlineData( "ascii", "7F", "80" )]
+	[InlineData( "blank", "09", "0A" )]
+	[InlineData( "cntrl", "7F", "20" )]
+	[InlineData( "digit", "39", "B2" )]
+	[InlineData( "graph", "21", "20" )]
+	[InlineData( "lower", "7A", "5A" )]
+	[InlineData( "print", "20", "1F" )]
+	[InlineData( "punct", "21", "41" )]
+	[InlineData( "space", "0B", "A0" )]
+	[InlineData( "upper", "5A", "7A" )]
+	[InlineData( "word", "5F", "2D" )]
+	[InlineData( "xdigit", "46", "47" )]
+	public void PosixNamesHaveAsciiNonUcpBoundaries( string name, string yesHex, string noHex ) {
+		var compiled = Compile( "[[:" + name + ":]]" );
+		Assert.Equal( 0, compiled.Match( Convert.FromHexString( yesHex ) ).Match?.ByteIndex );
+		Assert.Null( compiled.Match( Convert.FromHexString( noHex ) ).Match );
+	}
+
+	[Theory]
+	[InlineData( "[[:^digit:]]", "FF", 0 )]
+	[InlineData( "[[:^digit:]]", "35", -1 )]
+	[InlineData( "[[:digit:]_]", "5F", 0 )]
+	[InlineData( "[[:digit:]_]", "35", 0 )]
+	[InlineData( "[^[:digit:]]", "FF", 0 )]
+	[InlineData( "[^[:digit:]]", "35", -1 )]
+	[InlineData( "[[:digit:]\\w]", "41", 0 )]
+	[InlineData( "[[:digit:]-]", "2D", 0 )]
+	public void CombinesPosixSetsAndOuterNegation( string pattern, string subjectHex, int expectedStart ) {
+		var match = Compile( pattern ).Match( Convert.FromHexString( subjectHex ) );
+		int? start = expectedStart < 0 ? null : expectedStart;
+		Assert.Equal( start, match.Match?.ByteIndex );
+	}
+
+	[Theory]
+	[InlineData( "[[:bogus:]]", 1, PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( "[[.ch.]]", 1, PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( "[[=a=]]", 1, PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( "[[:digit]]", 1, PcreByteDiagnosticCode.InvalidSyntax )]
+	[InlineData( "[[:digit:]", 0, PcreByteDiagnosticCode.InvalidSyntax )]
+	[InlineData( "[a-[:digit:]]", 2, PcreByteDiagnosticCode.InvalidSyntax )]
+	[InlineData( "[[:digit:]-a]", 10, PcreByteDiagnosticCode.InvalidSyntax )]
+	public void RejectsUnknownOrMalformedPosixItemOrRange( string pattern, int offset, PcreByteDiagnosticCode code ) {
+		var result = PcreByteCompiler.Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
+		Assert.Equal( code, result.Diagnostic?.Code );
+		Assert.Equal( offset, result.Diagnostic?.ByteOffset );
+	}
+
 	private static PcreCompiledBytePattern Compile( string pattern ) => Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
 
 	private static PcreCompiledBytePattern Compile( byte[] pattern ) {
