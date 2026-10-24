@@ -87,16 +87,21 @@ internal sealed class PcreByteParser {
 		var offset = index;
 		var value = source[index++];
 		if ( value == (byte)'(' ) {
+			var capturing = true;
 			if ( index < source.Length && source[index] == (byte)'?' ) {
-				throw Unsupported( offset );
+				if ( index + 1 >= source.Length || source[index + 1] != (byte)':' ) {
+					throw Unsupported( offset );
+				}
+				index += 2;
+				capturing = false;
 			}
 			if ( depth >= MaximumPatternDepth ) {
 				throw new PcreByteParseException( new(
 					PcreByteDiagnosticCode.PatternDepthLimitExceeded, offset, "pattern nesting limit exceeded"
 				) );
 			}
-			var number = ++groupCount;
-			if ( number > MaximumCaptureCount ) {
+			var number = capturing ? ++groupCount : 0;
+			if ( groupCount > MaximumCaptureCount ) {
 				throw new PcreByteParseException( new(
 					PcreByteDiagnosticCode.PatternCaptureLimitExceeded, offset, "capture count limit exceeded"
 				) );
@@ -111,7 +116,7 @@ internal sealed class PcreByteParser {
 				throw Invalid( offset, "unclosed group" );
 			}
 			index++;
-			return new PcreByteGroup( number, body );
+			return capturing ? new PcreByteGroup( number, body ) : new PcreByteNoncapturingGroup( body );
 		}
 		if ( value == (byte)'^' || value == (byte)'$' ) {
 			return new PcreByteAnchor( value == (byte)'^' );

@@ -83,6 +83,9 @@ internal sealed class PcreByteProgramCompiler {
 				CompileAlternatives( group.Body );
 				Emit( PcreByteOpcode.CaptureEnd, group.Number );
 				break;
+			case PcreByteNoncapturingGroup noncapturing:
+				CompileAlternatives( noncapturing.Body );
+				break;
 			case PcreByteRepeat repeat:
 				CompileRepeat( repeat );
 				break;
