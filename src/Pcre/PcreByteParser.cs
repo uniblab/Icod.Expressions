@@ -140,6 +140,16 @@ internal sealed class PcreByteParser {
 			}
 			return new PcreByteLiteral( (byte)result );
 		}
+		PcreByteSet? characterClass = value switch {
+			(byte)'d' => PcreByteSet.Digit,
+			(byte)'D' => PcreByteSet.Digit.Complement(),
+			(byte)'s' => PcreByteSet.WhiteSpace,
+			(byte)'S' => PcreByteSet.WhiteSpace.Complement(),
+			(byte)'w' => PcreByteSet.Word,
+			(byte)'W' => PcreByteSet.Word.Complement(),
+			_ => (PcreByteSet?)null
+		};
+		if ( characterClass.HasValue ) { return new PcreByteClass( characterClass.Value ); }
 		var escaped = value switch {
 			(byte)'a' => 0x07,
 			(byte)'e' => 0x1B,

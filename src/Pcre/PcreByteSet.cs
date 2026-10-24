@@ -3,6 +3,18 @@ namespace Icod.Expressions.Pcre;
 /// <summary>An immutable set over all 256 byte values.</summary>
 internal readonly record struct PcreByteSet( ulong A, ulong B, ulong C, ulong D ) {
 	internal static PcreByteSet Dot { get; } = FromPredicate( value => value != (byte)'\n' );
+	internal static PcreByteSet Digit { get; } = FromPredicate(
+		value => value is >= (byte)'0' and <= (byte)'9'
+	);
+	internal static PcreByteSet WhiteSpace { get; } = FromPredicate(
+		value => value is >= 0x09 and <= 0x0D or (byte)' '
+	);
+	internal static PcreByteSet Word { get; } = FromPredicate(
+		value => value is >= (byte)'0' and <= (byte)'9'
+			or >= (byte)'A' and <= (byte)'Z'
+			or >= (byte)'a' and <= (byte)'z'
+			or (byte)'_'
+	);
 
 	internal bool Contains( byte value ) {
 		var word = value >> 6;
