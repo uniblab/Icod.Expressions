@@ -132,12 +132,14 @@ internal sealed class PcreByteParser {
 		if ( value == (byte)'x' ) {
 			if ( index < source.Length && source[index] == (byte)'{' ) { throw Unsupported( offset ); }
 			var result = 0;
-			for ( var count = 0; count < 2 && index < source.Length; count++ ) {
+			var count = 0;
+			for ( ; count < 2 && index < source.Length; count++ ) {
 				var digit = HexDigit( source[index] );
 				if ( digit < 0 ) { break; }
 				result = ( result << 4 ) | digit;
 				index++;
 			}
+			if ( count == 0 ) { throw Invalid( offset, "hex escape requires at least one digit" ); }
 			return new PcreByteLiteral( (byte)result );
 		}
 		PcreByteSet? characterClass = value switch {
