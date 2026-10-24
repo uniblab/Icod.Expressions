@@ -3,6 +3,7 @@ namespace Icod.Expressions.Pcre;
 internal enum PcreByteDiagnosticCode {
 	UnsupportedSyntax,
 	InvalidSyntax,
+	PatternDepthLimitExceeded,
 	InvalidWorkLimit,
 	InvalidStartOffset,
 	MatchWorkLimitExceeded,

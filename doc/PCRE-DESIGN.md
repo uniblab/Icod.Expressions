@@ -20,7 +20,7 @@ The draft foundation currently recognizes raw byte literals (including NUL and h
 | Dot, escapes, character classes, `{m,n}`, inline options and special groups such as lookaround | Explicit compile-time `UnsupportedSyntax` diagnostic. |
 | UTF-8/UCP, backreferences, lookaround, atomic groups, possessive repetition, backtracking verbs, recursion and broader PCRE2 syntax | Pending separate implementation and conformance fixtures. |
 
-The initial recursive search is depth bounded at 256 frames and work bounded at 1,000,000 steps by default. Both limits are provisional and require stress and performance review before a consumer switch.
+The initial parser limits group nesting to 256; recursive search is depth bounded at 256 frames and work bounded at 1,000,000 steps by default. These limits are provisional and require stress and performance review before a consumer switch.
 
 ## Approaches
 

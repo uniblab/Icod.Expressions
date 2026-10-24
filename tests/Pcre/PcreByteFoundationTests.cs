@@ -88,10 +88,13 @@ public sealed class PcreByteFoundationTests {
 
 	[Fact]
 	public void LimitsWorkAcrossCandidateStarts() {
-		var compiled = Compile( "zz"u8.ToArray(), new PcreByteOptions { MatchWorkLimit = 3 } );
+		var observed = 0;
+		var compiled = Compile( "zz"u8.ToArray(), new PcreByteOptions {
+			MatchWorkLimit = 3, WorkObserver = count => observed = count
+		} );
 		var result = compiled.Match( "aaaaaa"u8.ToArray() );
 
-		Assert.False( result.IsSuccess );
+		Assert.False( result.IsSuccess, $"work observed: {observed}; match: {result.Match}" );
 		Assert.Equal( PcreByteDiagnosticCode.MatchWorkLimitExceeded, result.Diagnostic?.Code );
 	}
 
@@ -172,7 +175,7 @@ public sealed class PcreByteFoundationTests {
 
 	[Theory]
 	[InlineData( "*a", 0 )]
-	[InlineData( "a++", 2 )]
+	[InlineData( "a+*", 2 )]
 	[InlineData( "(a", 0 )]
 	public void DiagnosesMalformedRepeatOrGroup( string pattern, int offset ) {
 		var result = PcreByteCompiler.Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
@@ -180,11 +183,32 @@ public sealed class PcreByteFoundationTests {
 		Assert.Equal( offset, result.Diagnostic?.ByteOffset );
 	}
 
+	[Theory]
+	[InlineData( "a++" )]
+	[InlineData( "a*+" )]
+	[InlineData( "a?+" )]
+	public void ExplicitlyRejectsPendingPossessiveQuantifiers( string pattern ) {
+		var result = PcreByteCompiler.Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
+		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
+		Assert.Equal( 2, result.Diagnostic?.ByteOffset );
+	}
+
+	[Fact]
+	public void BoundsPatternNestingDuringCompilation() {
+		var pattern = new string( '(', 300 ) + "a" + new string( ')', 300 );
+		var result = PcreByteCompiler.Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
+		Assert.Equal( PcreByteDiagnosticCode.PatternDepthLimitExceeded, result.Diagnostic?.Code );
+	}
+
 	[Fact]
 	public void BoundsNestedRepeats() {
-		var compiled = Compile( "(a+)+$"u8.ToArray(), new PcreByteOptions { MatchWorkLimit = 100 } );
+		var observed = 0;
+		var compiled = Compile( "(a+)+$"u8.ToArray(), new PcreByteOptions {
+			MatchWorkLimit = 100, WorkObserver = count => observed = count
+		} );
 		var result = compiled.Match( "aaaaaaaaaaaaaaaaaaaaab"u8.ToArray() );
-		Assert.Equal( PcreByteDiagnosticCode.MatchWorkLimitExceeded, result.Diagnostic?.Code );
+		Assert.True( result.Diagnostic?.Code == PcreByteDiagnosticCode.MatchWorkLimitExceeded,
+			$"work observed: {observed}; match: {result.Match}; diagnostic: {result.Diagnostic}" );
 	}
 
 	[Fact]

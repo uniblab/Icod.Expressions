@@ -2,6 +2,7 @@ namespace Icod.Expressions.Pcre;
 
 /// <summary>Parses only implemented byte-mode constructs, retaining syntax order.</summary>
 internal sealed class PcreByteParser {
+	private const int MaximumPatternDepth = 256;
 	private readonly byte[] source;
 	private readonly CancellationToken cancellationToken;
 	private int index;
@@ -15,20 +16,25 @@ internal sealed class PcreByteParser {
 	internal int GroupCount => groupCount;
 
 	internal PcreByteAlternatives Parse() {
-		var root = ParseAlternatives( false );
+		var root = ParseAlternatives( false, 0 );
 		if ( index != source.Length ) {
 			throw Invalid( index, "unmatched closing parenthesis" );
 		}
 		return root;
 	}
 
-	private PcreByteAlternatives ParseAlternatives( bool inGroup ) {
+	private PcreByteAlternatives ParseAlternatives( bool inGroup, int depth ) {
+		if ( depth > MaximumPatternDepth ) {
+			throw new PcreByteParseException( new(
+				PcreByteDiagnosticCode.PatternDepthLimitExceeded, index, "pattern nesting limit exceeded"
+			) );
+		}
 		var branches = new List<IReadOnlyList<PcreByteNode>>();
 		while ( true ) {
 			var nodes = new List<PcreByteNode>();
 			while ( index < source.Length && source[index] != (byte)'|' && source[index] != (byte)')' ) {
 				cancellationToken.ThrowIfCancellationRequested();
-				var atom = ParseAtom();
+				var atom = ParseAtom( depth );
 				if ( index < source.Length && source[index] is (byte)'*' or (byte)'+' or (byte)'?' ) {
 					if ( atom is PcreByteAnchor ) {
 						throw Invalid( index, "an anchor cannot be repeated" );
@@ -40,6 +46,9 @@ internal sealed class PcreByteParser {
 					if ( !greedy ) { index++; }
 					atom = new PcreByteRepeat( atom, minimum, maximum, greedy );
 					if ( index < source.Length && source[index] is (byte)'*' or (byte)'+' or (byte)'?' ) {
+						if ( greedy && source[index] == (byte)'+' ) {
+							throw Unsupported( index ); // Valid possessive suffix, pending implementation.
+						}
 						throw Invalid( index, "repeated quantifier" );
 					}
 				}
@@ -56,7 +65,7 @@ internal sealed class PcreByteParser {
 		}
 	}
 
-	private PcreByteNode ParseAtom() {
+	private PcreByteNode ParseAtom( int depth ) {
 		var offset = index;
 		var value = source[index++];
 		if ( value == (byte)'(' ) {
@@ -66,7 +75,7 @@ internal sealed class PcreByteParser {
 			var number = ++groupCount;
 			PcreByteAlternatives body;
 			try {
-				body = ParseAlternatives( true );
+				body = ParseAlternatives( true, depth + 1 );
 			} catch ( PcreByteParseException error ) when ( error.Diagnostic.Code == PcreByteDiagnosticCode.InvalidSyntax && error.Diagnostic.Message == "unclosed group" ) {
 				throw Invalid( offset, "unclosed group" );
 			}
