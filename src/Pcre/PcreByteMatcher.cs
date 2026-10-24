@@ -60,6 +60,26 @@ internal static class PcreByteMatcher {
 								pc++;
 							} else { failed = true; }
 							break;
+						case PcreByteOpcode.Backreference:
+							var capture = captures[instruction.First];
+							if ( !capture.HasValue ) {
+								failed = true;
+								break;
+							}
+							var captured = capture.Value;
+							for ( var byteIndex = 0; byteIndex < captured.ByteLength; byteIndex++ ) {
+								Step(); // Attempted captured-byte comparison.
+								if ( byteIndex >= input.Length - position
+									|| input.Span[captured.ByteIndex + byteIndex] != input.Span[position + byteIndex] ) {
+									failed = true;
+									break;
+								}
+							}
+							if ( !failed ) {
+								position += captured.ByteLength;
+								pc++;
+							}
+							break;
 						case PcreByteOpcode.Start:
 							if ( position == 0 ) { pc++; } else { failed = true; }
 							break;

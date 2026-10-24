@@ -7,6 +7,7 @@ internal sealed class PcreByteParser {
 	private const int MaximumRepeatMarks = 256;
 	private readonly byte[] source;
 	private readonly CancellationToken cancellationToken;
+	private readonly List<(int Number, int Offset)> backreferences = new();
 	private int index;
 	private int groupCount;
 	private int repeatMarks;
@@ -22,6 +23,12 @@ internal sealed class PcreByteParser {
 		var root = ParseAlternatives( false, 0 );
 		if ( index != source.Length ) {
 			throw Invalid( index, "unmatched closing parenthesis" );
+		}
+		foreach ( var reference in backreferences ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( reference.Number > groupCount ) {
+				throw Invalid( reference.Offset, "backreference has no capture group" );
+			}
 		}
 		return root;
 	}
@@ -176,6 +183,9 @@ internal sealed class PcreByteParser {
 				index++;
 				return (PcreByteSet.Singleton( 0x08 ), 0x08, true);
 			}
+			if ( index < source.Length && source[index] is >= (byte)'1' and <= (byte)'9' ) {
+				throw Unsupported( offset ); // In a class, numeric escapes are octal characters.
+			}
 			var escape = ParseEscape( offset );
 			return escape switch {
 				PcreByteLiteral literal => (PcreByteSet.Singleton( literal.Value ), literal.Value, true),
@@ -237,6 +247,14 @@ internal sealed class PcreByteParser {
 			throw Invalid( offset, "trailing backslash" );
 		}
 		var value = source[index++];
+		if ( value is >= (byte)'1' and <= (byte)'9' ) {
+			if ( index < source.Length && source[index] is >= (byte)'0' and <= (byte)'9' ) {
+				throw Unsupported( offset ); // Multi-digit references and octal ambiguity are pending.
+			}
+			var number = value - (byte)'0';
+			backreferences.Add( (number, offset) );
+			return new PcreByteBackreference( number );
+		}
 		if ( value == (byte)'x' ) {
 			if ( index < source.Length && source[index] == (byte)'{' ) { throw Unsupported( offset ); }
 			var result = 0;
