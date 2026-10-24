@@ -80,6 +80,20 @@ internal static class PcreByteMatcher {
 								pc++;
 							}
 							break;
+						case PcreByteOpcode.WordBoundary:
+							var beforeWord = false;
+							if ( position > 0 ) {
+								Step(); // Classify the preceding source byte.
+								beforeWord = PcreByteSet.Word.Contains( input.Span[position - 1] );
+							}
+							var afterWord = false;
+							if ( position < input.Length ) {
+								Step(); // Classify the following source byte.
+								afterWord = PcreByteSet.Word.Contains( input.Span[position] );
+							}
+							if ( ( beforeWord != afterWord ) == ( instruction.First == 1 ) ) { pc++; }
+							else { failed = true; }
+							break;
 						case PcreByteOpcode.AssertLiteral:
 							var literal = instruction.Bytes.Span;
 							var adjacent = instruction.Second == 1 ? position - literal.Length : position;
