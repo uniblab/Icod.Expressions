@@ -33,7 +33,24 @@ internal static class PcreByteMatcher {
 		}
 
 		try {
+			if ( program.Utf8 ) {
+				for ( var offset = 0; offset < input.Length; ) {
+					Step(); // Validate one scalar within the same match work budget.
+					if ( !PcreUtf8.TryRead( input.Span, offset, out _, out var width ) ) {
+						return new( null, new( PcreByteDiagnosticCode.InvalidUtf8Subject, offset,
+							"subject contains invalid UTF-8" ) );
+					}
+					offset += width;
+				}
+				if ( startOffset < input.Length && ( input.Span[startOffset] & 0xC0 ) == 0x80 ) {
+					return new( null, new( PcreByteDiagnosticCode.InvalidStartOffset, startOffset,
+						"start byte offset is inside a UTF-8 character" ) );
+				}
+			}
 			for ( var start = startOffset; start <= input.Length; start++ ) {
+				if ( program.Utf8 && start < input.Length && ( input.Span[start] & 0xC0 ) == 0x80 ) {
+					continue; // Search candidate boundaries, never continuation bytes.
+				}
 				Step(); // Candidate start.
 				var position = start;
 				var pc = 0;
@@ -47,9 +64,21 @@ internal static class PcreByteMatcher {
 					var failed = false;
 					switch ( instruction.Opcode ) {
 						case PcreByteOpcode.Literal:
-							Step(); // Attempted byte comparison.
-							if ( position < input.Length && ByteEquals( input.Span[position], (byte)instruction.First, program.Caseless ) ) {
-								position++;
+							Step(); // Attempted scalar/byte comparison.
+							var literalWidth = 1;
+							if ( position < input.Length && ( program.Utf8
+								? PcreUtf8.TryRead( input.Span, position, out var scalar, out literalWidth )
+									&& ScalarEquals( scalar, instruction.First, program.Caseless )
+								: ScalarEquals( input.Span[position], instruction.First, program.Caseless ) ) ) {
+								position += literalWidth;
+								pc++;
+							} else { failed = true; }
+							break;
+						case PcreByteOpcode.Any:
+							Step(); // Attempted scalar consumption.
+							if ( PcreUtf8.TryRead( input.Span, position, out var value, out var scalarWidth )
+								&& ( instruction.First == 1 || value != (int)'\n' ) ) {
+								position += scalarWidth;
 								pc++;
 							} else { failed = true; }
 							break;
@@ -70,7 +99,7 @@ internal static class PcreByteMatcher {
 							for ( var byteIndex = 0; byteIndex < captured.ByteLength; byteIndex++ ) {
 								Step(); // Attempted captured-byte comparison.
 								if ( byteIndex >= input.Length - position
-									|| !ByteEquals( input.Span[captured.ByteIndex + byteIndex], input.Span[position + byteIndex], program.Caseless ) ) {
+									|| !ScalarEquals( input.Span[captured.ByteIndex + byteIndex], input.Span[position + byteIndex], program.Caseless ) ) {
 									failed = true;
 									break;
 								}
@@ -101,7 +130,7 @@ internal static class PcreByteMatcher {
 							if ( equals ) {
 								for ( var byteIndex = 0; byteIndex < literal.Length; byteIndex++ ) {
 									Step(); // Attempted assertion byte comparison.
-									if ( !ByteEquals( input.Span[adjacent + byteIndex], literal[byteIndex], program.Caseless ) ) {
+									if ( !ScalarEquals( input.Span[adjacent + byteIndex], literal[byteIndex], program.Caseless ) ) {
 										equals = false;
 										break;
 									}
@@ -182,7 +211,7 @@ internal static class PcreByteMatcher {
 		}
 	}
 
-	private static bool ByteEquals( byte left, byte right, bool caseless ) {
+	private static bool ScalarEquals( int left, int right, bool caseless ) {
 		if ( left == right ) { return true; }
 		if ( !caseless ) { return false; }
 		if ( left is >= (byte)'A' and <= (byte)'Z' ) { left = (byte)( left + 32 ); }

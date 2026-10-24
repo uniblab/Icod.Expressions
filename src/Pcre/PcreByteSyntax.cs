@@ -2,7 +2,9 @@ namespace Icod.Expressions.Pcre;
 
 internal abstract record PcreByteNode;
 
-internal sealed record PcreByteLiteral( byte Value ) : PcreByteNode;
+internal sealed record PcreByteLiteral( int Value ) : PcreByteNode;
+
+internal sealed record PcreByteAny( bool DotAll ) : PcreByteNode;
 
 internal sealed record PcreByteClass( PcreByteSet Set ) : PcreByteNode;
 
