@@ -6,6 +6,8 @@ internal sealed record PcreByteLiteral( byte Value ) : PcreByteNode;
 
 internal sealed record PcreByteClass( PcreByteSet Set ) : PcreByteNode;
 
+internal sealed record PcreByteBackreference( int Number ) : PcreByteNode;
+
 internal sealed record PcreByteAnchor( bool IsStart ) : PcreByteNode;
 
 internal sealed record PcreByteGroup( int Number, PcreByteAlternatives Body ) : PcreByteNode;

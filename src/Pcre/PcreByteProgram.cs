@@ -3,6 +3,7 @@ namespace Icod.Expressions.Pcre;
 internal enum PcreByteOpcode {
 	Literal,
 	Class,
+	Backreference,
 	Start,
 	End,
 	CaptureStart,
@@ -70,6 +71,9 @@ internal sealed class PcreByteProgramCompiler {
 				break;
 			case PcreByteClass characterClass:
 				Emit( PcreByteOpcode.Class, set: characterClass.Set );
+				break;
+			case PcreByteBackreference reference:
+				Emit( PcreByteOpcode.Backreference, reference.Number );
 				break;
 			case PcreByteAnchor anchor:
 				Emit( anchor.IsStart ? PcreByteOpcode.Start : PcreByteOpcode.End );

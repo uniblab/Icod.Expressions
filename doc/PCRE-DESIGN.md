@@ -19,8 +19,9 @@ The internal foundation recognizes raw byte literals (including NUL and high byt
 | Raw bytes, `|`, capturing groups, anchors, `*`, `+`, `?` and their lazy forms | Implemented for the internal API. |
 | Dot excluding LF; `\a`, `\e`, `\f`, `\n`, `\r`, `\t`, `\x` (one or two hex digits), escaped punctuation; ASCII `\d`, `\s`, `\w` and complements | Implemented in the stacked byte-atoms PR for 8-bit non-UTF, non-UCP mode. |
 | Ordinary bracket ranges, negation, escaped byte items, shorthand unions and fourteen non-UCP ASCII POSIX names | Implemented in the stacked byte-classes PR for 8-bit non-UTF mode. |
+| Single-digit numbered, case-sensitive byte backreferences | Implemented in the stacked backreferences PR for 8-bit non-UTF mode. Multi-digit and named forms remain pending. |
 | Braced hex, other escapes, `{m,n}`, inline options and special groups such as lookaround | Explicit compile-time `UnsupportedSyntax` diagnostic. |
-| UTF-8/UCP, backreferences, lookaround, atomic groups, possessive repetition, backtracking verbs, recursion and broader PCRE2 syntax | Pending separate implementation and conformance fixtures. |
+| UTF-8/UCP, broader backreference syntax, lookaround, atomic groups, possessive repetition, backtracking verbs, recursion and broader PCRE2 syntax | Pending separate implementation and conformance fixtures. |
 
 The initial parser limits group nesting, total captures, and repeat-state marks to 256 each. The matcher executes ordered bytecode with an explicit stack bounded at 1,024 saved paths and a work budget of 1,000,000 steps by default; long linear matches do not spend stack slots. Empty iterations proceed to the continuation once while retaining captures and alternative paths. These limits are provisional and require stress and performance review before a consumer switch.
 
