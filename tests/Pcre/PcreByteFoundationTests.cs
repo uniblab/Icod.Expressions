@@ -97,7 +97,7 @@ public sealed class PcreByteFoundationTests {
 
 	[Fact]
 	public void ResetsWorkBudgetForEachMatch() {
-		var compiled = Compile( "a"u8.ToArray(), new PcreByteOptions { MatchWorkLimit = 3 } );
+		var compiled = Compile( "a"u8.ToArray(), new PcreByteOptions { MatchWorkLimit = 4 } );
 		Assert.Equal( 0, compiled.Match( "a"u8.ToArray() ).Match?.ByteIndex );
 		Assert.Equal( 0, compiled.Match( "a"u8.ToArray() ).Match?.ByteIndex );
 	}

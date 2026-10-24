@@ -10,6 +10,18 @@ Keep the GNU/POSIX engine independent. Its documented leftmost-longest result se
 
 This is an alpha design. The current package's legacy namespaces and any experimental PCRE API are not commitments to a stable shape; later work may refactor more than namespaces.
 
+## Internal byte foundation status
+
+The draft foundation currently recognizes raw byte literals (including NUL and high bytes), ordered `|`, capturing parentheses, `^` and `$` at whole-input boundaries, and greedy/lazy `*`, `+`, and `?`. Numbered capture spans include group zero. Compile-time diagnostics reject malformed groups and quantifiers. Backtracking has per-match work and depth limits with distinct diagnostics, and cancellation can interrupt it. This internal subset is not a public PCRE feature claim.
+
+| Syntax or mode | Status for the draft byte foundation |
+|---|---|
+| Raw bytes, `|`, capturing groups, anchors, `*`, `+`, `?` and their lazy forms | Implemented for the internal API. |
+| Dot, escapes, character classes, `{m,n}`, inline options and special groups such as lookaround | Explicit compile-time `UnsupportedSyntax` diagnostic. |
+| UTF-8/UCP, backreferences, lookaround, atomic groups, possessive repetition, backtracking verbs, recursion and broader PCRE2 syntax | Pending separate implementation and conformance fixtures. |
+
+The initial recursive search is depth bounded at 256 frames and work bounded at 1,000,000 steps by default. Both limits are provisional and require stress and performance review before a consumer switch.
+
 ## Approaches
 
 | Approach | Tradeoff | Decision |

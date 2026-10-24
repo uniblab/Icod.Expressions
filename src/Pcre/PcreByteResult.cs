@@ -2,9 +2,11 @@ namespace Icod.Expressions.Pcre;
 
 internal enum PcreByteDiagnosticCode {
 	UnsupportedSyntax,
+	InvalidSyntax,
 	InvalidWorkLimit,
 	InvalidStartOffset,
-	MatchWorkLimitExceeded
+	MatchWorkLimitExceeded,
+	MatchDepthLimitExceeded
 }
 
 internal sealed record PcreByteDiagnostic(
@@ -20,7 +22,9 @@ internal sealed record PcreByteCompileResult(
 	public bool IsSuccess => Diagnostic is null && Pattern is not null;
 }
 
-internal sealed record PcreByteMatch( int ByteIndex, int ByteLength );
+internal readonly record struct PcreByteCapture( int ByteIndex, int ByteLength );
+
+internal sealed record PcreByteMatch( int ByteIndex, int ByteLength, IReadOnlyList<PcreByteCapture?> Captures );
 
 internal sealed record PcreByteMatchResult(
 	PcreByteMatch? Match,
