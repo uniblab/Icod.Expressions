@@ -40,8 +40,9 @@ publishing this package.
 4. Confirm the published version is available from NuGet and install it
    in a clean package-only consumer. Record the package URL and immutable
    release commit for the migration PRs.
-5. Migrate and validate all known consumers, including CoreUtils, Grep,
-   ProcPs, DiffUtils, and LineEditor, before any CommandFramework production
+5. Migrate and validate all known consumers, starting with ProcPs and
+   DiffUtils, then CoreUtils and LineEditor, and leaving Grep last for its
+   planned PCRE implementation. Do this before any CommandFramework production
    regex code is removed or replaced. Keep `tac` and direct `diff -I` behavior
    corrections in their separate issues. A distributable bridge and ownership
    switch need their own review and full consumer evidence.
@@ -49,3 +50,7 @@ publishing this package.
 NuGet versions are immutable. If the release package or its metadata needs
 correction after publication, make a new prerelease version and rerun the
 release gate; do not assume the old version can be overwritten.
+
+Publish `.snupkg` symbol packages in a later release under
+[issue #5](https://github.com/uniblab/Icod.Expressions/issues/5). The initial
+alpha package remains unchanged.
