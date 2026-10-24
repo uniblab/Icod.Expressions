@@ -28,6 +28,7 @@ public sealed class PcreUtf8ScalarTests {
 	[InlineData( "(?s).", "\n", 0, 1 )]
 	[InlineData( "(?s)a.b", "a\nb", 0, 3 )]
 	[InlineData( "^..$", "é😀", 0, 6 )]
+	[InlineData( ".", "\U0010FFFF", 0, 4 )]
 	public void DotConsumesOneScalarAndHonorsLf( string pattern, string subject, int index, int length ) {
 		var result = Compile( Encoding.UTF8.GetBytes( pattern ) ).Match( Encoding.UTF8.GetBytes( subject ) );
 		Assert.True( result.IsSuccess, result.Diagnostic?.Message );
@@ -54,12 +55,31 @@ public sealed class PcreUtf8ScalarTests {
 		Assert.Equal( 3, inside.Diagnostic?.ByteOffset );
 	}
 
+	[Fact]
+	public void ZeroWidthMatchesRemainOnCharacterBoundaries() {
+		var compiled = Compile( Array.Empty<byte>() );
+		var input = "é😀"u8.ToArray();
+		Assert.Equal( 2, compiled.Match( input, startOffset: 2 ).Match?.ByteIndex );
+		Assert.Equal( input.Length, compiled.Match( input, startOffset: input.Length ).Match?.ByteIndex );
+	}
+
+	[Fact]
+	public void AsciiWordBoundariesSeeAdjacentNonAsciiScalarsAsNonWords() {
+		var result = Compile( "\\bA\\b"u8.ToArray() ).Match( "éA😀"u8.ToArray() );
+		Assert.True( result.IsSuccess, result.Diagnostic?.Message );
+		Assert.Equal( 2, result.Match?.ByteIndex );
+		Assert.Equal( 1, result.Match?.ByteLength );
+	}
+
 	[Theory]
 	[InlineData( "FF", 0 )]
 	[InlineData( "61C0AF", 1 )]
 	[InlineData( "EDB080", 0 )]
 	[InlineData( "F09F98", 0 )]
 	[InlineData( "E282", 0 )]
+	[InlineData( "80", 0 )]
+	[InlineData( "6180", 1 )]
+	[InlineData( "F4908080", 0 )]
 	public void InvalidPatternReportsFirstSequenceOffset( string hex, int offset ) {
 		var result = PcreByteCompiler.Compile( Convert.FromHexString( hex ), new PcreByteOptions { Utf8 = true } );
 		Assert.Equal( PcreByteDiagnosticCode.InvalidUtf8Pattern, result.Diagnostic?.Code );
@@ -71,6 +91,9 @@ public sealed class PcreUtf8ScalarTests {
 	[InlineData( "61C0AF", 1 )]
 	[InlineData( "EDB080", 0 )]
 	[InlineData( "F09F98", 0 )]
+	[InlineData( "80", 0 )]
+	[InlineData( "6180", 1 )]
+	[InlineData( "F4908080", 0 )]
 	public void InvalidSubjectReportsFirstSequenceOffset( string hex, int offset ) {
 		var result = Compile( "x"u8.ToArray() ).Match( Convert.FromHexString( hex ) );
 		Assert.Equal( PcreByteDiagnosticCode.InvalidUtf8Subject, result.Diagnostic?.Code );

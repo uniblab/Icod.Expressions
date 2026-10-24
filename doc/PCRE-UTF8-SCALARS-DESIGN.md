@@ -18,7 +18,7 @@ Add an opt-in internal UTF-8 mode that consumes whole Unicode scalar values for 
 - Validate the complete pattern at compile time and the complete subject at match time, reporting the first invalid byte offset. Reject a start offset inside a UTF-8 sequence. No replacement-character decoding or match-invalid-UTF policy in this step.
 - Raw UTF-8 literals, ASCII/control/one-or-two-digit `\x` escapes, dot, anchors, groups, alternatives, repetition, backreferences, and ASCII word boundaries may use the existing ordered bytecode. Dot consumes one scalar and excludes LF unless dot-all. Capture and match offsets remain byte offsets.
 - Keep classes, POSIX classes, shorthands, literal lookarounds and caseless matching explicitly unsupported in UTF mode until Unicode and option semantics are designed. An unsupported construct must not silently behave as a byte operation.
-- Validation and matching remain cancellable and subject to the internal work budget. No native or .NET regex engine at runtime. Continue the six Staging CI jobs and leave Grep and CommandFramework untouched.
+- Pattern validation is cancellable; subject validation and matching share the internal per-match work budget and cancellation checks. No native or .NET regex engine at runtime. Continue the six Staging CI jobs and leave Grep and CommandFramework untouched.
 
 ## Follow-on
 
