@@ -88,13 +88,10 @@ public sealed class PcreByteFoundationTests {
 
 	[Fact]
 	public void LimitsWorkAcrossCandidateStarts() {
-		var observed = 0;
-		var compiled = Compile( "zz"u8.ToArray(), new PcreByteOptions {
-			MatchWorkLimit = 3, WorkObserver = count => observed = count
-		} );
+		var compiled = Compile( "zz"u8.ToArray(), new PcreByteOptions { MatchWorkLimit = 3 } );
 		var result = compiled.Match( "aaaaaa"u8.ToArray() );
 
-		Assert.False( result.IsSuccess, $"work observed: {observed}; match: {result.Match}" );
+		Assert.False( result.IsSuccess );
 		Assert.Equal( PcreByteDiagnosticCode.MatchWorkLimitExceeded, result.Diagnostic?.Code );
 	}
 
@@ -202,13 +199,9 @@ public sealed class PcreByteFoundationTests {
 
 	[Fact]
 	public void BoundsNestedRepeats() {
-		var observed = 0;
-		var compiled = Compile( "(a+)+$"u8.ToArray(), new PcreByteOptions {
-			MatchWorkLimit = 100, WorkObserver = count => observed = count
-		} );
+		var compiled = Compile( "(a+)+$"u8.ToArray(), new PcreByteOptions { MatchWorkLimit = 100 } );
 		var result = compiled.Match( "aaaaaaaaaaaaaaaaaaaaab"u8.ToArray() );
-		Assert.True( result.Diagnostic?.Code == PcreByteDiagnosticCode.MatchWorkLimitExceeded,
-			$"work observed: {observed}; match: {result.Match}; diagnostic: {result.Diagnostic}" );
+		Assert.Equal( PcreByteDiagnosticCode.MatchWorkLimitExceeded, result.Diagnostic?.Code );
 	}
 
 	[Fact]

@@ -148,7 +148,8 @@ internal static class PcreByteMatcher {
 			if ( work >= workLimit ) {
 				throw new MatchLimitException( PcreByteDiagnosticCode.MatchWorkLimitExceeded, "match work limit exceeded" );
 			}
-			workObserver?.Invoke( ++work );
+			work++;
+			workObserver?.Invoke( work );
 			cancellationToken.ThrowIfCancellationRequested();
 		}
 
