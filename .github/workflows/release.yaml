@@ -34,15 +34,15 @@ jobs:
             throw "Only the reviewed v0.1.0-alpha.1 tag is accepted by this release workflow."
           }
           $version = $Matches.version
+          git fetch origin main --no-tags
+          if (0 -ne $LASTEXITCODE) { throw 'Could not fetch main.' }
+          git merge-base --is-ancestor $env:GITHUB_SHA origin/main
+          if (0 -ne $LASTEXITCODE) { throw 'The tagged commit must be contained in main.' }
           [xml]$project = Get-Content Icod.Expressions.csproj -Raw
           $projectVersion = [string]$project.SelectSingleNode('/Project/PropertyGroup/Version').InnerText
           if ($projectVersion -ne $version) {
             throw "Tag version $version differs from project version $projectVersion."
           }
-          git fetch origin main --no-tags
-          if (0 -ne $LASTEXITCODE) { throw 'Could not fetch main.' }
-          git merge-base --is-ancestor $env:GITHUB_SHA origin/main
-          if (0 -ne $LASTEXITCODE) { throw 'The tagged commit must be contained in main.' }
           "version=$version" >> $env:GITHUB_OUTPUT
       - name: Require five successful CI jobs at this main commit
         shell: bash

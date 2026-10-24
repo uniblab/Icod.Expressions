@@ -104,3 +104,10 @@ jobs:
       - name: Run source-pinned consumers with package-backed scratch bridge
         if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Staging'
         run: sh tools/ConsumerBridgeProbe/run.sh artifacts
+      - name: Verify templated local build on Linux
+        if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Staging'
+        run: sh build.sh
+      - name: Verify templated local build on Windows
+        if: matrix.os == 'windows-latest' && matrix.configuration == 'Staging'
+        shell: cmd
+        run: build.cmd
