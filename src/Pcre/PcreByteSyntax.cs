@@ -6,7 +6,7 @@ internal sealed record PcreByteLiteral( int Value ) : PcreByteNode;
 
 internal sealed record PcreByteAny( bool DotAll ) : PcreByteNode;
 
-internal enum PcreByteScalarClassKind { Letter, DecimalDigit, AsciiDigit }
+internal enum PcreByteScalarClassKind { Letter, DecimalDigit, AsciiDigit, AsciiWord, UnicodeWord }
 
 internal sealed record PcreByteScalarClass( PcreByteScalarClassKind Kind, bool Negated ) : PcreByteNode;
 
@@ -20,7 +20,7 @@ internal sealed record PcreByteLineAnchor( bool IsStart ) : PcreByteNode;
 
 internal sealed record PcreByteEndBeforeFinalLf : PcreByteNode;
 
-internal sealed record PcreByteWordBoundary( bool IsBoundary ) : PcreByteNode;
+internal sealed record PcreByteWordBoundary( bool IsBoundary, bool UnicodeWord = false ) : PcreByteNode;
 
 internal sealed record PcreByteGroup( int Number, PcreByteAlternatives Body ) : PcreByteNode;
 
