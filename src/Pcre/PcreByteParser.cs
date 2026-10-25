@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace Icod.Expressions.Pcre;
 
 /// <summary>Parses only implemented byte-mode constructs, retaining syntax order.</summary>
@@ -126,7 +128,6 @@ internal sealed class PcreByteParser {
 						&& source[index + 2] is (byte)'=' or (byte)'!';
 					var ahead = index + 1 < source.Length && source[index + 1] is (byte)'=' or (byte)'!';
 					if ( !behind && !ahead ) { throw Unsupported( offset ); }
-						if ( utf8 ) { throw Unsupported( offset ); }
 					if ( depth >= MaximumPatternDepth ) {
 						throw new PcreByteParseException( new(
 							PcreByteDiagnosticCode.PatternDepthLimitExceeded, offset, "pattern nesting limit exceeded"
@@ -227,7 +228,11 @@ internal sealed class PcreByteParser {
 					throw Unsupported( openingOffset );
 				}
 				if ( escaped is not PcreByteLiteral literal ) { throw Unsupported( openingOffset ); }
-				bytes.Add( (byte)literal.Value );
+				if ( utf8 ) {
+					Span<byte> encoded = stackalloc byte[4];
+					var width = new Rune( literal.Value ).EncodeToUtf8( encoded );
+					for ( var byteIndex = 0; byteIndex < width; byteIndex++ ) { bytes.Add( encoded[byteIndex] ); }
+				} else { bytes.Add( (byte)literal.Value ); }
 			} else if ( value is (byte)'|' or (byte)'(' or (byte)'[' or (byte)'.'
 				or (byte)'^' or (byte)'$' or (byte)'*' or (byte)'+' or (byte)'?'
 				or (byte)'{' or (byte)'}' ) {

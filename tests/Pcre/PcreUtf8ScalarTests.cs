@@ -104,7 +104,7 @@ public sealed class PcreUtf8ScalarTests {
 	[Theory]
 	[InlineData( "\\p{Greek}", 0 )]
 	[InlineData( "[é]", 0 )]
-	[InlineData( "(?<=é)x", 0 )]
+	[InlineData( "(?<=é+)x", 0 )]
 	[InlineData( "(?i)é", 0 )]
 	public void UnicodeSensitiveConstructsRemainExplicitlyUnsupported( string pattern, int offset ) {
 		var result = PcreByteCompiler.Compile( Encoding.UTF8.GetBytes( pattern ), new PcreByteOptions { Utf8 = true } );
