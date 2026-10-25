@@ -39,6 +39,7 @@ internal static class PcreByteMatcher {
 			var fragments = new List<Fragment>();
 			if ( program.Utf8 ) {
 				var fragmentStart = 0;
+				var hasValidScalar = false;
 				for ( var offset = 0; offset < input.Length; ) {
 					Step(); // Inspect one scalar or invalid byte within the match work budget.
 					if ( !PcreUtf8.TryRead( input.Span, offset, out _, out var width ) ) {
@@ -46,19 +47,20 @@ internal static class PcreByteMatcher {
 							return new( null, new( PcreByteDiagnosticCode.InvalidUtf8Subject, offset,
 								"subject contains invalid UTF-8" ) );
 						}
-						fragments.Add( new( fragmentStart, offset ) );
-						// A run of undecodable bytes separates two maximal valid fragments.
-						do {
-							offset++;
-							if ( offset == input.Length ) { break; }
-							Step();
-						} while ( !PcreUtf8.TryRead( input.Span, offset, out _, out _ ) );
-						fragmentStart = offset;
+						if ( hasValidScalar ) {
+							fragments.Add( new( fragmentStart, offset ) );
+						} else if ( ( input.Span[offset] & 0xC0 ) != 0x80 ) {
+							fragments.Add( new( offset, offset ) );
+						}
+						hasValidScalar = false;
+						offset++;
 						continue;
 					}
+					if ( !hasValidScalar ) { fragmentStart = offset; }
+					hasValidScalar = true;
 					offset += width;
 				}
-				fragments.Add( new( fragmentStart, input.Length ) );
+				fragments.Add( new( hasValidScalar ? fragmentStart : input.Length, input.Length ) );
 				if ( !program.MatchInvalidUtf && startOffset < input.Length
 					&& ( input.Span[startOffset] & 0xC0 ) == 0x80 ) {
 					return new( null, new( PcreByteDiagnosticCode.InvalidStartOffset, startOffset,
@@ -69,6 +71,10 @@ internal static class PcreByteMatcher {
 			}
 			foreach ( var fragment in fragments ) {
 				for ( var start = Math.Max( startOffset, fragment.Start ); start <= fragment.End; start++ ) {
+					if ( program.MatchInvalidUtf && start == startOffset && start == fragment.End
+						&& start < input.Length && ( input.Span[start] & 0xC0 ) == 0x80 ) {
+						continue; // Starting at a stray continuation skips it; an earlier search can see the preceding edge.
+					}
 					if ( program.Utf8 && start < fragment.End && ( input.Span[start] & 0xC0 ) == 0x80 ) {
 						continue; // Search candidate boundaries, never continuation bytes.
 					}
@@ -201,7 +207,8 @@ internal static class PcreByteMatcher {
 							} else { failed = true; }
 							break;
 						case PcreByteOpcode.EndBeforeFinalLf:
-							if ( position == fragment.End || ( position == fragment.End - 1 && input.Span[position] == (byte)'\n' ) ) {
+							var end = instruction.First == 1 ? fragment.End : input.Length;
+							if ( position == end || ( position == end - 1 && input.Span[position] == (byte)'\n' ) ) {
 								pc++;
 							} else { failed = true; }
 							break;

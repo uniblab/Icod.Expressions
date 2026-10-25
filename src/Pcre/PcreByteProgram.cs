@@ -112,8 +112,8 @@ internal sealed class PcreByteProgramCompiler {
 			case PcreByteLineAnchor lineAnchor:
 				Emit( lineAnchor.IsStart ? PcreByteOpcode.StartLine : PcreByteOpcode.EndLine );
 				break;
-			case PcreByteEndBeforeFinalLf:
-				Emit( PcreByteOpcode.EndBeforeFinalLf );
+			case PcreByteEndBeforeFinalLf end:
+				Emit( PcreByteOpcode.EndBeforeFinalLf, end.FragmentEnd ? 1 : 0 );
 				break;
 			case PcreByteGroup group:
 				Emit( PcreByteOpcode.CaptureStart, group.Number );

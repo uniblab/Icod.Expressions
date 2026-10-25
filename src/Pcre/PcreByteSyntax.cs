@@ -20,7 +20,7 @@ internal sealed record PcreByteAnchor( bool IsStart ) : PcreByteNode;
 
 internal sealed record PcreByteLineAnchor( bool IsStart ) : PcreByteNode;
 
-internal sealed record PcreByteEndBeforeFinalLf : PcreByteNode;
+internal sealed record PcreByteEndBeforeFinalLf( bool FragmentEnd = false ) : PcreByteNode;
 
 internal sealed record PcreByteWordBoundary( bool IsBoundary, bool UnicodeWord = false ) : PcreByteNode;
 

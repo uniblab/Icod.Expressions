@@ -363,7 +363,7 @@ internal sealed class PcreByteParser {
 		var value = source[index++];
 		if ( value == (byte)'A' ) { return new PcreByteAnchor( true ); }
 		if ( value == (byte)'z' ) { return new PcreByteAnchor( false ); }
-		if ( value == (byte)'Z' ) { return new PcreByteEndBeforeFinalLf(); }
+		if ( value == (byte)'Z' ) { return new PcreByteEndBeforeFinalLf( true ); }
 		if ( value is (byte)'p' or (byte)'P' ) {
 			return ParseUnicodeProperty( offset, value == (byte)'P' );
 		}

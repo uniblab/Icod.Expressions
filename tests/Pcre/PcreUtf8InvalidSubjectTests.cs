@@ -17,7 +17,7 @@ public sealed class PcreUtf8InvalidSubjectTests {
 	[InlineData( ".", "FFC3A9", 1, 2 )]
 	[InlineData( "\\p{L}", "FFC3A9", 1, 2 )]
 	[InlineData( "\\W", "FF20", 1, 1 )]
-	[InlineData( "[^x]", "FF79", 1, 1 )]
+	[InlineData( "[^[:digit:]]", "FF79", 1, 1 )]
 	[InlineData( ".", "F09F9880FF", 0, 4 )]
 	public void SearchesOnlyValidScalarIslands( string pattern, string hex, int offset, int length ) {
 		var result = Compile( pattern ).Match( Convert.FromHexString( hex ) );
@@ -29,7 +29,7 @@ public sealed class PcreUtf8InvalidSubjectTests {
 	[InlineData( "x.y", "78FF79" )]
 	[InlineData( "\\P{L}", "FF" )]
 	[InlineData( "\\W", "FF" )]
-	[InlineData( "[^x]", "FF" )]
+	[InlineData( "[^[:digit:]]", "FF" )]
 	[InlineData( ".", "C0AF" )]
 	[InlineData( ".", "EDB080" )]
 	[InlineData( ".", "F4908080" )]
@@ -52,7 +52,8 @@ public sealed class PcreUtf8InvalidSubjectTests {
 	}
 
 	[Theory]
-	[InlineData( "\\b", "61FF62", 1 )]
+	[InlineData( "\\b", "61FF62", 0 )]
+	[InlineData( "a\\b", "61FF62", 0 )]
 	[InlineData( "\\b", "FF61", 1 )]
 	[InlineData( "\\B", "FF", 0 )]
 	[InlineData( "\\z", "61FF62", 1 )]
@@ -62,10 +63,13 @@ public sealed class PcreUtf8InvalidSubjectTests {
 	[InlineData( "^", "FF61", 0 )]
 	[InlineData( "$", "FF61", 2 )]
 	[InlineData( "", "FF", 0 )]
+	[InlineData( "", "80", 1 )]
+	[InlineData( "\\z", "80FF41", 1 )]
+	[InlineData( "\\B", "80", 1 )]
 	public void ZeroWidthAssertionsRespectFragmentAndWholeSubjectEdges( string pattern, string hex, int offset ) {
 		var result = Compile( pattern ).Match( Convert.FromHexString( hex ) );
 		Assert.True( result.IsSuccess, result.Diagnostic?.Message );
-		Assert.Equal( new PcreByteCapture( offset, pattern is "a\\z" or "b\\z" ? 1 : 0 ),
+		Assert.Equal( new PcreByteCapture( offset, pattern is "a\\z" or "b\\z" or "a\\b" ? 1 : 0 ),
 			result.Match?.Captures[0] );
 	}
 
@@ -73,6 +77,7 @@ public sealed class PcreUtf8InvalidSubjectTests {
 	[InlineData( "^b", "61FF62" )]
 	[InlineData( "a$", "61FF62" )]
 	[InlineData( "a.b", "61FF62" )]
+	[InlineData( "^", "8061" )]
 	public void InvalidSequenceDoesNotBecomeLineOrCharacter( string pattern, string hex ) {
 		Assert.Null( Compile( pattern ).Match( Convert.FromHexString( hex ) ).Match );
 	}
@@ -83,7 +88,9 @@ public sealed class PcreUtf8InvalidSubjectTests {
 		Assert.Equal( 5, Compile( "A" ).Match( subject, startOffset: 1 ).Match?.ByteIndex );
 		Assert.Equal( 5, Compile( "A" ).Match( subject, startOffset: 3 ).Match?.ByteIndex );
 		Assert.Equal( 2, Compile( "\\z" ).Match( subject, startOffset: 2 ).Match?.ByteIndex );
-		Assert.Equal( 5, Compile( "" ).Match( subject, startOffset: 3 ).Match?.ByteIndex );
+		Assert.Equal( 3, Compile( "" ).Match( subject, startOffset: 3 ).Match?.ByteIndex );
+		Assert.Equal( 5, Compile( "" ).Match( subject, startOffset: 4 ).Match?.ByteIndex );
+		Assert.Equal( 2, Compile( "\\z" ).Match( Convert.FromHexString( "6180" ), startOffset: 1 ).Match?.ByteIndex );
 		Assert.Equal( PcreByteDiagnosticCode.InvalidStartOffset,
 			Compile( "A" ).Match( subject, startOffset: 7 ).Diagnostic?.Code );
 	}
