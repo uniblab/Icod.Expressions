@@ -8,6 +8,7 @@ internal sealed class PcreByteParser {
 	private readonly byte[] source;
 	private readonly CancellationToken cancellationToken;
 	private readonly bool utf8;
+	private readonly bool ucp;
 	private readonly List<(int Number, int Offset)> backreferences = new();
 	private int index;
 	private int groupCount;
@@ -15,11 +16,15 @@ internal sealed class PcreByteParser {
 	private bool dotAll;
 	private bool caseless;
 	private bool multiline;
+	private bool asciiBsD;
 
-	internal PcreByteParser( byte[] source, bool caseless, bool utf8, CancellationToken cancellationToken ) {
+	internal PcreByteParser( byte[] source, bool caseless, bool utf8, bool ucp,
+		bool asciiBsD, CancellationToken cancellationToken ) {
 		this.source = source;
 		this.caseless = caseless;
 		this.utf8 = utf8;
+		this.ucp = ucp;
+		this.asciiBsD = asciiBsD;
 		this.cancellationToken = cancellationToken;
 	}
 
@@ -27,7 +32,13 @@ internal sealed class PcreByteParser {
 	internal bool Caseless => caseless;
 
 	internal PcreByteAlternatives Parse() {
-		if ( source.Length >= 4 && source[0] == (byte)'(' && source[1] == (byte)'?'
+		if ( utf8 && source.AsSpan().StartsWith( "(?-aD)"u8 ) ) {
+			index = 6;
+			asciiBsD = false;
+		} else if ( utf8 && source.AsSpan().StartsWith( "(?aD)"u8 ) ) {
+			index = 5;
+			asciiBsD = true;
+		} else if ( source.Length >= 4 && source[0] == (byte)'(' && source[1] == (byte)'?'
 			&& ( source[2] is (byte)'s' or (byte)'i' or (byte)'m' ) && source[3] == (byte)')' ) {
 			if ( utf8 && source[2] == (byte)'i' ) { throw Unsupported( 0 ); }
 			index = 4;
@@ -160,7 +171,7 @@ internal sealed class PcreByteParser {
 				: new PcreByteClass( dotAll ? PcreByteSet.AllBytes : PcreByteSet.Dot );
 		}
 		if ( value == (byte)'[' ) {
-			if ( utf8 ) { throw Unsupported( offset ); }
+			if ( utf8 ) { return ParseUtf8DigitBracket( offset ); }
 			return ParseBracket( offset );
 		}
 		if ( value == (byte)'\\' ) {
@@ -178,6 +189,24 @@ internal sealed class PcreByteParser {
 			return new PcreByteLiteral( scalar );
 		}
 		return new PcreByteLiteral( value );
+	}
+
+	private PcreByteNode ParseUtf8DigitBracket( int openingOffset ) {
+		var outerNegated = index < source.Length && source[index] == (byte)'^';
+		if ( outerNegated ) { index++; }
+		var positive = "[:digit:]]"u8;
+		var negative = "[:^digit:]]"u8;
+		var posixNegated = false;
+		if ( source.AsSpan( index ).StartsWith( positive ) ) {
+			index += positive.Length;
+		} else if ( source.AsSpan( index ).StartsWith( negative ) ) {
+			index += negative.Length;
+			posixNegated = true;
+		} else {
+			throw Unsupported( openingOffset );
+		}
+		return new PcreByteScalarClass( ucp ? PcreByteScalarClassKind.DecimalDigit
+			: PcreByteScalarClassKind.AsciiDigit, outerNegated != posixNegated );
 	}
 
 	private PcreByteLiteralAssertion ParseLiteralAssertion( int openingOffset, bool positive, bool behind ) {
@@ -331,9 +360,10 @@ internal sealed class PcreByteParser {
 		if ( value == (byte)'z' ) { return new PcreByteAnchor( false ); }
 		if ( value == (byte)'Z' ) { return new PcreByteEndBeforeFinalLf(); }
 		if ( value is (byte)'p' or (byte)'P' ) {
-			return ParseLetterProperty( offset, value == (byte)'P' );
+			return ParseUnicodeProperty( offset, value == (byte)'P' );
 		}
 		if ( value == (byte)'b' || value == (byte)'B' ) {
+			if ( ucp ) { throw Unsupported( offset ); } // Unicode word boundaries require UCP \w semantics.
 			return new PcreByteWordBoundary( value == (byte)'b' );
 		}
 		if ( value is >= (byte)'1' and <= (byte)'9' ) {
@@ -356,6 +386,11 @@ internal sealed class PcreByteParser {
 			}
 			if ( count == 0 ) { throw Invalid( offset, "hex escape requires at least one digit" ); }
 			return new PcreByteLiteral( result );
+		}
+		if ( utf8 && ( value is (byte)'d' or (byte)'D' ) ) {
+			return new PcreByteScalarClass( ucp && !asciiBsD
+				? PcreByteScalarClassKind.DecimalDigit : PcreByteScalarClassKind.AsciiDigit,
+				value == (byte)'D' );
 		}
 		PcreByteSet? characterClass = value switch {
 			(byte)'d' => PcreByteSet.Digit,
@@ -389,13 +424,13 @@ internal sealed class PcreByteParser {
 		return new PcreByteLiteral( value );
 	}
 
-	private PcreByteNode ParseLetterProperty( int offset, bool negated ) {
+	private PcreByteNode ParseUnicodeProperty( int offset, bool negated ) {
 		if ( !utf8 ) { throw Unsupported( offset ); }
 		if ( index >= source.Length ) { throw Invalid( offset, "property escape requires a name" ); }
 		if ( source[index] != (byte)'{' ) {
 			if ( source[index] != (byte)'L' ) { throw Unsupported( offset ); }
 			index++;
-			return new PcreByteLetterProperty( negated );
+			return new PcreByteScalarClass( PcreByteScalarClassKind.Letter, negated );
 		}
 		index++;
 		if ( index < source.Length && source[index] == (byte)'^' ) {
@@ -410,10 +445,14 @@ internal sealed class PcreByteParser {
 		if ( index >= source.Length || index == nameStart ) {
 			throw Invalid( offset, "malformed property escape" );
 		}
-		var isLetter = index == nameStart + 1 && source[nameStart] == (byte)'L';
+		var kind = index == nameStart + 1 && source[nameStart] == (byte)'L'
+			? PcreByteScalarClassKind.Letter
+			: index == nameStart + 2 && source[nameStart] == (byte)'N' && source[nameStart + 1] == (byte)'d'
+				? PcreByteScalarClassKind.DecimalDigit
+				: (PcreByteScalarClassKind?)null;
 		index++;
-		if ( !isLetter ) { throw Unsupported( offset ); }
-		return new PcreByteLetterProperty( negated );
+		if ( !kind.HasValue ) { throw Unsupported( offset ); }
+		return new PcreByteScalarClass( kind.Value, negated );
 	}
 
 	private static int HexDigit( byte value ) => value switch {

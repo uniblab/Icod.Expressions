@@ -20,6 +20,10 @@ internal static class PcreByteCompiler {
 			return new( null, new( PcreByteDiagnosticCode.UnsupportedSyntax, 0,
 				"UTF-8 caseless matching is not implemented" ) );
 		}
+		if ( options.Ucp && !options.Utf8 ) {
+			return new( null, new( PcreByteDiagnosticCode.UnsupportedSyntax, 0,
+				"UCP without UTF-8 is not implemented by the internal matcher" ) );
+		}
 		var source = pattern.ToArray();
 		if ( options.Utf8 ) {
 			for ( var offset = 0; offset < source.Length; ) {
@@ -32,7 +36,8 @@ internal static class PcreByteCompiler {
 			}
 		}
 
-		var parser = new PcreByteParser( source, options.Caseless, options.Utf8, cancellationToken );
+		var parser = new PcreByteParser( source, options.Caseless, options.Utf8,
+			options.Ucp, options.AsciiBsD, cancellationToken );
 		try {
 			var root = parser.Parse();
 			var program = new PcreByteProgramCompiler( cancellationToken, parser.Caseless, options.Utf8 ).Compile( root );
