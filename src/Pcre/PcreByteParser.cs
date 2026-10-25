@@ -217,6 +217,7 @@ internal sealed class PcreByteParser {
 
 	private PcreByteLiteralAssertion ParseLiteralAssertion( int openingOffset, bool positive, bool behind ) {
 		var bytes = new List<byte>();
+		Span<byte> encoded = stackalloc byte[4];
 		while ( index < source.Length && source[index] != (byte)')' ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			var value = source[index++];
@@ -229,7 +230,6 @@ internal sealed class PcreByteParser {
 				}
 				if ( escaped is not PcreByteLiteral literal ) { throw Unsupported( openingOffset ); }
 				if ( utf8 ) {
-					Span<byte> encoded = stackalloc byte[4];
 					var width = new Rune( literal.Value ).EncodeToUtf8( encoded );
 					for ( var byteIndex = 0; byteIndex < width; byteIndex++ ) { bytes.Add( encoded[byteIndex] ); }
 				} else { bytes.Add( (byte)literal.Value ); }
