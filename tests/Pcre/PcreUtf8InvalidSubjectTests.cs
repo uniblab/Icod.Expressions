@@ -78,8 +78,19 @@ public sealed class PcreUtf8InvalidSubjectTests {
 	[InlineData( "a$", "61FF62" )]
 	[InlineData( "a.b", "61FF62" )]
 	[InlineData( "^", "8061" )]
+	[InlineData( "\\B", "61FF" )]
+	[InlineData( "\\B", "61FFFF" )]
+	[InlineData( "\\B", "61FFFF62" )]
+	[InlineData( "$", "61FF" )]
 	public void InvalidSequenceDoesNotBecomeLineOrCharacter( string pattern, string hex ) {
 		Assert.Null( Compile( pattern ).Match( Convert.FromHexString( hex ) ).Match );
+	}
+
+	[Fact]
+	public void MultilineStartDoesNotTreatInvalidFragmentEdgeAsNextLine() {
+		var compiled = Compile( "(?m)^" );
+		Assert.Null( compiled.Match( Convert.FromHexString( "0AFF" ), startOffset: 1 ).Match );
+		Assert.Equal( 1, compiled.Match( Convert.FromHexString( "0A61" ), startOffset: 1 ).Match?.ByteIndex );
 	}
 
 	[Fact]
@@ -91,6 +102,10 @@ public sealed class PcreUtf8InvalidSubjectTests {
 		Assert.Equal( 3, Compile( "" ).Match( subject, startOffset: 3 ).Match?.ByteIndex );
 		Assert.Equal( 5, Compile( "" ).Match( subject, startOffset: 4 ).Match?.ByteIndex );
 		Assert.Equal( 2, Compile( "\\z" ).Match( Convert.FromHexString( "6180" ), startOffset: 1 ).Match?.ByteIndex );
+		Assert.Equal( 2, Compile( "\\B" ).Match( Convert.FromHexString( "6180" ), startOffset: 1 ).Match?.ByteIndex );
+		Assert.Equal( 2, Compile( "\\B" ).Match( Convert.FromHexString( "61FF" ), startOffset: 2 ).Match?.ByteIndex );
+		Assert.Equal( 2, Compile( "\\B" ).Match( Convert.FromHexString( "61FFFF" ), startOffset: 2 ).Match?.ByteIndex );
+		Assert.Equal( 2, Compile( "\\B" ).Match( Convert.FromHexString( "6180FF" ), startOffset: 1 ).Match?.ByteIndex );
 		Assert.Equal( PcreByteDiagnosticCode.InvalidStartOffset,
 			Compile( "A" ).Match( subject, startOffset: 7 ).Diagnostic?.Code );
 	}

@@ -69,7 +69,11 @@ internal static class PcreByteMatcher {
 			} else {
 				fragments.Add( new( 0, input.Length ) );
 			}
+			var crossedBarrier = false;
 			foreach ( var fragment in fragments ) {
+				if ( fragment.Start < fragment.End ) { crossedBarrier = false; }
+				if ( fragment.Start == fragment.End && crossedBarrier ) { continue; }
+				var barrierCandidateTried = false;
 				for ( var start = Math.Max( startOffset, fragment.Start ); start <= fragment.End; start++ ) {
 					if ( program.MatchInvalidUtf && start == startOffset && start == fragment.End
 						&& start < input.Length && ( input.Span[start] & 0xC0 ) == 0x80 ) {
@@ -77,6 +81,9 @@ internal static class PcreByteMatcher {
 					}
 					if ( program.Utf8 && start < fragment.End && ( input.Span[start] & 0xC0 ) == 0x80 ) {
 						continue; // Search candidate boundaries, never continuation bytes.
+					}
+					if ( fragment.End < input.Length && start == fragment.End ) {
+						barrierCandidateTried = true;
 					}
 					Step(); // Candidate start.
 					var position = start;
@@ -196,7 +203,7 @@ internal static class PcreByteMatcher {
 							if ( position == fragment.End ) { pc++; } else { failed = true; }
 							break;
 						case PcreByteOpcode.StartLine:
-							if ( position == 0 || ( position > fragment.Start && position < input.Length
+							if ( position == 0 || ( position > fragment.Start && position < fragment.End
 								&& input.Span[position - 1] == (byte)'\n' ) ) {
 								pc++;
 							} else { failed = true; }
@@ -258,6 +265,7 @@ internal static class PcreByteMatcher {
 				}
 			}
 			}
+				if ( barrierCandidateTried ) { crossedBarrier = true; }
 			return new( null, null );
 		} catch ( MatchLimitException error ) {
 			return new( null, new( error.Code, 0, error.Message ) );
