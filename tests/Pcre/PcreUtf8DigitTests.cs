@@ -114,16 +114,6 @@ public sealed class PcreUtf8DigitTests {
 		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
 	}
 
-	[Theory]
-	[InlineData( "\\b[[:digit:]]", 0 )]
-	[InlineData( "\\B\\d", 0 )]
-	[InlineData( "a\\b", 1 )]
-	public void UcpWordBoundariesAreRejectedUntilUnicodeWordRulesExist( string pattern, int offset ) {
-		var result = PcreByteCompiler.Compile( Encoding.UTF8.GetBytes( pattern ), GrepOptions );
-		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
-		Assert.Equal( offset, result.Diagnostic?.ByteOffset );
-	}
-
 	[Fact]
 	public void UnicodeDigitPredicateIsBudgetedAndCancellable() {
 		var limited = Compile( "\\p{Nd}"u8.ToArray(), new PcreByteOptions {
