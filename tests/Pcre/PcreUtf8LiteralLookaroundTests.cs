@@ -83,14 +83,14 @@ public sealed class PcreUtf8LiteralLookaroundTests {
 	}
 
 	[Theory]
-	[InlineData( "(?<=é+)A", PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( "(?=\\w)A", PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( "(?=\\p{L})A", PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( "(?<=é|à)A", PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( "(?<=é", PcreByteDiagnosticCode.InvalidSyntax )]
-	public void NonliteralBodiesRemainDiagnosed( string pattern, PcreByteDiagnosticCode code ) {
+	[InlineData( "(?<=é+)A", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( "(?=\\w)A", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( "(?=\\p{L})A", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( "(?<=é|à)A", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( "(?<=é", (int)PcreByteDiagnosticCode.InvalidSyntax )]
+	public void NonliteralBodiesRemainDiagnosed( string pattern, int code ) {
 		var result = PcreByteCompiler.Compile( Encoding.UTF8.GetBytes( pattern ), GrepOptions );
-		Assert.Equal( code, result.Diagnostic?.Code );
+		Assert.Equal( (PcreByteDiagnosticCode)code, result.Diagnostic?.Code );
 		Assert.Equal( 0, result.Diagnostic?.ByteOffset );
 	}
 
