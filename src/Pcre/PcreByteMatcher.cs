@@ -36,40 +36,71 @@ internal static class PcreByteMatcher {
 		}
 
 		try {
+			var fragments = new List<Fragment>();
 			if ( program.Utf8 ) {
+				var fragmentStart = 0;
+				var hasValidScalar = false;
 				for ( var offset = 0; offset < input.Length; ) {
-					Step(); // Validate one scalar within the same match work budget.
+					Step(); // Inspect one scalar or invalid byte within the match work budget.
 					if ( !PcreUtf8.TryRead( input.Span, offset, out _, out var width ) ) {
-						return new( null, new( PcreByteDiagnosticCode.InvalidUtf8Subject, offset,
-							"subject contains invalid UTF-8" ) );
+						if ( !program.MatchInvalidUtf ) {
+							return new( null, new( PcreByteDiagnosticCode.InvalidUtf8Subject, offset,
+								"subject contains invalid UTF-8" ) );
+						}
+						if ( hasValidScalar ) {
+							fragments.Add( new( fragmentStart, offset ) );
+						} else if ( ( input.Span[offset] & 0xC0 ) != 0x80 ) {
+							fragments.Add( new( offset, offset ) );
+						}
+						hasValidScalar = false;
+						offset++;
+						continue;
 					}
+					if ( !hasValidScalar ) { fragmentStart = offset; }
+					hasValidScalar = true;
 					offset += width;
 				}
-				if ( startOffset < input.Length && ( input.Span[startOffset] & 0xC0 ) == 0x80 ) {
+				fragments.Add( new( hasValidScalar ? fragmentStart : input.Length, input.Length ) );
+				if ( !program.MatchInvalidUtf && startOffset < input.Length
+					&& ( input.Span[startOffset] & 0xC0 ) == 0x80 ) {
 					return new( null, new( PcreByteDiagnosticCode.InvalidStartOffset, startOffset,
 						"start byte offset is inside a UTF-8 character" ) );
 				}
+			} else {
+				fragments.Add( new( 0, input.Length ) );
 			}
-			for ( var start = startOffset; start <= input.Length; start++ ) {
-				if ( program.Utf8 && start < input.Length && ( input.Span[start] & 0xC0 ) == 0x80 ) {
-					continue; // Search candidate boundaries, never continuation bytes.
-				}
-				Step(); // Candidate start.
-				var position = start;
-				var pc = 0;
-				var captures = new PcreByteCapture?[groupCount + 1];
-				var captureStarts = new int[groupCount + 1];
-				var marks = new int[program.MarkCount];
-				var backtrack = new Stack<Frame>();
-				while ( true ) {
-					Step(); // Instruction transition.
-					var instruction = program.Instructions[pc];
-					var failed = false;
-					switch ( instruction.Opcode ) {
+			var crossedBarrier = false;
+			foreach ( var fragment in fragments ) {
+				if ( fragment.Start < fragment.End ) { crossedBarrier = false; }
+				if ( fragment.Start == fragment.End && crossedBarrier ) { continue; }
+				var barrierCandidateTried = false;
+				for ( var start = Math.Max( startOffset, fragment.Start ); start <= fragment.End; start++ ) {
+					if ( program.MatchInvalidUtf && start == startOffset && start == fragment.End
+						&& start < input.Length && ( input.Span[start] & 0xC0 ) == 0x80 ) {
+						continue; // Starting at a stray continuation skips it; an earlier search can see the preceding edge.
+					}
+					if ( program.Utf8 && start < fragment.End && ( input.Span[start] & 0xC0 ) == 0x80 ) {
+						continue; // Search candidate boundaries, never continuation bytes.
+					}
+					if ( fragment.End < input.Length && start == fragment.End ) {
+						barrierCandidateTried = true;
+					}
+					Step(); // Candidate start.
+					var position = start;
+					var pc = 0;
+					var captures = new PcreByteCapture?[groupCount + 1];
+					var captureStarts = new int[groupCount + 1];
+					var marks = new int[program.MarkCount];
+					var backtrack = new Stack<Frame>();
+					while ( true ) {
+						Step(); // Instruction transition.
+						var instruction = program.Instructions[pc];
+						var failed = false;
+						switch ( instruction.Opcode ) {
 						case PcreByteOpcode.Literal:
 							Step(); // Attempted scalar/byte comparison.
 							var literalWidth = 1;
-							if ( position < input.Length && ( program.Utf8
+							if ( position < fragment.End && ( program.Utf8
 								? PcreUtf8.TryRead( input.Span, position, out var scalar, out literalWidth )
 									&& ScalarEquals( scalar, instruction.First, program.Caseless )
 								: ScalarEquals( input.Span[position], instruction.First, program.Caseless ) ) ) {
@@ -79,7 +110,8 @@ internal static class PcreByteMatcher {
 							break;
 						case PcreByteOpcode.Any:
 							Step(); // Attempted scalar consumption.
-							if ( PcreUtf8.TryRead( input.Span, position, out var value, out var scalarWidth )
+							if ( position < fragment.End
+								&& PcreUtf8.TryRead( input.Span, position, out var value, out var scalarWidth )
 								&& ( instruction.First == 1 || value != (int)'\n' ) ) {
 								position += scalarWidth;
 								pc++;
@@ -87,7 +119,8 @@ internal static class PcreByteMatcher {
 							break;
 						case PcreByteOpcode.ScalarClass:
 							Step(); // Attempted scalar class evaluation.
-							if ( PcreUtf8.TryRead( input.Span, position, out var propertyScalar, out var propertyWidth )
+							if ( position < fragment.End
+								&& PcreUtf8.TryRead( input.Span, position, out var propertyScalar, out var propertyWidth )
 								&& ScalarClassContains( (PcreByteScalarClassKind)instruction.First, propertyScalar )
 									!= ( instruction.Second == 1 ) ) {
 								position += propertyWidth;
@@ -96,7 +129,7 @@ internal static class PcreByteMatcher {
 							break;
 						case PcreByteOpcode.Class:
 							Step(); // Attempted byte set membership.
-							if ( position < input.Length && instruction.Set.Contains( input.Span[position] ) ) {
+							if ( position < fragment.End && instruction.Set.Contains( input.Span[position] ) ) {
 								position++;
 								pc++;
 							} else { failed = true; }
@@ -108,6 +141,10 @@ internal static class PcreByteMatcher {
 								break;
 							}
 							var captured = capture.Value;
+							if ( captured.ByteLength > fragment.End - position ) {
+								failed = true;
+								break;
+							}
 							for ( var byteIndex = 0; byteIndex < captured.ByteLength; byteIndex++ ) {
 								Step(); // Attempted captured-byte comparison.
 								if ( byteIndex >= input.Length - position
@@ -123,7 +160,7 @@ internal static class PcreByteMatcher {
 							break;
 						case PcreByteOpcode.WordBoundary:
 							var beforeWord = false;
-							if ( position > 0 ) {
+							if ( position > fragment.Start ) {
 								Step(); // Classify the preceding source byte or UTF-8 scalar.
 								if ( instruction.Second == 1 ) {
 									var previous = position - 1;
@@ -133,7 +170,7 @@ internal static class PcreByteMatcher {
 								} else { beforeWord = PcreByteSet.Word.Contains( input.Span[position - 1] ); }
 							}
 							var afterWord = false;
-							if ( position < input.Length ) {
+							if ( position < fragment.End ) {
 								Step(); // Classify the following source byte or UTF-8 scalar.
 								if ( instruction.Second == 1 ) {
 									PcreUtf8.TryRead( input.Span, position, out var afterScalar, out _ );
@@ -163,20 +200,22 @@ internal static class PcreByteMatcher {
 							if ( position == 0 ) { pc++; } else { failed = true; }
 							break;
 						case PcreByteOpcode.End:
-							if ( position == input.Length ) { pc++; } else { failed = true; }
+							if ( position == fragment.End ) { pc++; } else { failed = true; }
 							break;
 						case PcreByteOpcode.StartLine:
-							if ( position == 0 || ( position < input.Length && input.Span[position - 1] == (byte)'\n' ) ) {
+							if ( position == 0 || ( position > fragment.Start && position < fragment.End
+								&& input.Span[position - 1] == (byte)'\n' ) ) {
 								pc++;
 							} else { failed = true; }
 							break;
 						case PcreByteOpcode.EndLine:
-							if ( position == input.Length || input.Span[position] == (byte)'\n' ) {
+							if ( position == input.Length || ( position < fragment.End && input.Span[position] == (byte)'\n' ) ) {
 								pc++;
 							} else { failed = true; }
 							break;
 						case PcreByteOpcode.EndBeforeFinalLf:
-							if ( position == input.Length || ( position == input.Length - 1 && input.Span[position] == (byte)'\n' ) ) {
+							var end = instruction.First == 1 ? fragment.End : input.Length;
+							if ( position == end || ( position == end - 1 && input.Span[position] == (byte)'\n' ) ) {
 								pc++;
 							} else { failed = true; }
 							break;
@@ -225,11 +264,15 @@ internal static class PcreByteMatcher {
 					marks = frame.Marks;
 				}
 			}
+				if ( barrierCandidateTried ) { crossedBarrier = true; }
+			}
 			return new( null, null );
 		} catch ( MatchLimitException error ) {
 			return new( null, new( error.Code, 0, error.Message ) );
 		}
 	}
+
+	private readonly record struct Fragment( int Start, int End );
 
 	private static bool ScalarEquals( int left, int right, bool caseless ) {
 		if ( left == right ) { return true; }
