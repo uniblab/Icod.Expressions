@@ -95,7 +95,8 @@ internal sealed class PcreByteProgramCompiler {
 				Emit( PcreByteOpcode.Backreference, reference.Number );
 				break;
 			case PcreByteWordBoundary boundary:
-				Emit( PcreByteOpcode.WordBoundary, boundary.IsBoundary ? 1 : 0 );
+				Emit( PcreByteOpcode.WordBoundary, boundary.IsBoundary ? 1 : 0,
+					boundary.UnicodeWord ? 1 : 0 );
 				break;
 			case PcreByteLiteralAssertion assertion:
 				Emit( PcreByteOpcode.AssertLiteral, assertion.IsPositive ? 1 : 0,

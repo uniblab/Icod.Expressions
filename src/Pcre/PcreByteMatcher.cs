@@ -124,13 +124,21 @@ internal static class PcreByteMatcher {
 						case PcreByteOpcode.WordBoundary:
 							var beforeWord = false;
 							if ( position > 0 ) {
-								Step(); // Classify the preceding source byte.
-								beforeWord = PcreByteSet.Word.Contains( input.Span[position - 1] );
+								Step(); // Classify the preceding source byte or UTF-8 scalar.
+								if ( instruction.Second == 1 ) {
+									var previous = position - 1;
+									while ( ( input.Span[previous] & 0xC0 ) == 0x80 ) { previous--; }
+									PcreUtf8.TryRead( input.Span, previous, out var beforeScalar, out _ );
+									beforeWord = ScalarClassContains( PcreByteScalarClassKind.UnicodeWord, beforeScalar );
+								} else { beforeWord = PcreByteSet.Word.Contains( input.Span[position - 1] ); }
 							}
 							var afterWord = false;
 							if ( position < input.Length ) {
-								Step(); // Classify the following source byte.
-								afterWord = PcreByteSet.Word.Contains( input.Span[position] );
+								Step(); // Classify the following source byte or UTF-8 scalar.
+								if ( instruction.Second == 1 ) {
+									PcreUtf8.TryRead( input.Span, position, out var afterScalar, out _ );
+									afterWord = ScalarClassContains( PcreByteScalarClassKind.UnicodeWord, afterScalar );
+								} else { afterWord = PcreByteSet.Word.Contains( input.Span[position] ); }
 							}
 							if ( ( beforeWord != afterWord ) == ( instruction.First == 1 ) ) { pc++; }
 							else { failed = true; }
@@ -233,6 +241,9 @@ internal static class PcreByteMatcher {
 
 	private static bool ScalarClassContains( PcreByteScalarClassKind kind, int scalar ) {
 		if ( kind == PcreByteScalarClassKind.AsciiDigit ) { return scalar is >= '0' and <= '9'; }
+		if ( kind == PcreByteScalarClassKind.AsciiWord ) {
+			return scalar <= 0x7F && PcreByteSet.Word.Contains( (byte)scalar );
+		}
 		var category = Rune.GetUnicodeCategory( new Rune( scalar ) );
 		return kind switch {
 			PcreByteScalarClassKind.DecimalDigit => category == UnicodeCategory.DecimalDigitNumber,
@@ -240,6 +251,12 @@ internal static class PcreByteMatcher {
 				UnicodeCategory.UppercaseLetter or UnicodeCategory.LowercaseLetter
 				or UnicodeCategory.TitlecaseLetter or UnicodeCategory.ModifierLetter
 				or UnicodeCategory.OtherLetter,
+			PcreByteScalarClassKind.UnicodeWord => category is
+				UnicodeCategory.UppercaseLetter or UnicodeCategory.LowercaseLetter
+				or UnicodeCategory.TitlecaseLetter or UnicodeCategory.ModifierLetter
+				or UnicodeCategory.OtherLetter or UnicodeCategory.DecimalDigitNumber
+				or UnicodeCategory.LetterNumber or UnicodeCategory.OtherNumber
+				or UnicodeCategory.NonSpacingMark or UnicodeCategory.ConnectorPunctuation,
 			_ => throw new InvalidOperationException( "Compiler produced an unknown PCRE scalar class." )
 		};
 	}

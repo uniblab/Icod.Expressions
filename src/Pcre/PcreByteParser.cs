@@ -363,8 +363,7 @@ internal sealed class PcreByteParser {
 			return ParseUnicodeProperty( offset, value == (byte)'P' );
 		}
 		if ( value == (byte)'b' || value == (byte)'B' ) {
-			if ( ucp ) { throw Unsupported( offset ); } // Unicode word boundaries require UCP \w semantics.
-			return new PcreByteWordBoundary( value == (byte)'b' );
+			return new PcreByteWordBoundary( value == (byte)'b', ucp );
 		}
 		if ( value is >= (byte)'1' and <= (byte)'9' ) {
 			if ( index < source.Length && source[index] is >= (byte)'0' and <= (byte)'9' ) {
@@ -391,6 +390,10 @@ internal sealed class PcreByteParser {
 			return new PcreByteScalarClass( ucp && !asciiBsD
 				? PcreByteScalarClassKind.DecimalDigit : PcreByteScalarClassKind.AsciiDigit,
 				value == (byte)'D' );
+		}
+		if ( utf8 && ( value is (byte)'w' or (byte)'W' ) ) {
+			return new PcreByteScalarClass( ucp ? PcreByteScalarClassKind.UnicodeWord
+				: PcreByteScalarClassKind.AsciiWord, value == (byte)'W' );
 		}
 		PcreByteSet? characterClass = value switch {
 			(byte)'d' => PcreByteSet.Digit,
