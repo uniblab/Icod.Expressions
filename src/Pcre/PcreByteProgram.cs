@@ -27,7 +27,9 @@ internal sealed record PcreByteInstruction(
 	ReadOnlyMemory<byte> Bytes = default
 );
 
-internal sealed record PcreByteProgram( PcreByteInstruction[] Instructions, int MarkCount, bool Caseless, bool Utf8 );
+internal sealed record PcreByteProgram(
+	PcreByteInstruction[] Instructions, int MarkCount, bool Caseless, bool Utf8, bool MatchInvalidUtf
+);
 
 /// <summary>Compiles the supported AST into ordered bytecode with explicit backtrack edges.</summary>
 internal sealed class PcreByteProgramCompiler {
@@ -35,18 +37,20 @@ internal sealed class PcreByteProgramCompiler {
 	private readonly CancellationToken cancellationToken;
 	private readonly bool caseless;
 	private readonly bool utf8;
+	private readonly bool matchInvalidUtf;
 	private int markCount;
 
-	internal PcreByteProgramCompiler( CancellationToken cancellationToken, bool caseless, bool utf8 ) {
+	internal PcreByteProgramCompiler( CancellationToken cancellationToken, bool caseless, bool utf8, bool matchInvalidUtf ) {
 		this.cancellationToken = cancellationToken;
 		this.caseless = caseless;
 		this.utf8 = utf8;
+		this.matchInvalidUtf = matchInvalidUtf;
 	}
 
 	internal PcreByteProgram Compile( PcreByteAlternatives root ) {
 		CompileAlternatives( root );
 		Emit( PcreByteOpcode.Accept );
-		return new( instructions.ToArray(), markCount, caseless, utf8 );
+		return new( instructions.ToArray(), markCount, caseless, utf8, matchInvalidUtf );
 	}
 
 	private int Emit( PcreByteOpcode opcode, int first = 0, int second = 0, PcreByteSet set = default,
