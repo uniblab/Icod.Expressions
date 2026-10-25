@@ -71,10 +71,10 @@ public sealed class PcreUtf8SpaceTests {
 
 	[Fact]
 	public void FailedWordBranchRestoresCaptureBeforeSpaceAlternative() {
-		var result = Compile( @"(\w+)\s+\1|([[:space:]]+)", GrepOptions ).Match( "\u00a0"u8.ToArray() );
-		Assert.Equal( new PcreByteCapture( 0, 2 ), result.Match?.Captures[0] );
+		var result = Compile( @"(\w+)\s+\1|é([[:space:]]+)", GrepOptions ).Match( "é\u00a0"u8.ToArray() );
+		Assert.Equal( new PcreByteCapture( 0, 4 ), result.Match?.Captures[0] );
 		Assert.Null( result.Match?.Captures[1] );
-		Assert.Equal( new PcreByteCapture( 0, 2 ), result.Match?.Captures[2] );
+		Assert.Equal( new PcreByteCapture( 2, 2 ), result.Match?.Captures[2] );
 	}
 
 	[Theory]
