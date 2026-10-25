@@ -264,8 +264,8 @@ internal static class PcreByteMatcher {
 					marks = frame.Marks;
 				}
 			}
-			}
 				if ( barrierCandidateTried ) { crossedBarrier = true; }
+			}
 			return new( null, null );
 		} catch ( MatchLimitException error ) {
 			return new( null, new( error.Code, 0, error.Message ) );
