@@ -171,7 +171,7 @@ internal sealed class PcreByteParser {
 				: new PcreByteClass( dotAll ? PcreByteSet.AllBytes : PcreByteSet.Dot );
 		}
 		if ( value == (byte)'[' ) {
-			if ( utf8 ) { return ParseUtf8DigitBracket( offset ); }
+			if ( utf8 ) { return ParseUtf8StandalonePosixBracket( offset ); }
 			return ParseBracket( offset );
 		}
 		if ( value == (byte)'\\' ) {
@@ -191,22 +191,27 @@ internal sealed class PcreByteParser {
 		return new PcreByteLiteral( value );
 	}
 
-	private PcreByteNode ParseUtf8DigitBracket( int openingOffset ) {
+	private PcreByteNode ParseUtf8StandalonePosixBracket( int openingOffset ) {
 		var outerNegated = index < source.Length && source[index] == (byte)'^';
 		if ( outerNegated ) { index++; }
-		var positive = "[:digit:]]"u8;
-		var negative = "[:^digit:]]"u8;
-		var posixNegated = false;
-		if ( source.AsSpan( index ).StartsWith( positive ) ) {
-			index += positive.Length;
-		} else if ( source.AsSpan( index ).StartsWith( negative ) ) {
-			index += negative.Length;
-			posixNegated = true;
-		} else {
+		var posixNegated = source.AsSpan( index ).StartsWith( "[:^"u8 );
+		if ( !posixNegated && !source.AsSpan( index ).StartsWith( "[:"u8 ) ) {
 			throw Unsupported( openingOffset );
 		}
-		return new PcreByteScalarClass( ucp ? PcreByteScalarClassKind.DecimalDigit
-			: PcreByteScalarClassKind.AsciiDigit, outerNegated != posixNegated );
+		index += posixNegated ? 3 : 2;
+		var suffix = source.AsSpan( index );
+		PcreByteScalarClassKind kind;
+		if ( suffix.StartsWith( "digit:]]"u8 ) ) {
+			kind = ucp ? PcreByteScalarClassKind.DecimalDigit : PcreByteScalarClassKind.AsciiDigit;
+			index += "digit:]]"u8.Length;
+		} else if ( suffix.StartsWith( "word:]]"u8 ) ) {
+			kind = ucp ? PcreByteScalarClassKind.UnicodeWord : PcreByteScalarClassKind.AsciiWord;
+			index += "word:]]"u8.Length;
+		} else if ( suffix.StartsWith( "space:]]"u8 ) ) {
+			kind = ucp ? PcreByteScalarClassKind.UnicodeSpace : PcreByteScalarClassKind.AsciiSpace;
+			index += "space:]]"u8.Length;
+		} else { throw Unsupported( openingOffset ); }
+		return new PcreByteScalarClass( kind, outerNegated != posixNegated );
 	}
 
 	private PcreByteLiteralAssertion ParseLiteralAssertion( int openingOffset, bool positive, bool behind ) {
@@ -394,6 +399,10 @@ internal sealed class PcreByteParser {
 		if ( utf8 && ( value is (byte)'w' or (byte)'W' ) ) {
 			return new PcreByteScalarClass( ucp ? PcreByteScalarClassKind.UnicodeWord
 				: PcreByteScalarClassKind.AsciiWord, value == (byte)'W' );
+		}
+		if ( utf8 && ( value is (byte)'s' or (byte)'S' ) ) {
+			return new PcreByteScalarClass( ucp ? PcreByteScalarClassKind.UnicodeSpace
+				: PcreByteScalarClassKind.AsciiSpace, value == (byte)'S' );
 		}
 		PcreByteSet? characterClass = value switch {
 			(byte)'d' => PcreByteSet.Digit,

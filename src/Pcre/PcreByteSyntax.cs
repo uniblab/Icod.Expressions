@@ -6,7 +6,9 @@ internal sealed record PcreByteLiteral( int Value ) : PcreByteNode;
 
 internal sealed record PcreByteAny( bool DotAll ) : PcreByteNode;
 
-internal enum PcreByteScalarClassKind { Letter, DecimalDigit, AsciiDigit, AsciiWord, UnicodeWord }
+internal enum PcreByteScalarClassKind {
+	Letter, DecimalDigit, AsciiDigit, AsciiWord, UnicodeWord, AsciiSpace, UnicodeSpace
+}
 
 internal sealed record PcreByteScalarClass( PcreByteScalarClassKind Kind, bool Negated ) : PcreByteNode;
 

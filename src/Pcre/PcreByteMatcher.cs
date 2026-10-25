@@ -244,6 +244,13 @@ internal static class PcreByteMatcher {
 		if ( kind == PcreByteScalarClassKind.AsciiWord ) {
 			return scalar <= 0x7F && PcreByteSet.Word.Contains( (byte)scalar );
 		}
+		if ( kind == PcreByteScalarClassKind.AsciiSpace ) {
+			return scalar <= 0x7F && PcreByteSet.WhiteSpace.Contains( (byte)scalar );
+		}
+		if ( kind == PcreByteScalarClassKind.UnicodeSpace
+			&& scalar is >= 0x09 and <= 0x0D or 0x85 or 0x180E ) {
+			return true;
+		}
 		var category = Rune.GetUnicodeCategory( new Rune( scalar ) );
 		return kind switch {
 			PcreByteScalarClassKind.DecimalDigit => category == UnicodeCategory.DecimalDigitNumber,
@@ -257,6 +264,9 @@ internal static class PcreByteMatcher {
 				or UnicodeCategory.OtherLetter or UnicodeCategory.DecimalDigitNumber
 				or UnicodeCategory.LetterNumber or UnicodeCategory.OtherNumber
 				or UnicodeCategory.NonSpacingMark or UnicodeCategory.ConnectorPunctuation,
+			PcreByteScalarClassKind.UnicodeSpace => category is
+				UnicodeCategory.SpaceSeparator or UnicodeCategory.LineSeparator
+				or UnicodeCategory.ParagraphSeparator,
 			_ => throw new InvalidOperationException( "Compiler produced an unknown PCRE scalar class." )
 		};
 	}
