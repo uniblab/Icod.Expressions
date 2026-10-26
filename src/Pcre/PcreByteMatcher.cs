@@ -102,7 +102,8 @@ internal static class PcreByteMatcher {
 							var literalWidth = 1;
 							if ( position < fragment.End && ( program.Utf8
 								? PcreUtf8.TryRead( input.Span, position, out var scalar, out literalWidth )
-									&& ScalarEquals( scalar, instruction.First, program.Caseless )
+									&& ( program.Caseless ? PcreUtf8CaseFold.Equals( scalar, instruction.First )
+										: scalar == instruction.First )
 								: ScalarEquals( input.Span[position], instruction.First, program.Caseless ) ) ) {
 								position += literalWidth;
 								pc++;
@@ -121,7 +122,8 @@ internal static class PcreByteMatcher {
 							Step(); // Attempted scalar class evaluation.
 							if ( position < fragment.End
 								&& PcreUtf8.TryRead( input.Span, position, out var propertyScalar, out var propertyWidth )
-								&& ScalarClassContains( (PcreByteScalarClassKind)instruction.First, propertyScalar, instruction.Category )
+								&& ScalarClassContains( (PcreByteScalarClassKind)instruction.First, propertyScalar,
+									instruction.Category, program.Utf8 && program.Caseless )
 									!= ( instruction.Second == 1 ) ) {
 								position += propertyWidth;
 								pc++;
@@ -309,7 +311,7 @@ internal static class PcreByteMatcher {
 	}
 
 	private static bool ScalarClassContains( PcreByteScalarClassKind kind, int scalar,
-		UnicodeCategory? specificCategory = null ) {
+		UnicodeCategory? specificCategory = null, bool caseless = false ) {
 		if ( kind == PcreByteScalarClassKind.AsciiDigit ) { return scalar is >= '0' and <= '9'; }
 		if ( kind == PcreByteScalarClassKind.Ascii ) { return scalar <= 0x7F; }
 		if ( kind is PcreByteScalarClassKind.AsciiAlnum or PcreByteScalarClassKind.AsciiAlpha
@@ -354,7 +356,9 @@ internal static class PcreByteMatcher {
 		var category = Rune.GetUnicodeCategory( new Rune( scalar ) );
 		return kind switch {
 			PcreByteScalarClassKind.SpecificCategory => specificCategory.HasValue
-				? category == specificCategory.Value
+				? caseless && IsCasedCategory( specificCategory.Value )
+						? IsCasedCategory( category )
+						: category == specificCategory.Value
 				: throw new InvalidOperationException( "Compiler omitted a specific Unicode category." ),
 			PcreByteScalarClassKind.CategoryOther => category is
 				UnicodeCategory.Control or UnicodeCategory.Format or UnicodeCategory.OtherNotAssigned
@@ -414,6 +418,9 @@ internal static class PcreByteMatcher {
 			_ => throw new InvalidOperationException( "Compiler produced an unknown PCRE scalar class." )
 		};
 	}
+
+	private static bool IsCasedCategory( UnicodeCategory category ) => category is
+		UnicodeCategory.UppercaseLetter or UnicodeCategory.LowercaseLetter or UnicodeCategory.TitlecaseLetter;
 
 	private static bool UnicodeGraphContains( UnicodeCategory category, int scalar ) {
 		if ( scalar is 0x061C or 0x180E or >= 0x2066 and <= 0x2069 ) { return false; }
