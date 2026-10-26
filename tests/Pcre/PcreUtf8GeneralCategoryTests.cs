@@ -95,6 +95,7 @@ public sealed class PcreUtf8GeneralCategoryTests {
 	[InlineData( @"[\P{Nl}]", "Ⅻ", false )]
 	[InlineData( @"[^\P{Nl}A]", "Ⅻ", true )]
 	[InlineData( @"[^\P{Nl}A]", "A", false )]
+	[InlineData( @"[^\P{ ^ N}A]", "😀", true )]
 	[InlineData( @"[^\P{N}A]", "٣", true )]
 	[InlineData( @"[^\P{N}A]", "A", false )]
 	[InlineData( @"[^\P{N}A]", "😀", false )]

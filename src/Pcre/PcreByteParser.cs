@@ -541,6 +541,10 @@ internal sealed class PcreByteParser {
 			return GeneralCategory( shortName, negated ) ?? throw Unsupported( offset );
 		}
 		index++;
+		while ( index < source.Length && source[index] is >= 0x09 and <= 0x0D or (byte)' ' ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			index++;
+		}
 		if ( index < source.Length && source[index] == (byte)'^' ) {
 			negated = !negated;
 			index++;
@@ -560,6 +564,7 @@ internal sealed class PcreByteParser {
 		else if ( name.StartsWith( "GENERALCATEGORY:" ) || name.StartsWith( "GENERALCATEGORY=" ) ) {
 			name = name[16..];
 		}
+		if ( name.Length == 0 ) { throw Invalid( offset, "property escape requires a name" ); }
 		return GeneralCategory( name, negated ) ?? throw Unsupported( offset );
 	}
 
