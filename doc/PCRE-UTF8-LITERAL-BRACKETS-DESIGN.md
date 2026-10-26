@@ -6,7 +6,7 @@
 
 Match ordinary case-sensitive UTF-8 bracket sets and scalar ranges over the original subject bytes. A class consumes exactly one valid UTF-8 scalar. Preserve the already implemented standalone POSIX digit, word, and space brackets. This milestone does not expose a public PCRE API, switch Grep, or modify CommandFramework production code.
 
-Support literal members, leading `^` negation, raw UTF-8 members, single-scalar escapes already recognized outside a class (`\xFF`, controls, escaped punctuation), `\b` as backspace, inclusive ranges, first-position `]`, and hyphens at the first or last position or following a range. `[` is literal unless it starts a POSIX, collating, or equivalence token. Treat a mixed POSIX class, shorthand/property escape, or unsupported escape in a UTF bracket as `UnsupportedSyntax` at the opening bracket. Reject malformed or descending ranges and missing closing brackets diagnostically. UTF caseless remains wholly unsupported.
+Support literal members, leading `^` negation, raw UTF-8 members, single-scalar escapes already recognized outside a class (`\xFF`, controls, escaped punctuation), `\b` as backspace, inclusive ranges, first-position `]`, and literal hyphens at the first or last position or following a range. A hyphen can itself be a range endpoint, as in `[--0]`. `[` is literal unless it starts a complete POSIX, collating, or equivalence token; an incomplete prefix such as `[[.]` is an ordinary literal set. Treat a complete mixed POSIX class, shorthand/property escape, or unsupported escape in a UTF bracket as `UnsupportedSyntax` at the opening bracket. Reject malformed or descending ranges and missing closing brackets diagnostically. UTF caseless remains wholly unsupported.
 
 ## Approaches
 

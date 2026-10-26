@@ -175,6 +175,7 @@ internal sealed class PcreByteParser {
 			if ( utf8 ) {
 				var content = index < source.Length && source[index] == (byte)'^' ? index + 1 : index;
 				return source.AsSpan( content ).StartsWith( "[:"u8 )
+					&& HasCompleteUtf8SpecialClassToken( content + 1 )
 					? ParseUtf8StandalonePosixBracket( offset ) : ParseUtf8LiteralBracket( offset );
 			}
 			return ParseBracket( offset );
@@ -229,10 +230,9 @@ internal sealed class PcreByteParser {
 				index++;
 				return new( ranges.ToArray(), negated );
 			}
-			var firstOffset = index;
 			var first = ParseUtf8BracketLiteral( openingOffset );
-			if ( source[firstOffset] != (byte)'-' && index + 1 < source.Length
-				&& source[index] == (byte)'-' && source[index + 1] != (byte)']' ) {
+			if ( index + 1 < source.Length && source[index] == (byte)'-'
+				&& source[index + 1] != (byte)']' ) {
 				index++;
 				var last = ParseUtf8BracketLiteral( openingOffset );
 				if ( last < first ) { throw Invalid( openingOffset, "range endpoints must be ordered scalars" ); }
@@ -246,7 +246,8 @@ internal sealed class PcreByteParser {
 		var offset = index;
 		var value = source[index++];
 		if ( value == (byte)'[' && index < source.Length
-			&& source[index] is (byte)':' or (byte)'.' or (byte)'=' ) {
+			&& source[index] is (byte)':' or (byte)'.' or (byte)'='
+			&& HasCompleteUtf8SpecialClassToken( index ) ) {
 			throw Unsupported( openingOffset );
 		}
 		if ( value == (byte)'\\' ) {
@@ -267,6 +268,20 @@ internal sealed class PcreByteParser {
 			return scalar;
 		}
 		return value;
+	}
+
+	private bool HasCompleteUtf8SpecialClassToken( int markerOffset ) {
+		var marker = source[markerOffset];
+		for ( var scan = markerOffset + 1; scan < source.Length; scan++ ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( source[scan] == (byte)'\\' ) { scan++; continue; }
+			if ( source[scan] == (byte)']' ) { return false; }
+			if ( scan > markerOffset + 1 && source[scan] == marker
+				&& scan + 1 < source.Length && source[scan + 1] == (byte)']' ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private PcreByteLiteralAssertion ParseLiteralAssertion( int openingOffset, bool positive, bool behind ) {
