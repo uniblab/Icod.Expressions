@@ -4,6 +4,7 @@ internal enum PcreByteOpcode {
 	Literal,
 	Any,
 	ScalarClass,
+	ScalarSet,
 	Class,
 	Backreference,
 	WordBoundary,
@@ -24,7 +25,7 @@ internal enum PcreByteOpcode {
 
 internal sealed record PcreByteInstruction(
 	PcreByteOpcode Opcode, int First = 0, int Second = 0, PcreByteSet Set = default,
-	ReadOnlyMemory<byte> Bytes = default
+	ReadOnlyMemory<byte> Bytes = default, ReadOnlyMemory<PcreByteScalarRange> Ranges = default
 );
 
 internal sealed record PcreByteProgram(
@@ -54,10 +55,10 @@ internal sealed class PcreByteProgramCompiler {
 	}
 
 	private int Emit( PcreByteOpcode opcode, int first = 0, int second = 0, PcreByteSet set = default,
-		ReadOnlyMemory<byte> bytes = default ) {
+		ReadOnlyMemory<byte> bytes = default, ReadOnlyMemory<PcreByteScalarRange> ranges = default ) {
 		cancellationToken.ThrowIfCancellationRequested();
 		var index = instructions.Count;
-		instructions.Add( new( opcode, first, second, set, bytes ) );
+		instructions.Add( new( opcode, first, second, set, bytes, ranges ) );
 		return index;
 	}
 
@@ -91,6 +92,10 @@ internal sealed class PcreByteProgramCompiler {
 				break;
 			case PcreByteScalarClass scalarClass:
 				Emit( PcreByteOpcode.ScalarClass, (int)scalarClass.Kind, scalarClass.Negated ? 1 : 0 );
+				break;
+			case PcreByteScalarSet scalarSet:
+				Emit( PcreByteOpcode.ScalarSet, second: scalarSet.Negated ? 1 : 0,
+					ranges: scalarSet.Ranges );
 				break;
 			case PcreByteClass characterClass:
 				Emit( PcreByteOpcode.Class, set: characterClass.Set );

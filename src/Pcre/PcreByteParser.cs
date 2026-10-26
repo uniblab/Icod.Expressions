@@ -172,7 +172,12 @@ internal sealed class PcreByteParser {
 				: new PcreByteClass( dotAll ? PcreByteSet.AllBytes : PcreByteSet.Dot );
 		}
 		if ( value == (byte)'[' ) {
-			if ( utf8 ) { return ParseUtf8StandalonePosixBracket( offset ); }
+			if ( utf8 ) {
+				var content = index < source.Length && source[index] == (byte)'^' ? index + 1 : index;
+				return source.AsSpan( content ).StartsWith( "[:"u8 )
+					&& HasCompleteUtf8SpecialClassToken( content + 1 )
+					? ParseUtf8StandalonePosixBracket( offset ) : ParseUtf8LiteralBracket( offset );
+			}
 			return ParseBracket( offset );
 		}
 		if ( value == (byte)'\\' ) {
@@ -213,6 +218,70 @@ internal sealed class PcreByteParser {
 			index += "space:]]"u8.Length;
 		} else { throw Unsupported( openingOffset ); }
 		return new PcreByteScalarClass( kind, outerNegated != posixNegated );
+	}
+
+	private PcreByteScalarSet ParseUtf8LiteralBracket( int openingOffset ) {
+		var negated = index < source.Length && source[index] == (byte)'^';
+		if ( negated ) { index++; }
+		var ranges = new List<PcreByteScalarRange>();
+		while ( index < source.Length ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( source[index] == (byte)']' && ranges.Count > 0 ) {
+				index++;
+				return new( ranges.ToArray(), negated );
+			}
+			var first = ParseUtf8BracketLiteral( openingOffset );
+			if ( index + 1 < source.Length && source[index] == (byte)'-'
+				&& source[index + 1] != (byte)']' ) {
+				index++;
+				var last = ParseUtf8BracketLiteral( openingOffset );
+				if ( last < first ) { throw Invalid( openingOffset, "range endpoints must be ordered scalars" ); }
+				ranges.Add( new( first, last ) );
+			} else { ranges.Add( new( first, first ) ); }
+		}
+		throw Invalid( openingOffset, "unclosed bracket class" );
+	}
+
+	private int ParseUtf8BracketLiteral( int openingOffset ) {
+		var offset = index;
+		var value = source[index++];
+		if ( value == (byte)'[' && index < source.Length
+			&& source[index] is (byte)':' or (byte)'.' or (byte)'='
+			&& HasCompleteUtf8SpecialClassToken( index ) ) {
+			throw Unsupported( openingOffset );
+		}
+		if ( value == (byte)'\\' ) {
+			if ( index < source.Length && source[index] == (byte)'b' ) { index++; return 0x08; }
+			if ( index < source.Length && source[index] is >= (byte)'1' and <= (byte)'9' ) {
+				throw Unsupported( openingOffset ); // Numeric escapes in brackets are octal.
+			}
+			PcreByteNode escaped;
+			try { escaped = ParseEscape( offset ); }
+			catch ( PcreByteParseException error ) when (
+				error.Diagnostic.Code == PcreByteDiagnosticCode.UnsupportedSyntax
+			) { throw Unsupported( openingOffset ); }
+			return escaped is PcreByteLiteral literal ? literal.Value : throw Unsupported( openingOffset );
+		}
+		if ( value >= 0x80 ) {
+			PcreUtf8.TryRead( source, offset, out var scalar, out var width ); // Validated at compile entry.
+			index = offset + width;
+			return scalar;
+		}
+		return value;
+	}
+
+	private bool HasCompleteUtf8SpecialClassToken( int markerOffset ) {
+		var marker = source[markerOffset];
+		for ( var scan = markerOffset + 1; scan < source.Length; scan++ ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( source[scan] == (byte)'\\' ) { scan++; continue; }
+			if ( source[scan] == (byte)']' ) { return false; }
+			if ( scan > markerOffset + 1 && source[scan] == marker
+				&& scan + 1 < source.Length && source[scan + 1] == (byte)']' ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private PcreByteLiteralAssertion ParseLiteralAssertion( int openingOffset, bool positive, bool behind ) {

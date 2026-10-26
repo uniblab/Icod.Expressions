@@ -103,7 +103,7 @@ public sealed class PcreUtf8ScalarTests {
 
 	[Theory]
 	[InlineData( "\\p{Greek}", 0 )]
-	[InlineData( "[é]", 0 )]
+	[InlineData( "[\\p{L}]", 0 )]
 	[InlineData( "(?<=é+)x", 0 )]
 	[InlineData( "(?i)é", 0 )]
 	public void UnicodeSensitiveConstructsRemainExplicitlyUnsupported( string pattern, int offset ) {
