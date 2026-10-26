@@ -121,7 +121,7 @@ internal static class PcreByteMatcher {
 							Step(); // Attempted scalar class evaluation.
 							if ( position < fragment.End
 								&& PcreUtf8.TryRead( input.Span, position, out var propertyScalar, out var propertyWidth )
-								&& ScalarClassContains( (PcreByteScalarClassKind)instruction.First, propertyScalar )
+								&& ScalarClassContains( (PcreByteScalarClassKind)instruction.First, propertyScalar, instruction.Category )
 									!= ( instruction.Second == 1 ) ) {
 								position += propertyWidth;
 								pc++;
@@ -142,7 +142,7 @@ internal static class PcreByteMatcher {
 							if ( !contained ) {
 								foreach ( var predicate in instruction.Predicates.Span ) {
 									Step(); // Each attempted scalar predicate consumes work.
-									if ( ScalarClassContains( predicate.Kind, setScalar ) != predicate.Negated ) {
+									if ( ScalarClassContains( predicate.Kind, setScalar, predicate.Category ) != predicate.Negated ) {
 										contained = true;
 										break;
 									}
@@ -308,7 +308,8 @@ internal static class PcreByteMatcher {
 		return left == right;
 	}
 
-	private static bool ScalarClassContains( PcreByteScalarClassKind kind, int scalar ) {
+	private static bool ScalarClassContains( PcreByteScalarClassKind kind, int scalar,
+		UnicodeCategory? specificCategory = null ) {
 		if ( kind == PcreByteScalarClassKind.AsciiDigit ) { return scalar is >= '0' and <= '9'; }
 		if ( kind == PcreByteScalarClassKind.Ascii ) { return scalar <= 0x7F; }
 		if ( kind is PcreByteScalarClassKind.AsciiAlnum or PcreByteScalarClassKind.AsciiAlpha
@@ -352,6 +353,32 @@ internal static class PcreByteMatcher {
 		}
 		var category = Rune.GetUnicodeCategory( new Rune( scalar ) );
 		return kind switch {
+			PcreByteScalarClassKind.SpecificCategory => specificCategory.HasValue
+				? category == specificCategory.Value
+				: throw new InvalidOperationException( "Compiler omitted a specific Unicode category." ),
+			PcreByteScalarClassKind.CategoryOther => category is
+				UnicodeCategory.Control or UnicodeCategory.Format or UnicodeCategory.OtherNotAssigned
+				or UnicodeCategory.PrivateUse or UnicodeCategory.Surrogate,
+			PcreByteScalarClassKind.CasedLetter => category is
+				UnicodeCategory.UppercaseLetter or UnicodeCategory.LowercaseLetter
+				or UnicodeCategory.TitlecaseLetter,
+			PcreByteScalarClassKind.CategoryMark => category is
+				UnicodeCategory.NonSpacingMark or UnicodeCategory.SpacingCombiningMark
+				or UnicodeCategory.EnclosingMark,
+			PcreByteScalarClassKind.CategoryNumber => category is
+				UnicodeCategory.DecimalDigitNumber or UnicodeCategory.LetterNumber
+				or UnicodeCategory.OtherNumber,
+			PcreByteScalarClassKind.CategoryPunctuation => category is
+				UnicodeCategory.ConnectorPunctuation or UnicodeCategory.DashPunctuation
+				or UnicodeCategory.OpenPunctuation or UnicodeCategory.ClosePunctuation
+				or UnicodeCategory.InitialQuotePunctuation or UnicodeCategory.FinalQuotePunctuation
+				or UnicodeCategory.OtherPunctuation,
+			PcreByteScalarClassKind.CategorySymbol => category is
+				UnicodeCategory.MathSymbol or UnicodeCategory.CurrencySymbol
+				or UnicodeCategory.ModifierSymbol or UnicodeCategory.OtherSymbol,
+			PcreByteScalarClassKind.CategorySeparator => category is
+				UnicodeCategory.SpaceSeparator or UnicodeCategory.LineSeparator
+				or UnicodeCategory.ParagraphSeparator,
 			PcreByteScalarClassKind.DecimalDigit => category == UnicodeCategory.DecimalDigitNumber,
 			PcreByteScalarClassKind.UnicodeAlnum => category is
 				UnicodeCategory.UppercaseLetter or UnicodeCategory.LowercaseLetter

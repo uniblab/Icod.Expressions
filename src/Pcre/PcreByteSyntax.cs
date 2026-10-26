@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Icod.Expressions.Pcre;
 
 internal abstract record PcreByteNode;
@@ -11,14 +13,20 @@ internal enum PcreByteScalarClassKind {
 	Ascii, AsciiAlnum, AsciiAlpha, AsciiBlank, AsciiControl, AsciiGraph,
 	AsciiLower, AsciiPrintable, AsciiPunctuation, AsciiUpper, AsciiHexDigit,
 	UnicodeAlnum, UnicodeBlank, UnicodeControl, UnicodeGraph, UnicodeLower,
-	UnicodePrintable, UnicodePunctuation, UnicodeUpper, UnicodeHexDigit
+	UnicodePrintable, UnicodePunctuation, UnicodeUpper, UnicodeHexDigit,
+	CategoryOther, CasedLetter, CategoryMark, CategoryNumber, CategoryPunctuation,
+	CategorySymbol, CategorySeparator, SpecificCategory
 }
 
-internal sealed record PcreByteScalarClass( PcreByteScalarClassKind Kind, bool Negated ) : PcreByteNode;
+internal sealed record PcreByteScalarClass(
+	PcreByteScalarClassKind Kind, bool Negated, UnicodeCategory? Category = null
+) : PcreByteNode;
 
 internal readonly record struct PcreByteScalarRange( int Start, int End );
 
-internal readonly record struct PcreByteScalarPredicate( PcreByteScalarClassKind Kind, bool Negated );
+internal readonly record struct PcreByteScalarPredicate(
+	PcreByteScalarClassKind Kind, bool Negated, UnicodeCategory? Category = null
+);
 
 internal sealed record PcreByteScalarSet(
 	ReadOnlyMemory<PcreByteScalarRange> Ranges,
