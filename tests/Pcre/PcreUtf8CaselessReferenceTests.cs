@@ -28,6 +28,9 @@ public sealed class PcreUtf8CaselessReferenceTests {
 			.Match( "KK"u8.ToArray() );
 		Assert.Equal( new PcreByteCapture( 0, 4 ), result.Match?.Captures[0] );
 		Assert.Equal( new PcreByteCapture( 0, 3 ), result.Match?.Captures[1] );
+		var assertion = Compile( "(?<=k)A", new PcreByteOptions { Utf8 = true, Caseless = true } )
+			.Match( "Ka"u8.ToArray() );
+		Assert.Equal( new PcreByteCapture( 3, 1 ), assertion.Match?.Captures[0] );
 	}
 
 	[Theory]
@@ -69,6 +72,25 @@ public sealed class PcreUtf8CaselessReferenceTests {
 		var result = Compile( "(?i)(Ka|k)\\1" ).Match( "kK"u8.ToArray() );
 		Assert.Equal( new PcreByteCapture( 0, 4 ), result.Match?.Captures[0] );
 		Assert.Equal( new PcreByteCapture( 0, 1 ), result.Match?.Captures[1] );
+		var repeated = Compile( "(?i)^((k)?K)+\\2$" ).Match( "kKKK"u8.ToArray() );
+		Assert.Equal( new PcreByteCapture( 0, 8 ), repeated.Match?.Captures[0] );
+		Assert.Equal( new PcreByteCapture( 4, 3 ), repeated.Match?.Captures[1] );
+		Assert.Equal( new PcreByteCapture( 0, 1 ), repeated.Match?.Captures[2] );
+	}
+
+	[Fact]
+	public void CaselessReferenceAndLookbehindHonorScalarStartOffsets() {
+		var reference = Compile( "(?i)(k)\\1" );
+		Assert.Equal( new PcreByteCapture( 1, 4 ), reference.Match( "xKK"u8.ToArray(),
+			startOffset: 1 ).Match?.Captures[0] );
+		var lookbehind = Compile( "(?i)(?<=K)A" );
+		Assert.Equal( new PcreByteCapture( 3, 1 ), lookbehind.Match( "éka"u8.ToArray(),
+			startOffset: 2 ).Match?.Captures[0] );
+		var invalid = lookbehind.Match( "éka"u8.ToArray(), startOffset: 1 );
+		Assert.Equal( PcreByteDiagnosticCode.InvalidStartOffset, invalid.Diagnostic?.Code );
+		Assert.Equal( 1, invalid.Diagnostic?.ByteOffset );
+		var fragmentMode = Compile( "(?i)(?<=K)A", new PcreByteOptions { MatchInvalidUtf = true } );
+		Assert.Equal( 3, fragmentMode.Match( "éka"u8.ToArray(), startOffset: 1 ).Match?.ByteIndex );
 	}
 
 	[Fact]
@@ -111,6 +133,22 @@ public sealed class PcreUtf8CaselessReferenceTests {
 		} );
 		Assert.Throws<OperationCanceledException>( () =>
 			cancellingAssertion.Match( asserted, cancellationToken: assertionCancellation.Token ) );
+	}
+
+	[Fact]
+	public void BackwardScalarWalkSpendsWorkAndCanBeCancelled() {
+		var prefix = new string( 'K', 80 );
+		var pattern = "(?i)^" + prefix + "(?<=" + new string( 'k', 80 ) + ")A";
+		var subject = Encoding.UTF8.GetBytes( prefix + "a" );
+		Assert.Equal( PcreByteDiagnosticCode.MatchWorkLimitExceeded,
+			Compile( pattern, new PcreByteOptions { Utf8 = true, MatchWorkLimit = 350 } )
+				.Match( subject ).Diagnostic?.Code );
+		using var cancellation = new CancellationTokenSource();
+		var cancellable = Compile( pattern, new PcreByteOptions {
+			Utf8 = true, WorkObserver = count => { if ( count == 350 ) { cancellation.Cancel(); } }
+		} );
+		Assert.Throws<OperationCanceledException>( () =>
+			cancellable.Match( subject, cancellationToken: cancellation.Token ) );
 	}
 
 	private static PcreCompiledBytePattern Compile( string pattern, PcreByteOptions? options = null ) {
