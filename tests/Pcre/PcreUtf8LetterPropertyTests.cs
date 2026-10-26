@@ -69,7 +69,6 @@ public sealed class PcreUtf8LetterPropertyTests {
 	}
 
 	[Theory]
-	[InlineData( "\\p{N}", 0, true )]
 	[InlineData( "\\p{Greek}", 0, true )]
 	[InlineData( "\\p{L}", 0, false )]
 	public void OtherPropertiesOrByteModeRemainExplicitlyUnsupported( string pattern, int offset, bool utf8 ) {

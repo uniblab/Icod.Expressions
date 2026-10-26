@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 
 namespace Icod.Expressions.Pcre;
@@ -218,7 +219,7 @@ internal sealed class PcreByteParser {
 			} else if ( first is PcreByteLiteral literal ) {
 				ranges.Add( new( literal.Value, literal.Value ) );
 			} else if ( first is PcreByteScalarClass scalarClass ) {
-				predicates.Add( new( scalarClass.Kind, scalarClass.Negated ) );
+				predicates.Add( new( scalarClass.Kind, scalarClass.Negated, scalarClass.Category ) );
 			} else { throw Unsupported( openingOffset ); }
 		}
 		throw Invalid( openingOffset, "unclosed bracket class" );
@@ -536,11 +537,14 @@ internal sealed class PcreByteParser {
 		if ( !utf8 ) { throw Unsupported( offset ); }
 		if ( index >= source.Length ) { throw Invalid( offset, "property escape requires a name" ); }
 		if ( source[index] != (byte)'{' ) {
-			if ( source[index] != (byte)'L' ) { throw Unsupported( offset ); }
-			index++;
-			return new PcreByteScalarClass( PcreByteScalarClassKind.Letter, negated );
+			var shortName = NormalizePropertyName( source.AsSpan( index++, 1 ) );
+			return GeneralCategory( shortName, negated ) ?? throw Unsupported( offset );
 		}
 		index++;
+		while ( index < source.Length && source[index] is >= 0x09 and <= 0x0D or (byte)' ' ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			index++;
+		}
 		if ( index < source.Length && source[index] == (byte)'^' ) {
 			negated = !negated;
 			index++;
@@ -553,14 +557,75 @@ internal sealed class PcreByteParser {
 		if ( index >= source.Length || index == nameStart ) {
 			throw Invalid( offset, "malformed property escape" );
 		}
-		var kind = index == nameStart + 1 && source[nameStart] == (byte)'L'
-			? PcreByteScalarClassKind.Letter
-			: index == nameStart + 2 && source[nameStart] == (byte)'N' && source[nameStart + 1] == (byte)'d'
-				? PcreByteScalarClassKind.DecimalDigit
-				: (PcreByteScalarClassKind?)null;
+		var name = NormalizePropertyName( source.AsSpan( nameStart, index - nameStart ) );
 		index++;
-		if ( !kind.HasValue ) { throw Unsupported( offset ); }
-		return new PcreByteScalarClass( kind.Value, negated );
+		if ( name.Length == 0 ) { throw Invalid( offset, "property escape requires a name" ); }
+		if ( name.StartsWith( "GC:" ) || name.StartsWith( "GC=" ) ) { name = name[3..]; }
+		else if ( name.StartsWith( "GENERALCATEGORY:" ) || name.StartsWith( "GENERALCATEGORY=" ) ) {
+			name = name[16..];
+		}
+		if ( name.Length == 0 ) { throw Invalid( offset, "property escape requires a name" ); }
+		return GeneralCategory( name, negated ) ?? throw Unsupported( offset );
+	}
+
+	private static string NormalizePropertyName( ReadOnlySpan<byte> sourceName ) {
+		var normalized = new StringBuilder( sourceName.Length );
+		foreach ( var value in sourceName ) {
+			if ( value is >= 0x09 and <= 0x0D or (byte)' ' or (byte)'-' or (byte)'_' ) { continue; }
+			normalized.Append( (char)( value is >= (byte)'a' and <= (byte)'z' ? value - 32 : value ) );
+		}
+		return normalized.ToString();
+	}
+
+	private static PcreByteScalarClass? GeneralCategory( string name, bool negated ) {
+		UnicodeCategory? specific = name switch {
+			"CC" => UnicodeCategory.Control,
+			"CF" => UnicodeCategory.Format,
+			"CN" => UnicodeCategory.OtherNotAssigned,
+			"CO" => UnicodeCategory.PrivateUse,
+			"CS" => UnicodeCategory.Surrogate,
+			"LL" => UnicodeCategory.LowercaseLetter,
+			"LM" => UnicodeCategory.ModifierLetter,
+			"LO" => UnicodeCategory.OtherLetter,
+			"LT" => UnicodeCategory.TitlecaseLetter,
+			"LU" => UnicodeCategory.UppercaseLetter,
+			"MC" => UnicodeCategory.SpacingCombiningMark,
+			"ME" => UnicodeCategory.EnclosingMark,
+			"MN" => UnicodeCategory.NonSpacingMark,
+			"ND" => UnicodeCategory.DecimalDigitNumber,
+			"NL" => UnicodeCategory.LetterNumber,
+			"NO" => UnicodeCategory.OtherNumber,
+			"PC" => UnicodeCategory.ConnectorPunctuation,
+			"PD" => UnicodeCategory.DashPunctuation,
+			"PE" => UnicodeCategory.ClosePunctuation,
+			"PF" => UnicodeCategory.FinalQuotePunctuation,
+			"PI" => UnicodeCategory.InitialQuotePunctuation,
+			"PO" => UnicodeCategory.OtherPunctuation,
+			"PS" => UnicodeCategory.OpenPunctuation,
+			"SC" => UnicodeCategory.CurrencySymbol,
+			"SK" => UnicodeCategory.ModifierSymbol,
+			"SM" => UnicodeCategory.MathSymbol,
+			"SO" => UnicodeCategory.OtherSymbol,
+			"ZL" => UnicodeCategory.LineSeparator,
+			"ZP" => UnicodeCategory.ParagraphSeparator,
+			"ZS" => UnicodeCategory.SpaceSeparator,
+			_ => null
+		};
+		if ( specific.HasValue ) {
+			return new( PcreByteScalarClassKind.SpecificCategory, negated, specific );
+		}
+		PcreByteScalarClassKind? group = name switch {
+			"C" => PcreByteScalarClassKind.CategoryOther,
+			"L" => PcreByteScalarClassKind.Letter,
+			"LC" or "L&" => PcreByteScalarClassKind.CasedLetter,
+			"M" => PcreByteScalarClassKind.CategoryMark,
+			"N" => PcreByteScalarClassKind.CategoryNumber,
+			"P" => PcreByteScalarClassKind.CategoryPunctuation,
+			"S" => PcreByteScalarClassKind.CategorySymbol,
+			"Z" => PcreByteScalarClassKind.CategorySeparator,
+			_ => null
+		};
+		return group.HasValue ? new( group.Value, negated ) : null;
 	}
 
 	private static int HexDigit( byte value ) => value switch {

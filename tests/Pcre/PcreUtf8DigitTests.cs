@@ -98,7 +98,7 @@ public sealed class PcreUtf8DigitTests {
 	[InlineData( "(?-aD:\\d)", 0 )]
 	[InlineData( "a(?-aD)\\d", 1 )]
 	[InlineData( "(?m)(?-aD)\\d", 4 )]
-	[InlineData( "\\p{N}", 0 )]
+	[InlineData( "\\p{Greek}", 0 )]
 	public void OutsideDigitSubsetRemainsExplicitlyUnsupported( string pattern, int offset ) {
 		var result = PcreByteCompiler.Compile( Encoding.UTF8.GetBytes( pattern ), GrepOptions );
 		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );

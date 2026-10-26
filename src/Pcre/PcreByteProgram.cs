@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Icod.Expressions.Pcre;
 
 internal enum PcreByteOpcode {
@@ -26,7 +28,7 @@ internal enum PcreByteOpcode {
 internal sealed record PcreByteInstruction(
 	PcreByteOpcode Opcode, int First = 0, int Second = 0, PcreByteSet Set = default,
 	ReadOnlyMemory<byte> Bytes = default, ReadOnlyMemory<PcreByteScalarRange> Ranges = default,
-	ReadOnlyMemory<PcreByteScalarPredicate> Predicates = default
+	ReadOnlyMemory<PcreByteScalarPredicate> Predicates = default, UnicodeCategory? Category = null
 );
 
 internal sealed record PcreByteProgram(
@@ -57,10 +59,10 @@ internal sealed class PcreByteProgramCompiler {
 
 	private int Emit( PcreByteOpcode opcode, int first = 0, int second = 0, PcreByteSet set = default,
 		ReadOnlyMemory<byte> bytes = default, ReadOnlyMemory<PcreByteScalarRange> ranges = default,
-		ReadOnlyMemory<PcreByteScalarPredicate> predicates = default ) {
+		ReadOnlyMemory<PcreByteScalarPredicate> predicates = default, UnicodeCategory? category = null ) {
 		cancellationToken.ThrowIfCancellationRequested();
 		var index = instructions.Count;
-		instructions.Add( new( opcode, first, second, set, bytes, ranges, predicates ) );
+		instructions.Add( new( opcode, first, second, set, bytes, ranges, predicates, category ) );
 		return index;
 	}
 
@@ -93,7 +95,8 @@ internal sealed class PcreByteProgramCompiler {
 				Emit( PcreByteOpcode.Any, any.DotAll ? 1 : 0 );
 				break;
 			case PcreByteScalarClass scalarClass:
-				Emit( PcreByteOpcode.ScalarClass, (int)scalarClass.Kind, scalarClass.Negated ? 1 : 0 );
+				Emit( PcreByteOpcode.ScalarClass, (int)scalarClass.Kind, scalarClass.Negated ? 1 : 0,
+					category: scalarClass.Category );
 				break;
 			case PcreByteScalarSet scalarSet:
 				Emit( PcreByteOpcode.ScalarSet, second: scalarSet.Negated ? 1 : 0,
