@@ -103,7 +103,7 @@ public sealed class PcreUtf8BracketUnionTests {
 	[InlineData( @"[\w-a]", (int)PcreByteDiagnosticCode.InvalidSyntax )]
 	[InlineData( "[[:digit:]-a]", (int)PcreByteDiagnosticCode.InvalidSyntax )]
 	[InlineData( @"[\p{L}-a]", (int)PcreByteDiagnosticCode.InvalidSyntax )]
-	[InlineData( "[[:alpha:]_]", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( "[[:nosuch:]_]", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
 	[InlineData( "[[.ch.]]", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
 	[InlineData( @"[\p{Greek}]", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
 	[InlineData( @"[\B]", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]

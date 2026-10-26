@@ -272,9 +272,20 @@ internal sealed class PcreByteParser {
 		}
 		var name = Encoding.ASCII.GetString( source, nameStart, index - nameStart );
 		var kind = name switch {
+			"alnum" => ucp ? PcreByteScalarClassKind.UnicodeAlnum : PcreByteScalarClassKind.AsciiAlnum,
+			"alpha" => ucp ? PcreByteScalarClassKind.Letter : PcreByteScalarClassKind.AsciiAlpha,
+			"ascii" => PcreByteScalarClassKind.Ascii,
+			"blank" => ucp ? PcreByteScalarClassKind.UnicodeBlank : PcreByteScalarClassKind.AsciiBlank,
+			"cntrl" => ucp ? PcreByteScalarClassKind.UnicodeControl : PcreByteScalarClassKind.AsciiControl,
 			"digit" => ucp ? PcreByteScalarClassKind.DecimalDigit : PcreByteScalarClassKind.AsciiDigit,
+			"graph" => ucp ? PcreByteScalarClassKind.UnicodeGraph : PcreByteScalarClassKind.AsciiGraph,
+			"lower" => ucp ? PcreByteScalarClassKind.UnicodeLower : PcreByteScalarClassKind.AsciiLower,
+			"print" => ucp ? PcreByteScalarClassKind.UnicodePrintable : PcreByteScalarClassKind.AsciiPrintable,
+			"punct" => ucp ? PcreByteScalarClassKind.UnicodePunctuation : PcreByteScalarClassKind.AsciiPunctuation,
 			"word" => ucp ? PcreByteScalarClassKind.UnicodeWord : PcreByteScalarClassKind.AsciiWord,
 			"space" => ucp ? PcreByteScalarClassKind.UnicodeSpace : PcreByteScalarClassKind.AsciiSpace,
+			"upper" => ucp ? PcreByteScalarClassKind.UnicodeUpper : PcreByteScalarClassKind.AsciiUpper,
+			"xdigit" => ucp ? PcreByteScalarClassKind.UnicodeHexDigit : PcreByteScalarClassKind.AsciiHexDigit,
 			_ => throw Unsupported( openingOffset )
 		};
 		index += 2; // POSIX ':]' belongs to this member; the outer class has its own ']'.
