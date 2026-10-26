@@ -122,17 +122,17 @@ internal sealed class PcreByteParser {
 
 	private (int Minimum, int Maximum) ParseCountedBounds( int offset ) {
 		index++; // Opening brace.
-		SkipCountedSpace();
+		SkipBraceHorizontalSpace();
 		var hasMinimum = ReadCount( offset, out var minimum );
-		SkipCountedSpace();
+		SkipBraceHorizontalSpace();
 		var comma = index < source.Length && source[index] == (byte)',';
 		var hasMaximum = false;
 		var maximum = minimum;
 		if ( comma ) {
 			index++;
-			SkipCountedSpace();
+			SkipBraceHorizontalSpace();
 			hasMaximum = ReadCount( offset, out maximum );
-			SkipCountedSpace();
+			SkipBraceHorizontalSpace();
 			if ( !hasMinimum && !hasMaximum ) { throw Unsupported( offset ); }
 			if ( !hasMinimum ) { minimum = 0; }
 			if ( !hasMaximum ) { maximum = int.MaxValue; }
@@ -145,7 +145,7 @@ internal sealed class PcreByteParser {
 		return (minimum, maximum);
 	}
 
-	private void SkipCountedSpace() {
+	private void SkipBraceHorizontalSpace() {
 		while ( index < source.Length && source[index] is (byte)' ' or (byte)'\t' ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			index++;
@@ -528,7 +528,9 @@ internal sealed class PcreByteParser {
 			return new PcreByteBackreference( number );
 		}
 		if ( value == (byte)'x' ) {
-			if ( index < source.Length && source[index] == (byte)'{' ) { throw Unsupported( offset ); }
+			if ( index < source.Length && source[index] == (byte)'{' ) {
+				return new PcreByteLiteral( ParseBracedHex( offset ) );
+			}
 			var result = 0;
 			var count = 0;
 			for ( ; count < 2 && index < source.Length; count++ ) {
@@ -583,6 +585,35 @@ internal sealed class PcreByteParser {
 		}
 		if ( utf8 && value >= 0x80 ) { throw Unsupported( offset ); }
 		return new PcreByteLiteral( value );
+	}
+
+	private int ParseBracedHex( int offset ) {
+		index++; // Opening brace.
+		SkipBraceHorizontalSpace();
+		var maximum = utf8 ? 0x10FFFF : 0xFF;
+		var scalar = 0;
+		var digits = 0;
+		while ( index < source.Length ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			var digit = HexDigit( source[index] );
+			if ( digit < 0 ) { break; }
+			if ( scalar > ( maximum - digit ) / 16 ) {
+				throw Invalid( offset, "hex escape exceeds the supported character range" );
+			}
+			scalar = ( scalar << 4 ) | digit;
+			index++;
+			digits++;
+		}
+		if ( digits == 0 ) { throw Invalid( offset, "hex escape requires at least one digit" ); }
+		SkipBraceHorizontalSpace();
+		if ( index >= source.Length || source[index] != (byte)'}' ) {
+			throw Invalid( offset, "unclosed hex escape or nonhex character" );
+		}
+		index++;
+		if ( utf8 && scalar is >= 0xD800 and <= 0xDFFF ) {
+			throw Invalid( offset, "hex escape is a surrogate code point" );
+		}
+		return scalar;
 	}
 
 	private PcreByteNode ParseUnicodeProperty( int offset, bool negated ) {
