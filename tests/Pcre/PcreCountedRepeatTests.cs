@@ -46,6 +46,13 @@ public sealed class PcreCountedRepeatTests {
 	}
 
 	[Fact]
+	public void OptionalCountRollbackRestoresLastParticipatingCapture() {
+		var result = Compile( "(a){1,3}a" ).Match( "aaa"u8.ToArray() );
+		Assert.Equal( new PcreByteCapture( 0, 3 ), result.Match?.Captures[0] );
+		Assert.Equal( new PcreByteCapture( 1, 1 ), result.Match?.Captures[1] );
+	}
+
+	[Fact]
 	public void ZeroAndEmptyGroupIterationsPreserveCaptureSemantics() {
 		Assert.Null( Compile( "(a){0}b" ).Match( "b"u8.ToArray() ).Match?.Captures[1] );
 		Assert.Equal( new PcreByteCapture( 0, 0 ),

@@ -46,6 +46,8 @@ internal sealed class PcreByteProgramCompiler {
 	private readonly bool matchInvalidUtf;
 	private int markCount;
 	private int countedOffset = -1;
+	private int lastCountedOffset = -1;
+	private int compileVisits;
 
 	internal PcreByteProgramCompiler( CancellationToken cancellationToken, bool caseless, bool utf8, bool matchInvalidUtf ) {
 		this.cancellationToken = cancellationToken;
@@ -91,6 +93,8 @@ internal sealed class PcreByteProgramCompiler {
 	}
 
 	private void CompileNode( PcreByteNode node ) {
+		cancellationToken.ThrowIfCancellationRequested();
+		if ( ++compileVisits > MaximumInstructions ) { throw RepeatExpansionLimit(); }
 		switch ( node ) {
 			case PcreByteLiteral literal:
 				Emit( PcreByteOpcode.Literal, literal.Value );
@@ -149,6 +153,7 @@ internal sealed class PcreByteProgramCompiler {
 		if ( repeat.Offset >= 0 ) {
 			var previousOffset = countedOffset;
 			if ( countedOffset < 0 ) { countedOffset = repeat.Offset; }
+			lastCountedOffset = countedOffset;
 			try { CompileCountedRepeat( repeat ); }
 			finally { countedOffset = previousOffset; }
 			return;
@@ -224,6 +229,7 @@ internal sealed class PcreByteProgramCompiler {
 
 	private PcreByteParseException RepeatExpansionLimit() => new( new(
 		PcreByteDiagnosticCode.PatternRepeatLimitExceeded,
-		Math.Max( 0, countedOffset ), "compiled repeat expansion limit exceeded"
+		countedOffset >= 0 ? countedOffset : Math.Max( 0, lastCountedOffset ),
+		"compiled repeat expansion limit exceeded"
 	) );
 }
