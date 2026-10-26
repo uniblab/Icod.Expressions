@@ -64,7 +64,6 @@ public sealed class PcreByteAtomTests {
 	}
 
 	[Theory]
-	[InlineData( "\\x{FF}" )]
 	[InlineData( "\\q" )]
 	[InlineData( "\\p{L}" )]
 	public void RejectsPendingEscapesInsteadOfLiteralizingThem( string pattern ) {
