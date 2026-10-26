@@ -48,6 +48,12 @@ public sealed class PcreBracedHexTests {
 	}
 
 	[Fact]
+	public void ByteLookaheadUsesEscapedLiteral() {
+		var match = Compile( "(?=\\x{41})A" ).Match( "zA"u8.ToArray() );
+		Assert.Equal( new PcreByteCapture( 1, 1 ), match.Match?.Captures[0] );
+	}
+
+	[Fact]
 	public void EscapedScalarCanBeCountedButNotMatchAcrossInvalidUtf() {
 		var match = Compile( "\\x{1F600}{2}", new PcreByteOptions { MatchInvalidUtf = true } )
 			.Match( new byte[] { 0xF0, 0x9F, 0x98, 0x80, 0xFF, 0xF0, 0x9F, 0x98, 0x80 } );
