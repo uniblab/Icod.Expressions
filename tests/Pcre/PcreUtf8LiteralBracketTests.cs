@@ -87,11 +87,6 @@ public sealed class PcreUtf8LiteralBracketTests {
 	}
 
 	[Theory]
-	[InlineData( @"[\w]", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( @"[\p{L}]", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( @"[a-\w]", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( "[a[:digit:]]", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( "[[:digit:]a]", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
 	[InlineData( "[[.x.]]", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
 	[InlineData( "[z-a]", (int)PcreByteDiagnosticCode.InvalidSyntax )]
 	[InlineData( "[é", (int)PcreByteDiagnosticCode.InvalidSyntax )]

@@ -14,7 +14,13 @@ internal sealed record PcreByteScalarClass( PcreByteScalarClassKind Kind, bool N
 
 internal readonly record struct PcreByteScalarRange( int Start, int End );
 
-internal sealed record PcreByteScalarSet( ReadOnlyMemory<PcreByteScalarRange> Ranges, bool Negated ) : PcreByteNode;
+internal readonly record struct PcreByteScalarPredicate( PcreByteScalarClassKind Kind, bool Negated );
+
+internal sealed record PcreByteScalarSet(
+	ReadOnlyMemory<PcreByteScalarRange> Ranges,
+	ReadOnlyMemory<PcreByteScalarPredicate> Predicates,
+	bool Negated
+) : PcreByteNode;
 
 internal sealed record PcreByteClass( PcreByteSet Set ) : PcreByteNode;
 

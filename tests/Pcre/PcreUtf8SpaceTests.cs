@@ -78,8 +78,6 @@ public sealed class PcreUtf8SpaceTests {
 	}
 
 	[Theory]
-	[InlineData( "[[:space:]_]" )]
-	[InlineData( "[[:word:]0]" )]
 	[InlineData( "[[:alpha:]]" )]
 	[InlineData( "(?aS)\\s" )]
 	public void BroaderUtfBracketAndSpaceOptionSyntaxRemainUnsupported( string pattern ) {
