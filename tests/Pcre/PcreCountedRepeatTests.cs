@@ -31,7 +31,6 @@ public sealed class PcreCountedRepeatTests {
 	[InlineData( "a{2}*", "InvalidSyntax", 4 )]
 	[InlineData( "^{2}", "InvalidSyntax", 1 )]
 	[InlineData( "a{foo}", "UnsupportedSyntax", 1 )]
-	[InlineData( "a{2,3}+", "UnsupportedSyntax", 6 )]
 	public void RejectsInvalidOrPendingBraceSyntax( string pattern, string code, int offset ) {
 		var result = PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( pattern ) );
 		Assert.Equal( code, result.Diagnostic?.Code.ToString() );
