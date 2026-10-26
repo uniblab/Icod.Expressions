@@ -102,13 +102,13 @@ public sealed class PcreUtf8PosixClassTests {
 	}
 
 	[Theory]
-	[InlineData( "[[:nosuch:]]", PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( "[[.ch.]]", PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( "[[:alpha:]-a]", PcreByteDiagnosticCode.InvalidSyntax )]
-	[InlineData( "[a-[:alpha:]]", PcreByteDiagnosticCode.InvalidSyntax )]
-	public void UnsupportedAndInvalidFormsRemainDiagnostics( string pattern, PcreByteDiagnosticCode code ) {
+	[InlineData( "[[:nosuch:]]", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( "[[.ch.]]", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( "[[:alpha:]-a]", (int)PcreByteDiagnosticCode.InvalidSyntax )]
+	[InlineData( "[a-[:alpha:]]", (int)PcreByteDiagnosticCode.InvalidSyntax )]
+	public void UnsupportedAndInvalidFormsRemainDiagnostics( string pattern, int code ) {
 		var result = PcreByteCompiler.Compile( Encoding.UTF8.GetBytes( pattern ), new PcreByteOptions { Utf8 = true, Ucp = true } );
-		Assert.Equal( code, result.Diagnostic?.Code );
+		Assert.Equal( (PcreByteDiagnosticCode)code, result.Diagnostic?.Code );
 		Assert.Equal( 0, result.Diagnostic?.ByteOffset );
 	}
 
