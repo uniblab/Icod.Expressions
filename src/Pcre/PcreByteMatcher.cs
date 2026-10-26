@@ -310,6 +310,28 @@ internal static class PcreByteMatcher {
 
 	private static bool ScalarClassContains( PcreByteScalarClassKind kind, int scalar ) {
 		if ( kind == PcreByteScalarClassKind.AsciiDigit ) { return scalar is >= '0' and <= '9'; }
+		if ( kind == PcreByteScalarClassKind.Ascii ) { return scalar <= 0x7F; }
+		if ( kind is PcreByteScalarClassKind.AsciiAlnum or PcreByteScalarClassKind.AsciiAlpha
+			or PcreByteScalarClassKind.AsciiBlank or PcreByteScalarClassKind.AsciiControl
+			or PcreByteScalarClassKind.AsciiGraph or PcreByteScalarClassKind.AsciiLower
+			or PcreByteScalarClassKind.AsciiPrintable or PcreByteScalarClassKind.AsciiPunctuation
+			or PcreByteScalarClassKind.AsciiUpper or PcreByteScalarClassKind.AsciiHexDigit ) {
+			if ( scalar > 0x7F ) { return false; }
+			var value = (byte)scalar;
+			return kind switch {
+				PcreByteScalarClassKind.AsciiAlnum => PcreByteSet.Alnum.Contains( value ),
+				PcreByteScalarClassKind.AsciiAlpha => PcreByteSet.Alpha.Contains( value ),
+				PcreByteScalarClassKind.AsciiBlank => PcreByteSet.Blank.Contains( value ),
+				PcreByteScalarClassKind.AsciiControl => PcreByteSet.Control.Contains( value ),
+				PcreByteScalarClassKind.AsciiGraph => PcreByteSet.Graph.Contains( value ),
+				PcreByteScalarClassKind.AsciiLower => PcreByteSet.Lower.Contains( value ),
+				PcreByteScalarClassKind.AsciiPrintable => PcreByteSet.Printable.Contains( value ),
+				PcreByteScalarClassKind.AsciiPunctuation => PcreByteSet.Punctuation.Contains( value ),
+				PcreByteScalarClassKind.AsciiUpper => PcreByteSet.Upper.Contains( value ),
+				PcreByteScalarClassKind.AsciiHexDigit => PcreByteSet.HexDigit.Contains( value ),
+				_ => throw new InvalidOperationException( "Compiler produced an unknown PCRE ASCII class." )
+			};
+		}
 		if ( kind == PcreByteScalarClassKind.AsciiWord ) {
 			return scalar <= 0x7F && PcreByteSet.Word.Contains( (byte)scalar );
 		}
@@ -320,9 +342,35 @@ internal static class PcreByteMatcher {
 			&& scalar is >= 0x09 and <= 0x0D or 0x85 or 0x180E ) {
 			return true;
 		}
+		if ( kind == PcreByteScalarClassKind.UnicodeBlank ) {
+			return scalar is 0x09 or 0x20 or 0xA0 or 0x1680 or 0x180E
+				or >= 0x2000 and <= 0x200A or 0x202F or 0x205F or 0x3000;
+		}
+		if ( kind == PcreByteScalarClassKind.UnicodeHexDigit ) {
+			return scalar is >= '0' and <= '9' or >= 'A' and <= 'F' or >= 'a' and <= 'f'
+				or >= 0xFF10 and <= 0xFF19 or >= 0xFF21 and <= 0xFF26 or >= 0xFF41 and <= 0xFF46;
+		}
 		var category = Rune.GetUnicodeCategory( new Rune( scalar ) );
 		return kind switch {
 			PcreByteScalarClassKind.DecimalDigit => category == UnicodeCategory.DecimalDigitNumber,
+			PcreByteScalarClassKind.UnicodeAlnum => category is
+				UnicodeCategory.UppercaseLetter or UnicodeCategory.LowercaseLetter
+				or UnicodeCategory.TitlecaseLetter or UnicodeCategory.ModifierLetter
+				or UnicodeCategory.OtherLetter or UnicodeCategory.DecimalDigitNumber
+				or UnicodeCategory.LetterNumber or UnicodeCategory.OtherNumber,
+			PcreByteScalarClassKind.UnicodeControl => category == UnicodeCategory.Control,
+			PcreByteScalarClassKind.UnicodeGraph => UnicodeGraphContains( category, scalar ),
+			PcreByteScalarClassKind.UnicodeLower => category == UnicodeCategory.LowercaseLetter,
+			PcreByteScalarClassKind.UnicodePrintable => category == UnicodeCategory.SpaceSeparator
+				|| UnicodeGraphContains( category, scalar ),
+			PcreByteScalarClassKind.UnicodePunctuation => category is
+				UnicodeCategory.ConnectorPunctuation or UnicodeCategory.DashPunctuation
+				or UnicodeCategory.OpenPunctuation or UnicodeCategory.ClosePunctuation
+				or UnicodeCategory.InitialQuotePunctuation or UnicodeCategory.FinalQuotePunctuation
+				or UnicodeCategory.OtherPunctuation || ( scalar < 0x100 && category is
+				UnicodeCategory.MathSymbol or UnicodeCategory.CurrencySymbol
+				or UnicodeCategory.ModifierSymbol or UnicodeCategory.OtherSymbol ),
+			PcreByteScalarClassKind.UnicodeUpper => category == UnicodeCategory.UppercaseLetter,
 			PcreByteScalarClassKind.Letter => category is
 				UnicodeCategory.UppercaseLetter or UnicodeCategory.LowercaseLetter
 				or UnicodeCategory.TitlecaseLetter or UnicodeCategory.ModifierLetter
@@ -338,6 +386,23 @@ internal static class PcreByteMatcher {
 				or UnicodeCategory.ParagraphSeparator,
 			_ => throw new InvalidOperationException( "Compiler produced an unknown PCRE scalar class." )
 		};
+	}
+
+	private static bool UnicodeGraphContains( UnicodeCategory category, int scalar ) {
+		if ( scalar is 0x061C or 0x180E or >= 0x2066 and <= 0x2069 ) { return false; }
+		return category is
+			UnicodeCategory.UppercaseLetter or UnicodeCategory.LowercaseLetter
+			or UnicodeCategory.TitlecaseLetter or UnicodeCategory.ModifierLetter
+			or UnicodeCategory.OtherLetter or UnicodeCategory.DecimalDigitNumber
+			or UnicodeCategory.LetterNumber or UnicodeCategory.OtherNumber
+			or UnicodeCategory.NonSpacingMark or UnicodeCategory.SpacingCombiningMark
+			or UnicodeCategory.EnclosingMark or UnicodeCategory.ConnectorPunctuation
+			or UnicodeCategory.DashPunctuation or UnicodeCategory.OpenPunctuation
+			or UnicodeCategory.ClosePunctuation or UnicodeCategory.InitialQuotePunctuation
+			or UnicodeCategory.FinalQuotePunctuation or UnicodeCategory.OtherPunctuation
+			or UnicodeCategory.MathSymbol or UnicodeCategory.CurrencySymbol
+			or UnicodeCategory.ModifierSymbol or UnicodeCategory.OtherSymbol
+			or UnicodeCategory.Format;
 	}
 
 	private sealed record Frame(
