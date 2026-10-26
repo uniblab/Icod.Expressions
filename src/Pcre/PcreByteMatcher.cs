@@ -169,6 +169,27 @@ internal static class PcreByteMatcher {
 								break;
 							}
 							var captured = capture.Value;
+							if ( program.Utf8 && program.Caseless ) {
+								var capturedOffset = captured.ByteIndex;
+								var capturedEnd = captured.ByteIndex + captured.ByteLength;
+								var candidate = position;
+								while ( capturedOffset < capturedEnd ) {
+									Step(); // Attempted captured-scalar comparison.
+									if ( candidate >= fragment.End
+										|| !PcreUtf8.TryRead( input.Span, capturedOffset, out var captureScalar, out var captureWidth )
+										|| capturedOffset + captureWidth > capturedEnd
+										|| !PcreUtf8.TryRead( input.Span, candidate, out var referenceScalar, out var referenceWidth )
+										|| candidate + referenceWidth > fragment.End
+										|| !PcreUtf8CaseFold.Equals( captureScalar, referenceScalar ) ) {
+										failed = true;
+										break;
+									}
+									capturedOffset += captureWidth;
+									candidate += referenceWidth;
+								}
+								if ( !failed ) { position = candidate; pc++; }
+								break;
+							}
 							if ( captured.ByteLength > fragment.End - position ) {
 								failed = true;
 								break;
@@ -210,6 +231,43 @@ internal static class PcreByteMatcher {
 							break;
 						case PcreByteOpcode.AssertLiteral:
 							var literal = instruction.Bytes.Span;
+							if ( program.Utf8 && program.Caseless ) {
+								var scalarEquals = true;
+								var scalarAdjacent = position;
+								if ( instruction.Second == 1 ) {
+									for ( var patternOffset = 0; patternOffset < literal.Length; ) {
+										Step(); // Count an asserted scalar.
+										PcreUtf8.TryRead( literal, patternOffset, out _, out var patternWidth );
+										patternOffset += patternWidth;
+										if ( scalarAdjacent <= fragment.Start ) { scalarEquals = false; break; }
+										do {
+											scalarAdjacent--;
+											Step(); // Find the previous scalar boundary within this fragment.
+										} while ( scalarAdjacent > fragment.Start
+											&& ( input.Span[scalarAdjacent] & 0xC0 ) == 0x80 );
+									}
+								}
+								if ( scalarEquals ) {
+									var subjectOffset = scalarAdjacent;
+									for ( var patternOffset = 0; patternOffset < literal.Length; ) {
+										Step(); // Attempted assertion-scalar comparison.
+										if ( subjectOffset >= fragment.End
+											|| !PcreUtf8.TryRead( literal, patternOffset, out var assertionScalar, out var assertionWidth )
+											|| !PcreUtf8.TryRead( input.Span, subjectOffset, out var subjectScalar, out var subjectWidth )
+											|| subjectOffset + subjectWidth > fragment.End
+											|| !PcreUtf8CaseFold.Equals( assertionScalar, subjectScalar ) ) {
+											scalarEquals = false;
+											break;
+										}
+										patternOffset += assertionWidth;
+										subjectOffset += subjectWidth;
+									}
+									if ( instruction.Second == 1 && subjectOffset != position ) { scalarEquals = false; }
+								}
+								if ( scalarEquals == ( instruction.First == 1 ) ) { pc++; }
+								else { failed = true; }
+								break;
+							}
 							var adjacent = instruction.Second == 1 ? position - literal.Length : position;
 							var equals = adjacent >= fragment.Start && literal.Length <= fragment.End - adjacent;
 							if ( equals ) {

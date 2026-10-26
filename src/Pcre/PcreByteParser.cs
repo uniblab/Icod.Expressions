@@ -128,7 +128,6 @@ internal sealed class PcreByteParser {
 						&& source[index + 2] is (byte)'=' or (byte)'!';
 					var ahead = index + 1 < source.Length && source[index + 1] is (byte)'=' or (byte)'!';
 					if ( !behind && !ahead ) { throw Unsupported( offset ); }
-					if ( utf8 && caseless ) { throw Unsupported( offset ); }
 					if ( depth >= MaximumPatternDepth ) {
 						throw new PcreByteParseException( new(
 							PcreByteDiagnosticCode.PatternDepthLimitExceeded, offset, "pattern nesting limit exceeded"
@@ -469,7 +468,6 @@ internal sealed class PcreByteParser {
 			return new PcreByteWordBoundary( value == (byte)'b', ucp );
 		}
 		if ( value is >= (byte)'1' and <= (byte)'9' ) {
-			if ( utf8 && caseless ) { throw Unsupported( offset ); }
 			if ( index < source.Length && source[index] is >= (byte)'0' and <= (byte)'9' ) {
 				throw Unsupported( offset ); // Multi-digit references and octal ambiguity are pending.
 			}
