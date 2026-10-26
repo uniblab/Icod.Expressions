@@ -172,7 +172,6 @@ internal sealed class PcreByteParser {
 				: new PcreByteClass( dotAll ? PcreByteSet.AllBytes : PcreByteSet.Dot );
 		}
 		if ( value == (byte)'[' ) {
-			if ( utf8 && caseless ) { throw Unsupported( offset ); }
 			if ( utf8 ) { return ParseUtf8Bracket( offset ); }
 			return ParseBracket( offset );
 		}
@@ -202,7 +201,8 @@ internal sealed class PcreByteParser {
 			cancellationToken.ThrowIfCancellationRequested();
 			if ( source[index] == (byte)']' && ( ranges.Count > 0 || predicates.Count > 0 ) ) {
 				index++;
-				return new( ranges.ToArray(), predicates.ToArray(), negated );
+				return new( caseless ? PcreUtf8CaseFold.CloseRanges( ranges, cancellationToken )
+					: ranges.ToArray(), predicates.ToArray(), negated );
 			}
 			var first = ParseUtf8BracketItem( openingOffset );
 			if ( index + 1 < source.Length && source[index] == (byte)'-'

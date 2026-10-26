@@ -56,18 +56,6 @@ public sealed class PcreUtf8CaselessTests {
 		Assert.Null( word.Match );
 	}
 
-	[Theory]
-	[InlineData( "(?i)[é]", false, 4 )]
-	[InlineData( "[é]", true, 0 )]
-	public void DiagnosesCaselessConstructsWhoseByteWidthsNeedSeparateImplementation(
-		string pattern, bool callerCaseless, int expectedOffset
-	) {
-		var result = PcreByteCompiler.Compile( Encoding.UTF8.GetBytes( pattern ),
-			new PcreByteOptions { Utf8 = true, Caseless = callerCaseless } );
-		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
-		Assert.Equal( expectedOffset, result.Diagnostic?.ByteOffset );
-	}
-
 	[Fact]
 	public void CaselessLiteralsCannotJoinValidFragmentsAcrossInvalidUtf() {
 		var result = Compile( "(?i)éa", matchInvalidUtf: true )
