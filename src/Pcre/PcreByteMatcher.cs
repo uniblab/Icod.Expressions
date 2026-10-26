@@ -136,6 +136,7 @@ internal static class PcreByteMatcher {
 							}
 							var contained = false;
 							foreach ( var range in instruction.Ranges.Span ) {
+								Step(); // Each attempted interval inspection consumes work.
 								if ( setScalar >= range.Start && setScalar <= range.End ) { contained = true; break; }
 							}
 							if ( contained != ( instruction.Second == 1 ) ) {
