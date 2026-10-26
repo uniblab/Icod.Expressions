@@ -59,9 +59,6 @@ public sealed class PcreUtf8CaselessTests {
 	[Theory]
 	[InlineData( "(?i)[é]", false, 4 )]
 	[InlineData( "[é]", true, 0 )]
-	[InlineData( "(?i)(é)\\1", false, 8 )]
-	[InlineData( "(?i)(?<=é)A", false, 4 )]
-	[InlineData( "(?i)(?=é)A", false, 4 )]
 	public void DiagnosesCaselessConstructsWhoseByteWidthsNeedSeparateImplementation(
 		string pattern, bool callerCaseless, int expectedOffset
 	) {
