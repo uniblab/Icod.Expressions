@@ -11,14 +11,29 @@ internal static class PcreUtf8CaseFold {
 	) {
 		cancellationToken.ThrowIfCancellationRequested();
 		if ( ranges.Count == 0 ) { return Array.Empty<PcreByteScalarRange>(); }
-		if ( ranges.Count == 1 && ranges[0] is { Start: 0, End: 0x10FFFF } ) {
-			return [ranges[0]]; // Every valid subject scalar is already in this interval.
+		var ordered = ranges.ToArray();
+		Array.Sort( ordered, static ( left, right ) => left.Start.CompareTo( right.Start ) );
+		var merged = new List<PcreByteScalarRange>();
+		var current = ordered[0];
+		for ( var index = 1; index < ordered.Length; index++ ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			var next = ordered[index];
+			if ( next.Start <= current.End + 1 ) {
+				current = current with { End = Math.Max( current.End, next.End ) };
+			} else {
+				merged.Add( current );
+				current = next;
+			}
+		}
+		merged.Add( current );
+		if ( merged.Count == 1 && merged[0] is { Start: 0, End: 0x10FFFF } ) {
+			return [merged[0]]; // Every valid subject scalar is already in this interval.
 		}
 		const int scalarCount = 0x110000;
 		var bitmap = new uint[scalarCount / 32]; // 136 KiB, independent of range width.
 		var minimum = scalarCount;
 		var maximum = -1;
-		foreach ( var range in ranges ) {
+		foreach ( var range in merged ) {
 			for ( var scalar = range.Start; scalar <= range.End; scalar++ ) {
 				if ( ( scalar & 1023 ) == 0 ) { cancellationToken.ThrowIfCancellationRequested(); }
 				if ( !Rune.IsValid( scalar ) ) { continue; } // A range may straddle the surrogate gap.

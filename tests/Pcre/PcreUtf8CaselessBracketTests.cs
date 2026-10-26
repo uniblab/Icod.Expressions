@@ -39,6 +39,25 @@ public sealed class PcreUtf8CaselessBracketTests {
 		Assert.Null( range.Match( "x"u8.ToArray() ).Match );
 	}
 
+	[Fact]
+	public void OverlappingRangesAndFullSpaceUnionKeepTheirMembers() {
+		var overlap = Compile( "(?i)[a-mh-z]" );
+		Assert.Equal( 3, overlap.Match( "K"u8.ToArray() ).Match?.ByteLength );
+		Assert.Null( overlap.Match( "!"u8.ToArray() ).Match );
+		var full = Compile( "(?i)[\0-\U0010FFFF\0-\U0010FFFF]" );
+		Assert.Equal( 4, full.Match( "\U0010FFFF"u8.ToArray() ).Match?.ByteLength );
+	}
+
+	[Fact]
+	public void WideRangeCompilationHonorsCancellation() {
+		using var cancellation = new CancellationTokenSource();
+		cancellation.CancelAfter( TimeSpan.FromMilliseconds( 1 ) );
+		Assert.Throws<OperationCanceledException>( () => PcreByteCompiler.Compile(
+			Encoding.UTF8.GetBytes( "(?i)[A-\U0010FFFF]" ),
+			new PcreByteOptions { Utf8 = true }, cancellation.Token
+		) );
+	}
+
 	[Theory]
 	[InlineData( "(?i)[\\p{Lu}]", "a", false, 0, 1 )]
 	[InlineData( "(?i)[\\p{Ll}]", "ǅ", false, 0, 2 )]
