@@ -77,10 +77,20 @@ public sealed class PcreUtf8BracketUnionTests {
 
 	[Fact]
 	public void NoPredicateMatchesMalformedByteOrCrossesFragment() {
-		Assert.Null( Compile( @"[^\p{L}]" ).Match( Convert.FromHexString( "FF" ) ).Match );
+		var malformed = Compile( @"[^\p{L}]" ).Match( Convert.FromHexString( "FF" ) );
+		Assert.True( malformed.IsSuccess, malformed.Diagnostic?.Message );
+		Assert.Null( malformed.Match );
 		Assert.Equal( new PcreByteCapture( 1, 1 ),
 			Compile( @"[^\p{L}]" ).Match( Convert.FromHexString( "FF37" ) ).Match?.Captures[0] );
-		Assert.Null( Compile( @"[\p{L}]A" ).Match( Convert.FromHexString( "C3A9FF41" ) ).Match );
+		var crossed = Compile( @"[\p{L}]A" ).Match( Convert.FromHexString( "C3A9FF41" ) );
+		Assert.True( crossed.IsSuccess, crossed.Diagnostic?.Message );
+		Assert.Null( crossed.Match );
+		var twiceNegated = Compile( "[^[:^digit:]_]" );
+		foreach ( var subject in new[] { Convert.FromHexString( "FF" ), Array.Empty<byte>() } ) {
+			var result = twiceNegated.Match( subject );
+			Assert.True( result.IsSuccess, result.Diagnostic?.Message );
+			Assert.Null( result.Match );
+		}
 		Assert.Equal( new PcreByteCapture( 1, 2 ),
 			Compile( @"[\p{L}]" ).Match( Convert.FromHexString( "FFC3A9" ) ).Match?.Captures[0] );
 		Assert.Equal( PcreByteDiagnosticCode.InvalidStartOffset,
