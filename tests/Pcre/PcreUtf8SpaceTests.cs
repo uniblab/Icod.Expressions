@@ -78,7 +78,7 @@ public sealed class PcreUtf8SpaceTests {
 	}
 
 	[Theory]
-	[InlineData( "[[:alpha:]]" )]
+	[InlineData( "[[:nosuch:]]" )]
 	[InlineData( "(?aS)\\s" )]
 	public void BroaderUtfBracketAndSpaceOptionSyntaxRemainUnsupported( string pattern ) {
 		var result = PcreByteCompiler.Compile( Encoding.UTF8.GetBytes( pattern ), GrepOptions );

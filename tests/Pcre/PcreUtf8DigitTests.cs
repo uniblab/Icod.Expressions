@@ -94,7 +94,7 @@ public sealed class PcreUtf8DigitTests {
 	}
 
 	[Theory]
-	[InlineData( "[[:alpha:]]", 0 )]
+	[InlineData( "[[:nosuch:]]", 0 )]
 	[InlineData( "(?-aD:\\d)", 0 )]
 	[InlineData( "a(?-aD)\\d", 1 )]
 	[InlineData( "(?m)(?-aD)\\d", 4 )]
