@@ -116,7 +116,7 @@ public sealed class PcreUtf8PosixClassTests {
 	public void NewPredicateTermsAreBudgetedAndCancellable() {
 		var limited = Compile( "[a[:alpha:][:xdigit:]]", ucp: true, limit: 7 );
 		Assert.Equal( PcreByteDiagnosticCode.MatchWorkLimitExceeded,
-			limited.Match( "Ｆ"u8.ToArray() ).Diagnostic?.Code );
+			limited.Match( "９"u8.ToArray() ).Diagnostic?.Code );
 		using var cancellation = new CancellationTokenSource();
 		var compiled = PcreByteCompiler.Compile( "[a[:alpha:][:xdigit:]]"u8.ToArray(),
 			new PcreByteOptions { Utf8 = true, Ucp = true,
@@ -124,7 +124,7 @@ public sealed class PcreUtf8PosixClassTests {
 			} );
 		Assert.True( compiled.IsSuccess, compiled.Diagnostic?.Message );
 		Assert.Throws<OperationCanceledException>( () =>
-			compiled.Pattern!.Match( "Ｆ"u8.ToArray(), cancellationToken: cancellation.Token ) );
+			compiled.Pattern!.Match( "９"u8.ToArray(), cancellationToken: cancellation.Token ) );
 	}
 
 	private static PcreCompiledBytePattern Compile( string pattern, bool ucp, bool invalidUtf = false,
