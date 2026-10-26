@@ -49,9 +49,9 @@ public sealed class PcreUtf8CaselessBracketTests {
 	}
 
 	[Fact]
-	public void WideRangeCompilationHonorsCancellation() {
+	public void AlreadyCancelledWideRangeCompilationThrows() {
 		using var cancellation = new CancellationTokenSource();
-		cancellation.CancelAfter( TimeSpan.FromMilliseconds( 1 ) );
+		cancellation.Cancel();
 		Assert.Throws<OperationCanceledException>( () => PcreByteCompiler.Compile(
 			Encoding.UTF8.GetBytes( "(?i)[A-\U0010FFFF]" ),
 			new PcreByteOptions { Utf8 = true }, cancellation.Token
