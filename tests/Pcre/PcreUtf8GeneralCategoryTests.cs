@@ -56,6 +56,8 @@ public sealed class PcreUtf8GeneralCategoryTests {
 	[InlineData( @"\PN", "Ⅻ", false )]
 	[InlineData( @"\p{^N}", "Ⅻ", false )]
 	[InlineData( @"\P{^N}", "Ⅻ", true )]
+	[InlineData( @"\p{ ^ N}", "Ⅻ", false )]
+	[InlineData( @"\P{ ^ N}", "Ⅻ", true )]
 	[InlineData( @"\p{n-l}", "Ⅻ", true )]
 	[InlineData( @"\p{G C = l u}", "Ω", true )]
 	[InlineData( @"\p{General_Category: p o}", "!", true )]
@@ -64,7 +66,6 @@ public sealed class PcreUtf8GeneralCategoryTests {
 	[InlineData( @"\P{Cs}", "😀", true )]
 	[InlineData( @"\p{N}", "é", false )]
 	[InlineData( @"\p{P}", "£", false )]
-	[InlineData( "[[:punct:]]", "£", true )]
 	[InlineData( @"\p{Z}", "\n", false )]
 	[InlineData( @"\s", "\n", true )]
 	public void NamesComplementsAndExistingPredicatesStayDistinct( string pattern, string subject, bool expected ) {
@@ -77,9 +78,23 @@ public sealed class PcreUtf8GeneralCategoryTests {
 	}
 
 	[Theory]
+	[InlineData( false, false )]
+	[InlineData( true, true )]
+	public void PosixPunctuationUsesUcpIndependentlyOfPropertyP( bool ucp, bool expected ) {
+		var result = Compile( "[[:punct:]]", new PcreByteOptions { Utf8 = true, Ucp = ucp } )
+			.Match( "£"u8.ToArray() );
+		Assert.True( result.IsSuccess, result.Diagnostic?.Message );
+		Assert.Equal( expected, result.Match is not null );
+	}
+
+	[Theory]
 	[InlineData( @"[\p{N}A]", "Ⅻ", true )]
 	[InlineData( @"[\p{N}A]", "A", true )]
 	[InlineData( @"[\p{N}A]", "😀", false )]
+	[InlineData( @"[\p{Nl}]", "Ⅻ", true )]
+	[InlineData( @"[\P{Nl}]", "Ⅻ", false )]
+	[InlineData( @"[^\P{Nl}A]", "Ⅻ", true )]
+	[InlineData( @"[^\P{Nl}A]", "A", false )]
 	[InlineData( @"[^\P{N}A]", "٣", true )]
 	[InlineData( @"[^\P{N}A]", "A", false )]
 	[InlineData( @"[^\P{N}A]", "😀", false )]
@@ -114,6 +129,8 @@ public sealed class PcreUtf8GeneralCategoryTests {
 	[InlineData( @"[a-\p{N}]", (int)PcreByteDiagnosticCode.InvalidSyntax )]
 	[InlineData( @"[\p{N}-a]", (int)PcreByteDiagnosticCode.InvalidSyntax )]
 	[InlineData( @"\p{_ - }", (int)PcreByteDiagnosticCode.InvalidSyntax )]
+	[InlineData( @"\p{gc:}", (int)PcreByteDiagnosticCode.InvalidSyntax )]
+	[InlineData( @"\p{General_Category= }", (int)PcreByteDiagnosticCode.InvalidSyntax )]
 	public void InvalidAndOtherPropertiesRemainDiagnosed( string pattern, int code ) {
 		var result = PcreByteCompiler.Compile( Encoding.UTF8.GetBytes( pattern ), new PcreByteOptions { Utf8 = true } );
 		Assert.Equal( (PcreByteDiagnosticCode)code, result.Diagnostic?.Code );
@@ -128,6 +145,19 @@ public sealed class PcreUtf8GeneralCategoryTests {
 		using var cancellation = new CancellationTokenSource();
 		var cancellable = Compile( @"\p{Nl}", new PcreByteOptions {
 			Utf8 = true, WorkObserver = count => { if ( count == 4 ) { cancellation.Cancel(); } }
+		} );
+		Assert.Throws<OperationCanceledException>( () =>
+			cancellable.Match( "Ⅻ"u8.ToArray(), cancellationToken: cancellation.Token ) );
+	}
+
+	[Fact]
+	public void BracketSpecificCategoryChargesEachTerm() {
+		var limited = Compile( @"[a\p{Nl}]", new PcreByteOptions { Utf8 = true, MatchWorkLimit = 6 } );
+		Assert.Equal( PcreByteDiagnosticCode.MatchWorkLimitExceeded,
+			limited.Match( "Ⅻ"u8.ToArray() ).Diagnostic?.Code );
+		using var cancellation = new CancellationTokenSource();
+		var cancellable = Compile( @"[a\p{Nl}]", new PcreByteOptions {
+			Utf8 = true, WorkObserver = count => { if ( count == 6 ) { cancellation.Cancel(); } }
 		} );
 		Assert.Throws<OperationCanceledException>( () =>
 			cancellable.Match( "Ⅻ"u8.ToArray(), cancellationToken: cancellation.Token ) );
