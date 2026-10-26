@@ -60,6 +60,20 @@ public sealed class PcreCountedRepeatTests {
 	}
 
 	[Fact]
+	public void EmptyGroupExpansionHasACompileWorkLimit() {
+		var result = PcreByteCompiler.Compile( "(?:){5000}"u8.ToArray() );
+		Assert.Equal( PcreByteDiagnosticCode.PatternRepeatLimitExceeded, result.Diagnostic?.Code );
+		Assert.Equal( 4, result.Diagnostic?.ByteOffset );
+	}
+
+	[Fact]
+	public void InstructionCapAtFinalAcceptReportsCountedQuantifier() {
+		var result = PcreByteCompiler.Compile( "a{4096}"u8.ToArray() );
+		Assert.Equal( PcreByteDiagnosticCode.PatternRepeatLimitExceeded, result.Diagnostic?.Code );
+		Assert.Equal( 1, result.Diagnostic?.ByteOffset );
+	}
+
+	[Fact]
 	public void Utf8RepeatCountsScalarsAndKeepsByteSpans() {
 		var result = Compile( "é{2,3}?x", new PcreByteOptions { Utf8 = true } )
 			.Match( "zéééx"u8.ToArray() );
