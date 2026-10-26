@@ -43,7 +43,6 @@ internal sealed class PcreByteParser {
 			asciiBsD = true;
 		} else if ( source.Length >= 4 && source[0] == (byte)'(' && source[1] == (byte)'?'
 			&& ( source[2] is (byte)'s' or (byte)'i' or (byte)'m' ) && source[3] == (byte)')' ) {
-			if ( utf8 && source[2] == (byte)'i' ) { throw Unsupported( 0 ); }
 			index = 4;
 			dotAll = source[2] == (byte)'s';
 			if ( source[2] == (byte)'i' ) { caseless = true; }
@@ -129,6 +128,7 @@ internal sealed class PcreByteParser {
 						&& source[index + 2] is (byte)'=' or (byte)'!';
 					var ahead = index + 1 < source.Length && source[index + 1] is (byte)'=' or (byte)'!';
 					if ( !behind && !ahead ) { throw Unsupported( offset ); }
+					if ( utf8 && caseless ) { throw Unsupported( offset ); }
 					if ( depth >= MaximumPatternDepth ) {
 						throw new PcreByteParseException( new(
 							PcreByteDiagnosticCode.PatternDepthLimitExceeded, offset, "pattern nesting limit exceeded"
@@ -173,6 +173,7 @@ internal sealed class PcreByteParser {
 				: new PcreByteClass( dotAll ? PcreByteSet.AllBytes : PcreByteSet.Dot );
 		}
 		if ( value == (byte)'[' ) {
+			if ( utf8 && caseless ) { throw Unsupported( offset ); }
 			if ( utf8 ) { return ParseUtf8Bracket( offset ); }
 			return ParseBracket( offset );
 		}
@@ -468,6 +469,7 @@ internal sealed class PcreByteParser {
 			return new PcreByteWordBoundary( value == (byte)'b', ucp );
 		}
 		if ( value is >= (byte)'1' and <= (byte)'9' ) {
+			if ( utf8 && caseless ) { throw Unsupported( offset ); }
 			if ( index < source.Length && source[index] is >= (byte)'0' and <= (byte)'9' ) {
 				throw Unsupported( offset ); // Multi-digit references and octal ambiguity are pending.
 			}

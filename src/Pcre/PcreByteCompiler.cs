@@ -17,10 +17,6 @@ internal static class PcreByteCompiler {
 				"match work limit must be positive"
 			) );
 		}
-		if ( utf8 && options.Caseless ) {
-			return new( null, new( PcreByteDiagnosticCode.UnsupportedSyntax, 0,
-				"UTF-8 caseless matching is not implemented" ) );
-		}
 		if ( options.Ucp && !utf8 ) {
 			return new( null, new( PcreByteDiagnosticCode.UnsupportedSyntax, 0,
 				"UCP without UTF-8 is not implemented by the internal matcher" ) );

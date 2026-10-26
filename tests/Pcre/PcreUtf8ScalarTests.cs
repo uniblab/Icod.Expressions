@@ -104,7 +104,6 @@ public sealed class PcreUtf8ScalarTests {
 	[Theory]
 	[InlineData( "\\p{Greek}", 0 )]
 	[InlineData( "(?<=é+)x", 0 )]
-	[InlineData( "(?i)é", 0 )]
 	public void UnicodeSensitiveConstructsRemainExplicitlyUnsupported( string pattern, int offset ) {
 		var result = PcreByteCompiler.Compile( Encoding.UTF8.GetBytes( pattern ), new PcreByteOptions { Utf8 = true } );
 		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
@@ -112,9 +111,11 @@ public sealed class PcreUtf8ScalarTests {
 	}
 
 	[Fact]
-	public void CaselessOptionIsRejectedUntilUnicodeCaseFoldingExists() {
-		var result = PcreByteCompiler.Compile( "é"u8.ToArray(), new PcreByteOptions { Utf8 = true, Caseless = true } );
-		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
+	public void CaselessOptionMatchesUnicodeLiterals() {
+		var compiled = Compile( "É"u8.ToArray(), new PcreByteOptions { Utf8 = true, Caseless = true } );
+		var result = compiled.Match( "é"u8.ToArray() );
+		Assert.True( result.IsSuccess, result.Diagnostic?.Message );
+		Assert.Equal( 2, result.Match?.ByteLength );
 	}
 
 	[Fact]
