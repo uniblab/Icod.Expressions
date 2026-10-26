@@ -15,6 +15,8 @@ public sealed class PcreUtf8LiteralBracketTests {
 	[InlineData( "[é😀]", "é", 0, 2 )]
 	[InlineData( "[é😀]", "x", -1, 0 )]
 	[InlineData( "[à-ö]", "é", 0, 2 )]
+	[InlineData( "[0-9]", "3", 0, 1 )]
+	[InlineData( "[0-9]", "٣", -1, 0 )]
 	[InlineData( "[à-ö]", "ö", 0, 2 )]
 	[InlineData( "[à-ö]", "÷", -1, 0 )]
 	[InlineData( "[😀-🙏]", "😁", 0, 4 )]
@@ -99,6 +101,19 @@ public sealed class PcreUtf8LiteralBracketTests {
 		} );
 		Assert.Throws<OperationCanceledException>( () =>
 			cancellable.Match( "é"u8.ToArray(), cancellationToken: cancellation.Token ) );
+	}
+
+	[Fact]
+	public void EachRangeInspectionObservesWorkAndCancellation() {
+		var limited = Compile( "[abcde]", GrepOptions with { MatchWorkLimit = 9 } );
+		Assert.Equal( PcreByteDiagnosticCode.MatchWorkLimitExceeded,
+			limited.Match( "e"u8.ToArray() ).Diagnostic?.Code );
+		using var cancellation = new CancellationTokenSource();
+		var cancellable = Compile( "[abcde]", GrepOptions with {
+			WorkObserver = count => { if ( count == 7 ) { cancellation.Cancel(); } }
+		} );
+		Assert.Throws<OperationCanceledException>( () =>
+			cancellable.Match( "e"u8.ToArray(), cancellationToken: cancellation.Token ) );
 	}
 
 	private static PcreCompiledBytePattern Compile( string pattern, PcreByteOptions? options = null ) {

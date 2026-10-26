@@ -95,7 +95,6 @@ public sealed class PcreUtf8DigitTests {
 
 	[Theory]
 	[InlineData( "[[:digit:]_]", 0 )]
-	[InlineData( "[0-9]", 0 )]
 	[InlineData( "[[:alpha:]]", 0 )]
 	[InlineData( "[\\p{Nd}]", 0 )]
 	[InlineData( "(?-aD:\\d)", 0 )]
