@@ -127,6 +127,22 @@ internal static class PcreByteMatcher {
 								pc++;
 							} else { failed = true; }
 							break;
+						case PcreByteOpcode.ScalarSet:
+							Step(); // Attempted scalar-set evaluation.
+							if ( position >= fragment.End
+								|| !PcreUtf8.TryRead( input.Span, position, out var setScalar, out var setWidth ) ) {
+								failed = true;
+								break;
+							}
+							var contained = false;
+							foreach ( var range in instruction.Ranges.Span ) {
+								if ( setScalar >= range.Start && setScalar <= range.End ) { contained = true; break; }
+							}
+							if ( contained != ( instruction.Second == 1 ) ) {
+								position += setWidth;
+								pc++;
+							} else { failed = true; }
+							break;
 						case PcreByteOpcode.Class:
 							Step(); // Attempted byte set membership.
 							if ( position < fragment.End && instruction.Set.Contains( input.Span[position] ) ) {
