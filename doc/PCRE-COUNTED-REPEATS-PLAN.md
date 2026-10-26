@@ -31,7 +31,7 @@
 
 **Files:** `src/Pcre/PcreByteParser.cs`, `src/Pcre/PcreByteSyntax.cs`, `tests/Pcre/PcreCountedRepeatTests.cs`.
 
-**Interfaces:** `PcreByteRepeat(PcreByteNode Child, int Minimum, int Maximum, bool Greedy, int Offset = 0)`; parser accepts `{n}`, `{n,m}`, `{n,}`, `{,m}`, horizontal spaces, optional lazy suffix and rejects invalid bounds.
+**Interfaces:** `PcreByteRepeat(PcreByteNode Child, int Minimum, int Maximum, bool Greedy, int Offset = -1)`; nonnegative offset marks a counted form. Parser accepts `{n}`, `{n,m}`, `{n,}`, `{,m}`, horizontal spaces, optional lazy suffix and rejects invalid bounds.
 
 - [ ] Write matching and diagnostic tests for exact, finite, unbounded, zero, lazy, spaced forms, malformed bounds and suffixes.
 - [ ] Push a test-only commit and verify Staging failures are the expected unsupported syntax assertions.

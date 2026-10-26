@@ -74,7 +74,7 @@ internal sealed class PcreByteParser {
 			while ( index < source.Length && source[index] != (byte)'|' && source[index] != (byte)')' ) {
 				cancellationToken.ThrowIfCancellationRequested();
 				var atom = ParseAtom( depth );
-				if ( index < source.Length && source[index] is (byte)'*' or (byte)'+' or (byte)'?' ) {
+				if ( index < source.Length && source[index] is (byte)'*' or (byte)'+' or (byte)'?' or (byte)'{' ) {
 					if ( atom is PcreByteLiteralAssertion ) {
 						throw Unsupported( index );
 					}
@@ -82,19 +82,25 @@ internal sealed class PcreByteParser {
 						throw Invalid( index, "an anchor cannot be repeated" );
 					}
 					var quantifierOffset = index;
-					var quantifier = source[index++];
-					repeatMarks += quantifier == (byte)'+' ? 2 : quantifier == (byte)'*' ? 1 : 0;
+					var counted = source[index] == (byte)'{';
+					var quantifier = counted ? (byte)0 : source[index++];
+					var bounds = counted ? ParseCountedBounds( quantifierOffset )
+						: (quantifier == (byte)'+' ? 1 : 0,
+							quantifier == (byte)'?' ? 1 : int.MaxValue);
+					var minimum = bounds.Item1;
+					var maximum = bounds.Item2;
+					repeatMarks += counted ? maximum == int.MaxValue ? 1 : 0
+						: quantifier == (byte)'+' ? 2 : quantifier == (byte)'*' ? 1 : 0;
 					if ( repeatMarks > MaximumRepeatMarks ) {
 						throw new PcreByteParseException( new(
 							PcreByteDiagnosticCode.PatternRepeatLimitExceeded, quantifierOffset, "repeat state limit exceeded"
 						) );
 					}
-					var minimum = quantifier == (byte)'+' ? 1 : 0;
-					var maximum = quantifier == (byte)'?' ? 1 : int.MaxValue;
 					var greedy = index >= source.Length || source[index] != (byte)'?';
 					if ( !greedy ) { index++; }
-					atom = new PcreByteRepeat( atom, minimum, maximum, greedy );
-					if ( index < source.Length && source[index] is (byte)'*' or (byte)'+' or (byte)'?' ) {
+					atom = new PcreByteRepeat( atom, minimum, maximum, greedy,
+						counted ? quantifierOffset : -1 );
+					if ( index < source.Length && source[index] is (byte)'*' or (byte)'+' or (byte)'?' or (byte)'{' ) {
 						if ( greedy && source[index] == (byte)'+' ) {
 							throw Unsupported( index ); // Valid possessive suffix, pending implementation.
 						}
@@ -112,6 +118,52 @@ internal sealed class PcreByteParser {
 			}
 			index++; // Ordered alternative.
 		}
+	}
+
+	private (int Minimum, int Maximum) ParseCountedBounds( int offset ) {
+		index++; // Opening brace.
+		SkipCountedSpace();
+		var hasMinimum = ReadCount( offset, out var minimum );
+		SkipCountedSpace();
+		var comma = index < source.Length && source[index] == (byte)',';
+		var hasMaximum = false;
+		var maximum = minimum;
+		if ( comma ) {
+			index++;
+			SkipCountedSpace();
+			hasMaximum = ReadCount( offset, out maximum );
+			SkipCountedSpace();
+			if ( !hasMinimum && !hasMaximum ) { throw Unsupported( offset ); }
+			if ( !hasMinimum ) { minimum = 0; }
+			if ( !hasMaximum ) { maximum = int.MaxValue; }
+		} else if ( !hasMinimum ) { throw Unsupported( offset ); }
+		if ( index >= source.Length || source[index] != (byte)'}' ) {
+			throw Invalid( offset, "unclosed counted quantifier" );
+		}
+		index++;
+		if ( maximum < minimum ) { throw Invalid( offset, "repeat maximum is less than minimum" ); }
+		return (minimum, maximum);
+	}
+
+	private void SkipCountedSpace() {
+		while ( index < source.Length && source[index] is (byte)' ' or (byte)'\t' ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			index++;
+		}
+	}
+
+	private bool ReadCount( int offset, out int count ) {
+		count = 0;
+		var start = index;
+		while ( index < source.Length && source[index] is >= (byte)'0' and <= (byte)'9' ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			var digit = source[index++] - (byte)'0';
+			if ( count > ( 65535 - digit ) / 10 ) {
+				throw Invalid( offset, "repeat count exceeds 65535" );
+			}
+			count = count * 10 + digit;
+		}
+		return index > start;
 	}
 
 	private PcreByteNode ParseAtom( int depth ) {
