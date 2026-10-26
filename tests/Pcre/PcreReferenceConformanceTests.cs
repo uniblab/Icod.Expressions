@@ -29,6 +29,7 @@ public sealed class PcreReferenceConformanceTests {
 	[InlineData( "byte-atomic-prior", "^(?:a|ab)(?>b)c$", "61626263", false, false, false, 0, 0, 4 )]
 	[InlineData( "byte-possessive-star", "^a*+a$", "6161", false, false, false, 0, -1, 0 )]
 	[InlineData( "byte-possessive-count", "^a{1,2}+a$", "616161", false, false, false, 0, 0, 3 )]
+	[InlineData( "byte-possessive-empty", "^(?:)*+a$", "61", false, false, false, 0, 0, 1 )]
 	[InlineData( "utf-atomic-scalar", "^(?>é|éé)x$", "C3A9C3A978", true, false, true, 0, -1, 0 )]
 	public void MatchesPinnedReferenceWholeByteSpan( string name, string pattern, string subjectHex,
 		bool utf8, bool caseless, bool invalidUtf, int startOffset, int expectedIndex, int expectedLength ) {

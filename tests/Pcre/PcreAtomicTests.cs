@@ -8,6 +8,7 @@ public sealed class PcreAtomicTests {
 	[Theory]
 	[InlineData( "^(?>a|ab)c$", "abc", false )]
 	[InlineData( "^(?>a|ab)b$", "ab", true )]
+	[InlineData( "^(?>ab|a)c$", "ac", true )]
 	[InlineData( "^(?:a|ab)c$", "abc", true )]
 	[InlineData( "^(?:a|ab)(?>b)c$", "abbc", true )]
 	[InlineData( "^(?>a+?)a$", "aaa", false )]
@@ -18,6 +19,7 @@ public sealed class PcreAtomicTests {
 	[InlineData( "^a{1,2}+a$", "aaa", true )]
 	[InlineData( "^a{2}+a$", "aaa", true )]
 	[InlineData( "^a{1,}+a$", "aa", false )]
+	[InlineData( "^(?:)*+a$", "a", true )]
 	[InlineData( "^(a|ab)++c$", "abc", false )]
 	[InlineData( "^(?>(?>a|ab)|ab)c$", "abc", false )]
 	public void AtomicSectionsCommitTheirFirstSuccessfulPath( string pattern, string subject, bool matches ) {
@@ -70,6 +72,16 @@ public sealed class PcreAtomicTests {
 		var compiled = Compile( "^(?>a|b)c$", new PcreByteOptions { MatchWorkLimit = 2 } );
 		Assert.Equal( PcreByteDiagnosticCode.MatchWorkLimitExceeded,
 			compiled.Match( "ac"u8.ToArray() ).Diagnostic?.Code );
+	}
+
+	[Fact]
+	public void CancellationInterruptsAtomicExecution() {
+		using var cancellation = new CancellationTokenSource();
+		var compiled = Compile( "^(?>a|b)c$", new PcreByteOptions {
+			WorkObserver = count => { if ( count == 5 ) cancellation.Cancel(); }
+		} );
+		Assert.Throws<OperationCanceledException>( () =>
+			compiled.Match( "ac"u8.ToArray(), cancellationToken: cancellation.Token ) );
 	}
 
 	private static PcreCompiledBytePattern Compile( string pattern, PcreByteOptions? options = null ) {
