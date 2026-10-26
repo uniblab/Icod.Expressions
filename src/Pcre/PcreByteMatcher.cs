@@ -139,6 +139,15 @@ internal static class PcreByteMatcher {
 								Step(); // Each attempted interval inspection consumes work.
 								if ( setScalar >= range.Start && setScalar <= range.End ) { contained = true; break; }
 							}
+							if ( !contained ) {
+								foreach ( var predicate in instruction.Predicates.Span ) {
+									Step(); // Each attempted scalar predicate consumes work.
+									if ( ScalarClassContains( predicate.Kind, setScalar ) != predicate.Negated ) {
+										contained = true;
+										break;
+									}
+								}
+							}
 							if ( contained != ( instruction.Second == 1 ) ) {
 								position += setWidth;
 								pc++;
