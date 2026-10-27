@@ -115,3 +115,17 @@ The following three-round Windows x64 run after PR #53 completed all seven sourc
 | long-record | 0.48 → 0.41 | 3,712 → 3,712 B | 3.57 |
 
 The Unicode allocation reduction matches the no-match shortcut's scope. The single run does not explain unrelated dense and multi-pattern timing changes. The backreference allocation and timing remain near their previous values; the next search change explores its captured first byte.
+
+The next three-round Windows x64 run after PR #54 again matched all seven source-byte corpora:
+
+| Workload | Internal ms after #53 → after #54 | Internal allocated after #53 → after #54 | PCRE2 ms after #54 |
+|---|---:|---:|---:|
+| literal | 4.53 → 4.25 | 848,192 → 848,192 B | 5.32 |
+| lookbehind | 7.92 → 6.66 | 848,192 → 848,192 B | 4.78 |
+| backreference | 63.94 → 3.98 | 5,296,864 → 855,904 B | 4.54 |
+| unicode-property | 23.27 → 22.28 | 2,768,136 → 2,768,128 B | 5.29 |
+| dense-only-matching | 5.87 → 4.62 | 1,638,400 → 1,638,400 B | 2.71 |
+| multi-pattern | 19.86 → 25.92 | 4,275,280 → 4,275,280 B | 38.28 |
+| long-record | 0.41 → 1.05 | 3,712 → 3,712 B | 3.31 |
+
+The backreference allocation and timing drop matches the captured-first-byte shortcut's scope. The Unicode workload remains about four times the PCRE2 component time, with allocation for nonmatching records still dominated by UTF-8 fragment preparation. The next change places the proven missing-suffix check before fragment preparation in tolerant invalid-UTF mode; strict mode retains validation before its early return. Other timing differences in this run have no corresponding allocation change and should not be attributed to PR #54.

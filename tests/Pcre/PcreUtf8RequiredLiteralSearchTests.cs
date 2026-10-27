@@ -17,7 +17,7 @@ public sealed class PcreUtf8RequiredLiteralSearchTests {
 			Assert.Null( pattern.Match( record ).Match );
 		}
 		var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
-		Assert.InRange( allocated, 0L, 900_000L );
+		Assert.InRange( allocated, 0L, 300_000L );
 	}
 
 	[Fact]
@@ -28,6 +28,22 @@ public sealed class PcreUtf8RequiredLiteralSearchTests {
 		var result = pattern.Match( new byte[] { 0xCE, 0xBA, 0xFF, (byte)' ', (byte)'x' } );
 		Assert.True( result.IsSuccess, result.Diagnostic?.Message );
 		Assert.Null( result.Match );
+	}
+
+	[Fact]
+	public void TolerantNoMatchRetainsLowWorkLimitAndObserverAccounting() {
+		var input = new byte[] { 0xFF, (byte)'x' };
+		Assert.Equal( PcreByteDiagnosticCode.MatchWorkLimitExceeded,
+			Compile( @"\p{L}+ 世界", new PcreByteOptions {
+				Utf8 = true, Ucp = true, MatchInvalidUtf = true, MatchWorkLimit = 1
+			} ).Match( input ).Diagnostic?.Code );
+		var observed = new List<int>();
+		var result = Compile( @"\p{L}+ 世界", new PcreByteOptions {
+			Utf8 = true, Ucp = true, MatchInvalidUtf = true, WorkObserver = observed.Add
+		} ).Match( input );
+		Assert.True( result.IsSuccess, result.Diagnostic?.Message );
+		Assert.Null( result.Match );
+		Assert.NotEmpty( observed );
 	}
 
 	[Fact]
