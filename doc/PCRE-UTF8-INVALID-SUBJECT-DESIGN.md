@@ -18,6 +18,8 @@ The strict `Utf8` option continues to reject the first malformed subject sequenc
 
 Consuming instructions cannot move beyond a fragment end. `\b`/`\B` classify outside each fragment as nonword. `\z` and `\Z` require the whole-subject end (or the final LF position for `\Z`), while `\A`, `^`, and `$` keep their source or line meanings. Captures remain absolute source-byte spans. The work budget includes the subject scan and search; cancellation is checked during both. The original fragment-edge `\z`/`\Z` rule came from the older local PCRE2 10.42 probe; the pinned PCRE.NET 1.6.0 / PCRE2 10.48 offset matrix corrects it.
 
+The pinned two-byte matrix also corrects an older local expectation for multiline `^`: at a valid fragment's end immediately after CR or LF, the assertion can match before a malformed byte. A fragment edge without a preceding newline remains ineligible. The old local fixture had expected no match for `0A FF` from offset 1 and was revised to match the pinned reference.
+
 This milestone covers supported syntax only. Unicode-version/case-fold conformance, arbitrary lookaround and the full malformed-sequence offset matrix against Grep's pinned PCRE2 10.48 remain release gates. The local reference probe used PCRE2 10.42; fixtures assert behaviors described in PCRE2's Unicode manual and observed in that probe, without claiming version-wide parity.
 
 Reference: https://www.pcre.org/current/doc/html/pcre2unicode.html#SEC8

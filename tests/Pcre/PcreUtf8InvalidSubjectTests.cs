@@ -87,9 +87,10 @@ public sealed class PcreUtf8InvalidSubjectTests {
 	}
 
 	[Fact]
-	public void MultilineStartDoesNotTreatInvalidFragmentEdgeAsNextLine() {
+	public void MultilineStartAtInvalidFragmentEdgeRequiresPrecedingNewline() {
 		var compiled = Compile( "(?m)^" );
-		Assert.Null( compiled.Match( Convert.FromHexString( "0AFF" ), startOffset: 1 ).Match );
+		Assert.Equal( 1, compiled.Match( Convert.FromHexString( "0AFF" ), startOffset: 1 ).Match?.ByteIndex );
+		Assert.Null( compiled.Match( Convert.FromHexString( "61FF" ), startOffset: 1 ).Match );
 		Assert.Equal( 1, compiled.Match( Convert.FromHexString( "0A61" ), startOffset: 1 ).Match?.ByteIndex );
 	}
 
