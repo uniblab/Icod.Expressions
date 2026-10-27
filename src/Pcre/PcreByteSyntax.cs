@@ -34,7 +34,7 @@ internal sealed record PcreByteScalarSet(
 	bool Negated
 ) : PcreByteNode;
 
-internal sealed record PcreByteClass( PcreByteSet Set ) : PcreByteNode;
+internal sealed record PcreByteClass( PcreByteSet Set, bool ExplicitNewline = false ) : PcreByteNode;
 
 internal sealed record PcreByteBackreference( int Number ) : PcreByteNode;
 

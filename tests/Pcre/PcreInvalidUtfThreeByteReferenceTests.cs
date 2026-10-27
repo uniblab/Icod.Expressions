@@ -9,7 +9,7 @@ namespace Icod.Expressions.Tests.Pcre;
 public sealed class PcreInvalidUtfThreeByteReferenceTests {
 	private static readonly string[] Patterns = [
 		"", ".", "a", "é", "a.b", @"(?<=a)b", @"\b", @"\B", "$", @"\Z", @"\z",
-		@"\p{L}", "(?m)^", "(?m)$"
+		@"\p{L}", "(?m)^", "(?m)$", @"\na", @"[\n]a", @"[^\r]a", @"\s?a"
 	];
 	private static readonly byte[] LeadingBytes = [
 		0x61, 0x0A, 0x0D, 0x80, 0xC2, 0xE2, 0xF0, 0xFF
