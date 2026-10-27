@@ -34,6 +34,14 @@ internal static class PcreByteMatcher {
 			workObserver?.Invoke( work );
 			cancellationToken.ThrowIfCancellationRequested();
 		}
+		void SkipFailedLiteralCandidates( long count ) {
+			// A failed leading byte literal costs candidate, instruction and comparison steps.
+			var cost = count * 3;
+			if ( cost > matchWorkLimit - work ) {
+				throw new MatchLimitException( PcreByteDiagnosticCode.MatchWorkLimitExceeded, "match work limit exceeded" );
+			}
+			work += (int)cost;
+		}
 
 		try {
 			var fragments = new List<Fragment>();
@@ -76,6 +84,12 @@ internal static class PcreByteMatcher {
 			var backtrack = new Stack<Frame>();
 			var changes = new List<StateChange>();
 			var atomicDepths = new List<int>();
+			// Keep the observed and cancellable path byte-for-byte accountable to Step().
+			var leadingLiteral = !program.Utf8 && !program.Caseless
+				&& !cancellationToken.CanBeCanceled && workObserver is null
+				&& program.Instructions[0].Opcode == PcreByteOpcode.Literal
+				&& program.Instructions[0].First is >= 0 and <= 255
+				? program.Instructions[0].First : -1;
 			var crossedBarrier = false;
 			foreach ( var fragment in fragments ) {
 				if ( fragment.Start < fragment.End ) { crossedBarrier = false; }
@@ -88,6 +102,15 @@ internal static class PcreByteMatcher {
 					}
 					if ( program.Utf8 && start < fragment.End && ( input.Span[start] & 0xC0 ) == 0x80 ) {
 						continue; // Search candidate boundaries, never continuation bytes.
+					}
+					if ( leadingLiteral >= 0 ) {
+						var next = input.Span.Slice( start, fragment.End - start ).IndexOf( (byte)leadingLiteral );
+						if ( next < 0 ) {
+							SkipFailedLiteralCandidates( (long)fragment.End - start + 1 );
+							break;
+						}
+						SkipFailedLiteralCandidates( next );
+						start += next;
 					}
 					if ( fragment.End < input.Length && start == fragment.End ) {
 						barrierCandidateTried = true;
