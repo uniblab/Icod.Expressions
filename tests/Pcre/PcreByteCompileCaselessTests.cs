@@ -63,10 +63,11 @@ public sealed class PcreByteCompileCaselessTests {
 	}
 
 	[Fact]
-	public void CallerOptionDoesNotEnableUnsupportedFlagUnsetting() {
-		var result = PcreByteCompiler.Compile( "(?-i)a"u8.ToArray(), new PcreByteOptions { Caseless = true } );
-		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
-		Assert.Equal( 0, result.Diagnostic?.ByteOffset );
+	public void LeadingFlagCanUnsetCallerCaseless() {
+		var result = Compile( "(?-i)a"u8.ToArray(), new PcreByteOptions { Caseless = true } )
+			.Match( "A"u8.ToArray() );
+		Assert.True( result.IsSuccess, result.Diagnostic?.Message );
+		Assert.Null( result.Match );
 	}
 
 	[Fact]

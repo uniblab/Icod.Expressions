@@ -72,9 +72,6 @@ public sealed class PcreByteLeadingMultilineTests {
 	[Theory]
 	[InlineData( "a(?m)^", 1 )]
 	[InlineData( "(?m:^)", 0 )]
-	[InlineData( "(?im)^", 0 )]
-	[InlineData( "(?m)(?m)^", 4 )]
-	[InlineData( "(?m)(?s)^", 4 )]
 	public void UnsupportedFlagPlacementRemainsExplicit( string pattern, int offset ) {
 		var result = PcreByteCompiler.Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
 		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );

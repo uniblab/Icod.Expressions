@@ -37,18 +37,17 @@ internal sealed class PcreByteParser {
 	internal bool Caseless => caseless;
 
 	internal PcreByteAlternatives Parse() {
-		if ( utf8 && source.AsSpan().StartsWith( "(?-aD)"u8 ) ) {
-			index = 6;
-			asciiBsD = false;
-		} else if ( utf8 && source.AsSpan().StartsWith( "(?aD)"u8 ) ) {
-			index = 5;
-			asciiBsD = true;
-		} else if ( source.Length >= 4 && source[0] == (byte)'(' && source[1] == (byte)'?'
-			&& ( source[2] is (byte)'s' or (byte)'i' or (byte)'m' ) && source[3] == (byte)')' ) {
-			index = 4;
-			dotAll = source[2] == (byte)'s';
-			if ( source[2] == (byte)'i' ) { caseless = true; }
-			multiline = source[2] == (byte)'m';
+		while ( true ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( utf8 && source.AsSpan( index ).StartsWith( "(?-aD)"u8 ) ) {
+				index += 6;
+				asciiBsD = false;
+			} else if ( utf8 && source.AsSpan( index ).StartsWith( "(?aD)"u8 ) ) {
+				index += 5;
+				asciiBsD = true;
+			} else if ( !TryParseLeadingOptions() ) {
+				break;
+			}
 		}
 		var root = ParseAlternatives( false, 0 );
 		if ( index != source.Length ) {
@@ -61,6 +60,43 @@ internal sealed class PcreByteParser {
 			}
 		}
 		return root;
+	}
+
+	private bool TryParseLeadingOptions() {
+		if ( index + 3 >= source.Length || source[index] != (byte)'('
+			|| source[index + 1] != (byte)'?' ) { return false; }
+		var cursor = index + 2;
+		var unsetting = false;
+		var sawFlag = false;
+		var sawUnsetFlag = false;
+		var setI = false;
+		var setM = false;
+		var setS = false;
+		var unsetI = false;
+		var unsetM = false;
+		var unsetS = false;
+		while ( cursor < source.Length && source[cursor] != (byte)')' ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			var value = source[cursor++];
+			if ( value == (byte)'-' && !unsetting ) {
+				unsetting = true;
+				continue;
+			}
+			if ( value is not (byte)'i' and not (byte)'m' and not (byte)'s' ) { return false; }
+			sawFlag = true;
+			if ( unsetting ) { sawUnsetFlag = true; }
+			switch ( value ) {
+				case (byte)'i': if ( unsetting ) { unsetI = true; } else { setI = true; } break;
+				case (byte)'m': if ( unsetting ) { unsetM = true; } else { setM = true; } break;
+				case (byte)'s': if ( unsetting ) { unsetS = true; } else { setS = true; } break;
+			}
+		}
+		if ( cursor >= source.Length || !sawFlag || unsetting && !sawUnsetFlag ) { return false; }
+		index = cursor + 1;
+		caseless = ( caseless || setI ) && !unsetI;
+		multiline = ( multiline || setM ) && !unsetM;
+		dotAll = ( dotAll || setS ) && !unsetS;
+		return true;
 	}
 
 	private PcreByteAlternatives ParseAlternatives( bool inGroup, int depth ) {

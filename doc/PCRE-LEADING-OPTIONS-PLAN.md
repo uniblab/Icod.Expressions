@@ -26,9 +26,9 @@
 
 **Files:** `tests/Pcre/PcreLeadingOptionCombinationReferenceTests.cs`, four prior unsupported test files, `src/Pcre/PcreByteParser.cs`, `doc/PCRE-DESIGN.md`.
 
-- [ ] Add pinned-reference byte/UTF tests for the review cases, captures and explicit rejection.
-- [ ] Run tests and observe failures on currently unsupported prefixes in Staging CI (local .NET SDK is unavailable).
-- [ ] Parse repeated leading `i`/`m`/`s` set/unset groups and the existing UTF-only `aD` groups in order.
-- [ ] Update superseded unsupported assertions and the feature table.
+- [x] Add pinned-reference byte/UTF tests for the review cases, captures and explicit rejection.
+- [x] Run tests and observe failures on currently unsupported prefixes in Staging CI (local .NET SDK is unavailable): Linux x64 net8.0, 16 new cases failed at the expected compile diagnostic; 1,375 prior tests passed.
+- [x] Parse repeated leading `i`/`m`/`s` set/unset groups and the existing UTF-only `aD` groups in order.
+- [x] Update superseded unsupported assertions and the feature table.
 - [ ] Run six Staging jobs, frozen source, workload smoke and package-only checks; inspect failures and fix regressions.
 - [ ] Review the final diff and leave a PR for user merge.

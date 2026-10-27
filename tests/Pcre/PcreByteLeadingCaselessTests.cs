@@ -70,9 +70,6 @@ public sealed class PcreByteLeadingCaselessTests {
 	[Theory]
 	[InlineData( "a(?i)b", 1 )]
 	[InlineData( "(?i:a)", 0 )]
-	[InlineData( "(?-i)a", 0 )]
-	[InlineData( "(?is)a", 0 )]
-	[InlineData( "(?s)(?i)a", 4 )]
 	public void RejectsUnsupportedFlagPlacementOrCombination( string pattern, int offset ) {
 		var result = PcreByteCompiler.Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
 		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
