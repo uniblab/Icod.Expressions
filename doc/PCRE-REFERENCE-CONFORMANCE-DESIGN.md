@@ -12,6 +12,8 @@ Use a table of stable supported syntax with byte subjects and optional start off
 
 The oracle runs only in tests. The CI's existing net8/net9/net10 and six OS/architecture matrix, frozen GNU corpus and package-only smoke provide integration evidence. This fixture set is deliberately finite: passing does not establish PCRE2 10.48 compatibility or authorize Grep migration. Continue expanding it with focused cases, pinned invalid-UTF offsets, captures and performance gates.
 
+`PcreInvalidUtfOffsetReferenceTests` checks every possible start byte offset, including the end, on a fixed set of valid and malformed UTF-8 subjects. It compares whole-match source-byte spans for empty matches, literal/dot consumption, fixed lookbehind, word and subject-end assertions, and a numbered backreference under Grep's UTF/UCP/ASCII-`\d`/`MatchInvalidUtf` options. This is complete offset coverage only for those selected subjects and patterns; malformed-byte exhaustiveness and general PCRE2 syntax remain open.
+
 ## Options and risks
 
 `PcreRegex8Bit` must receive `PcreOptions.Utf | Ucp | MatchInvalidUtf` plus `PcreExtraCompileOptions.AsciiBsD` for Grep-like UTF cases, and `Caseless` where appropriate. Byte cases omit UTF/UCP. Test-only native reference assets must restore and run on all six matrix RIDs; the library's packed dependency closure must remain unchanged. If a discrepancy appears, first distinguish actual behavior from a different compile option or reference version, then correct the implementation or document a gate with a failing test kept in a draft PR.
