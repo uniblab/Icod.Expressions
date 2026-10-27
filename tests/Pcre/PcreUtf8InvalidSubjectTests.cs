@@ -56,20 +56,23 @@ public sealed class PcreUtf8InvalidSubjectTests {
 	[InlineData( "a\\b", "61FF62", 0 )]
 	[InlineData( "\\b", "FF61", 1 )]
 	[InlineData( "\\B", "FF", 0 )]
-	[InlineData( "\\z", "61FF62", 1 )]
-	[InlineData( "\\Z", "61FF62", 1 )]
-	[InlineData( "a\\z", "61FF62", 0 )]
+	[InlineData( "\\B", "61FF", 2 )]
+	[InlineData( "\\B", "61FFFF", 3 )]
+	[InlineData( "\\z", "61FF62", 3 )]
+	[InlineData( "\\Z", "61FF62", 3 )]
 	[InlineData( "b\\z", "61FF62", 2 )]
 	[InlineData( "^", "FF61", 0 )]
+	[InlineData( "^", "8061", 0 )]
 	[InlineData( "$", "FF61", 2 )]
+	[InlineData( "$", "61FF", 2 )]
 	[InlineData( "", "FF", 0 )]
 	[InlineData( "", "80", 1 )]
-	[InlineData( "\\z", "80FF41", 1 )]
+	[InlineData( "\\z", "80FF41", 3 )]
 	[InlineData( "\\B", "80", 1 )]
 	public void ZeroWidthAssertionsRespectFragmentAndWholeSubjectEdges( string pattern, string hex, int offset ) {
 		var result = Compile( pattern ).Match( Convert.FromHexString( hex ) );
 		Assert.True( result.IsSuccess, result.Diagnostic?.Message );
-		Assert.Equal( new PcreByteCapture( offset, pattern is "a\\z" or "b\\z" or "a\\b" ? 1 : 0 ),
+		Assert.Equal( new PcreByteCapture( offset, pattern is "b\\z" or "a\\b" ? 1 : 0 ),
 			result.Match?.Captures[0] );
 	}
 
@@ -77,11 +80,8 @@ public sealed class PcreUtf8InvalidSubjectTests {
 	[InlineData( "^b", "61FF62" )]
 	[InlineData( "a$", "61FF62" )]
 	[InlineData( "a.b", "61FF62" )]
-	[InlineData( "^", "8061" )]
-	[InlineData( "\\B", "61FF" )]
-	[InlineData( "\\B", "61FFFF" )]
+	[InlineData( "a\\z", "61FF62" )]
 	[InlineData( "\\B", "61FFFF62" )]
-	[InlineData( "$", "61FF" )]
 	public void InvalidSequenceDoesNotBecomeLineOrCharacter( string pattern, string hex ) {
 		Assert.Null( Compile( pattern ).Match( Convert.FromHexString( hex ) ).Match );
 	}
@@ -98,14 +98,14 @@ public sealed class PcreUtf8InvalidSubjectTests {
 		var subject = Convert.FromHexString( "C3A9FFE28241" );
 		Assert.Equal( 5, Compile( "A" ).Match( subject, startOffset: 1 ).Match?.ByteIndex );
 		Assert.Equal( 5, Compile( "A" ).Match( subject, startOffset: 3 ).Match?.ByteIndex );
-		Assert.Equal( 2, Compile( "\\z" ).Match( subject, startOffset: 2 ).Match?.ByteIndex );
+		Assert.Equal( subject.Length, Compile( "\\z" ).Match( subject, startOffset: 2 ).Match?.ByteIndex );
 		Assert.Equal( 3, Compile( "" ).Match( subject, startOffset: 3 ).Match?.ByteIndex );
-		Assert.Equal( 5, Compile( "" ).Match( subject, startOffset: 4 ).Match?.ByteIndex );
+		Assert.Equal( 4, Compile( "" ).Match( subject, startOffset: 4 ).Match?.ByteIndex );
 		Assert.Equal( 2, Compile( "\\z" ).Match( Convert.FromHexString( "6180" ), startOffset: 1 ).Match?.ByteIndex );
 		Assert.Equal( 2, Compile( "\\B" ).Match( Convert.FromHexString( "6180" ), startOffset: 1 ).Match?.ByteIndex );
 		Assert.Equal( 2, Compile( "\\B" ).Match( Convert.FromHexString( "61FF" ), startOffset: 2 ).Match?.ByteIndex );
-		Assert.Equal( 2, Compile( "\\B" ).Match( Convert.FromHexString( "61FFFF" ), startOffset: 2 ).Match?.ByteIndex );
-		Assert.Equal( 2, Compile( "\\B" ).Match( Convert.FromHexString( "6180FF" ), startOffset: 1 ).Match?.ByteIndex );
+		Assert.Equal( 3, Compile( "\\B" ).Match( Convert.FromHexString( "61FFFF" ), startOffset: 2 ).Match?.ByteIndex );
+		Assert.Equal( 3, Compile( "\\B" ).Match( Convert.FromHexString( "6180FF" ), startOffset: 1 ).Match?.ByteIndex );
 		Assert.Equal( PcreByteDiagnosticCode.InvalidStartOffset,
 			Compile( "A" ).Match( subject, startOffset: 7 ).Diagnostic?.Code );
 	}

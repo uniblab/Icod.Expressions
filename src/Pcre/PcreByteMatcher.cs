@@ -101,7 +101,7 @@ internal static class PcreByteMatcher {
 						}
 						if ( hasValidScalar ) {
 							fragments.Add( new( fragmentStart, offset ) );
-						} else if ( ( input.Span[offset] & 0xC0 ) != 0x80 ) {
+						} else if ( offset == 0 ) {
 							fragments.Add( new( offset, offset ) );
 						}
 						hasValidScalar = false;
@@ -126,6 +126,16 @@ internal static class PcreByteMatcher {
 				// Strict mode must validate UTF-8 and the start boundary first.
 				return new( null, null );
 			}
+			if ( program.MatchInvalidUtf && program.Instructions.Length == 1
+				&& program.Instructions[0].Opcode == PcreByteOpcode.Accept ) {
+				// PCRE2 permits an empty pattern at the requested byte offset,
+				// including inside a valid scalar or a malformed byte run.
+				Step(); // Candidate start.
+				Step(); // Accept transition.
+				var emptyCaptures = new PcreByteCapture?[groupCount + 1];
+				emptyCaptures[0] = new( startOffset, 0 );
+				return new( new PcreByteMatch( startOffset, 0, Array.AsReadOnly( emptyCaptures ) ), null );
+			}
 			// Candidate positions share storage; a successful match returns before the storage is reused.
 			var captures = new PcreByteCapture?[groupCount + 1];
 			var captureStarts = new int[groupCount + 1];
@@ -134,16 +144,8 @@ internal static class PcreByteMatcher {
 			var changes = new List<StateChange>();
 			var atomicDepths = new List<int>();
 			// Keep the observed and cancellable path byte-for-byte accountable to Step().
-			var crossedBarrier = false;
 			foreach ( var fragment in fragments ) {
-				if ( fragment.Start < fragment.End ) { crossedBarrier = false; }
-				if ( fragment.Start == fragment.End && crossedBarrier ) { continue; }
-				var barrierCandidateTried = false;
 				for ( var start = Math.Max( startOffset, fragment.Start ); start <= fragment.End; start++ ) {
-					if ( program.MatchInvalidUtf && start == startOffset && start == fragment.End
-						&& start < input.Length && ( input.Span[start] & 0xC0 ) == 0x80 ) {
-						continue; // Starting at a stray continuation skips it; an earlier search can see the preceding edge.
-					}
 					if ( program.Utf8 && start < fragment.End && ( input.Span[start] & 0xC0 ) == 0x80 ) {
 						continue; // Search candidate boundaries, never continuation bytes.
 					}
@@ -155,9 +157,6 @@ internal static class PcreByteMatcher {
 						}
 						SkipFailedLiteralCandidates( next );
 						start += next;
-					}
-					if ( fragment.End < input.Length && start == fragment.End ) {
-						barrierCandidateTried = true;
 					}
 					Step(); // Candidate start.
 					var position = start;
@@ -364,7 +363,7 @@ internal static class PcreByteMatcher {
 							if ( position == 0 ) { pc++; } else { failed = true; }
 							break;
 						case PcreByteOpcode.End:
-							if ( position == fragment.End ) { pc++; } else { failed = true; }
+							if ( position == input.Length ) { pc++; } else { failed = true; }
 							break;
 						case PcreByteOpcode.StartLine:
 							if ( position == 0 || ( position > fragment.Start && position < fragment.End
@@ -456,7 +455,6 @@ internal static class PcreByteMatcher {
 					if ( backtrack.Count == 0 ) { changes.Clear(); }
 				}
 			}
-				if ( barrierCandidateTried ) { crossedBarrier = true; }
 			}
 			return new( null, null );
 		} catch ( MatchLimitException error ) {
