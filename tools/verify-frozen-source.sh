@@ -4,7 +4,9 @@ set -eu
 cd "$(dirname "$0")/.."
 
 count=0
+cr=$(printf '\r')
 while read -r expected path; do
+    path=${path%"$cr"}
     actual=$(git hash-object "$path")
     if [ "$actual" != "$expected" ]; then
         printf 'Source drift: %s (expected %s, got %s)\n' "$path" "$expected" "$actual" >&2

@@ -90,6 +90,10 @@ jobs:
               throw "Frozen characterization test count drift: $framework"
             }
           }
+      - name: Verify frozen source manifest in Git Bash
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: sh tools/verify-frozen-source.sh
       - name: Compare Grep PCRE component workload smoke
         if: matrix.os == 'ubuntu-latest'
         run: dotnet run --project tools/PcreWorkloadComparison/PcreWorkloadComparison.csproj -c Staging -- --smoke
