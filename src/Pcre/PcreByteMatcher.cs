@@ -103,6 +103,18 @@ internal static class PcreByteMatcher {
 			} else {
 				fragments.Add( new( 0, input.Length ) );
 			}
+			if ( !program.RequiredLiteralSuffix.IsEmpty && !cancellationToken.CanBeCanceled
+				&& workObserver is null ) {
+				var candidates = (long)input.Length - startOffset + 1;
+				// For this single class+ and at most eight literal scalars, 256 steps
+				// per candidate and byte is above the VM's worst-case no-match work.
+				// Small inputs also stay well below the backtrack-depth limit.
+				if ( candidates <= 64
+					&& input.Length + 256L * candidates * candidates <= matchWorkLimit
+					&& input.Span.Slice( startOffset ).IndexOf( program.RequiredLiteralSuffix.Span ) < 0 ) {
+					return new( null, null );
+				}
+			}
 			// Candidate positions share storage; a successful match returns before the storage is reused.
 			var captures = new PcreByteCapture?[groupCount + 1];
 			var captureStarts = new int[groupCount + 1];
