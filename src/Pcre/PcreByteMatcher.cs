@@ -92,6 +92,7 @@ internal static class PcreByteMatcher {
 					var captureStarts = new int[groupCount + 1];
 					var marks = new int[program.MarkCount];
 					var backtrack = new Stack<Frame>();
+					var changes = new List<StateChange>();
 					var atomicDepths = new List<int>();
 					while ( true ) {
 						Step(); // Instruction transition.
@@ -309,10 +310,18 @@ internal static class PcreByteMatcher {
 							} else { failed = true; }
 							break;
 						case PcreByteOpcode.CaptureStart:
+							if ( backtrack.Count > 0 ) {
+								changes.Add( new( StateKind.CaptureStart, instruction.First,
+									captureStarts[instruction.First], null ) );
+							}
 							captureStarts[instruction.First] = position;
 							pc++;
 							break;
 						case PcreByteOpcode.CaptureEnd:
+							if ( backtrack.Count > 0 ) {
+								changes.Add( new( StateKind.Capture, instruction.First, 0,
+									captures[instruction.First] ) );
+							}
 							captures[instruction.First] = new( captureStarts[instruction.First], position - captureStarts[instruction.First] );
 							pc++;
 							break;
@@ -320,17 +329,16 @@ internal static class PcreByteMatcher {
 							if ( backtrack.Count >= MaximumBacktrackFrames ) {
 								throw new MatchLimitException( PcreByteDiagnosticCode.MatchDepthLimitExceeded, "backtrack stack limit exceeded" );
 							}
-							backtrack.Push( new Frame(
-								instruction.Second, position,
-								(PcreByteCapture?[])captures.Clone(), (int[])captureStarts.Clone(), (int[])marks.Clone(),
-								atomicDepths.ToArray()
-							) );
+							backtrack.Push( new Frame( instruction.Second, position, changes.Count, atomicDepths.Count ) );
 							pc = instruction.First;
 							break;
 						case PcreByteOpcode.Jump:
 							pc = instruction.First;
 							break;
 						case PcreByteOpcode.Mark:
+							if ( backtrack.Count > 0 ) {
+								changes.Add( new( StateKind.Mark, instruction.First, marks[instruction.First], null ) );
+							}
 							marks[instruction.First] = position;
 							pc++;
 							break;
@@ -345,6 +353,7 @@ internal static class PcreByteMatcher {
 						case PcreByteOpcode.AtomicExit:
 							var boundary = atomicDepths[^1];
 							while ( backtrack.Count > boundary ) { backtrack.Pop(); }
+							if ( backtrack.Count == 0 ) { changes.Clear(); }
 							atomicDepths.RemoveAt( atomicDepths.Count - 1 );
 							pc++;
 							break;
@@ -359,10 +368,18 @@ internal static class PcreByteMatcher {
 					var frame = backtrack.Pop();
 					pc = frame.Pc;
 					position = frame.Position;
-					captures = frame.Captures;
-					captureStarts = frame.CaptureStarts;
-					marks = frame.Marks;
-					atomicDepths = new List<int>( frame.AtomicDepths );
+					for ( var changeIndex = changes.Count - 1; changeIndex >= frame.ChangeCount; changeIndex-- ) {
+						var change = changes[changeIndex];
+						switch ( change.Kind ) {
+						case StateKind.Capture: captures[change.Index] = change.PriorCapture; break;
+						case StateKind.CaptureStart: captureStarts[change.Index] = change.PriorValue; break;
+						case StateKind.Mark: marks[change.Index] = change.PriorValue; break;
+						default: throw new InvalidOperationException( "Unknown PCRE journal entry." );
+						}
+					}
+					changes.RemoveRange( frame.ChangeCount, changes.Count - frame.ChangeCount );
+					atomicDepths.RemoveRange( frame.AtomicDepth, atomicDepths.Count - frame.AtomicDepth );
+					if ( backtrack.Count == 0 ) { changes.Clear(); }
 				}
 			}
 				if ( barrierCandidateTried ) { crossedBarrier = true; }
@@ -517,10 +534,13 @@ internal static class PcreByteMatcher {
 			or UnicodeCategory.Format;
 	}
 
-	private sealed record Frame(
-		int Pc, int Position, PcreByteCapture?[] Captures, int[] CaptureStarts, int[] Marks,
-		int[] AtomicDepths
+	private enum StateKind : byte { Capture, CaptureStart, Mark }
+
+	private readonly record struct StateChange(
+		StateKind Kind, int Index, int PriorValue, PcreByteCapture? PriorCapture
 	);
+
+	private readonly record struct Frame( int Pc, int Position, int ChangeCount, int AtomicDepth );
 
 	private sealed class MatchLimitException( PcreByteDiagnosticCode code, string message ) : Exception( message ) {
 		internal PcreByteDiagnosticCode Code { get; } = code;

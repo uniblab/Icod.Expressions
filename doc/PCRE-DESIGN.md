@@ -14,6 +14,8 @@ This is an alpha design. The current package's legacy namespaces and any experim
 
 The internal foundation recognizes raw byte literals (including NUL and high bytes), ordered `|`, capturing and noncapturing parentheses, `^` and `$` at whole-input boundaries, and greedy/lazy `*`, `+`, and `?`. Stacked syntax slices add dot, selected literal/control/hex escapes, non-UCP ASCII `\d`, `\s`, `\w` with complements, ordinary byte brackets with fourteen ASCII POSIX class names, and single-digit numbered backreferences. Numbered capture spans include group zero. Compile-time diagnostics reject malformed groups, quantifiers and classes. Backtracking has per-match work and saved-path limits with distinct diagnostics, and cancellation can interrupt it. This internal subset is not a public PCRE feature claim.
 
+The internal byte VM journals prior capture, capture-start, and repetition-mark values while saved paths exist. Split frames retain byte offsets and journal checkpoints instead of cloning all capture and mark arrays. Atomic pruning discards inner paths while preserving outer fallbacks. A warmed allocation regression guards this internal improvement; Grep's documented correctness and performance workloads still require separate comparison before consumer migration.
+
 | Syntax or mode | Status for the draft byte foundation |
 |---|---|
 | Raw bytes, `|`, capturing groups, anchors, `*`, `+`, `?` and their lazy forms | Implemented for the internal API. |
