@@ -90,6 +90,9 @@ jobs:
               throw "Frozen characterization test count drift: $framework"
             }
           }
+      - name: Compare Grep PCRE component workload smoke
+        if: matrix.os == 'ubuntu-latest'
+        run: dotnet run --project tools/PcreWorkloadComparison/PcreWorkloadComparison.csproj -c Staging -- --smoke
       - name: Verify exact extraction parity
         shell: bash
         run: |
