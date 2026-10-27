@@ -9,6 +9,11 @@ internal static class PcreUtf8 {
 		scalar = 0;
 		width = 0;
 		if ( offset < 0 || offset >= source.Length ) { return false; }
+		if ( source[offset] < 0x80 ) {
+			scalar = source[offset];
+			width = 1;
+			return true;
+		}
 		if ( Rune.DecodeFromUtf8( source[offset..], out var rune, out width ) != OperationStatus.Done ) {
 			return false;
 		}
