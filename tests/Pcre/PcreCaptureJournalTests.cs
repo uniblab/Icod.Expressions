@@ -49,6 +49,19 @@ public sealed class PcreCaptureJournalTests {
 		Assert.InRange( allocated, 0L, 350_000L );
 	}
 
+	[Fact]
+	public void UnmatchedLongRecordDoesNotAllocateForEveryCandidate() {
+		var pattern = Compile( "TARGET" );
+		var subject = Encoding.ASCII.GetBytes( new string( 'x', 65_536 ) );
+		Assert.Null( pattern.Match( subject ).Match ); // Warm up JIT and the matching path.
+		var before = GC.GetAllocatedBytesForCurrentThread();
+		var result = pattern.Match( subject );
+		var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+		Assert.True( result.IsSuccess, result.Diagnostic?.Message );
+		Assert.Null( result.Match );
+		Assert.InRange( allocated, 0L, 300_000L );
+	}
+
 	private static PcreCompiledBytePattern Compile( string pattern ) {
 		var result = PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( pattern ) );
 		Assert.True( result.IsSuccess, result.Diagnostic?.Message );
