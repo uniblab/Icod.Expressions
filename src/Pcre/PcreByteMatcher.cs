@@ -69,6 +69,13 @@ internal static class PcreByteMatcher {
 			} else {
 				fragments.Add( new( 0, input.Length ) );
 			}
+			// Candidate positions share storage; a successful match returns before the storage is reused.
+			var captures = new PcreByteCapture?[groupCount + 1];
+			var captureStarts = new int[groupCount + 1];
+			var marks = new int[program.MarkCount];
+			var backtrack = new Stack<Frame>();
+			var changes = new List<StateChange>();
+			var atomicDepths = new List<int>();
 			var crossedBarrier = false;
 			foreach ( var fragment in fragments ) {
 				if ( fragment.Start < fragment.End ) { crossedBarrier = false; }
@@ -88,12 +95,12 @@ internal static class PcreByteMatcher {
 					Step(); // Candidate start.
 					var position = start;
 					var pc = 0;
-					var captures = new PcreByteCapture?[groupCount + 1];
-					var captureStarts = new int[groupCount + 1];
-					var marks = new int[program.MarkCount];
-					var backtrack = new Stack<Frame>();
-					var changes = new List<StateChange>();
-					var atomicDepths = new List<int>();
+					Array.Clear( captures );
+					Array.Clear( captureStarts );
+					Array.Clear( marks );
+					backtrack.Clear();
+					changes.Clear();
+					atomicDepths.Clear();
 					while ( true ) {
 						Step(); // Instruction transition.
 						var instruction = program.Instructions[pc];
