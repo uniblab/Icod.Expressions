@@ -18,6 +18,8 @@ The oracle runs only in tests. The CI's existing net8/net9/net10 and six OS/arch
 
 `PcreInvalidUtfTwoByteReferenceTests` checks every possible first byte paired with 24 selected second bytes, including ASCII controls, CR/LF, continuation bytes, leading bytes, and malformed tails. Eleven supported patterns run at all three start offsets with Grep-equivalent UTF/UCP/ASCII-`\d`/invalid-UTF and CRLF newline options. The finite 6,144-subject matrix covers valid two-byte scalars and malformed fragments, but it is not exhaustive across both byte positions, longer subjects, or PCRE2 syntax.
 
+The two-byte oracle also checks zero-width multiline `^` at the end of a valid fragment followed by malformed UTF. Such an internal fragment edge may be a line start after CR or LF even though no consuming atom may cross into the malformed byte. Absolute subject end continues to disallow the final newline position for multiline `^`.
+
 ## Options and risks
 
 `PcreRegex8Bit` must receive `PcreOptions.Utf | Ucp | MatchInvalidUtf` plus `PcreExtraCompileOptions.AsciiBsD` for Grep-like UTF cases, and `Caseless` where appropriate. Byte cases omit UTF/UCP. Test-only native reference assets must restore and run on all six matrix RIDs; the library's packed dependency closure must remain unchanged. If a discrepancy appears, first distinguish actual behavior from a different compile option or reference version, then correct the implementation or document a gate with a failing test kept in a draft PR.
