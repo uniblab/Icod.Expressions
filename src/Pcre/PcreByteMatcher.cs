@@ -467,6 +467,13 @@ internal static class PcreByteMatcher {
 					atomicDepths.RemoveRange( frame.AtomicDepth, atomicDepths.Count - frame.AtomicDepth );
 					if ( backtrack.Count == 0 ) { changes.Clear(); }
 				}
+				if ( program.AnyCrLfNewline && !program.ExplicitNewline
+					&& start + 1 < fragment.End && input.Span[start] == (byte)'\r'
+					&& input.Span[start + 1] == (byte)'\n' ) {
+					// After a failed unanchored attempt at CR, PCRE2 advances past
+					// the entire pair unless the pattern explicitly mentions CR or LF.
+					start++;
+				}
 			}
 			}
 			return new( null, null );

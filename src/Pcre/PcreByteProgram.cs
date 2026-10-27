@@ -36,7 +36,7 @@ internal sealed record PcreByteInstruction(
 
 internal sealed record PcreByteProgram(
 	PcreByteInstruction[] Instructions, int MarkCount, bool Caseless, bool Utf8, bool MatchInvalidUtf,
-	ReadOnlyMemory<byte> RequiredLiteralSuffix, bool AnyCrLfNewline
+	ReadOnlyMemory<byte> RequiredLiteralSuffix, bool AnyCrLfNewline, bool ExplicitNewline
 );
 
 /// <summary>Compiles the supported AST into ordered bytecode with explicit backtrack edges.</summary>
@@ -67,7 +67,38 @@ internal sealed class PcreByteProgramCompiler {
 		CompileAlternatives( root );
 		Emit( PcreByteOpcode.Accept );
 		return new( instructions.ToArray(), markCount, caseless, utf8, matchInvalidUtf,
-			FindRequiredLiteralSuffix( root ), anyCrLfNewline );
+			FindRequiredLiteralSuffix( root ), anyCrLfNewline, HasExplicitNewline( root ) );
+	}
+
+	private static bool HasExplicitNewline( PcreByteAlternatives alternatives ) {
+		foreach ( var branch in alternatives.Branches ) {
+			foreach ( var node in branch ) {
+				if ( HasExplicitNewline( node ) ) { return true; }
+			}
+		}
+		return false;
+	}
+
+	private static bool HasExplicitNewline( PcreByteNode node ) => node switch {
+		PcreByteLiteral literal => literal.Value is '\r' or '\n',
+		PcreByteClass characterClass => characterClass.ExplicitNewline,
+		PcreByteScalarSet scalarSet => HasExplicitNewline( scalarSet ),
+		PcreByteLiteralAssertion assertion => assertion.Bytes.Span.IndexOf( (byte)'\r' ) >= 0
+			|| assertion.Bytes.Span.IndexOf( (byte)'\n' ) >= 0,
+		PcreByteGroup group => HasExplicitNewline( group.Body ),
+		PcreByteNoncapturingGroup group => HasExplicitNewline( group.Body ),
+		PcreByteAtomic atomic => HasExplicitNewline( atomic.Child ),
+		PcreByteRepeat repeat => HasExplicitNewline( repeat.Child ),
+		_ => false
+	};
+
+	private static bool HasExplicitNewline( PcreByteScalarSet set ) {
+		if ( set.Negated ) { return false; }
+		foreach ( var range in set.Ranges.Span ) {
+			if ( range.Start <= '\n' && range.End >= '\n'
+				|| range.Start <= '\r' && range.End >= '\r' ) { return true; }
+		}
+		return false;
 	}
 
 	private ReadOnlyMemory<byte> FindRequiredLiteralSuffix( PcreByteAlternatives root ) {

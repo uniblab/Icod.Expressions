@@ -405,6 +405,7 @@ internal sealed class PcreByteParser {
 		var negated = index < source.Length && source[index] == (byte)'^';
 		if ( negated ) { index++; }
 		var hasItem = false;
+		var explicitNewline = false;
 		var set = default(PcreByteSet);
 		var specialScanCursor = index;
 		var nextClosingBracket = -1;
@@ -412,9 +413,10 @@ internal sealed class PcreByteParser {
 			cancellationToken.ThrowIfCancellationRequested();
 			if ( source[index] == (byte)']' && hasItem ) {
 				index++;
-				return new PcreByteClass( negated ? set.Complement() : set );
+				return new PcreByteClass( negated ? set.Complement() : set, !negated && explicitNewline );
 			}
 			var item = ParseBracketItem( ref specialScanCursor, ref nextClosingBracket );
+			if ( item.Value is (byte)'\r' or (byte)'\n' ) { explicitNewline = true; }
 			if ( !item.Value.HasValue && index < source.Length && source[index] == (byte)'-'
 				&& index + 1 < source.Length && source[index + 1] != (byte)']' ) {
 				throw Invalid( index, "a character class cannot start a range" );
@@ -425,6 +427,10 @@ internal sealed class PcreByteParser {
 				var end = ParseBracketItem( ref specialScanCursor, ref nextClosingBracket );
 				if ( !end.Value.HasValue || end.Value.Value < item.Value.Value ) {
 					throw Invalid( hyphenOffset, "range endpoints must be ordered literal bytes" );
+				}
+				if ( item.Value.Value <= (byte)'\n' && end.Value.Value >= (byte)'\n'
+					|| item.Value.Value <= (byte)'\r' && end.Value.Value >= (byte)'\r' ) {
+					explicitNewline = true;
 				}
 				var range = PcreByteSet.Range( item.Value.Value, end.Value.Value );
 				set = set.Union( caseless ? range.AsciiCaseClosure() : range );

@@ -20,6 +20,10 @@ The oracle runs only in tests. The CI's existing net8/net9/net10 and six OS/arch
 
 The two-byte oracle also checks zero-width multiline `^` at the end of a valid fragment followed by malformed UTF. Such an internal fragment edge may be a line start after CR or LF even though no consuming atom may cross into the malformed byte. Absolute subject end continues to disallow the final newline position for multiline `^`.
 
+`PcreInvalidUtfThreeByteReferenceTests` checks eight selected first bytes, all 256 middle bytes, and eight selected final bytes (16,384 subjects) at all four start offsets. Eighteen supported patterns include two-byte literals, dot between literals, fixed lookbehind, word boundaries, newline assertions, explicit CR/LF literals and implicit whitespace, under the same Grep-equivalent options. This explores incomplete two-, three- and four-byte sequences alongside valid scalars and CRLF boundaries. The first and final byte positions are sampled, so the fixture remains a finite gate rather than exhaustive malformed-subject conformance.
+
+The three-byte oracle exposed PCRE2's unanchored CRLF advancement rule: after a failed attempt at CR, a pattern without an explicit CR or LF match skips the following LF. Literal CR/LF, their escape forms, and positive literal bracket members are explicit; `\s` and negated bracket members are not. Preserve a caller start offset that begins directly at LF. See [PCRE2 newline handling](https://www.pcre.org/current/doc/html/pcre2api.html).
+
 ## Options and risks
 
 `PcreRegex8Bit` must receive `PcreOptions.Utf | Ucp | MatchInvalidUtf` plus `PcreExtraCompileOptions.AsciiBsD` for Grep-like UTF cases, and `Caseless` where appropriate. Byte cases omit UTF/UCP. Test-only native reference assets must restore and run on all six matrix RIDs; the library's packed dependency closure must remain unchanged. If a discrepancy appears, first distinguish actual behavior from a different compile option or reference version, then correct the implementation or document a gate with a failing test kept in a draft PR.
