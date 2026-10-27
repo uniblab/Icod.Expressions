@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 
 namespace Icod.Expressions.Pcre;
 
@@ -34,7 +35,8 @@ internal sealed record PcreByteInstruction(
 );
 
 internal sealed record PcreByteProgram(
-	PcreByteInstruction[] Instructions, int MarkCount, bool Caseless, bool Utf8, bool MatchInvalidUtf
+	PcreByteInstruction[] Instructions, int MarkCount, bool Caseless, bool Utf8, bool MatchInvalidUtf,
+	ReadOnlyMemory<byte> RequiredLiteralSuffix
 );
 
 /// <summary>Compiles the supported AST into ordered bytecode with explicit backtrack edges.</summary>
@@ -61,7 +63,31 @@ internal sealed class PcreByteProgramCompiler {
 	internal PcreByteProgram Compile( PcreByteAlternatives root ) {
 		CompileAlternatives( root );
 		Emit( PcreByteOpcode.Accept );
-		return new( instructions.ToArray(), markCount, caseless, utf8, matchInvalidUtf );
+		return new( instructions.ToArray(), markCount, caseless, utf8, matchInvalidUtf,
+			FindRequiredLiteralSuffix( root ) );
+	}
+
+	private ReadOnlyMemory<byte> FindRequiredLiteralSuffix( PcreByteAlternatives root ) {
+		// A single scalar-class + followed only by literals must consume this suffix.
+		// Restrict the shape so a bounded no-match shortcut can preserve VM limits.
+		if ( !utf8 || caseless || root.Branches.Count != 1 ) { return default; }
+		var branch = root.Branches[0];
+		if ( branch.Count is < 3 or > 9
+			|| branch[0] is not PcreByteRepeat {
+				Child: PcreByteScalarClass, Minimum: 1, Maximum: int.MaxValue, Greedy: true, Offset: -1
+			} ) { return default; }
+		var suffix = new byte[( branch.Count - 1 ) * 4];
+		var length = 0;
+		for ( var index = 1; index < branch.Count; index++ ) {
+			if ( branch[index] is not PcreByteLiteral literal
+				|| !Rune.TryCreate( literal.Value, out var scalar )
+				|| !scalar.TryEncodeToUtf8( suffix.AsSpan( length ), out var width ) ) {
+				return default;
+			}
+			length += width;
+		}
+		Array.Resize( ref suffix, length );
+		return suffix;
 	}
 
 	private int Emit( PcreByteOpcode opcode, int first = 0, int second = 0, PcreByteSet set = default,
