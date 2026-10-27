@@ -14,6 +14,8 @@ The oracle runs only in tests. The CI's existing net8/net9/net10 and six OS/arch
 
 `PcreInvalidUtfOffsetReferenceTests` checks every possible start byte offset, including the end, on a fixed set of valid and malformed UTF-8 subjects. It compares whole-match source-byte spans for empty matches, literal/dot consumption, fixed lookbehind, word and subject-end assertions, and a numbered backreference under Grep's UTF/UCP/ASCII-`\d`/`MatchInvalidUtf` options. This is complete offset coverage only for those selected subjects and patterns; malformed-byte exhaustiveness and general PCRE2 syntax remain open.
 
+`PcreInvalidUtfSingleByteReferenceTests` also checks all 256 one-byte subjects at both start offsets with empty and dot patterns, word and subject assertions, a Unicode letter property and ASCII `\d`. It compares the byte span with the same pinned reference and reports the first 25 discrepancies while counting all of them. This exhausts one-byte inputs for this fixed pattern set, not multi-byte subjects, all patterns or PCRE2 compatibility.
+
 ## Options and risks
 
 `PcreRegex8Bit` must receive `PcreOptions.Utf | Ucp | MatchInvalidUtf` plus `PcreExtraCompileOptions.AsciiBsD` for Grep-like UTF cases, and `Caseless` where appropriate. Byte cases omit UTF/UCP. Test-only native reference assets must restore and run on all six matrix RIDs; the library's packed dependency closure must remain unchanged. If a discrepancy appears, first distinguish actual behavior from a different compile option or reference version, then correct the implementation or document a gate with a failing test kept in a draft PR.
