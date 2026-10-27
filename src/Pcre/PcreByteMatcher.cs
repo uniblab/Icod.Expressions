@@ -136,6 +136,12 @@ internal static class PcreByteMatcher {
 				emptyCaptures[0] = new( startOffset, 0 );
 				return new( new PcreByteMatch( startOffset, 0, Array.AsReadOnly( emptyCaptures ) ), null );
 			}
+			if ( program.MatchInvalidUtf && program.CanMatchEmptyAtAnyOffset
+				&& startOffset < input.Length && !PcreUtf8.TryRead( input.Span, startOffset, out _, out _ ) ) {
+				// PCRE2 can accept a zero-width path exactly at a requested byte offset,
+				// including inside a scalar or malformed run. Consumption remains barred.
+				fragments.Insert( 0, new( startOffset, startOffset ) );
+			}
 			// Candidate positions share storage; a successful match returns before the storage is reused.
 			var captures = new PcreByteCapture?[groupCount + 1];
 			var captureStarts = new int[groupCount + 1];
