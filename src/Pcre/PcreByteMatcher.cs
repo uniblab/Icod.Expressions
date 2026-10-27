@@ -188,7 +188,8 @@ internal static class PcreByteMatcher {
 							Step(); // Attempted scalar consumption.
 							if ( position < fragment.End
 								&& PcreUtf8.TryRead( input.Span, position, out var value, out var scalarWidth )
-								&& ( instruction.First == 1 || value != (int)'\n' ) ) {
+								&& ( instruction.First == 1 || value != (int)'\n'
+									&& ( !program.AnyCrLfNewline || value != (int)'\r' ) ) ) {
 								position += scalarWidth;
 								pc++;
 							} else { failed = true; }
@@ -367,18 +368,29 @@ internal static class PcreByteMatcher {
 							break;
 						case PcreByteOpcode.StartLine:
 							if ( position == 0 || ( position > fragment.Start && position < fragment.End
-								&& input.Span[position - 1] == (byte)'\n' ) ) {
+								&& ( input.Span[position - 1] == (byte)'\n'
+									|| program.AnyCrLfNewline && input.Span[position - 1] == (byte)'\r'
+										&& ( input.Span[position] != (byte)'\n' || position == startOffset ) ) ) ) {
 								pc++;
 							} else { failed = true; }
 							break;
 						case PcreByteOpcode.EndLine:
-							if ( position == input.Length || ( position < fragment.End && input.Span[position] == (byte)'\n' ) ) {
+							if ( position == input.Length || ( position < fragment.End
+							&& ( input.Span[position] == (byte)'\n'
+								&& ( !program.AnyCrLfNewline || position == startOffset || position == 0
+									|| input.Span[position - 1] != (byte)'\r' )
+								|| program.AnyCrLfNewline && input.Span[position] == (byte)'\r' ) ) ) {
 								pc++;
 							} else { failed = true; }
 							break;
 						case PcreByteOpcode.EndBeforeFinalLf:
 							var end = instruction.First == 1 ? fragment.End : input.Length;
-							if ( position == end || ( position == end - 1 && input.Span[position] == (byte)'\n' ) ) {
+							if ( position == end || ( position == end - 1 && input.Span[position] == (byte)'\n'
+								&& ( !program.AnyCrLfNewline || position == startOffset || position == 0
+									|| input.Span[position - 1] != (byte)'\r' ) )
+							|| program.AnyCrLfNewline && ( position == end - 1 && input.Span[position] == (byte)'\r'
+								|| position == end - 2 && input.Span[position] == (byte)'\r'
+									&& input.Span[position + 1] == (byte)'\n' ) ) {
 								pc++;
 							} else { failed = true; }
 							break;

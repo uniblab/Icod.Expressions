@@ -10,6 +10,8 @@ internal sealed record PcreByteOptions {
 	public bool MatchInvalidUtf { get; init; }
 	public bool Ucp { get; init; }
 	public bool AsciiBsD { get; init; }
+	/// <summary>Recognize CR, LF, and CRLF as newlines, as in Grep's pinned PCRE2 build.</summary>
+	public bool AnyCrLfNewline { get; init; }
 
 	/// <summary>Test-only progress hook used to cancel a running match deterministically.</summary>
 	internal Action<int>? WorkObserver { get; init; }
