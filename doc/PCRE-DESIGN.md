@@ -81,6 +81,8 @@ The matrix is the first consumer floor, not the complete PCRE2 syntax promise. E
 
 `doc/PCRE-GREP-CONSUMER-FIXTURES.md` maps every current Grep `PcreTests.cs` case to an engine byte fixture or a consumer-owned behavior. `tests/Pcre/PcreGrepConsumerFixtureTests.cs` applies Grep's C/POSIX and UTF-8 options to the pinned reference and the internal matcher on the same bytes, and explicitly rejects selected pending syntax. The inventory also names the Grep workloads that still need correctness and performance comparison.
 
+`tools/PcreWorkloadComparison` reproduces the seven pinned Grep PCRE benchmark inputs at the matcher-component level. Its `--smoke` mode verifies byte spans and selection on bounded input in Linux x64 Staging CI; `--measure` verifies full inputs and prints alternating-round timings and allocations for a controlled reference host. The tool does not time Grep's command path, and these measurements cannot be compared directly to published 1.6.0 command timings. See `doc/PCRE-GREP-WORKLOAD-PROBE-DESIGN.md` for provenance and remaining gates.
+
 ## Delivery and exit gates
 
 1. Freeze Grep and reference-engine input/output fixtures, including malformed byte and cancellation/resource cases. Record an explicit syntax coverage matrix.
