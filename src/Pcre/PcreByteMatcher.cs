@@ -61,6 +61,13 @@ internal static class PcreByteMatcher {
 				return new( null, null );
 			}
 		}
+		var unobservedUnicodeSearch = !cancellationToken.CanBeCanceled && workObserver is null
+			&& !program.RequiredLiteralSuffix.IsEmpty;
+		if ( unobservedUnicodeSearch && program.MatchInvalidUtf
+			&& MissingRequiredLiteralSuffixWithinBudget( program, input.Span, startOffset, matchWorkLimit ) ) {
+			// Tolerant mode has no invalid-subject diagnostic to preserve.
+			return new( null, null );
+		}
 		var work = 0;
 		void Step() {
 			cancellationToken.ThrowIfCancellationRequested();
@@ -114,17 +121,10 @@ internal static class PcreByteMatcher {
 			} else {
 				fragments.Add( new( 0, input.Length ) );
 			}
-			if ( !program.RequiredLiteralSuffix.IsEmpty && !cancellationToken.CanBeCanceled
-				&& workObserver is null ) {
-				var candidates = (long)input.Length - startOffset + 1;
-				// For this single class+ and at most eight literal scalars, 256 steps
-				// per candidate and byte is above the VM's worst-case no-match work.
-				// Small inputs also stay well below the backtrack-depth limit.
-				if ( candidates <= 64
-					&& input.Length + 256L * candidates * candidates <= matchWorkLimit
-					&& input.Span.Slice( startOffset ).IndexOf( program.RequiredLiteralSuffix.Span ) < 0 ) {
-					return new( null, null );
-				}
+			if ( unobservedUnicodeSearch && !program.MatchInvalidUtf
+				&& MissingRequiredLiteralSuffixWithinBudget( program, input.Span, startOffset, matchWorkLimit ) ) {
+				// Strict mode must validate UTF-8 and the start boundary first.
+				return new( null, null );
 			}
 			// Candidate positions share storage; a successful match returns before the storage is reused.
 			var captures = new PcreByteCapture?[groupCount + 1];
@@ -462,6 +462,18 @@ internal static class PcreByteMatcher {
 		} catch ( MatchLimitException error ) {
 			return new( null, new( error.Code, 0, error.Message ) );
 		}
+	}
+
+	private static bool MissingRequiredLiteralSuffixWithinBudget( PcreByteProgram program,
+		ReadOnlySpan<byte> input, int startOffset, int matchWorkLimit ) {
+		var candidates = (long)input.Length - startOffset + 1;
+		// UTF-8 inspection costs at most input.Length steps. For one class+ and
+		// at most eight literal scalars, 256 steps per candidate and remaining
+		// byte exceeds the VM's no-match work even with invalid fragments.
+		// At most 64 bytes after the start also keep backtracking below the depth limit.
+		return candidates <= 64
+			&& input.Length + 256L * candidates * candidates <= matchWorkLimit
+			&& input.Slice( startOffset ).IndexOf( program.RequiredLiteralSuffix.Span ) < 0;
 	}
 
 	private readonly record struct Fragment( int Start, int End );
