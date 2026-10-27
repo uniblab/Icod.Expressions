@@ -24,7 +24,7 @@ public sealed class PcreInvalidUtfCaptureReferenceTests {
 		var examples = new List<string>();
 		void Report( string caseName, string expected, string found ) {
 			mismatchCount++;
-			if ( examples.Count < 25 ) { examples.Add( $"{caseName}: expected {expected}, found {found}" ); }
+			if ( examples.Count < 75 ) { examples.Add( $"{caseName}: expected {expected}, found {found}" ); }
 		}
 
 		foreach ( var pattern in Patterns ) {
