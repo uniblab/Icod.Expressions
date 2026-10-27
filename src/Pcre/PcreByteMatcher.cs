@@ -24,6 +24,20 @@ internal static class PcreByteMatcher {
 				"start byte offset is outside the input"
 			) );
 		}
+		// No candidate can reach the VM when the required first byte is absent.
+		// This is limited to unobserved, noncancellable exact byte searches.
+		var leadingLiteral = !program.Utf8 && !program.Caseless
+			&& !cancellationToken.CanBeCanceled && workObserver is null
+			&& program.Instructions[0].Opcode == PcreByteOpcode.Literal
+			&& program.Instructions[0].First is >= 0 and <= 255
+			? program.Instructions[0].First : -1;
+		if ( leadingLiteral >= 0 && input.Span.Slice( startOffset ).IndexOf( (byte)leadingLiteral ) < 0 ) {
+			// Include the final empty candidate, whose literal comparison also fails.
+			if ( ( (long)input.Length - startOffset + 1 ) * 3 > matchWorkLimit ) {
+				return new( null, new( PcreByteDiagnosticCode.MatchWorkLimitExceeded, 0, "match work limit exceeded" ) );
+			}
+			return new( null, null );
+		}
 		var work = 0;
 		void Step() {
 			cancellationToken.ThrowIfCancellationRequested();
@@ -85,11 +99,6 @@ internal static class PcreByteMatcher {
 			var changes = new List<StateChange>();
 			var atomicDepths = new List<int>();
 			// Keep the observed and cancellable path byte-for-byte accountable to Step().
-			var leadingLiteral = !program.Utf8 && !program.Caseless
-				&& !cancellationToken.CanBeCanceled && workObserver is null
-				&& program.Instructions[0].Opcode == PcreByteOpcode.Literal
-				&& program.Instructions[0].First is >= 0 and <= 255
-				? program.Instructions[0].First : -1;
 			var crossedBarrier = false;
 			foreach ( var fragment in fragments ) {
 				if ( fragment.Start < fragment.End ) { crossedBarrier = false; }

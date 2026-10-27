@@ -48,6 +48,33 @@ public sealed class PcreByteLiteralSearchTests {
 		Assert.Equal( 4, result.Match?.ByteIndex );
 	}
 
+	[Fact]
+	public void NoPrefixFromStartOffsetUsesTheSameWorkBudget() {
+		var input = "aaa"u8.ToArray();
+		Assert.Equal( PcreByteDiagnosticCode.MatchWorkLimitExceeded,
+			Compile( "z"u8.ToArray(), new PcreByteOptions { MatchWorkLimit = 5 } )
+				.Match( input, startOffset: 2 ).Diagnostic?.Code );
+		var exact = Compile( "z"u8.ToArray(), new PcreByteOptions { MatchWorkLimit = 6 } )
+			.Match( input, startOffset: 2 );
+		Assert.True( exact.IsSuccess, exact.Diagnostic?.Message );
+		Assert.Null( exact.Match );
+	}
+
+	[Fact]
+	public void RecordsWithoutTheFirstLiteralDoNotAllocateVmState() {
+		var pattern = Compile( "TARGET"u8.ToArray() );
+		var record = "ordinary payload"u8.ToArray();
+		Assert.Null( pattern.Match( record ).Match ); // Warm up the matching path.
+		var before = GC.GetAllocatedBytesForCurrentThread();
+		var matches = 0;
+		for ( var index = 0; index < 4096; index++ ) {
+			if ( pattern.Match( record ).Match is not null ) { matches++; }
+		}
+		var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+		Assert.Equal( 0, matches );
+		Assert.InRange( allocated, 0L, 900_000L );
+	}
+
 	private static PcreCompiledBytePattern Compile( byte[] pattern, PcreByteOptions? options = null ) {
 		var result = PcreByteCompiler.Compile( pattern, options );
 		Assert.True( result.IsSuccess, result.Diagnostic?.Message );

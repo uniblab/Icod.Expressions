@@ -42,4 +42,18 @@ The repeat three-round run after candidate-state reuse (PR #47) reported the sam
 | multi-pattern | 569.31 → 286.23 | 2,453,449,208 → 40,907,960 B | 35.65 |
 | long-record | 235.82 → 141.35 | 1,208,005,312 → 10,432 B | 4.22 |
 
-The long-record allocation improvement is substantial, but its 141 ms internal time remains much higher than the repeat reference's 4.22 ms. An exact leading-byte literal can skip failed candidate positions using a span search while charging the same candidate/instruction/comparison work. Observed, cancellable, caseless and UTF-8 paths remain on the ordinary per-candidate path. Measure this narrower optimization on the same host before deciding whether to extend search acceleration to more syntax.
+The long-record allocation improvement was substantial, but its 141 ms internal time remained much higher than the repeat reference's 4.22 ms. PR #48 searches for exact leading-byte literals with a span search, charging the same candidate/instruction/comparison work for skipped positions. Observed, cancellable, caseless and UTF-8 paths remain on the ordinary per-candidate path.
+
+The next user-run three-round measurement after literal search (PR #48) again completed all seven full comparisons on the same reported Windows x64/.NET 10.0.14/workstation-GC configuration:
+
+| Workload | Internal ms after #47 → after #48 | PCRE2 ms after #48 | Internal allocated after #48 |
+|---|---:|---:|---:|
+| literal | 35.54 → 8.02 | 5.66 | 5,165,792 B |
+| lookbehind | 64.98 → 38.05 | 7.10 | 5,165,792 B |
+| backreference | 14.75 → 16.40 | 6.83 | 5,296,864 B |
+| unicode-property | 211.68 → 161.81 | 3.19 | 14,734,048 B |
+| dense-only-matching | 8.70 → 1.86 | 1.85 | 2,785,280 B |
+| multi-pattern | 286.23 → 23.95 | 26.41 | 40,907,960 B |
+| long-record | 141.35 → 0.40 | 3.69 | 10,432 B |
+
+The repeat shows large gains on literal-leading workloads, especially long records and multiple independent patterns. Lookbehind and Unicode property paths remain much slower. Unchanged allocations indicate that each no-match call still creates VM state before discovering that the exact leading byte is absent. A narrow early no-prefix result can avoid that storage while preserving the work-limit result; it needs another same-host measurement. No speed threshold or consumer migration decision follows from these individual runs.
