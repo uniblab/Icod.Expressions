@@ -96,7 +96,9 @@ jobs:
         run: sh tools/verify-frozen-source.sh
       - name: Compare Grep PCRE component workload smoke
         if: matrix.os == 'ubuntu-latest'
-        run: dotnet run --project tools/PcreWorkloadComparison/PcreWorkloadComparison.csproj -c Staging -- --smoke
+        run: |
+          dotnet run --project tools/PcreWorkloadComparison/PcreWorkloadComparison.csproj -c Staging -- --smoke
+          dotnet run --project tools/PcreWorkloadComparison/PcreWorkloadComparison.csproj -c Staging --no-build -- --steps unicode-property --smoke
       - name: Verify exact extraction parity
         shell: bash
         run: |

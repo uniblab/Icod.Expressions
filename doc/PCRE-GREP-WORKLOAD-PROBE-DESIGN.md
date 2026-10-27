@@ -84,4 +84,18 @@ The three-round measurement after the fixed-lookbehind shortcut (PR #50) again c
 | multi-pattern | 15.65 → 15.09 | 4,275,280 B | 41.00 |
 | long-record | 0.47 → 1.31 | 3,712 B | 4.62 |
 
-The lookbehind allocation reduction matches the shortcut's scope. Unrelated time variations, especially the backreference result, should not be attributed to this change without repeated controlled measurements. Unicode property remains the largest persistent component gap. ASCII bytes in this UTF-8 workload still pass through general scalar decoding and Unicode-category lookup; an ASCII decoder and a direct ASCII `Letter` check are narrowly applicable without changing Unicode categories, byte offsets or work accounting. Their effect remains to be measured.
+The lookbehind allocation reduction matches the shortcut's scope. Unrelated time variations, especially the backreference result, should not be attributed to this change without repeated controlled measurements. Unicode property remains the largest persistent component gap. PR #51 added an ASCII decoder and a direct ASCII `Letter` check without changing Unicode categories, byte offsets or work accounting.
+
+The next three-round Windows x64 run after the ASCII primitives (PR #51) completed all seven source-byte comparisons:
+
+| Workload | Internal ms after #50 → after #51 | Internal allocated after #51 | PCRE2 ms after #51 |
+|---|---:|---:|---:|
+| literal | 3.93 → 4.55 | 848,192 B | 5.81 |
+| lookbehind | 8.14 → 8.81 | 848,192 B | 5.71 |
+| backreference | 57.21 → 63.87 | 5,296,864 B | 5.61 |
+| unicode-property | 186.87 → 175.26 | 14,734,048 B | 4.41 |
+| dense-only-matching | 2.29 → 2.26 | 1,638,400 B | 2.30 |
+| multi-pattern | 15.09 → 11.60 | 4,275,280 B | 32.09 |
+| long-record | 1.31 → 0.48 | 3,712 B | 3.32 |
+
+ASCII primitives only modestly changed the Unicode result, with unchanged allocations. The last two backreference runs also varied upward despite no backreference-path change. Before altering the VM, the unpackaged probe's `--steps unicode-property` and `--steps backreference` modes count match-work steps separately for selected and unselected full records. This observer adds overhead, so these modes print deterministic work counts and no timings. Neither mode changes the library package or serves as a conformance threshold.

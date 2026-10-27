@@ -12,30 +12,68 @@ CultureInfo.CurrentUICulture = CultureInfo.InvariantCulture;
 
 try {
 	var measure = args.Length > 0 && args[0] == "--measure";
+	var steps = args.Length > 0 && args[0] == "--steps";
+	const string usage = "Usage: --smoke | --measure [--iterations 1..20] | --steps <unicode-property|backreference> [--smoke]";
+	var boundedSteps = steps && args.Length == 3 && args[2] == "--smoke";
 	var iterations = 3;
 	if ( measure ) {
 		if ( args.Length == 3 && args[1] == "--iterations"
 			&& int.TryParse( args[2], NumberStyles.None, CultureInfo.InvariantCulture, out var parsed )
 			&& parsed is >= 1 and <= 20 ) { iterations = parsed; }
-		else if ( args.Length != 1 ) { throw new ArgumentException( "Usage: --smoke | --measure [--iterations 1..20]" ); }
+		else if ( args.Length != 1 ) { throw new ArgumentException( usage ); }
+	} else if ( steps ) {
+		if ( args.Length is not 2 and not 3 || args[1] is not ( "unicode-property" or "backreference" )
+			|| args.Length == 3 && !boundedSteps ) {
+			throw new ArgumentException( usage );
+		}
 	} else if ( args.Length != 1 || args[0] != "--smoke" ) {
-		throw new ArgumentException( "Usage: --smoke | --measure [--iterations 1..20]" );
+		throw new ArgumentException( usage );
 	}
 
 	Console.WriteLine( JsonSerializer.Serialize( new {
-		kind = "host", mode = measure ? "measure" : "smoke", framework = RuntimeInformation.FrameworkDescription,
+		kind = "host", mode = measure ? "measure" : boundedSteps ? "steps-smoke" : steps ? "steps" : "smoke",
+		framework = RuntimeInformation.FrameworkDescription,
 		os = RuntimeInformation.OSDescription, architecture = RuntimeInformation.ProcessArchitecture.ToString(),
 		serverGc = GCSettings.IsServerGC, reference = "PCRE.NET 1.6.0 compiled", internalLimit = PcreByteOptions.DefaultMatchWorkLimit,
 		iterations = measure ? iterations : 0
 	} ) );
 	foreach ( var scenario in Workloads.All ) {
-		Console.Error.WriteLine( $"{scenario.Name}: preparing and comparing {( measure ? "full" : "smoke" )} records" );
-		var workload = PreparedWorkload.Create( scenario, !measure );
+		if ( steps && scenario.Name != args[1] ) { continue; }
+		long workSteps = 0;
+		Console.Error.WriteLine( $"{scenario.Name}: preparing and comparing {( measure || steps && !boundedSteps ? "full" : "smoke" )} records" );
+		var workload = PreparedWorkload.Create( scenario, !measure && ( !steps || boundedSteps ),
+			steps ? _ => workSteps++ : null );
 		var verified = workload.Run( Engine.Compare );
 		var expected = ( workload.Records.Length - 1 ) / scenario.MatchEvery + 1;
 		if ( verified.Selected != expected || verified.Matches != expected ) {
 			throw new InvalidOperationException( $"{scenario.Name}: expected {expected} selected records and matches; "
 				+ $"found {verified.Selected} and {verified.Matches}." );
+		}
+		if ( steps ) {
+			workSteps = 0; // Exclude the prior reference-comparison pass.
+			long selectedSteps = 0;
+			long unselectedSteps = 0;
+			long previous = 0;
+			long maximumRecordSteps = 0;
+			var observed = workload.Run( Engine.Managed, selected => {
+				var recordSteps = workSteps - previous;
+				previous = workSteps;
+				if ( selected ) { selectedSteps += recordSteps; }
+				else { unselectedSteps += recordSteps; }
+				maximumRecordSteps = Math.Max( maximumRecordSteps, recordSteps );
+			} );
+			workload.CheckTotals( observed, verified );
+			if ( selectedSteps + unselectedSteps != workSteps || maximumRecordSteps == 0 ) {
+				throw new InvalidOperationException( $"{scenario.Name}: inconsistent match-work accounting." );
+			}
+			Console.WriteLine( JsonSerializer.Serialize( new {
+				kind = "workload-steps", scenario.Name, records = workload.Records.Length,
+				selected = verified.Selected, matches = verified.Matches,
+				workSteps, selectedSteps, unselectedSteps, maximumRecordSteps,
+				averageSelectedSteps = selectedSteps / (double)verified.Selected,
+				averageUnselectedSteps = unselectedSteps / (double)( workload.Records.Length - verified.Selected )
+			} ) );
+			continue;
 		}
 		if ( !measure ) {
 			Console.WriteLine( JsonSerializer.Serialize( new {
@@ -131,7 +169,7 @@ internal sealed class PreparedWorkload {
 	internal byte[][] Records { get; }
 	internal long RecordBytes { get; }
 
-	internal static PreparedWorkload Create( Workload scenario, bool smoke ) {
+	internal static PreparedWorkload Create( Workload scenario, bool smoke, Action<int>? workObserver = null ) {
 		var count = smoke ? Math.Min( 64, scenario.Records ) : scenario.Records;
 		var length = smoke ? Math.Min( 256, scenario.Length ) : scenario.Length;
 		var records = new byte[count][];
@@ -157,7 +195,8 @@ internal sealed class PreparedWorkload {
 				ExtraCompileOptions = utf8 ? PcreExtraCompileOptions.AsciiBsD : PcreExtraCompileOptions.None
 			} );
 			var result = PcreByteCompiler.Compile( bytes, new PcreByteOptions {
-				Utf8 = utf8, Ucp = utf8, AsciiBsD = utf8, MatchInvalidUtf = utf8
+				Utf8 = utf8, Ucp = utf8, AsciiBsD = utf8, MatchInvalidUtf = utf8,
+				WorkObserver = workObserver
 			} );
 			managed[index] = result.Pattern ?? throw new InvalidOperationException(
 				$"{scenario.Name}: internal compilation failed for pattern {index}: {result.Diagnostic?.Message}" );
@@ -176,7 +215,7 @@ internal sealed class PreparedWorkload {
 		return prefix + marker + new string( padding );
 	}
 
-	internal Totals Run( Engine engine ) {
+	internal Totals Run( Engine engine, Action<bool>? afterRecord = null ) {
 		var selectedRecords = 0;
 		var matches = 0;
 		for ( var recordIndex = 0; recordIndex < Records.Length; recordIndex++ ) {
@@ -210,6 +249,7 @@ internal sealed class PreparedWorkload {
 				}
 			}
 			if ( selected ) { selectedRecords++; }
+			afterRecord?.Invoke( selected );
 		}
 		return new( selectedRecords, matches );
 	}
