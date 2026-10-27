@@ -71,3 +71,17 @@ The three-round measurement after the no-prefix result (PR #49) completed all se
 | long-record | 0.40 → 0.47 | 10,432 → 3,712 B | 3.75 |
 
 No-prefix allocation and time improved on literal-heavy workloads; timing changes in unrelated modes varied between runs. A positive fixed lookbehind followed immediately by a required literal can also return no match before VM allocation when that literal is absent, provided a conservative bound on all candidate steps fits the configured work limit. Small budgets, observers and cancellation retain the ordinary path. Unicode-property matching still needs a separate investigation; these component readings are not Grep command thresholds.
+
+The three-round measurement after the fixed-lookbehind shortcut (PR #50) again completed all seven full span comparisons on the reported Windows x64/.NET 10.0.14/workstation-GC setup:
+
+| Workload | Internal ms after #49 → after #50 | Internal allocated after #50 | PCRE2 ms after #50 |
+|---|---:|---:|---:|
+| literal | 4.53 → 3.93 | 848,192 B | 4.88 |
+| lookbehind | 50.64 → 8.14 | 848,192 B | 5.83 |
+| backreference | 14.97 → 57.21 | 5,296,864 B | 4.99 |
+| unicode-property | 255.24 → 186.87 | 14,734,048 B | 4.00 |
+| dense-only-matching | 2.80 → 2.29 | 1,638,400 B | 2.38 |
+| multi-pattern | 15.65 → 15.09 | 4,275,280 B | 41.00 |
+| long-record | 0.47 → 1.31 | 3,712 B | 4.62 |
+
+The lookbehind allocation reduction matches the shortcut's scope. Unrelated time variations, especially the backreference result, should not be attributed to this change without repeated controlled measurements. Unicode property remains the largest persistent component gap. ASCII bytes in this UTF-8 workload still pass through general scalar decoding and Unicode-category lookup; an ASCII decoder and a direct ASCII `Letter` check are narrowly applicable without changing Unicode categories, byte offsets or work accounting. Their effect remains to be measured.

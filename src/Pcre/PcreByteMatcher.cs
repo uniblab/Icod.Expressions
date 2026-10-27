@@ -453,6 +453,9 @@ internal static class PcreByteMatcher {
 
 	private static bool ScalarClassContains( PcreByteScalarClassKind kind, int scalar,
 		UnicodeCategory? specificCategory = null, bool caseless = false ) {
+		if ( kind == PcreByteScalarClassKind.Letter && scalar <= 0x7F ) {
+			return scalar is >= 'A' and <= 'Z' or >= 'a' and <= 'z';
+		}
 		if ( kind == PcreByteScalarClassKind.AsciiDigit ) { return scalar is >= '0' and <= '9'; }
 		if ( kind == PcreByteScalarClassKind.Ascii ) { return scalar <= 0x7F; }
 		if ( caseless && ( kind is PcreByteScalarClassKind.AsciiLower or PcreByteScalarClassKind.AsciiUpper ) ) {
