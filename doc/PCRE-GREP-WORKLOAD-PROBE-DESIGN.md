@@ -28,4 +28,18 @@ The first user-run `--measure --iterations 3` completed all seven span compariso
 | multi-pattern | 27.04 | 569.31 | 9,640 B | 2,453,449,208 B |
 | long-record | 3.39 | 235.82 | 320 B | 1,208,005,312 B |
 
-All seven agreed on the expected selected-record and match counts. The large internal allocations prompted candidate-state reuse in the next matcher change. A fresh full measurement on the same host is needed to quantify its effect; the remaining CPU gap and broader conformance gate are still open.
+All seven agreed on the expected selected-record and match counts. The large internal allocations prompted candidate-state reuse in PR #47; the remaining CPU gap and broader conformance gate are still open.
+
+The repeat three-round run after candidate-state reuse (PR #47) reported the same Windows x64, .NET 10.0.14 and workstation GC metadata. All seven full byte-span comparisons still completed. Internal mean times and allocations changed as follows:
+
+| Workload | Internal ms before → after | Internal allocated before → after | PCRE2 ms in repeat |
+|---|---:|---:|---:|
+| literal | 109.57 → 35.54 | 246,274,016 → 5,165,792 B | 4.84 |
+| lookbehind | 101.11 → 64.98 | 246,274,016 → 5,165,792 B | 5.60 |
+| backreference | 27.78 → 14.75 | 77,578,464 → 5,296,864 B | 4.98 |
+| unicode-property | 249.64 → 211.68 | 219,141,568 → 14,734,048 B | 4.41 |
+| dense-only-matching | 18.99 → 8.70 | 73,564,160 → 2,785,280 B | 1.93 |
+| multi-pattern | 569.31 → 286.23 | 2,453,449,208 → 40,907,960 B | 35.65 |
+| long-record | 235.82 → 141.35 | 1,208,005,312 → 10,432 B | 4.22 |
+
+The long-record allocation improvement is substantial, but its 141 ms internal time remains much higher than the repeat reference's 4.22 ms. An exact leading-byte literal can skip failed candidate positions using a span search while charging the same candidate/instruction/comparison work. Observed, cancellable, caseless and UTF-8 paths remain on the ordinary per-candidate path. Measure this narrower optimization on the same host before deciding whether to extend search acceleration to more syntax.
