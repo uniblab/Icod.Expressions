@@ -26,8 +26,9 @@ internal static class PcreByteMatcher {
 		}
 		// No candidate can reach the VM when the required first byte is absent.
 		// This is limited to unobserved, noncancellable exact byte searches.
-		var leadingLiteral = !program.Utf8 && !program.Caseless
-			&& !cancellationToken.CanBeCanceled && workObserver is null
+		var unobservedByteSearch = !program.Utf8 && !program.Caseless
+			&& !cancellationToken.CanBeCanceled && workObserver is null;
+		var leadingLiteral = unobservedByteSearch
 			&& program.Instructions[0].Opcode == PcreByteOpcode.Literal
 			&& program.Instructions[0].First is >= 0 and <= 255
 			? program.Instructions[0].First : -1;
@@ -37,6 +38,17 @@ internal static class PcreByteMatcher {
 				return new( null, new( PcreByteDiagnosticCode.MatchWorkLimitExceeded, 0, "match work limit exceeded" ) );
 			}
 			return new( null, null );
+		}
+		if ( unobservedByteSearch && program.Instructions.Length > 1
+			&& program.Instructions[0] is { Opcode: PcreByteOpcode.AssertLiteral, First: 1, Second: 1 } lookbehind
+			&& program.Instructions[1] is { Opcode: PcreByteOpcode.Literal, First: >= 0 and <= 255 } nextLiteral
+			&& input.Span.Slice( startOffset ).IndexOf( (byte)nextLiteral.First ) < 0 ) {
+			// Each candidate reaches at most one assertion, its byte comparisons,
+			// and one failed literal. Only skip if even that bound fits the budget.
+			var candidates = (long)input.Length - startOffset + 1;
+			if ( candidates * ( 4L + lookbehind.Bytes.Length ) <= matchWorkLimit ) {
+				return new( null, null );
+			}
 		}
 		var work = 0;
 		void Step() {
