@@ -22,6 +22,8 @@ internal enum PcreByteOpcode {
 	Jump,
 	Mark,
 	Progress,
+	AtomicEnter,
+	AtomicExit,
 	Accept
 }
 
@@ -140,6 +142,11 @@ internal sealed class PcreByteProgramCompiler {
 				break;
 			case PcreByteNoncapturingGroup noncapturing:
 				CompileAlternatives( noncapturing.Body );
+				break;
+			case PcreByteAtomic atomic:
+				Emit( PcreByteOpcode.AtomicEnter );
+				CompileNode( atomic.Child );
+				Emit( PcreByteOpcode.AtomicExit );
 				break;
 			case PcreByteRepeat repeat:
 				CompileRepeat( repeat );

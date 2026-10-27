@@ -100,10 +100,11 @@ internal sealed class PcreByteParser {
 					if ( !greedy ) { index++; }
 					atom = new PcreByteRepeat( atom, minimum, maximum, greedy,
 						counted ? quantifierOffset : -1 );
+					if ( greedy && index < source.Length && source[index] == (byte)'+' ) {
+						index++;
+						atom = new PcreByteAtomic( atom );
+					}
 					if ( index < source.Length && source[index] is (byte)'*' or (byte)'+' or (byte)'?' or (byte)'{' ) {
-						if ( greedy && source[index] == (byte)'+' ) {
-							throw Unsupported( index ); // Valid possessive suffix, pending implementation.
-						}
 						throw Invalid( index, "repeated quantifier" );
 					}
 				}
@@ -171,10 +172,15 @@ internal sealed class PcreByteParser {
 		var value = source[index++];
 		if ( value == (byte)'(' ) {
 			var capturing = true;
+			var atomic = false;
 			if ( index < source.Length && source[index] == (byte)'?' ) {
 				if ( index + 1 < source.Length && source[index + 1] == (byte)':' ) {
 					index += 2;
 					capturing = false;
+				} else if ( index + 1 < source.Length && source[index + 1] == (byte)'>' ) {
+					index += 2;
+					capturing = false;
+					atomic = true;
 				} else {
 					var behind = index + 2 < source.Length && source[index + 1] == (byte)'<'
 						&& source[index + 2] is (byte)'=' or (byte)'!';
@@ -211,7 +217,9 @@ internal sealed class PcreByteParser {
 				throw Invalid( offset, "unclosed group" );
 			}
 			index++;
-			return capturing ? new PcreByteGroup( number, body ) : new PcreByteNoncapturingGroup( body );
+			return capturing ? new PcreByteGroup( number, body )
+				: atomic ? new PcreByteAtomic( new PcreByteNoncapturingGroup( body ) )
+				: new PcreByteNoncapturingGroup( body );
 		}
 		if ( value == (byte)'^' ) {
 			return multiline ? new PcreByteLineAnchor( true ) : new PcreByteAnchor( true );

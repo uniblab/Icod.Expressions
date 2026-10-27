@@ -210,16 +210,6 @@ public sealed class PcreByteFoundationTests {
 		Assert.Equal( offset, result.Diagnostic?.ByteOffset );
 	}
 
-	[Theory]
-	[InlineData( "a++" )]
-	[InlineData( "a*+" )]
-	[InlineData( "a?+" )]
-	public void ExplicitlyRejectsPendingPossessiveQuantifiers( string pattern ) {
-		var result = PcreByteCompiler.Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
-		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
-		Assert.Equal( 2, result.Diagnostic?.ByteOffset );
-	}
-
 	[Fact]
 	public void BoundsPatternNestingDuringCompilation() {
 		var pattern = new string( '(', 300 ) + "a" + new string( ')', 300 );

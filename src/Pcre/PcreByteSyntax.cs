@@ -50,6 +50,8 @@ internal sealed record PcreByteGroup( int Number, PcreByteAlternatives Body ) : 
 
 internal sealed record PcreByteNoncapturingGroup( PcreByteAlternatives Body ) : PcreByteNode;
 
+internal sealed record PcreByteAtomic( PcreByteNode Child ) : PcreByteNode;
+
 internal sealed record PcreByteLiteralAssertion( ReadOnlyMemory<byte> Bytes, bool IsPositive, bool IsBehind ) : PcreByteNode;
 
 internal sealed record PcreByteRepeat(

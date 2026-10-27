@@ -92,6 +92,7 @@ internal static class PcreByteMatcher {
 					var captureStarts = new int[groupCount + 1];
 					var marks = new int[program.MarkCount];
 					var backtrack = new Stack<Frame>();
+					var atomicDepths = new List<int>();
 					while ( true ) {
 						Step(); // Instruction transition.
 						var instruction = program.Instructions[pc];
@@ -321,7 +322,8 @@ internal static class PcreByteMatcher {
 							}
 							backtrack.Push( new Frame(
 								instruction.Second, position,
-								(PcreByteCapture?[])captures.Clone(), (int[])captureStarts.Clone(), (int[])marks.Clone()
+								(PcreByteCapture?[])captures.Clone(), (int[])captureStarts.Clone(), (int[])marks.Clone(),
+								atomicDepths.ToArray()
 							) );
 							pc = instruction.First;
 							break;
@@ -335,6 +337,16 @@ internal static class PcreByteMatcher {
 						case PcreByteOpcode.Progress:
 							if ( position == marks[instruction.First] ) { pc = instruction.Second; }
 							else { pc++; }
+							break;
+						case PcreByteOpcode.AtomicEnter:
+							atomicDepths.Add( backtrack.Count );
+							pc++;
+							break;
+						case PcreByteOpcode.AtomicExit:
+							var boundary = atomicDepths[^1];
+							while ( backtrack.Count > boundary ) { backtrack.Pop(); }
+							atomicDepths.RemoveAt( atomicDepths.Count - 1 );
+							pc++;
 							break;
 						case PcreByteOpcode.Accept:
 							captures[0] = new( start, position - start );
@@ -350,6 +362,7 @@ internal static class PcreByteMatcher {
 					captures = frame.Captures;
 					captureStarts = frame.CaptureStarts;
 					marks = frame.Marks;
+					atomicDepths = new List<int>( frame.AtomicDepths );
 				}
 			}
 				if ( barrierCandidateTried ) { crossedBarrier = true; }
@@ -505,7 +518,8 @@ internal static class PcreByteMatcher {
 	}
 
 	private sealed record Frame(
-		int Pc, int Position, PcreByteCapture?[] Captures, int[] CaptureStarts, int[] Marks
+		int Pc, int Position, PcreByteCapture?[] Captures, int[] CaptureStarts, int[] Marks,
+		int[] AtomicDepths
 	);
 
 	private sealed class MatchLimitException( PcreByteDiagnosticCode code, string message ) : Exception( message ) {
