@@ -8,7 +8,7 @@ namespace Icod.Expressions.Tests.Pcre;
 /// <summary>Every start offset on selected malformed byte subjects against Grep's pinned PCRE2 wrapper.</summary>
 public sealed class PcreInvalidUtfOffsetReferenceTests {
 	private static readonly string[] Patterns = [
-		"", ".", "a", "é", "a.b", @"(?<=a)b", @"\b", @"\z", @"(a)\1"
+		"", ".", "a", "é", "a.b", @"(?<=a)b", @"\b", @"\z", @"\Z", @"(a)\1"
 	];
 
 	[Theory]
@@ -23,6 +23,7 @@ public sealed class PcreInvalidUtfOffsetReferenceTests {
 	[InlineData( "F09F9880FF61" )]
 	public void EveryStartOffsetPreservesReferenceByteSpan( string subjectHex ) {
 		var subject = Convert.FromHexString( subjectHex );
+		var mismatches = new List<string>();
 		foreach ( var pattern in Patterns ) {
 			var source = Encoding.UTF8.GetBytes( pattern );
 			var reference = new PcreRegex8Bit( source, Encoding.UTF8, new PcreRegexSettings {
@@ -37,15 +38,15 @@ public sealed class PcreInvalidUtfOffsetReferenceTests {
 				var expected = reference.Match( subject, offset );
 				var actual = compiled.Pattern!.Match( subject, offset );
 				var caseName = $"{pattern} on {subjectHex} from {offset}";
-				Assert.True( actual.IsSuccess, $"{caseName}: {actual.Diagnostic?.Message}" );
-				Assert.True( ( expected.Success ? expected.Index : -1 ) == ( actual.Match?.ByteIndex ?? -1 ),
-					$"{caseName}: expected index {( expected.Success ? expected.Index : -1 )}, "
-					+ $"found {actual.Match?.ByteIndex ?? -1}" );
-				if ( expected.Success ) {
-					Assert.True( expected.Length == actual.Match?.ByteLength,
-						$"{caseName}: expected length {expected.Length}, found {actual.Match?.ByteLength}" );
+				if ( !actual.IsSuccess || ( expected.Success ? expected.Index : -1 ) != ( actual.Match?.ByteIndex ?? -1 )
+					|| expected.Success && expected.Length != actual.Match?.ByteLength ) {
+					mismatches.Add( $"{caseName}: expected {( expected.Success ? expected.Index : -1 )}"
+						+ $"/{( expected.Success ? expected.Length : 0 )}, found {actual.Match?.ByteIndex ?? -1}"
+						+ $"/{actual.Match?.ByteLength ?? 0} ({actual.Diagnostic?.Code})" );
 				}
 			}
 		}
+		Assert.True( mismatches.Count == 0, $"{subjectHex}: {mismatches.Count} mismatches"
+			+ Environment.NewLine + String.Join( Environment.NewLine, mismatches.Take( 25 ) ) );
 	}
 }
