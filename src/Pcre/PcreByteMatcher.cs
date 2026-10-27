@@ -370,14 +370,15 @@ internal static class PcreByteMatcher {
 							if ( position == 0 || ( position > fragment.Start && position < fragment.End
 								&& ( input.Span[position - 1] == (byte)'\n'
 									|| program.AnyCrLfNewline && input.Span[position - 1] == (byte)'\r'
-										&& input.Span[position] != (byte)'\n' ) ) ) {
+										&& ( input.Span[position] != (byte)'\n' || position == startOffset ) ) ) ) {
 								pc++;
 							} else { failed = true; }
 							break;
 						case PcreByteOpcode.EndLine:
 							if ( position == input.Length || ( position < fragment.End
 							&& ( input.Span[position] == (byte)'\n'
-								&& ( !program.AnyCrLfNewline || position == 0 || input.Span[position - 1] != (byte)'\r' )
+								&& ( !program.AnyCrLfNewline || position == startOffset || position == 0
+									|| input.Span[position - 1] != (byte)'\r' )
 								|| program.AnyCrLfNewline && input.Span[position] == (byte)'\r' ) ) ) {
 								pc++;
 							} else { failed = true; }
@@ -385,7 +386,8 @@ internal static class PcreByteMatcher {
 						case PcreByteOpcode.EndBeforeFinalLf:
 							var end = instruction.First == 1 ? fragment.End : input.Length;
 							if ( position == end || ( position == end - 1 && input.Span[position] == (byte)'\n'
-								&& ( !program.AnyCrLfNewline || position == 0 || input.Span[position - 1] != (byte)'\r' ) )
+								&& ( !program.AnyCrLfNewline || position == startOffset || position == 0
+									|| input.Span[position - 1] != (byte)'\r' ) )
 							|| program.AnyCrLfNewline && ( position == end - 1 && input.Span[position] == (byte)'\r'
 								|| position == end - 2 && input.Span[position] == (byte)'\r'
 									&& input.Span[position + 1] == (byte)'\n' ) ) {
