@@ -34,11 +34,11 @@ internal static class PcreByteCompiler {
 		}
 
 		var parser = new PcreByteParser( source, options.Caseless, utf8,
-			options.Ucp, options.AsciiBsD, cancellationToken );
+			options.Ucp, options.AsciiBsD, options.AnyCrLfNewline, cancellationToken );
 		try {
 			var root = parser.Parse();
 			var program = new PcreByteProgramCompiler(
-				cancellationToken, parser.Caseless, utf8, options.MatchInvalidUtf
+				cancellationToken, parser.Caseless, utf8, options.MatchInvalidUtf, options.AnyCrLfNewline
 			).Compile( root );
 			return new(
 				new PcreCompiledBytePattern( program, parser.GroupCount, options.MatchWorkLimit, options.WorkObserver ),

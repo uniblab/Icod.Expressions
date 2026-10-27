@@ -36,7 +36,7 @@ internal sealed record PcreByteInstruction(
 
 internal sealed record PcreByteProgram(
 	PcreByteInstruction[] Instructions, int MarkCount, bool Caseless, bool Utf8, bool MatchInvalidUtf,
-	ReadOnlyMemory<byte> RequiredLiteralSuffix
+	ReadOnlyMemory<byte> RequiredLiteralSuffix, bool AnyCrLfNewline
 );
 
 /// <summary>Compiles the supported AST into ordered bytecode with explicit backtrack edges.</summary>
@@ -48,23 +48,26 @@ internal sealed class PcreByteProgramCompiler {
 	private readonly bool caseless;
 	private readonly bool utf8;
 	private readonly bool matchInvalidUtf;
+	private readonly bool anyCrLfNewline;
 	private int markCount;
 	private int countedOffset = -1;
 	private int lastCountedOffset = -1;
 	private int compileVisits;
 
-	internal PcreByteProgramCompiler( CancellationToken cancellationToken, bool caseless, bool utf8, bool matchInvalidUtf ) {
+	internal PcreByteProgramCompiler( CancellationToken cancellationToken, bool caseless, bool utf8, bool matchInvalidUtf,
+		bool anyCrLfNewline ) {
 		this.cancellationToken = cancellationToken;
 		this.caseless = caseless;
 		this.utf8 = utf8;
 		this.matchInvalidUtf = matchInvalidUtf;
+		this.anyCrLfNewline = anyCrLfNewline;
 	}
 
 	internal PcreByteProgram Compile( PcreByteAlternatives root ) {
 		CompileAlternatives( root );
 		Emit( PcreByteOpcode.Accept );
 		return new( instructions.ToArray(), markCount, caseless, utf8, matchInvalidUtf,
-			FindRequiredLiteralSuffix( root ) );
+			FindRequiredLiteralSuffix( root ), anyCrLfNewline );
 	}
 
 	private ReadOnlyMemory<byte> FindRequiredLiteralSuffix( PcreByteAlternatives root ) {
