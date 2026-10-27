@@ -99,3 +99,19 @@ The next three-round Windows x64 run after the ASCII primitives (PR #51) complet
 | long-record | 1.31 → 0.48 | 3,712 B | 3.32 |
 
 ASCII primitives only modestly changed the Unicode result, with unchanged allocations. The last two backreference runs also varied upward despite no backreference-path change. Before altering the VM, the unpackaged probe's `--steps unicode-property` and `--steps backreference` modes count match-work steps separately for selected and unselected full records. This observer adds overhead, so these modes print deterministic work counts and no timings. Neither mode changes the library package or serves as a conformance threshold.
+
+The bounded 64-record Unicode diagnostic in PR #52 reported 84 work steps per selected record and 938 per unselected record. Because this corpus uses one fixed record of each kind, the full corpus implies 14,544,936 steps before search hints (964 × 84 + 15,420 × 938). The observer deliberately disables the shortcut, so this count diagnoses the old search path rather than timing PR #53.
+
+The following three-round Windows x64 run after PR #53 completed all seven source-byte comparisons:
+
+| Workload | Internal ms after #51 → after #53 | Internal allocated after #51 → after #53 | PCRE2 ms after #53 |
+|---|---:|---:|---:|
+| literal | 4.55 → 4.53 | 848,192 → 848,192 B | 5.75 |
+| lookbehind | 8.81 → 7.92 | 848,192 → 848,192 B | 5.38 |
+| backreference | 63.87 → 63.94 | 5,296,864 → 5,296,864 B | 6.50 |
+| unicode-property | 175.26 → 23.27 | 14,734,048 → 2,768,136 B | 5.65 |
+| dense-only-matching | 2.26 → 5.87 | 1,638,400 → 1,638,400 B | 3.65 |
+| multi-pattern | 11.60 → 19.86 | 4,275,280 → 4,275,280 B | 40.76 |
+| long-record | 0.48 → 0.41 | 3,712 → 3,712 B | 3.57 |
+
+The Unicode allocation reduction matches the no-match shortcut's scope. The single run does not explain unrelated dense and multi-pattern timing changes. The backreference allocation and timing remain near their previous values; the next search change explores its captured first byte.

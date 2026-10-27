@@ -28,13 +28,24 @@ internal static class PcreByteMatcher {
 		// This is limited to unobserved, noncancellable exact byte searches.
 		var unobservedByteSearch = !program.Utf8 && !program.Caseless
 			&& !cancellationToken.CanBeCanceled && workObserver is null;
-		var leadingLiteral = unobservedByteSearch
-			&& program.Instructions[0].Opcode == PcreByteOpcode.Literal
-			&& program.Instructions[0].First is >= 0 and <= 255
-			? program.Instructions[0].First : -1;
+		var leadingLiteral = -1;
+		var failedLiteralCost = 3;
+		if ( unobservedByteSearch ) {
+			var first = program.Instructions[0];
+			if ( first.Opcode == PcreByteOpcode.Literal && first.First is >= 0 and <= 255 ) {
+				leadingLiteral = first.First;
+			} else if ( first.Opcode == PcreByteOpcode.CaptureStart
+				&& program.Instructions.Length > 1
+				&& program.Instructions[1] is { Opcode: PcreByteOpcode.Literal, First: >= 0 and <= 255 } capturedLiteral ) {
+				// A root or group alternative emits Split before CaptureStart/Literal.
+				// Here every successful path must consume the captured first byte.
+				leadingLiteral = capturedLiteral.First;
+				failedLiteralCost = 4;
+			}
+		}
 		if ( leadingLiteral >= 0 && input.Span.Slice( startOffset ).IndexOf( (byte)leadingLiteral ) < 0 ) {
 			// Include the final empty candidate, whose literal comparison also fails.
-			if ( ( (long)input.Length - startOffset + 1 ) * 3 > matchWorkLimit ) {
+			if ( ( (long)input.Length - startOffset + 1 ) * failedLiteralCost > matchWorkLimit ) {
 				return new( null, new( PcreByteDiagnosticCode.MatchWorkLimitExceeded, 0, "match work limit exceeded" ) );
 			}
 			return new( null, null );
@@ -61,8 +72,8 @@ internal static class PcreByteMatcher {
 			cancellationToken.ThrowIfCancellationRequested();
 		}
 		void SkipFailedLiteralCandidates( long count ) {
-			// A failed leading byte literal costs candidate, instruction and comparison steps.
-			var cost = count * 3;
+			// A capture wrapper adds one instruction before the failed literal.
+			var cost = count * failedLiteralCost;
 			if ( cost > matchWorkLimit - work ) {
 				throw new MatchLimitException( PcreByteDiagnosticCode.MatchWorkLimitExceeded, "match work limit exceeded" );
 			}
