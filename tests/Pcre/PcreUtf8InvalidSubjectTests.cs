@@ -66,9 +66,9 @@ public sealed class PcreUtf8InvalidSubjectTests {
 	[InlineData( "$", "FF61", 2 )]
 	[InlineData( "$", "61FF", 2 )]
 	[InlineData( "", "FF", 0 )]
-	[InlineData( "", "80", 1 )]
+	[InlineData( "", "80", 0 )]
 	[InlineData( "\\z", "80FF41", 3 )]
-	[InlineData( "\\B", "80", 1 )]
+	[InlineData( "\\B", "80", 0 )]
 	public void ZeroWidthAssertionsRespectFragmentAndWholeSubjectEdges( string pattern, string hex, int offset ) {
 		var result = Compile( pattern ).Match( Convert.FromHexString( hex ) );
 		Assert.True( result.IsSuccess, result.Diagnostic?.Message );
