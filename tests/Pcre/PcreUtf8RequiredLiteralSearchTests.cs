@@ -25,7 +25,7 @@ public sealed class PcreUtf8RequiredLiteralSearchTests {
 		var pattern = Compile( @"\p{L}+ 世界", new PcreByteOptions {
 			Utf8 = true, Ucp = true, MatchInvalidUtf = true
 		} );
-		var result = pattern.Match( [ 0xCE, 0xBA, 0xFF, (byte)' ', (byte)'x' ] );
+		var result = pattern.Match( new byte[] { 0xCE, 0xBA, 0xFF, (byte)' ', (byte)'x' } );
 		Assert.True( result.IsSuccess, result.Diagnostic?.Message );
 		Assert.Null( result.Match );
 	}
@@ -45,7 +45,7 @@ public sealed class PcreUtf8RequiredLiteralSearchTests {
 	public void AbsentSuffixStillValidatesUtf8AndHonorsWorkLimit() {
 		var pattern = Compile( @"\p{L}+ 世界" );
 		Assert.Equal( PcreByteDiagnosticCode.InvalidUtf8Subject,
-			pattern.Match( [ 0xCE, 0xBA, 0xFF ] ).Diagnostic?.Code );
+			pattern.Match( new byte[] { 0xCE, 0xBA, 0xFF } ).Diagnostic?.Code );
 		Assert.Equal( PcreByteDiagnosticCode.InvalidStartOffset,
 			pattern.Match( "Καλημέρα ordinary"u8.ToArray(), startOffset: 1 ).Diagnostic?.Code );
 		Assert.Equal( PcreByteDiagnosticCode.MatchWorkLimitExceeded,
