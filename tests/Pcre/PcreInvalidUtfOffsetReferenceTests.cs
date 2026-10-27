@@ -8,7 +8,8 @@ namespace Icod.Expressions.Tests.Pcre;
 /// <summary>Every start offset on selected malformed byte subjects against Grep's pinned PCRE2 wrapper.</summary>
 public sealed class PcreInvalidUtfOffsetReferenceTests {
 	private static readonly string[] Patterns = [
-		"", ".", "a", "é", "a.b", @"(?<=a)b", @"\b", @"\z", @"\Z", @"(a)\1"
+		"", ".", "a", "é", "a.b", @"(?<=a)b", @"(?=a)", @"\b", @"\B",
+		"^", "$", @"\A", @"\z", @"\Z", @"(a)\1"
 	];
 
 	[Theory]
