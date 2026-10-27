@@ -56,4 +56,18 @@ The next user-run three-round measurement after literal search (PR #48) again co
 | multi-pattern | 286.23 → 23.95 | 26.41 | 40,907,960 B |
 | long-record | 141.35 → 0.40 | 3.69 | 10,432 B |
 
-The repeat shows large gains on literal-leading workloads, especially long records and multiple independent patterns. Lookbehind and Unicode property paths remain much slower. Unchanged allocations indicate that each no-match call still creates VM state before discovering that the exact leading byte is absent. A narrow early no-prefix result can avoid that storage while preserving the work-limit result; it needs another same-host measurement. No speed threshold or consumer migration decision follows from these individual runs.
+The repeat shows large gains on literal-leading workloads, especially long records and multiple independent patterns. Lookbehind and Unicode property paths remain much slower. Unchanged allocations showed that each no-match call still created VM state before discovering that the exact leading byte was absent; PR #49 added an early no-prefix result while preserving the work-limit result. No speed threshold or consumer migration decision follows from these individual runs.
+
+The three-round measurement after the no-prefix result (PR #49) completed all seven full comparisons, again on Windows x64/.NET 10.0.14 with workstation GC:
+
+| Workload | Internal ms after #48 → after #49 | Internal allocated after #48 → after #49 | PCRE2 ms after #49 |
+|---|---:|---:|---:|
+| literal | 8.02 → 4.53 | 5,165,792 → 848,192 B | 6.17 |
+| lookbehind | 38.05 → 50.64 | 5,165,792 → 5,165,792 B | 6.69 |
+| backreference | 16.40 → 14.97 | 5,296,864 → 5,296,864 B | 4.07 |
+| unicode-property | 161.81 → 255.24 | 14,734,048 → 14,734,048 B | 4.78 |
+| dense-only-matching | 1.86 → 2.80 | 2,785,280 → 1,638,400 B | 3.00 |
+| multi-pattern | 23.95 → 15.65 | 40,907,960 → 4,275,280 B | 44.80 |
+| long-record | 0.40 → 0.47 | 10,432 → 3,712 B | 3.75 |
+
+No-prefix allocation and time improved on literal-heavy workloads; timing changes in unrelated modes varied between runs. A positive fixed lookbehind followed immediately by a required literal can also return no match before VM allocation when that literal is absent, provided a conservative bound on all candidate steps fits the configured work limit. Small budgets, observers and cancellation retain the ordinary path. Unicode-property matching still needs a separate investigation; these component readings are not Grep command thresholds.
