@@ -79,6 +79,8 @@ The matrix is the first consumer floor, not the complete PCRE2 syntax promise. E
 
 `tests/Pcre/PcreReferenceCaptureTests.cs` checks selected numbered group participation and source-byte spans against the same pinned reference. Unset and participating empty captures are distinct. This finite test-only matrix is another conformance gate, not a complete capture or syntax claim.
 
+`doc/PCRE-GREP-CONSUMER-FIXTURES.md` maps every current Grep `PcreTests.cs` case to an engine byte fixture or a consumer-owned behavior. `tests/Pcre/PcreGrepConsumerFixtureTests.cs` applies Grep's C/POSIX and UTF-8 options to the pinned reference and the internal matcher on the same bytes, and explicitly rejects selected pending syntax. The inventory also names the Grep workloads that still need correctness and performance comparison.
+
 ## Delivery and exit gates
 
 1. Freeze Grep and reference-engine input/output fixtures, including malformed byte and cancellation/resource cases. Record an explicit syntax coverage matrix.
