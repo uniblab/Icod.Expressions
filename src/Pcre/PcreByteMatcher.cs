@@ -367,7 +367,8 @@ internal static class PcreByteMatcher {
 							if ( position == input.Length ) { pc++; } else { failed = true; }
 							break;
 						case PcreByteOpcode.StartLine:
-							if ( position == 0 || ( position > fragment.Start && position < fragment.End
+							if ( position == 0 || ( position > fragment.Start
+							&& ( position < fragment.End || position == fragment.End && position < input.Length )
 								&& ( input.Span[position - 1] == (byte)'\n'
 									|| program.AnyCrLfNewline && input.Span[position - 1] == (byte)'\r'
 										&& ( input.Span[position] != (byte)'\n' || position == startOffset ) ) ) ) {
