@@ -93,6 +93,7 @@ internal sealed class PcreByteProgramCompiler {
 	};
 
 	private static bool HasExplicitNewline( PcreByteScalarSet set ) {
+		if ( set.Negated ) { return false; }
 		foreach ( var range in set.Ranges.Span ) {
 			if ( range.Start <= '\n' && range.End >= '\n'
 				|| range.Start <= '\r' && range.End >= '\r' ) { return true; }

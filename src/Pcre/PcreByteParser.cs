@@ -413,7 +413,7 @@ internal sealed class PcreByteParser {
 			cancellationToken.ThrowIfCancellationRequested();
 			if ( source[index] == (byte)']' && hasItem ) {
 				index++;
-				return new PcreByteClass( negated ? set.Complement() : set, explicitNewline );
+				return new PcreByteClass( negated ? set.Complement() : set, !negated && explicitNewline );
 			}
 			var item = ParseBracketItem( ref specialScanCursor, ref nextClosingBracket );
 			if ( item.Value is (byte)'\r' or (byte)'\n' ) { explicitNewline = true; }
