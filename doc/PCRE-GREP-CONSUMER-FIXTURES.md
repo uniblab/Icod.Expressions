@@ -1,0 +1,30 @@
+# Grep `-P` consumer fixture inventory
+
+**Status:** initial frozen consumer floor for issue #7, based on `Icod.Grep` commit `2ef1c11f11b77eb876242eb0c92a88d20857db64` (`tests/Grep.Tests/src/PcreTests.cs`) and its 1.6.0 workload reports. It is not full PCRE2 syntax coverage or approval to migrate Grep.
+
+Grep constructs one PCRE.NET 1.6.0 expression per pattern. In a UTF-8 locale it requests UTF, UCP, malformed-UTF matching, and ASCII `\d`; in C/POSIX it matches 8-bit bytes. `tests/Pcre/PcreGrepConsumerFixtureTests.cs` applies exactly these options to the pinned reference and the internal byte matcher on the same source bytes. Expected source-byte spans are stated independently of either engine.
+
+| Grep test | Engine fixture or existing gate | Work remaining in Grep |
+|---|---|---|
+| `SupportsLookbehindAndBackreferences` | `utf-lookbehind`, `utf-backreference`, `utf-backreference-miss`; numbered capture reference tests | Record selection and output bytes. |
+| `KeepsBackslashDAsciiUnderUtf8Ucp` | `utf-ascii-digit-miss`, `utf-posix-digit`, `utf-digit-override` | Multiple records and locale selection. |
+| `SupportsUnicodePropertiesInUtf8Locale` | `utf-letter-property` | Unicode-version parity across target frameworks. |
+| `PreservesByteModeInCLocale` | `byte-high` | Locale and byte-stream selection. |
+| `SupportsWordAndLineRegexpSelection` | Existing boundary, anchor, dot and option tests | Grep's `-w`/`-x` wrappers and selection policy. |
+| `SupportsNullDataDotAllAcrossEmbeddedNewlines` | `utf-dotall-embedded-lf` | NUL record framing and output delimiter. |
+| `PreservesEmbeddedNulPatternsFromPatternFiles` | `byte-nul-pattern` | Pattern-file parsing and NUL record policy. |
+| `SuppressesMalformedUtf8OutputUnlessTextIsForced` | `utf-malformed-subject` | Binary-output suppression and `-a`. |
+| `CooperatesWithOnlyMatchingIgnoreCaseAndColor` | `utf-caseless-lookbehind`, `byte-subsequent-offset` | `-o` iteration, coloring, output formatting. |
+| `InvalidPatternReturnsUsageError` | `invalid-group`, plus existing compile diagnostics | Grep's status 2 and stderr text. |
+
+## Syntax boundary at this checkpoint
+
+| Status | Concrete examples | Verification |
+|---|---|---|
+| Supported subset | Grep's literal lookbehind, single-digit numbered backreference, `\p{L}`, POSIX digit class, ASCII `\d` and `(?-aD)`, leading `(?s)`, byte NUL/high byte | Consumer fixture table and prior PCRE reference tests. |
+| Rejected by the internal compiler for now | Named groups `(?<name>a)`, branch-reset `(?|a)`, recursion `(?R)`, scoped options `(?i:a)`, nonliteral lookbehind `(?<=a+)b`, multi-digit backreference `\10` | Explicit unsupported-syntax assertions in the fixture tests. Reference acceptance is not a claim of internal support. |
+| Pending conformance | Invalid UTF-8 offset exhaustiveness, Unicode and caseless data versions, broader assertion and option scopes, PCRE2 properties, verbs, recursion, capture boundaries and diagnostic equivalence | Separate issue #7 tranches; no fallback engine. |
+
+## Resource and performance gates still open
+
+Existing internal tests cover cancellation, work limits, backtracking depth and malformed-byte barriers. Grep's `Icod.Grep-1.6.0-T6.7-PCRE-Closure-Report.md`, `benchmarks/README.md`, and T6.8 stress plan cover dense `-o`, 32 independent expressions, long records, large pattern sets and record scaling. Their measured PCRE2 JIT baseline is the comparison target; the capture-journal allocation test in PR #43 is only a synthetic internal guard. Freeze the full workload inputs, outputs and measured thresholds before claiming parity or changing Grep.
