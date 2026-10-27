@@ -23,6 +23,7 @@ public sealed class PcreLeadingOptionCombinationReferenceTests {
 	[InlineData( "byte-alternative-flags", "(?i-m)a|^b", "42", false, false, 0, 0, 1 )]
 	[InlineData( "utf-aD-before-options", "(?-aD)(?i)^\\d$", "D9A3", true, false, 0, 0, 2 )]
 	[InlineData( "utf-aD-after-options", "(?i)(?aD)^\\d$", "D9A3", true, false, 0, -1, 0 )]
+	[InlineData( "utf-multiline-before-aD", "(?m)(?-aD)^\\d$", "780AD9A3", true, false, 0, 2, 2 )]
 	[InlineData( "utf-aD-override", "(?aD)(?-aD)^\\d$", "D9A3", true, false, 0, 0, 2 )]
 	public void LeadingOptionsMatchPinnedReference( string name, string pattern, string subjectHex,
 		bool utf8, bool callerCaseless, int startOffset, int expectedIndex, int expectedLength ) {
