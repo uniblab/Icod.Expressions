@@ -36,7 +36,8 @@ internal sealed record PcreByteInstruction(
 
 internal sealed record PcreByteProgram(
 	PcreByteInstruction[] Instructions, int MarkCount, bool Caseless, bool Utf8, bool MatchInvalidUtf,
-	ReadOnlyMemory<byte> RequiredLiteralSuffix, bool AnyCrLfNewline, bool ExplicitNewline
+	ReadOnlyMemory<byte> RequiredLiteralSuffix, bool AnyCrLfNewline, bool ExplicitNewline,
+	bool CanMatchEmptyAtAnyOffset
 );
 
 /// <summary>Compiles the supported AST into ordered bytecode with explicit backtrack edges.</summary>
@@ -67,8 +68,27 @@ internal sealed class PcreByteProgramCompiler {
 		CompileAlternatives( root );
 		Emit( PcreByteOpcode.Accept );
 		return new( instructions.ToArray(), markCount, caseless, utf8, matchInvalidUtf,
-			FindRequiredLiteralSuffix( root ), anyCrLfNewline, HasExplicitNewline( root ) );
+			FindRequiredLiteralSuffix( root ), anyCrLfNewline, HasExplicitNewline( root ), CanMatchEmptyAtAnyOffset( root ) );
 	}
+
+	private static bool CanMatchEmptyAtAnyOffset( PcreByteAlternatives alternatives ) {
+		foreach ( var branch in alternatives.Branches ) {
+			var empty = true;
+			foreach ( var node in branch ) {
+				if ( !CanMatchEmptyAtAnyOffset( node ) ) { empty = false; break; }
+			}
+			if ( empty ) { return true; }
+		}
+		return false;
+	}
+
+	private static bool CanMatchEmptyAtAnyOffset( PcreByteNode node ) => node switch {
+		PcreByteGroup group => CanMatchEmptyAtAnyOffset( group.Body ),
+		PcreByteNoncapturingGroup group => CanMatchEmptyAtAnyOffset( group.Body ),
+		PcreByteAtomic atomic => CanMatchEmptyAtAnyOffset( atomic.Child ),
+		PcreByteRepeat repeat => repeat.Minimum == 0 || CanMatchEmptyAtAnyOffset( repeat.Child ),
+		_ => false
+	};
 
 	private static bool HasExplicitNewline( PcreByteAlternatives alternatives ) {
 		foreach ( var branch in alternatives.Branches ) {

@@ -8,7 +8,7 @@ namespace Icod.Expressions.Tests.Pcre;
 /// <summary>Source-byte capture participation and spans under Grep's pinned invalid-UTF reference.</summary>
 public sealed class PcreInvalidUtfCaptureReferenceTests {
 	private static readonly string[] Patterns = [
-		"()", "(a)", "(a)?", "(a|ab)", "(?:(a)|b)", @"(a)\1", "((a)?b)+",
+		"()", "(a)", "(a)?", "(a*)", "(.*)", "(a|)", "(a|ab)", "(?:(a)|b)", @"(a)\1", "((a)?b)+",
 		"(?<=a)(b)", "(é)", "(😀)", "(?m)^()", @"()\Z", @"(\p{L}+)",
 		@"(\w+)", @"([^\r]a)", @"(\s?a)"
 	];
