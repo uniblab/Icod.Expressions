@@ -10,6 +10,8 @@ public sealed class PcreReferenceCaptureTests {
 	[Theory]
 	[InlineData( "no-capture", "a", "7A61", false, false, 0, "1:1" )]
 	[InlineData( "backreference-rollback", @"^(a|ab)\1$", "61626162", false, false, 0, "0:4;0:2" )]
+	[InlineData( "relative-enclosing", @"(A)(\g{-2}B)", "414142", false, false, 0, "0:3;0:1;1:2" )]
+	[InlineData( "relative-forward-iteration", @"^(?:\g{+1}|(a))+$", "6161", false, false, 0, "0:2;0:1" )]
 	[InlineData( "nested-unset", "^((a)|ab)c$", "616263", false, false, 0, "0:3;0:2;-" )]
 	[InlineData( "optional-unset", "^(a)?b$", "62", false, false, 0, "0:1;-" )]
 	[InlineData( "optional-set", "^(a)?b$", "6162", false, false, 0, "0:2;0:1" )]

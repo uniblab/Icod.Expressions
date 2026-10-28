@@ -29,7 +29,6 @@ public sealed class PcreSyntaxAcceptanceTests {
 	[InlineData( "(?C1)a", 0, false )]
 	[InlineData( "(?<=[ab])c", 0, false )]
 	[InlineData( @"(a)\10", 3, false )]
-	[InlineData( @"(a)\g{-1}", 3, false )]
 	[InlineData( @"(a)\g<1>", 3, false )]
 	[InlineData( @"\Qliteral\E", 0, false )]
 	[InlineData( @"\K", 0, false )]
