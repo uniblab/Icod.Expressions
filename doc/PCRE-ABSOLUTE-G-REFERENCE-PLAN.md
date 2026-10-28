@@ -35,8 +35,8 @@
 
 **Interfaces:** `PcreByteCompiler.Compile(byte[], PcreByteOptions?)` continues to produce the existing internal `PcreByteBackreference` node and `PcreByteDiagnostic`.
 
-- [ ] Add reference and diagnostic fixtures for `\gN`, `\g{N}`, a tenth capture, digit termination, unset/forward capture and rejected families.
-- [ ] Run the Staging tests against the unchanged parser and confirm the accepted-form cases fail as `UnsupportedSyntax`.
-- [ ] Parse only unsigned decimal absolute `\g` operands, enforce the capture ceiling and register the numeric reference for post-parse validation.
-- [ ] Update the acceptance inventory and design status without widening the public API.
+- [x] Add reference and diagnostic fixtures for `\gN`, `\g{N}`, a tenth capture, digit termination, unset/forward capture and rejected families.
+- [x] Run the Staging tests against the unchanged parser and confirm the accepted-form cases fail as `UnsupportedSyntax`.
+- [x] Parse only unsigned decimal absolute `\g` operands, enforce the capture ceiling and register the numeric reference for post-parse validation.
+- [x] Update the acceptance inventory and design status without widening the public API.
 - [ ] Verify all six Staging jobs and review the final diff before user merge.
