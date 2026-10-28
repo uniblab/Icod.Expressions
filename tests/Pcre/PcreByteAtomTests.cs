@@ -117,9 +117,9 @@ public sealed class PcreByteAtomTests {
 	}
 
 	[Theory]
-	[InlineData( "\\h" )]
-	[InlineData( "\\v" )]
-	public void RetainsPendingUnicodeAwareWhitespaceAsUnsupported( string pattern ) {
+	[InlineData( "\\N" )]
+	[InlineData( "\\R" )]
+	public void RetainsPendingNewlineEscapesAsUnsupported( string pattern ) {
 		var result = PcreByteCompiler.Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
 		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
 	}
