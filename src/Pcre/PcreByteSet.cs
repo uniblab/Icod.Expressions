@@ -11,6 +11,8 @@ internal readonly record struct PcreByteSet( ulong A, ulong B, ulong C, ulong D 
 	internal static PcreByteSet WhiteSpace { get; } = FromPredicate(
 		value => value is >= 0x09 and <= 0x0D or (byte)' '
 	);
+	internal static PcreByteSet HorizontalSpace { get; } = FromPredicate( value => PcreSpaceCharacters.IsHorizontal( value ) );
+	internal static PcreByteSet VerticalSpace { get; } = FromPredicate( value => PcreSpaceCharacters.IsVertical( value ) );
 	internal static PcreByteSet Word { get; } = FromPredicate(
 		value => value is >= (byte)'0' and <= (byte)'9'
 			or >= (byte)'A' and <= (byte)'Z'

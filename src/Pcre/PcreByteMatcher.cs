@@ -551,9 +551,11 @@ internal static class PcreByteMatcher {
 			&& scalar is >= 0x09 and <= 0x0D or 0x85 or 0x180E ) {
 			return true;
 		}
-		if ( kind == PcreByteScalarClassKind.UnicodeBlank ) {
-			return scalar is 0x09 or 0x20 or 0xA0 or 0x1680 or 0x180E
-				or >= 0x2000 and <= 0x200A or 0x202F or 0x205F or 0x3000;
+		if ( kind is PcreByteScalarClassKind.UnicodeBlank or PcreByteScalarClassKind.HorizontalSpace ) {
+			return PcreSpaceCharacters.IsHorizontal( scalar );
+		}
+		if ( kind == PcreByteScalarClassKind.VerticalSpace ) {
+			return PcreSpaceCharacters.IsVertical( scalar );
 		}
 		if ( kind == PcreByteScalarClassKind.UnicodeHexDigit ) {
 			return scalar is >= '0' and <= '9' or >= 'A' and <= 'F' or >= 'a' and <= 'f'

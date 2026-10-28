@@ -6,6 +6,8 @@
 
 Implement `\h`, `\H`, `\v`, and `\V` as consuming character classes in ordinary expressions and brackets. PCRE2 defines fixed scalar lists for these escapes, independently of UTF/UCP, caseless options, locale tables, and newline convention. Byte mode uses only values below 256. Each uppercase form complements its corresponding lowercase form; no form consumes end-of-subject or invalid UTF bytes.
 
+The semantic source is the official [PCRE2 pattern specification](https://www.pcre.org/current/doc/html/pcre2pattern.html), generic character types section; executable fixtures pin PCRE.NET 1.6.0 / PCRE2 10.48.
+
 Use the existing byte-set and UTF scalar-class nodes and VM opcodes. Share the fixed membership predicates between byte-set construction and scalar evaluation, including the existing UCP POSIX `blank` predicate, whose list equals `\h`. Reusing `\s` or .NET whitespace/category classification was rejected because it would introduce different membership and UCP/version dependencies. A new matcher or instruction is unnecessary.
 
 ## Fixed membership
