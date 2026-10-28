@@ -75,6 +75,8 @@ The matrix is the first consumer floor, not the complete PCRE2 syntax promise. E
 
 [`PCRE-SYNTAX-ACCEPTANCE-MATRIX.md`](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md) records the current supported shapes, representative explicitly rejected PCRE2 families, consumer-owned behavior and the next conformance gates. A representative `(*...)` directive is now diagnosed as pending syntax at its opening byte rather than as a quantifier error; malformed groups remain invalid syntax. This inventory is a checkpoint for prioritizing issue #7, not a complete PCRE2 implementation claim.
 
+[`PCRE-RESOURCE-ERROR-CONTRACT.md`](PCRE-RESOURCE-ERROR-CONTRACT.md) records the internal diagnostic and limit outcomes against Grep's observed error and cancellation behavior. The saved-path boundary is pinned in `PcreResourceContractTests`; numeric limits remain provisional and Grep's future adapter still needs command-level resource fixtures before migration.
+
 `tests/Pcre/PcreReferenceConformanceTests.cs` compares a finite supported-syntax matrix against Grep's pinned PCRE.NET 1.6.0 reference on original byte inputs. This is a test-only dependency and whole-match span gate; it does not establish full PCRE2 10.48 compatibility or add a production dependency.
 
 `tests/Pcre/PcreReferenceCaptureTests.cs` checks selected numbered group participation and source-byte spans against the same pinned reference. Unset and participating empty captures are distinct. This finite test-only matrix is another conformance gate, not a complete capture or syntax claim.

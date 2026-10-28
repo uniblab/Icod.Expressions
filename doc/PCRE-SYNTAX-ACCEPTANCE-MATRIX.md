@@ -53,8 +53,10 @@ deliberate product restriction and test the corresponding Grep diagnostic;
 it cannot silently substitute a different engine or claim unrestricted
 PCRE2 compatibility.
 
-Next, freeze error/resource and start-offset fixtures beyond the current
-selected cases, then implement the highest-priority pending families against
+The [error/resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) now pins the
+internal saved-path boundary and identifies Grep's remaining command-level
+error and cancellation fixtures. Expand start-offset and resource parity
+cases, then implement the highest-priority pending families against
 the pinned reference. The most direct gaps are general lookaround/capture
 semantics, broader backreferences, option scope and Unicode table parity.
 Full workload measurements and command-level Grep comparisons follow before
