@@ -34,7 +34,7 @@ public sealed class PcreByteLeadingDotAllTests {
 	}
 
 	[Theory]
-	[InlineData( "(?x).", 0 )]
+	[InlineData( "(?J).", 0 )]
 	public void UnsupportedFlagPlacementIsDiagnosed( string pattern, int offset ) {
 		var result = PcreByteCompiler.Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
 		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
