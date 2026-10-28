@@ -71,7 +71,10 @@ context; never shadow it with an empty fragment. Body consumption still
 cannot cross a fragment. After failure, nullable paths may also try later
 malformed bytes in gaps between real fragments. Enumerate those zero-width
 candidates lazily with indexes; do not add candidates inside valid scalars or
-allocate a gap list. Pin this against the oracle at every
+allocate a gap list. Between two malformed codepoints, both word-boundary
+forms fail (the pinned JIT uses an invalid/invalid sentinel), rather than
+treating both sides as ordinary nonword characters. Subject start and EOF
+retain their existing handling. Pin this against the oracle at every
 selected offset. Keep suffix/search shortcuts restricted to existing proven
 shapes. No Regex/native fallback or cloned byte/UTF engines.
 

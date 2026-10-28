@@ -228,6 +228,20 @@ public sealed class PcreGeneralLookaheadReferenceTests {
 			Compile( pattern, new PcreByteOptions { MatchInvalidUtf = true } ).Match( subject, 1 ), pattern );
 	}
 
+
+	[Theory]
+	[InlineData( @"\G(?=\b)", "8080" )]
+	[InlineData( @"\G(?=\B)", "8080" )]
+	[InlineData( @"\G(?=\b)", "B0B0" )]
+	[InlineData( @"\G(?=\B)", "B0B0" )]
+	public void BothBoundaryFormsFailBetweenMalformedCodepoints( string pattern, string hex ) {
+		var subject = Convert.FromHexString( hex );
+		var reference = Reference( pattern, true, true );
+		Assert.False( reference.Match( subject, 1 ).Success );
+		Compare( reference, subject, 1,
+			Compile( pattern, new PcreByteOptions { MatchInvalidUtf = true } ).Match( subject, 1 ), pattern );
+	}
+
 	private static void AssertDiagnostic( string pattern, PcreByteDiagnosticCode code, int offset, bool utf8 = false ) {
 		var result = PcreByteCompiler.Compile( ( utf8 ? Encoding.UTF8 : Encoding.Latin1 ).GetBytes( pattern ),
 			new PcreByteOptions { Utf8 = utf8 } );

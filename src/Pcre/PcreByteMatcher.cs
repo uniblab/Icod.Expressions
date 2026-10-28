@@ -315,6 +315,14 @@ internal static class PcreByteMatcher {
 							}
 							break;
 						case PcreByteOpcode.WordBoundary:
+							// PCRE2 JIT has a third boundary state: invalid codepoints on
+							// both sides reject both b and B. A synthetic/gap candidate has
+							// no valid preceding scalar; subject start and EOF are distinct.
+							if ( program.MatchInvalidUtf && position > 0 && position == fragment.Start
+								&& position < input.Length && !PcreUtf8.TryRead( input.Span, position, out _, out _ ) ) {
+								failed = true;
+								break;
+							}
 							var beforeWord = false;
 							if ( position > fragment.Start ) {
 								Step(); // Classify the preceding source byte or UTF-8 scalar.
