@@ -38,11 +38,30 @@ release/migration gates stay open. Do not use subagents.
    the maximum before returning. Emit existing noncapturing/group nodes. Register
    aliases in both directions to reject inconsistent identities during parsing.
 
-The compiled program, matcher and journal remain unchanged. Frames keep integer
+The compiled instruction model, matcher and journal remain unchanged. Frames keep integer
 offsets/checkpoints; names and numbering scopes are compilation data only. The
 256 capture ceiling applies to the highest slot number, not the total number of
 declarations. Pattern depth, repeat marks, bounded bytecode expansion, match work,
 saved paths and cancellation retain the existing policies.
+
+## Compiler depth finding
+
+The new 256-level positive depth fixture exposed an existing native stack
+overflow in recursive `CompileNode` / `CompileAlternatives` calls on macOS ARM64
+net8 Staging. Linux passed the same fixture; accepting the nominal parser depth
+must not depend on the test host's thread stack.
+
+Extend this slice to replace recursive bytecode emission with an explicit
+`Stack<Action>` of compilation continuations. Schedule one sequence element,
+branch or repeat copy at a time, keeping order, instruction/visit ceilings,
+repeat marks, counted-source diagnostic context and cancellation. Finishing
+continuations patch edges only after their children finish. Continuations are
+compilation allocations, released with the compiler; they never enter matching
+state. No VM instruction, runtime frame or match-work accounting changes.
+
+Keep the 256-level fixture and additionally cover captures, atomic groups,
+optional and counted wrappers, plus deep named-reference resolution. Do not
+raise CI thread stacks or reduce the advertised parser limit to hide the crash.
 
 ## Verification
 

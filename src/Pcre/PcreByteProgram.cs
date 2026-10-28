@@ -46,6 +46,9 @@ internal sealed class PcreByteProgramCompiler {
 	private const int MaximumInstructions = 4096;
 	private const int MaximumMarks = 256;
 	private readonly List<PcreByteInstruction> instructions = new();
+	// Compilation continuations live on the heap; AST depth must not consume
+	// platform-dependent native stack space. This is not VM backtracking state.
+	private readonly Stack<Action> compileWork = new();
 	private readonly CancellationToken cancellationToken;
 	private readonly bool caseless;
 	private readonly bool utf8;
@@ -69,6 +72,10 @@ internal sealed class PcreByteProgramCompiler {
 
 	internal PcreByteProgram Compile( PcreByteAlternatives root ) {
 		CompileAlternatives( root );
+		while ( compileWork.TryPop( out var next ) ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			next();
+		}
 		Emit( PcreByteOpcode.Accept );
 		return new( instructions.ToArray(), markCount, caseless, utf8, matchInvalidUtf,
 			FindRequiredLiteralSuffix( root ), anyCrLfNewline, HasExplicitNewline( root ), CanMatchEmptyAtAnyOffset( root ) );
@@ -168,18 +175,33 @@ internal sealed class PcreByteProgramCompiler {
 
 	private void CompileAlternatives( PcreByteAlternatives alternatives ) {
 		var endJumps = new List<int>();
-		for ( var index = 0; index < alternatives.Branches.Count; index++ ) {
-			cancellationToken.ThrowIfCancellationRequested();
-			var split = index + 1 < alternatives.Branches.Count ? Emit( PcreByteOpcode.Split ) : -1;
-			var first = instructions.Count;
-			foreach ( var node in alternatives.Branches[index] ) { CompileNode( node ); }
+		compileWork.Push( () => CompileBranch( alternatives, 0, endJumps ) );
+	}
+
+	private void CompileBranch( PcreByteAlternatives alternatives, int index, List<int> endJumps ) {
+		var split = index + 1 < alternatives.Branches.Count ? Emit( PcreByteOpcode.Split ) : -1;
+		var first = instructions.Count;
+		compileWork.Push( () => {
 			if ( split >= 0 ) {
 				endJumps.Add( Emit( PcreByteOpcode.Jump ) );
 				Patch( split, first, instructions.Count );
 			}
-		}
-		foreach ( var jump in endJumps ) { Patch( jump, instructions.Count ); }
+			if ( index + 1 < alternatives.Branches.Count ) {
+				CompileBranch( alternatives, index + 1, endJumps );
+			} else {
+				foreach ( var jump in endJumps ) { Patch( jump, instructions.Count ); }
+			}
+		} );
+		CompileSequence( alternatives.Branches[index], 0 );
 	}
+
+	private void CompileSequence( IReadOnlyList<PcreByteNode> nodes, int index ) {
+		if ( index >= nodes.Count ) { return; }
+		compileWork.Push( () => CompileSequence( nodes, index + 1 ) );
+		ScheduleNode( nodes[index] );
+	}
+
+	private void ScheduleNode( PcreByteNode node ) => compileWork.Push( () => CompileNode( node ) );
 
 	private void CompileNode( PcreByteNode node ) {
 		cancellationToken.ThrowIfCancellationRequested();
@@ -194,7 +216,7 @@ internal sealed class PcreByteProgramCompiler {
 			case PcreByteNewlineSequence:
 				// Synthetic CR/LF literals must not mark the source pattern as
 				// explicitly mentioning a newline for the candidate-search policy.
-				CompileNode( LowerNewlineSequence() );
+				ScheduleNode( LowerNewlineSequence() );
 				break;
 			case PcreByteScalarClass scalarClass:
 				Emit( PcreByteOpcode.ScalarClass, (int)scalarClass.Kind, scalarClass.Negated ? 1 : 0,
@@ -235,16 +257,16 @@ internal sealed class PcreByteProgramCompiler {
 				break;
 			case PcreByteGroup group:
 				Emit( PcreByteOpcode.CaptureStart, group.Number );
+				compileWork.Push( () => Emit( PcreByteOpcode.CaptureEnd, group.Number ) );
 				CompileAlternatives( group.Body );
-				Emit( PcreByteOpcode.CaptureEnd, group.Number );
 				break;
 			case PcreByteNoncapturingGroup noncapturing:
 				CompileAlternatives( noncapturing.Body );
 				break;
 			case PcreByteAtomic atomic:
 				Emit( PcreByteOpcode.AtomicEnter );
-				CompileNode( atomic.Child );
-				Emit( PcreByteOpcode.AtomicExit );
+				compileWork.Push( () => Emit( PcreByteOpcode.AtomicExit ) );
+				ScheduleNode( atomic.Child );
 				break;
 			case PcreByteRepeat repeat:
 				CompileRepeat( repeat );
@@ -274,67 +296,74 @@ internal sealed class PcreByteProgramCompiler {
 			var previousOffset = countedOffset;
 			if ( countedOffset < 0 ) { countedOffset = repeat.Offset; }
 			lastCountedOffset = countedOffset;
-			try { CompileCountedRepeat( repeat ); }
-			finally { countedOffset = previousOffset; }
+			compileWork.Push( () => countedOffset = previousOffset );
+			CompileCountedRepeat( repeat, 0 );
 			return;
 		}
 		if ( repeat.Maximum == 1 ) {
 			var split = Emit( PcreByteOpcode.Split );
 			var body = instructions.Count;
-			CompileNode( repeat.Child );
-			var end = instructions.Count;
-			Patch( split, repeat.Greedy ? body : end, repeat.Greedy ? end : body );
+			compileWork.Push( () => {
+				var end = instructions.Count;
+				Patch( split, repeat.Greedy ? body : end, repeat.Greedy ? end : body );
+			} );
+			ScheduleNode( repeat.Child );
 			return;
 		}
-		var initialProgress = -1;
 		if ( repeat.Minimum == 1 ) {
 			var initialMark = AllocateMark();
 			Emit( PcreByteOpcode.Mark, initialMark );
-			CompileNode( repeat.Child );
-			initialProgress = Emit( PcreByteOpcode.Progress, initialMark );
+			compileWork.Push( () => CompileUnboundedRepeat( repeat, Emit( PcreByteOpcode.Progress, initialMark ) ) );
+			ScheduleNode( repeat.Child );
+		} else {
+			CompileUnboundedRepeat( repeat );
 		}
+	}
+
+	private void CompileUnboundedRepeat( PcreByteRepeat repeat, int initialProgress = -1 ) {
 		var loop = Emit( PcreByteOpcode.Split );
 		var bodyStart = instructions.Count;
 		var mark = AllocateMark();
 		Emit( PcreByteOpcode.Mark, mark );
-		CompileNode( repeat.Child );
-		var loopProgress = Emit( PcreByteOpcode.Progress, mark );
-		Emit( PcreByteOpcode.Jump, loop );
-		var endPosition = instructions.Count;
-		Patch( loopProgress, mark, endPosition );
-		if ( initialProgress >= 0 ) { Patch( initialProgress, instructions[initialProgress].First, endPosition ); }
-		Patch( loop,
-			repeat.Greedy ? bodyStart : endPosition,
-			repeat.Greedy ? endPosition : bodyStart
-		);
+		compileWork.Push( () => {
+			var loopProgress = Emit( PcreByteOpcode.Progress, mark );
+			Emit( PcreByteOpcode.Jump, loop );
+			var endPosition = instructions.Count;
+			Patch( loopProgress, mark, endPosition );
+			if ( initialProgress >= 0 ) { Patch( initialProgress, instructions[initialProgress].First, endPosition ); }
+			Patch( loop,
+				repeat.Greedy ? bodyStart : endPosition,
+				repeat.Greedy ? endPosition : bodyStart
+			);
+		} );
+		ScheduleNode( repeat.Child );
 	}
 
-	private void CompileCountedRepeat( PcreByteRepeat repeat ) {
-		for ( var index = 0; index < repeat.Minimum; index++ ) {
-			cancellationToken.ThrowIfCancellationRequested();
-			CompileNode( repeat.Child );
+	private void CompileCountedRepeat( PcreByteRepeat repeat, int index ) {
+		if ( index < repeat.Minimum ) {
+			compileWork.Push( () => CompileCountedRepeat( repeat, index + 1 ) );
+			ScheduleNode( repeat.Child );
+			return;
 		}
 		if ( repeat.Maximum == repeat.Minimum ) { return; }
 		if ( repeat.Maximum == int.MaxValue ) {
-			var loop = Emit( PcreByteOpcode.Split );
-			var body = instructions.Count;
-			var mark = AllocateMark();
-			Emit( PcreByteOpcode.Mark, mark );
-			CompileNode( repeat.Child );
-			var progress = Emit( PcreByteOpcode.Progress, mark );
-			Emit( PcreByteOpcode.Jump, loop );
-			var end = instructions.Count;
-			Patch( progress, mark, end );
-			Patch( loop, repeat.Greedy ? body : end, repeat.Greedy ? end : body );
+			CompileUnboundedRepeat( repeat );
 			return;
 		}
 		var options = new List<(int Split, int Body)>();
-		for ( var index = repeat.Minimum; index < repeat.Maximum; index++ ) {
-			cancellationToken.ThrowIfCancellationRequested();
+		CompileCountedOptions( repeat, index, options );
+	}
+
+	private void CompileCountedOptions( PcreByteRepeat repeat, int index, List<(int Split, int Body)> options ) {
+		if ( index < repeat.Maximum ) {
 			var split = Emit( PcreByteOpcode.Split );
 			var body = instructions.Count;
-			CompileNode( repeat.Child );
-			options.Add( (split, body) );
+			compileWork.Push( () => {
+				options.Add( (split, body) );
+				CompileCountedOptions( repeat, index + 1, options );
+			} );
+			ScheduleNode( repeat.Child );
+			return;
 		}
 		var exit = instructions.Count;
 		foreach ( var (split, body) in options ) {

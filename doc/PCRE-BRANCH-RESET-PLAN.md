@@ -53,3 +53,19 @@ Run `git diff --check` and the frozen source verifier; inspect the full diff
 against the review focus. Require six green Staging jobs on the exact PR head,
 full framework suites and existing workload/package checks. Record failing and
 passing CI evidence in the PR description and mark ready for the user's review.
+
+## Execution finding: native compiler stack exhaustion
+
+The first implemented run reproduced a process-level stack overflow on macOS
+ARM64 net8 in the new positive depth-boundary test. The stack trace identifies
+recursive `PcreByteProgramCompiler.CompileNode` / `CompileAlternatives` calls.
+Both Linux jobs passed all 1,755 tests; this is a platform stack-budget bug, not
+a reason to remove or relax the fixture.
+
+Extend task 2 to `src/Pcre/PcreByteProgram.cs`: drain an explicit compilation
+continuation stack, schedule alternatives/sequences and repeat copies lazily,
+then patch control flow in finishing continuations. Preserve emitted order,
+compile visits/marks, counted diagnostic offsets and cancellation. Keep matcher
+frames and instructions unchanged. Extend the regression file with 256 nested
+capture/atomic/optional/counted groups and deep named resolution. Require the
+same six-platform suite after the compiler fix.
