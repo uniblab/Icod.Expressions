@@ -300,9 +300,7 @@ internal sealed class PcreByteParser {
 			return multiline ? new PcreByteLineAnchor( false ) : new PcreByteEndBeforeFinalLf();
 		}
 		if ( value == (byte)'.' ) {
-			return utf8 ? new PcreByteAny( dotAll )
-				: new PcreByteClass( dotAll ? PcreByteSet.AllBytes
-					: anyCrLfNewline ? PcreByteSet.DotAnyCrLf : PcreByteSet.Dot );
+			return CreateAnyCharacter( dotAll );
 		}
 		if ( value == (byte)'[' ) {
 			if ( utf8 ) { return ParseUtf8Bracket( offset ); }
@@ -324,6 +322,11 @@ internal sealed class PcreByteParser {
 		}
 		return new PcreByteLiteral( value );
 	}
+
+	private PcreByteNode CreateAnyCharacter( bool includeNewline ) =>
+		utf8 ? new PcreByteAny( includeNewline )
+			: new PcreByteClass( includeNewline ? PcreByteSet.AllBytes
+				: anyCrLfNewline ? PcreByteSet.DotAnyCrLf : PcreByteSet.Dot );
 
 	private PcreByteScalarSet ParseUtf8Bracket( int openingOffset ) {
 		var negated = index < source.Length && source[index] == (byte)'^';
@@ -623,6 +626,7 @@ internal sealed class PcreByteParser {
 			if ( inBracket ) { throw Invalid( offset, "a newline sequence is not a character class member" ); }
 			return new PcreByteNewlineSequence();
 		}
+		if ( value == (byte)'N' ) { return ParseNonNewlineEscape( offset, inBracket ); }
 		if ( value == (byte)'A' ) { return new PcreByteAnchor( true ); }
 		if ( value == (byte)'z' ) { return new PcreByteAnchor( false ); }
 		if ( value == (byte)'Z' ) { return new PcreByteEndBeforeFinalLf(); }
@@ -752,9 +756,34 @@ internal sealed class PcreByteParser {
 		return new( number );
 	}
 
+	private PcreByteNode ParseNonNewlineEscape( int offset, bool inBracket ) {
+		if ( index < source.Length && source[index] == (byte)'{' ) {
+			var opening = index++;
+			SkipBraceHorizontalSpace();
+			if ( source.AsSpan( index ).StartsWith( "U+"u8 ) ) {
+				if ( !utf8 ) { throw Invalid( offset, "a Unicode codepoint escape requires UTF mode" ); }
+				index += 2;
+				return new PcreByteLiteral( ParseBracedHexValue( offset ) );
+			}
+			index = opening;
+			if ( inBracket ) { throw Invalid( offset, "a non-newline escape is not a character class member" ); }
+			// Validate braces here, but leave valid counts to the normal quantifier path.
+			try { ParseCountedBounds( opening ); }
+			catch ( PcreByteParseException error ) when ( error.Diagnostic.Code == PcreByteDiagnosticCode.UnsupportedSyntax ) {
+				throw Invalid( offset, "non-newline braces require a count or a Unicode codepoint" );
+			} finally { index = opening; }
+		}
+		if ( inBracket ) { throw Invalid( offset, "a non-newline escape is not a character class member" ); }
+		return CreateAnyCharacter( false );
+	}
+
 	private int ParseBracedHex( int offset ) {
 		index++; // Opening brace.
 		SkipBraceHorizontalSpace();
+		return ParseBracedHexValue( offset );
+	}
+
+	private int ParseBracedHexValue( int offset ) {
 		var maximum = utf8 ? 0x10FFFF : 0xFF;
 		var scalar = 0;
 		var digits = 0;
