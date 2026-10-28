@@ -44,6 +44,19 @@ only runs when named references occur, honors cancellation and traverses the
 already depth-limited group tree. Names are compilation data only; no names,
 interior pointers or spans enter backtracking frames or the compiled program.
 
+## Conformance findings during implementation
+
+The invalid-UTF offset fixture exposed an existing numbered-reference gap:
+`(a?)\g{1}` can match an empty capture at a requested continuation byte, but
+the program's empty-path analysis excluded all backreferences. Include references
+as potentially empty so the existing VM can try the zero-width candidate. The VM
+still rejects unset targets and nonempty references across fragment barriers.
+The regression is pinned in both named and numbered syntax; no matcher change
+or new instruction is needed.
+
+The `(?<*...)` non-atomic lookbehind prefix must retain UnsupportedSyntax.
+Disambiguating angle-bracket names therefore excludes `=`, `!` and `*`.
+
 ## Evidence
 
 Pin all three declarations and five references, mixed numbering, forward and

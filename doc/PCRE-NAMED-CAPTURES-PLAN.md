@@ -38,6 +38,8 @@ declarations, temporary reference nodes, post-parse numeric resolution, and
 explicit bracket/context handling. Reuse `PcreByteGroup` and
 `PcreByteBackreference`; leave the matcher and program compiler unchanged.
 Remove the obsolete named-group pending row from syntax acceptance tests.
+Remove its equivalent row in `PcreGrepConsumerFixtureTests` and update the
+consumer fixture inventory.
 Update `doc/PCRE-DESIGN.md` and `doc/PCRE-SYNTAX-ACCEPTANCE-MATRIX.md`.
 
 ## Task 3: Verify and review
@@ -47,3 +49,15 @@ numbering, lifetime and consumer changes. Require six successful Staging jobs
 on the exact PR head, full suites on all three frameworks, and existing frozen,
 workload and package checks. Record red/green evidence in the PR description
 and mark ready. The user reviews and merges main.
+
+### Review findings and execution decisions
+
+1. The first native run accepts bracket-literal g/k interpretation; keep this
+   pending rather than incorrectly classifying it as invalid named syntax.
+2. Pin the non-atomic lookbehind prefix separately and preserve its pending
+   diagnostic while recognizing angle-bracket capture names.
+3. The invalid-UTF matrix exposed the existing empty-reference offset gap.
+   Pin named and numeric `(a?)` references at a continuation byte before changing
+   `PcreByteProgram.CanMatchEmptyAtAnyOffset` to include possible empty references.
+   This narrowly extends task 2 beyond parser aliases without modifying the VM;
+   retain fragment-barrier comparisons and require the entire suite to pass.

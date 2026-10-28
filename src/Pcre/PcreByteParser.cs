@@ -267,7 +267,7 @@ internal sealed partial class PcreByteParser {
 					index += 2;
 					name = ParseCaptureName( (byte)'\'', offset );
 				} else if ( index + 1 < source.Length && source[index + 1] == (byte)'<'
-					&& ( index + 2 >= source.Length || source[index + 2] is not (byte)'=' and not (byte)'!' ) ) {
+					&& ( index + 2 >= source.Length || source[index + 2] is not (byte)'=' and not (byte)'!' and not (byte)'*' ) ) {
 					index += 2;
 					name = ParseCaptureName( (byte)'>', offset );
 				} else {
