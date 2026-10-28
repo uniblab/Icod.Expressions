@@ -109,10 +109,14 @@ internal sealed class PcreByteParser {
 		while ( true ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			var nodes = new List<PcreByteNode>();
-			while ( index < source.Length && source[index] != (byte)'|' && source[index] != (byte)')' ) {
+			var quoting = false;
+			while ( index < source.Length ) {
 				cancellationToken.ThrowIfCancellationRequested();
-				var atom = ParseAtom( depth );
-				if ( index < source.Length && source[index] is (byte)'*' or (byte)'+' or (byte)'?' or (byte)'{' ) {
+				if ( TryConsumeQuoteDelimiter( ref quoting ) ) { continue; }
+				if ( !quoting && source[index] is (byte)'|' or (byte)')' ) { break; }
+				var atom = quoting ? ParseQuotedLiteral() : ParseAtom( depth );
+				while ( TryConsumeQuoteDelimiter( ref quoting ) ) { }
+				if ( !quoting && index < source.Length && source[index] is (byte)'*' or (byte)'+' or (byte)'?' or (byte)'{' ) {
 					if ( atom is PcreByteLiteralAssertion ) {
 						throw Unsupported( index );
 					}
@@ -157,6 +161,31 @@ internal sealed class PcreByteParser {
 			}
 			index++; // Ordered alternative.
 		}
+	}
+
+	private bool TryConsumeQuoteDelimiter( ref bool quoting ) {
+		if ( index + 1 >= source.Length || source[index] != (byte)'\\' ) { return false; }
+		if ( source[index + 1] == (byte)'E' ) {
+			index += 2;
+			quoting = false;
+			return true;
+		}
+		if ( !quoting && source[index + 1] == (byte)'Q' ) {
+			index += 2;
+			quoting = true;
+			return true;
+		}
+		return false;
+	}
+
+	private PcreByteLiteral ParseQuotedLiteral() {
+		var offset = index;
+		if ( utf8 && source[index] >= 0x80 ) {
+			PcreUtf8.TryRead( source, offset, out var scalar, out var width ); // Validated at compile entry.
+			index += width;
+			return new( scalar );
+		}
+		return new( source[index++] );
 	}
 
 	private (int Minimum, int Maximum) ParseCountedBounds( int offset ) {
@@ -299,17 +328,21 @@ internal sealed class PcreByteParser {
 	private PcreByteScalarSet ParseUtf8Bracket( int openingOffset ) {
 		var negated = index < source.Length && source[index] == (byte)'^';
 		if ( negated ) { index++; }
+		var quoting = false;
 		var ranges = new List<PcreByteScalarRange>();
 		var predicates = new List<PcreByteScalarPredicate>();
 		while ( index < source.Length ) {
 			cancellationToken.ThrowIfCancellationRequested();
-			if ( source[index] == (byte)']' && ( ranges.Count > 0 || predicates.Count > 0 ) ) {
+			if ( TryConsumeQuoteDelimiter( ref quoting ) ) { continue; }
+			if ( !quoting && source[index] == (byte)']' && ( ranges.Count > 0 || predicates.Count > 0 ) ) {
 				index++;
 				return new( caseless ? PcreUtf8CaseFold.CloseRanges( ranges, cancellationToken )
 					: ranges.ToArray(), predicates.ToArray(), negated );
 			}
-			var first = ParseUtf8BracketItem( openingOffset );
-			if ( index + 1 < source.Length && source[index] == (byte)'-'
+			var firstQuoted = quoting;
+			var first = quoting ? ParseQuotedLiteral() : ParseUtf8BracketItem( openingOffset );
+			while ( TryConsumeQuoteDelimiter( ref quoting ) ) { }
+			if ( !firstQuoted && !quoting && index + 1 < source.Length && source[index] == (byte)'-'
 				&& source[index + 1] != (byte)']' ) {
 				if ( first is not PcreByteLiteral start ) {
 					throw Invalid( openingOffset, "a character class cannot start a range" );
@@ -414,10 +447,17 @@ internal sealed class PcreByteParser {
 	private PcreByteLiteralAssertion ParseLiteralAssertion( int openingOffset, bool positive, bool behind ) {
 		var bytes = new List<byte>();
 		Span<byte> encoded = stackalloc byte[4];
-		while ( index < source.Length && source[index] != (byte)')' ) {
+		var quoting = false;
+		while ( index < source.Length ) {
 			cancellationToken.ThrowIfCancellationRequested();
+			if ( TryConsumeQuoteDelimiter( ref quoting ) ) { continue; }
+			if ( !quoting && source[index] == (byte)')' ) {
+				index++;
+				return new( bytes.ToArray(), positive, behind );
+			}
 			var value = source[index++];
-			if ( value == (byte)'\\' ) {
+			if ( quoting ) { bytes.Add( value ); }
+			else if ( value == (byte)'\\' ) {
 				PcreByteNode escaped;
 				try {
 					escaped = ParseEscape( index - 1 );
@@ -437,14 +477,13 @@ internal sealed class PcreByteParser {
 				bytes.Add( value );
 			}
 		}
-		if ( index >= source.Length ) { throw Invalid( openingOffset, "unclosed assertion" ); }
-		index++;
-		return new( bytes.ToArray(), positive, behind );
+		throw Invalid( openingOffset, "unclosed assertion" );
 	}
 
 	private PcreByteNode ParseBracket( int openingOffset ) {
 		var negated = index < source.Length && source[index] == (byte)'^';
 		if ( negated ) { index++; }
+		var quoting = false;
 		var hasItem = false;
 		var explicitNewline = false;
 		var set = default(PcreByteSet);
@@ -452,17 +491,20 @@ internal sealed class PcreByteParser {
 		var nextClosingBracket = -1;
 		while ( index < source.Length ) {
 			cancellationToken.ThrowIfCancellationRequested();
-			if ( source[index] == (byte)']' && hasItem ) {
+			if ( TryConsumeQuoteDelimiter( ref quoting ) ) { continue; }
+			if ( !quoting && source[index] == (byte)']' && hasItem ) {
 				index++;
 				return new PcreByteClass( negated ? set.Complement() : set, !negated && explicitNewline );
 			}
-			var item = ParseBracketItem( ref specialScanCursor, ref nextClosingBracket );
+			var itemQuoted = quoting;
+			var item = quoting ? QuotedBracketLiteral() : ParseBracketItem( ref specialScanCursor, ref nextClosingBracket );
+			while ( TryConsumeQuoteDelimiter( ref quoting ) ) { }
 			if ( item.Value is (byte)'\r' or (byte)'\n' ) { explicitNewline = true; }
 			if ( !item.Value.HasValue && index < source.Length && source[index] == (byte)'-'
 				&& index + 1 < source.Length && source[index + 1] != (byte)']' ) {
 				throw Invalid( index, "a character class cannot start a range" );
 			}
-			if ( item.Value.HasValue && item.MayStartRange && index < source.Length
+			if ( !itemQuoted && !quoting && item.Value.HasValue && item.MayStartRange && index < source.Length
 				&& source[index] == (byte)'-' && index + 1 < source.Length && source[index + 1] != (byte)']' ) {
 				var hyphenOffset = index++;
 				var end = ParseBracketItem( ref specialScanCursor, ref nextClosingBracket );
@@ -481,6 +523,11 @@ internal sealed class PcreByteParser {
 			hasItem = true;
 		}
 		throw Invalid( openingOffset, "unclosed bracket class" );
+	}
+
+	private (PcreByteSet Set, byte? Value, bool MayStartRange) QuotedBracketLiteral() {
+		var value = source[index++];
+		return (BracketLiteral( value ), value, false);
 	}
 
 	private (PcreByteSet Set, byte? Value, bool MayStartRange) ParseBracketItem(
