@@ -209,6 +209,11 @@ internal sealed class PcreByteParser {
 		var offset = index;
 		var value = source[index++];
 		if ( value == (byte)'(' ) {
+			// PCRE2's (*...) directives and aliases are pending, not repeated empty groups.
+			if ( index < source.Length && source[index] == (byte)'*'
+				&& source.AsSpan( index + 1 ).IndexOf( (byte)')' ) >= 0 ) {
+				throw Unsupported( offset );
+			}
 			var capturing = true;
 			var atomic = false;
 			if ( index < source.Length && source[index] == (byte)'?' ) {
