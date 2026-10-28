@@ -90,8 +90,8 @@ public sealed class PcreMatchPositionReferenceTests {
 	}
 
 	[Fact]
-	public void SearchStartInsideGeneralAssertionRemainsUnsupported() {
-		var result = PcreByteCompiler.Compile( @"(?=\G)"u8.ToArray() );
+	public void SearchStartInsideLookbehindRemainsUnsupported() {
+		var result = PcreByteCompiler.Compile( @"(?<=\G)"u8.ToArray() );
 		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
 		Assert.Equal( 0, result.Diagnostic?.ByteOffset );
 	}

@@ -110,7 +110,7 @@ public sealed class PcreGeneralLookaheadReferenceTests {
 			@"(?=(.))\1", @"(?=a.b)a", @"(?!a.b)a", @"(?=(a?))", @"(?!(a))",
 			@"(?=(?:[a]|))", @"(?=\G[a]?)", @"(?!\G[a])", @"(?=[a]$)a", @"(?m)(?=^([a]))a",
 			@"(?=(\R))\1", @"(?=\N+).", @"(?=(?<=a)[b])b", @"(?=())", @"(?!a)", @"(?!(?=a))",
-			@"(?=(?:a|))", @"(?=(a))", @"(?=\G)(?!a)" } ) {
+			@"(?=(?:a|))", @"(?=(a))", @"(?=\G)(?!a)", @"(?=)", @"(?!)" } ) {
 			var reference = Reference( pattern, utf8, utf8, anyCrLf );
 			var compiled = Compile( pattern, new PcreByteOptions {
 				Utf8 = utf8, MatchInvalidUtf = utf8, AnyCrLfNewline = anyCrLf
@@ -217,6 +217,17 @@ public sealed class PcreGeneralLookaheadReferenceTests {
 		Assert.Throws<OperationCanceledException>( () => compiled.Match( subject, cancellationToken: cancellation.Token ) );
 	}
 
+
+	[Theory]
+	[InlineData( @"(?!(?<=a))" )]
+	[InlineData( @"(?=\B)" )]
+	public void AssertionAtMalformedBoundaryRetainsTheAvailableLeftContext( string pattern ) {
+		var subject = Convert.FromHexString( "61FF" );
+		var reference = Reference( pattern, true, true );
+		Compare( reference, subject, 1,
+			Compile( pattern, new PcreByteOptions { MatchInvalidUtf = true } ).Match( subject, 1 ), pattern );
+	}
+
 	private static void AssertDiagnostic( string pattern, PcreByteDiagnosticCode code, int offset, bool utf8 = false ) {
 		var result = PcreByteCompiler.Compile( ( utf8 ? Encoding.UTF8 : Encoding.Latin1 ).GetBytes( pattern ),
 			new PcreByteOptions { Utf8 = utf8 } );
@@ -248,7 +259,8 @@ public sealed class PcreGeneralLookaheadReferenceTests {
 		PcreByteMatchResult actual, string context ) {
 		var native = reference.Match( subject, offset );
 		Assert.True( actual.IsSuccess, $"{context}: {actual.Diagnostic?.Message}" );
-		Assert.True( ( native.Success ? native.Index : -1 ) == ( actual.Match?.ByteIndex ?? -1 ), context );
+		Assert.True( ( native.Success ? native.Index : -1 ) == ( actual.Match?.ByteIndex ?? -1 ),
+			$"{context}; native index {( native.Success ? native.Index : -1 )}, managed index {actual.Match?.ByteIndex ?? -1}" );
 		if ( !native.Success ) { return; }
 		Assert.Equal( native.Length, actual.Match!.ByteLength );
 		Assert.Equal( native.Groups.Count, actual.Match.Captures.Count );
