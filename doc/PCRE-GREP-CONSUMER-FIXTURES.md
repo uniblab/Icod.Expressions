@@ -22,8 +22,8 @@ Grep constructs one PCRE.NET 1.6.0 expression per pattern. In a UTF-8 locale it 
 | Status | Concrete examples | Verification |
 |---|---|---|
 | Supported subset | Grep's literal lookbehind, single-digit numbered backreference, `\p{L}`, POSIX digit class, ASCII `\d` and `(?-aD)`, leading `(?s)`, byte NUL/high byte | Consumer fixture table and prior PCRE reference tests. |
-| Supported capture syntax extensions | Named captures/references and branch-reset groups alias numbered slots | `PcreNamedCaptureReferenceTests`, `PcreBranchResetReferenceTests`; this does not migrate Grep or establish a broader public compatibility claim. |
-| Rejected by the internal compiler for now | Recursion `(?R)`, scoped options `(?i:a)`, nonliteral lookbehind `(?<=a+)b`, multi-digit backreference `\10` | Explicit unsupported-syntax assertions in the fixture tests. Reference acceptance is not a claim of internal support. |
+| Supported capture syntax extensions | Named/decimal references and branch-reset groups reuse numbered slots; octals reuse literal nodes | `PcreNamedCaptureReferenceTests`, `PcreBranchResetReferenceTests`, `PcreNumericEscapeReferenceTests`; this does not migrate Grep or establish a broader public compatibility claim. |
+| Rejected by the internal compiler for now | Recursion `(?R)`, scoped options `(?i:a)`, nonliteral lookbehind `(?<=a+)b` | Explicit unsupported-syntax assertions in the fixture tests. Reference acceptance is not a claim of internal support. |
 | Pending conformance | Invalid UTF-8 offset exhaustiveness, Unicode and caseless data versions, broader assertion and option scopes, PCRE2 properties, verbs, recursion, capture boundaries and diagnostic equivalence | Separate issue #7 tranches; no fallback engine. |
 
 ## Resource and performance gates still open

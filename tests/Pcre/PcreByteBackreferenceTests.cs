@@ -70,16 +70,6 @@ public sealed class PcreByteBackreferenceTests {
 	}
 
 	[Theory]
-	[InlineData( @"(a)\10" )]
-	[InlineData( @"\0" )]
-	[InlineData( @"[\1]" )]
-	public void RetainsAmbiguousOrInClassNumbersAsUnsupported( string pattern ) {
-		var result = PcreByteCompiler.Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
-		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
-		Assert.Equal( pattern.IndexOf( '\\' ), result.Diagnostic?.ByteOffset );
-	}
-
-	[Theory]
 	[InlineData( @"(a)\g12", (int)PcreByteDiagnosticCode.InvalidSyntax )]
 	[InlineData( @"(a)\g{2}", (int)PcreByteDiagnosticCode.InvalidSyntax )]
 	[InlineData( @"(a)\g{0}", (int)PcreByteDiagnosticCode.InvalidSyntax )]

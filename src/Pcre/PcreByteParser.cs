@@ -409,9 +409,6 @@ internal sealed partial class PcreByteParser {
 				index++;
 				return new PcreByteLiteral( 0x08 );
 			}
-			if ( index < source.Length && source[index] is >= (byte)'1' and <= (byte)'9' ) {
-				throw Unsupported( openingOffset ); // Numeric escapes in brackets are octal.
-			}
 			PcreByteNode escaped;
 			try { escaped = ParseEscape( offset, inBracket: true ); }
 			catch ( PcreByteParseException error ) when (
@@ -581,9 +578,6 @@ internal sealed partial class PcreByteParser {
 				index++;
 				return (PcreByteSet.Singleton( 0x08 ), 0x08, true);
 			}
-			if ( index < source.Length && source[index] is >= (byte)'1' and <= (byte)'9' ) {
-				throw Unsupported( offset ); // In a class, numeric escapes are octal characters.
-			}
 			var escape = ParseEscape( offset, inBracket: true );
 			return escape switch {
 				PcreByteLiteral literal => (BracketLiteral( (byte)literal.Value ), (byte)literal.Value, true),
@@ -669,14 +663,8 @@ internal sealed partial class PcreByteParser {
 		if ( value == (byte)'b' || value == (byte)'B' ) {
 			return new PcreByteWordBoundary( value == (byte)'b', ucp );
 		}
-		if ( value is >= (byte)'1' and <= (byte)'9' ) {
-			if ( index < source.Length && source[index] is >= (byte)'0' and <= (byte)'9' ) {
-				throw Unsupported( offset ); // Multi-digit references and octal ambiguity are pending.
-			}
-			var number = value - (byte)'0';
-			backreferences.Add( (number, offset) );
-			return new PcreByteBackreference( number );
-		}
+		if ( value is >= (byte)'0' and <= (byte)'9' ) { return ParseDecimalOrOctalEscape( value, offset, inBracket ); }
+		if ( value == (byte)'o' ) { return ParseBracedOctal( offset ); }
 		if ( value == (byte)'k' ) {
 			if ( inBracket ) { throw Unsupported( offset ); } // Literal bracket interpretation is pending.
 			if ( index >= source.Length || source[index] is not (byte)'<' and not (byte)'\'' and not (byte)'{' ) {
@@ -771,7 +759,7 @@ internal sealed partial class PcreByteParser {
 
 	private PcreByteBackreference ParseNumericBackreference( int offset ) {
 		var braced = index < source.Length && source[index] == (byte)'{';
-		if ( braced ) { index++; }
+		if ( braced ) { index++; SkipBraceHorizontalSpace(); }
 		var sign = 0;
 		if ( index < source.Length && source[index] is (byte)'+' or (byte)'-' ) {
 			sign = source[index++] == (byte)'+' ? 1 : -1;
@@ -792,6 +780,7 @@ internal sealed partial class PcreByteParser {
 			magnitude = magnitude * 10 + digit;
 		} while ( index < source.Length && source[index] is >= (byte)'0' and <= (byte)'9' );
 		if ( braced ) {
+			SkipBraceHorizontalSpace();
 			if ( index >= source.Length || source[index] != (byte)'}' ) {
 				throw Invalid( offset, "unclosed numeric backreference" );
 			}
@@ -837,29 +826,31 @@ internal sealed partial class PcreByteParser {
 		return ParseBracedHexValue( offset );
 	}
 
-	private int ParseBracedHexValue( int offset ) {
+	private int ParseBracedHexValue( int offset ) => ParseBracedCharacterValue( offset, 16, "hex" );
+
+	private int ParseBracedCharacterValue( int offset, int radix, string kind ) {
 		var maximum = utf8 ? 0x10FFFF : 0xFF;
 		var scalar = 0;
-		var digits = 0;
+		var hasDigits = false;
 		while ( index < source.Length ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			var digit = HexDigit( source[index] );
-			if ( digit < 0 ) { break; }
-			if ( scalar > ( maximum - digit ) / 16 ) {
-				throw Invalid( offset, "hex escape exceeds the supported character range" );
+			if ( digit < 0 || digit >= radix ) { break; }
+			if ( scalar > ( maximum - digit ) / radix ) {
+				throw Invalid( offset, $"{kind} escape exceeds the supported character range" );
 			}
-			scalar = ( scalar << 4 ) | digit;
+			scalar = scalar * radix + digit;
 			index++;
-			digits++;
+			hasDigits = true;
 		}
-		if ( digits == 0 ) { throw Invalid( offset, "hex escape requires at least one digit" ); }
+		if ( !hasDigits ) { throw Invalid( offset, $"{kind} escape requires at least one digit" ); }
 		SkipBraceHorizontalSpace();
 		if ( index >= source.Length || source[index] != (byte)'}' ) {
-			throw Invalid( offset, "unclosed hex escape or nonhex character" );
+			throw Invalid( offset, $"unclosed {kind} escape or non{kind} character" );
 		}
 		index++;
 		if ( utf8 && scalar is >= 0xD800 and <= 0xDFFF ) {
-			throw Invalid( offset, "hex escape is a surrogate code point" );
+			throw Invalid( offset, $"{kind} escape is a surrogate code point" );
 		}
 		return scalar;
 	}
