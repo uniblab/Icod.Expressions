@@ -119,6 +119,27 @@ public sealed class PcreBranchResetReferenceTests {
 		Assert.Equal( PcreByteDiagnosticCode.PatternRepeatLimitExceeded, expanded.Diagnostic?.Code );
 	}
 
+	[Theory]
+	[InlineData( "(", ")" )]
+	[InlineData( "(?>", ")" )]
+	[InlineData( "(?:", ")?" )]
+	[InlineData( "(?:", "){1}" )]
+	public void OtherGroupShapesCompileAtTheSameDepthBoundary( string opening, string closing ) {
+		var pattern = string.Concat( Enumerable.Repeat( opening, 256 ) ) + "a"
+			+ string.Concat( Enumerable.Repeat( closing, 256 ) );
+		Assert.Equal( 1, Compile( pattern ).Match( "a"u8.ToArray() ).Match?.ByteLength );
+	}
+
+	[Fact]
+	public void DeepNamedResolutionAndCaptureCompilationKeepTheirBoundary() {
+		var pattern = string.Concat( Enumerable.Range( 1, 256 ).Select( n => $"(?<g{n}>" ) )
+			+ "a" + new string( ')', 256 ) + @"\g{g256}";
+		var match = Compile( pattern ).Match( "aa"u8.ToArray() ).Match;
+		Assert.Equal( 2, match?.ByteLength );
+		Assert.Equal( 257, match?.Captures.Count );
+		Assert.Equal( new PcreByteCapture( 0, 1 ), match?.Captures[256] );
+	}
+
 	[Fact]
 	public void ResetAlternativesSpendMatchWorkAndHonorCancellation() {
 		const string pattern = "(?|(a)|(aa))*b";
