@@ -70,15 +70,6 @@ public sealed class PcreByteLeadingMultilineTests {
 	}
 
 	[Theory]
-	[InlineData( "a(?m)^", 1 )]
-	[InlineData( "(?m:^)", 0 )]
-	public void UnsupportedFlagPlacementRemainsExplicit( string pattern, int offset ) {
-		var result = PcreByteCompiler.Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
-		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
-		Assert.Equal( offset, result.Diagnostic?.ByteOffset );
-	}
-
-	[Theory]
 	[InlineData( "(?m)^+" )]
 	[InlineData( "(?m)$?" )]
 	public void RejectsDirectLineAnchorRepetition( string pattern ) {

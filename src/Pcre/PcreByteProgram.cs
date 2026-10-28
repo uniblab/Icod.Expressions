@@ -32,11 +32,12 @@ internal enum PcreByteOpcode {
 internal sealed record PcreByteInstruction(
 	PcreByteOpcode Opcode, int First = 0, int Second = 0, PcreByteSet Set = default,
 	ReadOnlyMemory<byte> Bytes = default, ReadOnlyMemory<PcreByteScalarRange> Ranges = default,
-	ReadOnlyMemory<PcreByteScalarPredicate> Predicates = default, UnicodeCategory? Category = null
+	ReadOnlyMemory<PcreByteScalarPredicate> Predicates = default, UnicodeCategory? Category = null,
+	bool Caseless = false
 );
 
 internal sealed record PcreByteProgram(
-	PcreByteInstruction[] Instructions, int MarkCount, bool Caseless, bool Utf8, bool MatchInvalidUtf,
+	PcreByteInstruction[] Instructions, int MarkCount, bool HasCaselessComparisons, bool Utf8, bool MatchInvalidUtf,
 	ReadOnlyMemory<byte> RequiredLiteralSuffix, bool AnyCrLfNewline, bool ExplicitNewline,
 	bool CanMatchEmptyAtAnyOffset
 );
@@ -50,7 +51,7 @@ internal sealed class PcreByteProgramCompiler {
 	// platform-dependent native stack space. This is not VM backtracking state.
 	private readonly Stack<Action> compileWork = new();
 	private readonly CancellationToken cancellationToken;
-	private readonly bool caseless;
+	private bool hasCaselessComparisons;
 	private readonly bool utf8;
 	private readonly bool matchInvalidUtf;
 	private readonly bool anyCrLfNewline;
@@ -60,10 +61,9 @@ internal sealed class PcreByteProgramCompiler {
 	private int lastCountedOffset = -1;
 	private int compileVisits;
 
-	internal PcreByteProgramCompiler( CancellationToken cancellationToken, bool caseless, bool utf8, bool matchInvalidUtf,
+	internal PcreByteProgramCompiler( CancellationToken cancellationToken, bool utf8, bool matchInvalidUtf,
 		bool anyCrLfNewline, bool bsrAnyCrLf ) {
 		this.cancellationToken = cancellationToken;
-		this.caseless = caseless;
 		this.utf8 = utf8;
 		this.matchInvalidUtf = matchInvalidUtf;
 		this.anyCrLfNewline = anyCrLfNewline;
@@ -77,7 +77,7 @@ internal sealed class PcreByteProgramCompiler {
 			next();
 		}
 		Emit( PcreByteOpcode.Accept );
-		return new( instructions.ToArray(), markCount, caseless, utf8, matchInvalidUtf,
+		return new( instructions.ToArray(), markCount, hasCaselessComparisons, utf8, matchInvalidUtf,
 			FindRequiredLiteralSuffix( root ), anyCrLfNewline, HasExplicitNewline( root ), CanMatchEmptyAtAnyOffset( root ) );
 	}
 
@@ -138,7 +138,7 @@ internal sealed class PcreByteProgramCompiler {
 	private ReadOnlyMemory<byte> FindRequiredLiteralSuffix( PcreByteAlternatives root ) {
 		// A single scalar-class + followed only by literals must consume this suffix.
 		// Restrict the shape so a bounded no-match shortcut can preserve VM limits.
-		if ( !utf8 || caseless || root.Branches.Count != 1 ) { return default; }
+		if ( !utf8 || hasCaselessComparisons || root.Branches.Count != 1 ) { return default; }
 		var branch = root.Branches[0];
 		if ( branch.Count is < 3 or > 9
 			|| branch[0] is not PcreByteRepeat {
@@ -160,11 +160,13 @@ internal sealed class PcreByteProgramCompiler {
 
 	private int Emit( PcreByteOpcode opcode, int first = 0, int second = 0, PcreByteSet set = default,
 		ReadOnlyMemory<byte> bytes = default, ReadOnlyMemory<PcreByteScalarRange> ranges = default,
-		ReadOnlyMemory<PcreByteScalarPredicate> predicates = default, UnicodeCategory? category = null ) {
+		ReadOnlyMemory<PcreByteScalarPredicate> predicates = default, UnicodeCategory? category = null,
+		bool caseless = false ) {
 		cancellationToken.ThrowIfCancellationRequested();
 		if ( instructions.Count >= MaximumInstructions ) { throw RepeatExpansionLimit(); }
 		var index = instructions.Count;
-		instructions.Add( new( opcode, first, second, set, bytes, ranges, predicates, category ) );
+		instructions.Add( new( opcode, first, second, set, bytes, ranges, predicates, category, caseless ) );
+		hasCaselessComparisons |= caseless;
 		return index;
 	}
 
@@ -208,7 +210,7 @@ internal sealed class PcreByteProgramCompiler {
 		if ( ++compileVisits > MaximumInstructions ) { throw RepeatExpansionLimit(); }
 		switch ( node ) {
 			case PcreByteLiteral literal:
-				Emit( PcreByteOpcode.Literal, literal.Value );
+				Emit( PcreByteOpcode.Literal, literal.Value, caseless: literal.Caseless );
 				break;
 			case PcreByteAny any:
 				Emit( PcreByteOpcode.Any, any.DotAll ? 1 : 0 );
@@ -220,17 +222,17 @@ internal sealed class PcreByteProgramCompiler {
 				break;
 			case PcreByteScalarClass scalarClass:
 				Emit( PcreByteOpcode.ScalarClass, (int)scalarClass.Kind, scalarClass.Negated ? 1 : 0,
-					category: scalarClass.Category );
+					category: scalarClass.Category, caseless: scalarClass.Caseless );
 				break;
 			case PcreByteScalarSet scalarSet:
 				Emit( PcreByteOpcode.ScalarSet, second: scalarSet.Negated ? 1 : 0,
-					ranges: scalarSet.Ranges, predicates: scalarSet.Predicates );
+					ranges: scalarSet.Ranges, predicates: scalarSet.Predicates, caseless: scalarSet.Caseless );
 				break;
 			case PcreByteClass characterClass:
-				Emit( PcreByteOpcode.Class, set: characterClass.Set );
+				Emit( PcreByteOpcode.Class, set: characterClass.Set, caseless: characterClass.Caseless );
 				break;
 			case PcreByteBackreference reference:
-				Emit( PcreByteOpcode.Backreference, reference.Number );
+				Emit( PcreByteOpcode.Backreference, reference.Number, caseless: reference.Caseless );
 				break;
 			case PcreByteWordBoundary boundary:
 				Emit( PcreByteOpcode.WordBoundary, boundary.IsBoundary ? 1 : 0,
@@ -238,7 +240,7 @@ internal sealed class PcreByteProgramCompiler {
 				break;
 			case PcreByteLiteralAssertion assertion:
 				Emit( PcreByteOpcode.AssertLiteral, assertion.IsPositive ? 1 : 0,
-					assertion.IsBehind ? 1 : 0, bytes: assertion.Bytes );
+					assertion.IsBehind ? 1 : 0, bytes: assertion.Bytes, caseless: assertion.Caseless );
 				break;
 			case PcreByteAnchor anchor:
 				Emit( anchor.IsStart ? PcreByteOpcode.Start : PcreByteOpcode.End );

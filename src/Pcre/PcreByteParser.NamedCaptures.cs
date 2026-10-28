@@ -74,7 +74,7 @@ internal sealed partial class PcreByteParser {
 		cancellationToken.ThrowIfCancellationRequested();
 		return node switch {
 			NamedReference reference => namedCaptures.TryGetValue( reference.Name, out var number )
-				? new PcreByteBackreference( number )
+				? new PcreByteBackreference( number ) { Caseless = reference.Caseless }
 				: throw Invalid( reference.Offset, "backreference has no capture name" ),
 			PcreByteGroup group => group with { Body = ResolveNamedReferences( group.Body ) },
 			PcreByteNoncapturingGroup group => group with { Body = ResolveNamedReferences( group.Body ) },

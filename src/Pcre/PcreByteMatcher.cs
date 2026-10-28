@@ -26,7 +26,7 @@ internal static class PcreByteMatcher {
 		}
 		// No candidate can reach the VM when the required first byte is absent.
 		// This is limited to unobserved, noncancellable exact byte searches.
-		var unobservedByteSearch = !program.Utf8 && !program.Caseless
+		var unobservedByteSearch = !program.Utf8 && !program.HasCaselessComparisons
 			&& !cancellationToken.CanBeCanceled && workObserver is null;
 		var leadingLiteral = -1;
 		var failedLiteralCost = 3;
@@ -184,9 +184,9 @@ internal static class PcreByteMatcher {
 							var literalWidth = 1;
 							if ( position < fragment.End && ( program.Utf8
 								? PcreUtf8.TryRead( input.Span, position, out var scalar, out literalWidth )
-									&& ( program.Caseless ? PcreUtf8CaseFold.Equals( scalar, instruction.First )
+									&& ( instruction.Caseless ? PcreUtf8CaseFold.Equals( scalar, instruction.First )
 										: scalar == instruction.First )
-								: ScalarEquals( input.Span[position], instruction.First, program.Caseless ) ) ) {
+								: ScalarEquals( input.Span[position], instruction.First, instruction.Caseless ) ) ) {
 								position += literalWidth;
 								pc++;
 							} else { failed = true; }
@@ -206,7 +206,7 @@ internal static class PcreByteMatcher {
 							if ( position < fragment.End
 								&& PcreUtf8.TryRead( input.Span, position, out var propertyScalar, out var propertyWidth )
 								&& ScalarClassContains( (PcreByteScalarClassKind)instruction.First, propertyScalar,
-									instruction.Category, program.Utf8 && program.Caseless )
+									instruction.Category, program.Utf8 && instruction.Caseless )
 									!= ( instruction.Second == 1 ) ) {
 								position += propertyWidth;
 								pc++;
@@ -220,7 +220,7 @@ internal static class PcreByteMatcher {
 								break;
 							}
 							var contained = false;
-							var rangeScalar = program.Caseless ? PcreUtf8CaseFold.Fold( setScalar ) : setScalar;
+							var rangeScalar = instruction.Caseless ? PcreUtf8CaseFold.Fold( setScalar ) : setScalar;
 							foreach ( var range in instruction.Ranges.Span ) {
 								Step(); // Each attempted interval inspection consumes work.
 								if ( rangeScalar >= range.Start && rangeScalar <= range.End ) { contained = true; break; }
@@ -229,7 +229,7 @@ internal static class PcreByteMatcher {
 								foreach ( var predicate in instruction.Predicates.Span ) {
 									Step(); // Each attempted scalar predicate consumes work.
 									if ( ScalarClassContains( predicate.Kind, setScalar, predicate.Category,
-										program.Caseless ) != predicate.Negated ) {
+										instruction.Caseless ) != predicate.Negated ) {
 										contained = true;
 										break;
 									}
@@ -254,7 +254,7 @@ internal static class PcreByteMatcher {
 								break;
 							}
 							var captured = capture.Value;
-							if ( program.Utf8 && program.Caseless ) {
+							if ( program.Utf8 && instruction.Caseless ) {
 								var capturedOffset = captured.ByteIndex;
 								var capturedEnd = captured.ByteIndex + captured.ByteLength;
 								var candidate = position;
@@ -282,7 +282,7 @@ internal static class PcreByteMatcher {
 							for ( var byteIndex = 0; byteIndex < captured.ByteLength; byteIndex++ ) {
 								Step(); // Attempted captured-byte comparison.
 								if ( byteIndex >= input.Length - position
-									|| !ScalarEquals( input.Span[captured.ByteIndex + byteIndex], input.Span[position + byteIndex], program.Caseless ) ) {
+									|| !ScalarEquals( input.Span[captured.ByteIndex + byteIndex], input.Span[position + byteIndex], instruction.Caseless ) ) {
 									failed = true;
 									break;
 								}
@@ -316,7 +316,7 @@ internal static class PcreByteMatcher {
 							break;
 						case PcreByteOpcode.AssertLiteral:
 							var literal = instruction.Bytes.Span;
-							if ( program.Utf8 && program.Caseless ) {
+							if ( program.Utf8 && instruction.Caseless ) {
 								var scalarEquals = true;
 								var scalarAdjacent = position;
 								if ( instruction.Second == 1 ) {
@@ -358,7 +358,7 @@ internal static class PcreByteMatcher {
 							if ( equals ) {
 								for ( var byteIndex = 0; byteIndex < literal.Length; byteIndex++ ) {
 									Step(); // Attempted assertion byte comparison.
-									if ( !ScalarEquals( input.Span[adjacent + byteIndex], literal[byteIndex], program.Caseless ) ) {
+									if ( !ScalarEquals( input.Span[adjacent + byteIndex], literal[byteIndex], instruction.Caseless ) ) {
 										equals = false;
 										break;
 									}

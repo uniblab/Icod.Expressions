@@ -59,8 +59,6 @@ public sealed class PcreLeadingOptionCombinationReferenceTests {
 	}
 
 	[Theory]
-	[InlineData( "a(?im)b", 1 )]
-	[InlineData( "(?i:a)", 0 )]
 	[InlineData( "(?im-x)a", 0 )]
 	[InlineData( "(?i)(?x)a", 4 )]
 	[InlineData( "(?im-aD)a", 0 )]
