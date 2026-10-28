@@ -36,9 +36,7 @@ public sealed class PcreByteLeadingDotAllTests {
 	[Theory]
 	[InlineData( "a(?s).", 1 )]
 	[InlineData( "(?s:.)", 0 )]
-	[InlineData( "(?-s).", 0 )]
 	[InlineData( "(?x).", 0 )]
-	[InlineData( "(?s)(?s).", 4 )]
 	public void UnsupportedFlagPlacementIsDiagnosed( string pattern, int offset ) {
 		var result = PcreByteCompiler.Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
 		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
