@@ -135,6 +135,7 @@ public sealed class PcreNamedCaptureReferenceTests {
 	[InlineData( "(?J)(?<x>a)(?<x>b)", 0 )]
 	[InlineData( "(?|(?<x>a)|(?<x>b))", 0 )]
 	[InlineData( @"(?<x>a)(?=\k<x>)", 7 )]
+	[InlineData( "(?<*a)b", 0 )]
 	public void SubroutinesAndGeneralAssertionsRemainUnsupported( string pattern, int offset ) {
 		Reference( pattern, false, false ); // Valid PCRE2 syntax, distinct from implemented aliases.
 		var result = PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( pattern ) );
@@ -152,6 +153,16 @@ public sealed class PcreNamedCaptureReferenceTests {
 			Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
 			Assert.Equal( utf8 ? 0 : 1, result.Diagnostic?.ByteOffset );
 		}
+	}
+
+	[Theory]
+	[InlineData( @"(?<x>a?)\k<x>" )]
+	[InlineData( @"(a?)\g{1}" )]
+	public void EmptyCapturedReferenceCanMatchAtContinuationByte( string pattern ) {
+		var subject = "é"u8.ToArray();
+		var reference = Reference( pattern, true, true );
+		Assert.Equal( 1, reference.Match( subject, 1 ).Index );
+		Compare( reference, subject, 1, Compile( pattern, new PcreByteOptions { MatchInvalidUtf = true } ).Match( subject, 1 ) );
 	}
 
 	private static void AssertInvalid( string pattern, bool utf8, int offset ) {
