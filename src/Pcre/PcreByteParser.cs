@@ -652,6 +652,16 @@ internal sealed class PcreByteParser {
 			if ( count == 0 ) { throw Invalid( offset, "hex escape requires at least one digit" ); }
 			return new PcreByteLiteral( result );
 		}
+		if ( value is (byte)'h' or (byte)'H' or (byte)'v' or (byte)'V' ) {
+			var horizontal = value is (byte)'h' or (byte)'H';
+			var negated = value is (byte)'H' or (byte)'V';
+			if ( utf8 ) {
+				return new PcreByteScalarClass( horizontal ? PcreByteScalarClassKind.HorizontalSpace
+					: PcreByteScalarClassKind.VerticalSpace, negated );
+			}
+			var set = horizontal ? PcreByteSet.HorizontalSpace : PcreByteSet.VerticalSpace;
+			return new PcreByteClass( negated ? set.Complement() : set );
+		}
 		if ( utf8 && ( value is (byte)'d' or (byte)'D' ) ) {
 			return new PcreByteScalarClass( ucp && !asciiBsD
 				? PcreByteScalarClassKind.DecimalDigit : PcreByteScalarClassKind.AsciiDigit,
