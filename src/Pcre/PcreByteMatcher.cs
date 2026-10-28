@@ -37,8 +37,8 @@ internal static class PcreByteMatcher {
 			} else if ( first.Opcode == PcreByteOpcode.CaptureStart
 				&& program.Instructions.Length > 1
 				&& program.Instructions[1] is { Opcode: PcreByteOpcode.Literal, First: >= 0 and <= 255 } capturedLiteral ) {
-				// A root or group alternative emits Split before CaptureStart/Literal.
-				// Here every successful path must consume the captured first byte.
+				// Captures and match-start resets both add one zero-width instruction.
+				// Every successful path here must still consume this first literal.
 				leadingLiteral = capturedLiteral.First;
 				failedLiteralCost = 4;
 			}
@@ -169,6 +169,7 @@ internal static class PcreByteMatcher {
 					var pc = 0;
 					Array.Clear( captures );
 					Array.Clear( captureStarts );
+					captureStarts[0] = start; // Reported start; backtracked resets use the capture journal.
 					Array.Clear( marks );
 					backtrack.Clear();
 					changes.Clear();
@@ -369,6 +370,9 @@ internal static class PcreByteMatcher {
 						case PcreByteOpcode.Start:
 							if ( position == 0 ) { pc++; } else { failed = true; }
 							break;
+						case PcreByteOpcode.SearchStart:
+							if ( position == startOffset ) { pc++; } else { failed = true; }
+							break;
 						case PcreByteOpcode.End:
 							if ( position == input.Length ) { pc++; } else { failed = true; }
 							break;
@@ -450,8 +454,9 @@ internal static class PcreByteMatcher {
 							pc++;
 							break;
 						case PcreByteOpcode.Accept:
-							captures[0] = new( start, position - start );
-							return new( new PcreByteMatch( start, position - start, Array.AsReadOnly( captures ) ), null );
+							var reportedStart = captureStarts[0];
+							captures[0] = new( reportedStart, position - reportedStart );
+							return new( new PcreByteMatch( reportedStart, position - reportedStart, Array.AsReadOnly( captures ) ), null );
 						default:
 							throw new InvalidOperationException( "Compiler produced an unknown PCRE byte instruction." );
 					}
