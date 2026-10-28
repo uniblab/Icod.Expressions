@@ -140,7 +140,15 @@ internal static class PcreByteMatcher {
 				&& startOffset < input.Length && !PcreUtf8.TryRead( input.Span, startOffset, out _, out _ ) ) {
 				// PCRE2 can accept a zero-width path exactly at a requested byte offset,
 				// including inside a scalar or malformed run. Consumption remains barred.
-				fragments.Insert( 0, new( startOffset, startOffset ) );
+				// A real fragment ending here already permits a zero-width candidate
+				// with its valid preceding context. Do not shadow it with an empty
+				// fragment: nested lookbehind/boundary assertions may inspect that text.
+				var hasContextCandidate = false;
+				foreach ( var existing in fragments ) {
+					cancellationToken.ThrowIfCancellationRequested();
+					if ( existing.End == startOffset ) { hasContextCandidate = true; break; }
+				}
+				if ( !hasContextCandidate ) { fragments.Insert( 0, new( startOffset, startOffset ) ); }
 			}
 			// Candidate positions share storage; a successful match returns before the storage is reused.
 			var captures = new PcreByteCapture?[groupCount + 1];

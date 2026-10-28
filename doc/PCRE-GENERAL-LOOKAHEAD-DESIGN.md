@@ -64,8 +64,11 @@ and work counts. Mixed options or nonliteral syntax uses general bytecode.
 
 Compile bodies with the existing heap continuation stack. Extend explicit-
 newline analysis through lookahead. Conservatively mark general lookahead as
-potentially zero-width for the malformed-offset synthetic candidate; body
-consumption still cannot cross a fragment. Pin this against the oracle at every
+potentially zero-width for the malformed-offset synthetic candidate, along
+with optimized negative/empty literal lookahead. A real fragment ending at
+the requested offset already supplies a zero-width candidate with valid left
+context; never shadow it with an empty fragment. Body consumption still
+cannot cross a fragment. Pin this against the oracle at every
 selected offset. Keep suffix/search shortcuts restricted to existing proven
 shapes. No Regex/native fallback or cloned byte/UTF engines.
 

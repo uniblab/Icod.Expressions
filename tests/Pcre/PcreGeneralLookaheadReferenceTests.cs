@@ -110,7 +110,7 @@ public sealed class PcreGeneralLookaheadReferenceTests {
 			@"(?=(.))\1", @"(?=a.b)a", @"(?!a.b)a", @"(?=(a?))", @"(?!(a))",
 			@"(?=(?:[a]|))", @"(?=\G[a]?)", @"(?!\G[a])", @"(?=[a]$)a", @"(?m)(?=^([a]))a",
 			@"(?=(\R))\1", @"(?=\N+).", @"(?=(?<=a)[b])b", @"(?=())", @"(?!a)", @"(?!(?=a))",
-			@"(?=(?:a|))", @"(?=(a))", @"(?=\G)(?!a)", @"(?=)", @"(?!)" } ) {
+			@"(?=(?:a|))", @"(?=(a))", @"(?=\G)(?!a)", @"(?=)", @"(?!)", @"(?!(?<=a))", @"(?=\B)" } ) {
 			var reference = Reference( pattern, utf8, utf8, anyCrLf );
 			var compiled = Compile( pattern, new PcreByteOptions {
 				Utf8 = utf8, MatchInvalidUtf = utf8, AnyCrLfNewline = anyCrLf

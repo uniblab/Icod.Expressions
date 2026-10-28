@@ -99,6 +99,10 @@ internal sealed class PcreByteProgramCompiler {
 		// A participating capture may be empty. The VM still checks participation
 		// and forbids nonempty consumption across the synthetic fragment boundary.
 		PcreByteBackreference => true,
+		// A negative or empty literal lookahead can accept without reading the
+		// requested code unit, just like a nullable general assertion.
+		PcreByteLiteralAssertion assertion => !assertion.IsBehind
+			&& ( !assertion.IsPositive || assertion.Bytes.IsEmpty ),
 		PcreByteLookahead => true,
 		PcreByteGroup group => CanMatchEmptyAtAnyOffset( group.Body ),
 		PcreByteNoncapturingGroup group => CanMatchEmptyAtAnyOffset( group.Body ),
