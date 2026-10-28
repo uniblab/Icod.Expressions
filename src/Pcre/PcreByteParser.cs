@@ -21,6 +21,8 @@ internal sealed partial class PcreByteParser {
 	private bool caseless;
 	private bool multiline;
 	private bool asciiBsD;
+	private bool noAutoCapture;
+	private bool ungreedy;
 
 	internal PcreByteParser( byte[] source, bool caseless, bool utf8, bool ucp,
 		bool asciiBsD, bool anyCrLfNewline, CancellationToken cancellationToken ) {
@@ -71,9 +73,13 @@ internal sealed partial class PcreByteParser {
 		var setI = false;
 		var setM = false;
 		var setS = false;
+		var setN = false;
+		var setU = false;
 		var unsetI = false;
 		var unsetM = false;
 		var unsetS = false;
+		var unsetN = false;
+		var unsetU = false;
 		while ( cursor < source.Length && source[cursor] is not (byte)')' and not (byte)':' ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			var value = source[cursor++];
@@ -81,13 +87,15 @@ internal sealed partial class PcreByteParser {
 				unsetting = true;
 				continue;
 			}
-			if ( value is not (byte)'i' and not (byte)'m' and not (byte)'s' ) { return false; }
+			if ( value is not (byte)'i' and not (byte)'m' and not (byte)'s' and not (byte)'n' and not (byte)'U' ) { return false; }
 			sawFlag = true;
 			if ( unsetting ) { sawUnsetFlag = true; }
 			switch ( value ) {
 				case (byte)'i': if ( unsetting ) { unsetI = true; } else { setI = true; } break;
 				case (byte)'m': if ( unsetting ) { unsetM = true; } else { setM = true; } break;
 				case (byte)'s': if ( unsetting ) { unsetS = true; } else { setS = true; } break;
+				case (byte)'n': if ( unsetting ) { unsetN = true; } else { setN = true; } break;
+				case (byte)'U': if ( unsetting ) { unsetU = true; } else { setU = true; } break;
 			}
 		}
 		if ( cursor >= source.Length || !sawFlag || unsetting && !sawUnsetFlag
@@ -96,6 +104,8 @@ internal sealed partial class PcreByteParser {
 		caseless = ( caseless || setI ) && !unsetI;
 		multiline = ( multiline || setM ) && !unsetM;
 		dotAll = ( dotAll || setS ) && !unsetS;
+		noAutoCapture = ( noAutoCapture || setN ) && !unsetN;
+		ungreedy = ( ungreedy || setU ) && !unsetU;
 		if ( !scoped && index < source.Length && source[index] is (byte)'*' or (byte)'+' or (byte)'?' or (byte)'{' ) {
 			var repeatOffset = index;
 			if ( source[index] == (byte)'{' ) { ParseCountedBounds( repeatOffset ); }
@@ -151,12 +161,15 @@ internal sealed partial class PcreByteParser {
 							PcreByteDiagnosticCode.PatternRepeatLimitExceeded, quantifierOffset, "repeat state limit exceeded"
 						) );
 					}
-					var greedy = index >= source.Length || source[index] != (byte)'?';
-					if ( !greedy ) { index++; }
+					var questionSuffix = index < source.Length && source[index] == (byte)'?';
+					if ( questionSuffix ) { index++; }
+					var possessive = !questionSuffix && index < source.Length && source[index] == (byte)'+';
+					if ( possessive ) { index++; }
+					// U reverses ordinary/question-suffix preference; possessive is always greedy.
+					var greedy = possessive || ungreedy == questionSuffix;
 					atom = new PcreByteRepeat( atom, minimum, maximum, greedy,
 						counted ? quantifierOffset : -1 );
-					if ( greedy && index < source.Length && source[index] == (byte)'+' ) {
-						index++;
+					if ( possessive ) {
 						atom = new PcreByteAtomic( atom );
 					}
 					if ( index < source.Length && source[index] is (byte)'*' or (byte)'+' or (byte)'?' or (byte)'{' ) {
@@ -259,12 +272,14 @@ internal sealed partial class PcreByteParser {
 				&& source.AsSpan( index + 1 ).IndexOf( (byte)')' ) >= 0 ) {
 				throw Unsupported( offset );
 			}
-			var capturing = true;
+			var capturing = !noAutoCapture;
 			var atomic = false;
 			var branchReset = false;
 			var entryCaseless = caseless;
 			var entryMultiline = multiline;
 			var entryDotAll = dotAll;
+			var entryNoAutoCapture = noAutoCapture;
+			var entryUngreedy = ungreedy;
 			string? name = null;
 			if ( index < source.Length && source[index] == (byte)'?' ) {
 				if ( TryParseOptions( offset, scoped: true ) ) {
@@ -286,13 +301,16 @@ internal sealed partial class PcreByteParser {
 				} else if ( source.AsSpan( index ).StartsWith( "?P<"u8 ) ) {
 					index += 3;
 					name = ParseCaptureName( (byte)'>', offset );
+					capturing = true;
 				} else if ( source.AsSpan( index ).StartsWith( "?'"u8 ) ) {
 					index += 2;
 					name = ParseCaptureName( (byte)'\'', offset );
+					capturing = true;
 				} else if ( index + 1 < source.Length && source[index + 1] == (byte)'<'
 					&& ( index + 2 >= source.Length || source[index + 2] is not (byte)'=' and not (byte)'!' and not (byte)'*' ) ) {
 					index += 2;
 					name = ParseCaptureName( (byte)'>', offset );
+					capturing = true;
 				} else {
 					var behind = index + 2 < source.Length && source[index + 1] == (byte)'<'
 						&& source[index + 2] is (byte)'=' or (byte)'!';
@@ -329,6 +347,8 @@ internal sealed partial class PcreByteParser {
 				caseless = entryCaseless;
 				multiline = entryMultiline;
 				dotAll = entryDotAll;
+				noAutoCapture = entryNoAutoCapture;
+				ungreedy = entryUngreedy;
 			}
 			if ( index >= source.Length || source[index] != (byte)')' ) {
 				throw Invalid( offset, "unclosed group" );
