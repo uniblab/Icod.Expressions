@@ -27,7 +27,7 @@
 **Files:** `tests/Pcre/PcreResourceContractTests.cs`, `doc/PCRE-RESOURCE-ERROR-CONTRACT.md`, `doc/PCRE-DESIGN.md`, `doc/PCRE-SYNTAX-ACCEPTANCE-MATRIX.md`.
 
 - [x] Add the saved-path boundary, work-limit priority and cancellation fixtures.
-- [ ] Run the new tests on Staging; investigate any outcome that differs from the documented provisional policy.
+- [x] Run the new tests on Staging; investigate any outcome that differs from the documented provisional policy.
 - [x] Link the Grep-facing error contract and outstanding adapter gate from the design documents.
-- [ ] Verify all six Staging jobs, frozen source, workload smoke and package-only consumer.
-- [ ] Review the final diff and leave a PR for user merge.
+- [x] Verify all six Staging jobs, frozen source, workload smoke and package-only consumer.
+- [x] Review the final diff and leave a PR for user merge.
