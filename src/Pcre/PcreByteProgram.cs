@@ -50,18 +50,20 @@ internal sealed class PcreByteProgramCompiler {
 	private readonly bool utf8;
 	private readonly bool matchInvalidUtf;
 	private readonly bool anyCrLfNewline;
+	private readonly bool bsrAnyCrLf;
 	private int markCount;
 	private int countedOffset = -1;
 	private int lastCountedOffset = -1;
 	private int compileVisits;
 
 	internal PcreByteProgramCompiler( CancellationToken cancellationToken, bool caseless, bool utf8, bool matchInvalidUtf,
-		bool anyCrLfNewline ) {
+		bool anyCrLfNewline, bool bsrAnyCrLf ) {
 		this.cancellationToken = cancellationToken;
 		this.caseless = caseless;
 		this.utf8 = utf8;
 		this.matchInvalidUtf = matchInvalidUtf;
 		this.anyCrLfNewline = anyCrLfNewline;
+		this.bsrAnyCrLf = bsrAnyCrLf;
 	}
 
 	internal PcreByteProgram Compile( PcreByteAlternatives root ) {
@@ -184,6 +186,11 @@ internal sealed class PcreByteProgramCompiler {
 			case PcreByteAny any:
 				Emit( PcreByteOpcode.Any, any.DotAll ? 1 : 0 );
 				break;
+			case PcreByteNewlineSequence:
+				// Synthetic CR/LF literals must not mark the source pattern as
+				// explicitly mentioning a newline for the candidate-search policy.
+				CompileNode( LowerNewlineSequence() );
+				break;
 			case PcreByteScalarClass scalarClass:
 				Emit( PcreByteOpcode.ScalarClass, (int)scalarClass.Kind, scalarClass.Negated ? 1 : 0,
 					category: scalarClass.Category );
@@ -234,6 +241,21 @@ internal sealed class PcreByteProgramCompiler {
 			default:
 				throw new InvalidOperationException( "Parser produced an unknown PCRE byte node." );
 		}
+	}
+
+	private PcreByteAtomic LowerNewlineSequence() {
+		var branches = new List<IReadOnlyList<PcreByteNode>> {
+			new PcreByteNode[] { new PcreByteLiteral( '\r' ), new PcreByteLiteral( '\n' ) }
+		};
+		if ( bsrAnyCrLf ) {
+			branches.Add( new PcreByteNode[] { new PcreByteLiteral( '\r' ) } );
+			branches.Add( new PcreByteNode[] { new PcreByteLiteral( '\n' ) } );
+		} else {
+			PcreByteNode single = utf8 ? new PcreByteScalarClass( PcreByteScalarClassKind.VerticalSpace, false )
+				: new PcreByteClass( PcreByteSet.VerticalSpace );
+			branches.Add( new[] { single } );
+		}
+		return new PcreByteAtomic( new PcreByteNoncapturingGroup( new PcreByteAlternatives( branches ) ) );
 	}
 
 	private void CompileRepeat( PcreByteRepeat repeat ) {

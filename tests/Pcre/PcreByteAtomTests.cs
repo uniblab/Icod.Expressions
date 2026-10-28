@@ -118,8 +118,8 @@ public sealed class PcreByteAtomTests {
 
 	[Theory]
 	[InlineData( "\\N" )]
-	[InlineData( "\\R" )]
-	public void RetainsPendingNewlineEscapesAsUnsupported( string pattern ) {
+	[InlineData( "\\X" )]
+	public void RetainsPendingCharacterEscapesAsUnsupported( string pattern ) {
 		var result = PcreByteCompiler.Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
 		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
 	}
