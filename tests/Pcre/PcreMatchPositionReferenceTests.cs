@@ -82,6 +82,7 @@ public sealed class PcreMatchPositionReferenceTests {
 	[InlineData( @"(?<=\K)a", 0 )]
 	public void InvalidContextsHaveControlledByteDiagnostics( string pattern, int expectedOffset ) {
 		foreach ( var utf8 in new[] { false, true } ) {
+			Assert.Throws<PcrePatternException>( () => Reference( pattern, utf8: utf8 ) );
 			var result = PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( pattern ), new PcreByteOptions { Utf8 = utf8 } );
 			Assert.Equal( PcreByteDiagnosticCode.InvalidSyntax, result.Diagnostic?.Code );
 			Assert.Equal( expectedOffset, result.Diagnostic?.ByteOffset );

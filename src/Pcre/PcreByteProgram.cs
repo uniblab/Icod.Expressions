@@ -13,6 +13,7 @@ internal enum PcreByteOpcode {
 	WordBoundary,
 	AssertLiteral,
 	Start,
+	SearchStart,
 	End,
 	StartLine,
 	EndLine,
@@ -85,6 +86,7 @@ internal sealed class PcreByteProgramCompiler {
 	}
 
 	private static bool CanMatchEmptyAtAnyOffset( PcreByteNode node ) => node switch {
+		PcreByteSearchStart or PcreByteMatchStartReset => true,
 		PcreByteGroup group => CanMatchEmptyAtAnyOffset( group.Body ),
 		PcreByteNoncapturingGroup group => CanMatchEmptyAtAnyOffset( group.Body ),
 		PcreByteAtomic atomic => CanMatchEmptyAtAnyOffset( atomic.Child ),
@@ -215,6 +217,12 @@ internal sealed class PcreByteProgramCompiler {
 				break;
 			case PcreByteAnchor anchor:
 				Emit( anchor.IsStart ? PcreByteOpcode.Start : PcreByteOpcode.End );
+				break;
+			case PcreByteSearchStart:
+				Emit( PcreByteOpcode.SearchStart );
+				break;
+			case PcreByteMatchStartReset:
+				Emit( PcreByteOpcode.CaptureStart, 0 );
 				break;
 			case PcreByteLineAnchor lineAnchor:
 				Emit( lineAnchor.IsStart ? PcreByteOpcode.StartLine : PcreByteOpcode.EndLine );

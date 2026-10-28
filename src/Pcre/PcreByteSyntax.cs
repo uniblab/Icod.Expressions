@@ -42,6 +42,10 @@ internal sealed record PcreByteBackreference( int Number ) : PcreByteNode;
 
 internal sealed record PcreByteAnchor( bool IsStart ) : PcreByteNode;
 
+internal sealed record PcreByteSearchStart : PcreByteNode;
+
+internal sealed record PcreByteMatchStartReset : PcreByteNode;
+
 internal sealed record PcreByteLineAnchor( bool IsStart ) : PcreByteNode;
 
 internal sealed record PcreByteEndBeforeFinalLf( bool FragmentEnd = false ) : PcreByteNode;

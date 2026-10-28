@@ -120,7 +120,10 @@ internal sealed class PcreByteParser {
 					if ( atom is PcreByteLiteralAssertion ) {
 						throw Unsupported( index );
 					}
-					if ( atom is PcreByteAnchor or PcreByteLineAnchor or PcreByteEndBeforeFinalLf or PcreByteWordBoundary ) {
+					if ( atom is PcreByteMatchStartReset ) {
+						throw Invalid( index, "a match-start reset cannot be repeated" );
+					}
+					if ( atom is PcreByteAnchor or PcreByteSearchStart or PcreByteLineAnchor or PcreByteEndBeforeFinalLf or PcreByteWordBoundary ) {
 						throw Invalid( index, "an anchor cannot be repeated" );
 					}
 					var quantifierOffset = index;
@@ -469,6 +472,7 @@ internal sealed class PcreByteParser {
 				} catch ( PcreByteParseException error ) when ( error.Diagnostic.Code == PcreByteDiagnosticCode.UnsupportedSyntax ) {
 					throw Unsupported( openingOffset );
 				}
+				if ( escaped is PcreByteMatchStartReset ) { throw Invalid( openingOffset, "a match-start reset is not allowed in an assertion" ); }
 				if ( escaped is not PcreByteLiteral literal ) { throw Unsupported( openingOffset ); }
 				if ( utf8 ) {
 					var width = new Rune( literal.Value ).EncodeToUtf8( encoded );
@@ -625,6 +629,10 @@ internal sealed class PcreByteParser {
 		if ( value == (byte)'R' ) {
 			if ( inBracket ) { throw Invalid( offset, "a newline sequence is not a character class member" ); }
 			return new PcreByteNewlineSequence();
+		}
+		if ( value is (byte)'G' or (byte)'K' ) {
+			if ( inBracket ) { throw Invalid( offset, "a match-position escape is not a character class member" ); }
+			return value == (byte)'G' ? new PcreByteSearchStart() : new PcreByteMatchStartReset();
 		}
 		if ( value == (byte)'N' ) { return ParseNonNewlineEscape( offset, inBracket ); }
 		if ( value == (byte)'A' ) { return new PcreByteAnchor( true ); }
