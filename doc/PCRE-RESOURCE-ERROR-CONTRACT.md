@@ -33,7 +33,7 @@ No adapter is implemented in this tranche; these are migration requirements.
 | Malformed subject in Grep-like tolerant UTF mode | Match or successful no-match on valid fragments | Invalid UTF offset/capture reference suites; invalid bytes are not an error. |
 | Ordinary miss | Successful result with null match | Foundation tests; must not be treated as a resource failure. |
 | Exhausted match steps | `MatchWorkLimitExceeded`, no match | Foundation and optimization tests; 1,000,000 default steps is provisional. |
-| More than 1,024 live saved paths | `MatchDepthLimitExceeded`, no match | `PcreResourceContractTests` pins 1,024/1,025 lazy optional paths on empty input. This is an explicit-frame ceiling, not PCRE2 recursion depth. |
+| More than 1,024 live saved paths or assertion guards | `MatchDepthLimitExceeded`, no match | `PcreResourceContractTests` pins 1,024/1,025 lazy optional paths on empty input. General lookahead guards share this ceiling, pinned at 1,023 choices plus one guard and nested-guard variants in `PcreGeneralLookaheadReferenceTests`. This is an explicit-frame ceiling, not PCRE2 recursion depth. |
 | Cancellation before/during compilation or matching | `OperationCanceledException` | Foundation and resource tests; distinct from all diagnostics. |
 
 PCRE2 exposes match, heap and depth limits with different accounting; its

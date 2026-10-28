@@ -84,8 +84,8 @@ public sealed class PcreUtf8LiteralLookaroundTests {
 
 	[Theory]
 	[InlineData( "(?<=é+)A", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( "(?=\\w)A", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( "(?=\\p{L})A", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( "(?<=\\w)A", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( "(?<=\\p{L})A", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
 	[InlineData( "(?<=é|à)A", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
 	[InlineData( "(?<=é", (int)PcreByteDiagnosticCode.InvalidSyntax )]
 	public void NonliteralBodiesRemainDiagnosed( string pattern, int code ) {

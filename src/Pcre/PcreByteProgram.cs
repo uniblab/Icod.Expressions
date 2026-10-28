@@ -12,6 +12,8 @@ internal enum PcreByteOpcode {
 	Backreference,
 	WordBoundary,
 	AssertLiteral,
+	LookaheadEnter,
+	LookaheadExit,
 	Start,
 	SearchStart,
 	End,
@@ -97,6 +99,11 @@ internal sealed class PcreByteProgramCompiler {
 		// A participating capture may be empty. The VM still checks participation
 		// and forbids nonempty consumption across the synthetic fragment boundary.
 		PcreByteBackreference => true,
+		// A negative or empty literal lookahead can accept without reading the
+		// requested code unit, just like a nullable general assertion.
+		PcreByteLiteralAssertion assertion => !assertion.IsBehind
+			&& ( !assertion.IsPositive || assertion.Bytes.IsEmpty ),
+		PcreByteLookahead => true,
 		PcreByteGroup group => CanMatchEmptyAtAnyOffset( group.Body ),
 		PcreByteNoncapturingGroup group => CanMatchEmptyAtAnyOffset( group.Body ),
 		PcreByteAtomic atomic => CanMatchEmptyAtAnyOffset( atomic.Child ),
@@ -119,6 +126,7 @@ internal sealed class PcreByteProgramCompiler {
 		PcreByteScalarSet scalarSet => HasExplicitNewline( scalarSet ),
 		PcreByteLiteralAssertion assertion => assertion.Bytes.Span.IndexOf( (byte)'\r' ) >= 0
 			|| assertion.Bytes.Span.IndexOf( (byte)'\n' ) >= 0,
+		PcreByteLookahead assertion => HasExplicitNewline( assertion.Body ),
 		PcreByteGroup group => HasExplicitNewline( group.Body ),
 		PcreByteNoncapturingGroup group => HasExplicitNewline( group.Body ),
 		PcreByteAtomic atomic => HasExplicitNewline( atomic.Child ),
@@ -241,6 +249,14 @@ internal sealed class PcreByteProgramCompiler {
 			case PcreByteLiteralAssertion assertion:
 				Emit( PcreByteOpcode.AssertLiteral, assertion.IsPositive ? 1 : 0,
 					assertion.IsBehind ? 1 : 0, bytes: assertion.Bytes, caseless: assertion.Caseless );
+				break;
+			case PcreByteLookahead assertion:
+				var enter = Emit( PcreByteOpcode.LookaheadEnter, second: assertion.IsPositive ? 1 : 0 );
+				compileWork.Push( () => {
+					Emit( PcreByteOpcode.LookaheadExit );
+					Patch( enter, instructions.Count, assertion.IsPositive ? 1 : 0 );
+				} );
+				CompileAlternatives( assertion.Body );
 				break;
 			case PcreByteAnchor anchor:
 				Emit( anchor.IsStart ? PcreByteOpcode.Start : PcreByteOpcode.End );

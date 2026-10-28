@@ -199,11 +199,11 @@ internal sealed partial class PcreByteParser {
 		return index > start;
 	}
 
-	private PcreByteNode? ParseAtom( int depth, out GroupFrame? group ) {
+	private PcreByteNode? ParseAtom( int depth, int assertionOpeningContext, out GroupFrame? group ) {
 		group = null;
 		var offset = index;
 		var value = source[index++];
-		if ( value == (byte)'(' ) { return ParseGroupOpening( offset, depth, out group ); }
+		if ( value == (byte)'(' ) { return ParseGroupOpening( offset, depth, assertionOpeningContext, out group ); }
 		if ( value == (byte)'^' ) {
 			return multiline ? new PcreByteLineAnchor( true ) : new PcreByteAnchor( true );
 		}
@@ -218,7 +218,11 @@ internal sealed partial class PcreByteParser {
 			return ParseBracket( offset );
 		}
 		if ( value == (byte)'\\' ) {
-			return ParseEscape( offset );
+			var escaped = ParseEscape( offset );
+			if ( escaped is PcreByteMatchStartReset && assertionOpeningContext >= 0 ) {
+				throw Invalid( assertionOpeningContext, "a match-start reset is not allowed in an assertion" );
+			}
+			return escaped;
 		}
 		if ( value is (byte)'*' or (byte)'+' or (byte)'?' ) {
 			throw Invalid( offset, "quantifier without an atom" );

@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace Icod.Expressions.Pcre;
 
 internal sealed partial class PcreByteParser {
@@ -7,12 +9,15 @@ internal sealed partial class PcreByteParser {
 
 	// Bounded heap frames keep source nesting off the native call stack.
 	private sealed class GroupFrame( int openingOffset, int depth, int number, bool atomic,
-		bool branchReset, GroupOptions entryOptions, int entryGroupCount ) {
+		bool branchReset, GroupOptions entryOptions, int entryGroupCount,
+		int assertionKind, int assertionOpeningContext ) {
 		internal int OpeningOffset { get; } = openingOffset;
 		internal int Depth { get; } = depth;
 		internal int Number { get; } = number;
 		internal bool Atomic { get; } = atomic;
 		internal bool BranchReset { get; } = branchReset;
+		internal int AssertionKind { get; } = assertionKind;
+		internal int AssertionOpeningContext { get; } = assertionOpeningContext;
 		internal GroupOptions EntryOptions { get; } = entryOptions;
 		internal int EntryGroupCount { get; } = entryGroupCount;
 		internal int MaximumGroupCount { get; set; } = entryGroupCount;
@@ -34,12 +39,15 @@ internal sealed partial class PcreByteParser {
 
 	private PcreByteAlternatives ParseAlternatives() {
 		var parents = new Stack<GroupFrame>();
-		var current = new GroupFrame( -1, 0, 0, false, false, CurrentGroupOptions, groupCount );
+		var current = new GroupFrame( -1, 0, 0, false, false, CurrentGroupOptions, groupCount, 0, -1 );
 		while ( true ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			SkipPatternTrivia( ref current.Quoting );
 			if ( index >= source.Length ) {
 				if ( current.OpeningOffset >= 0 ) {
+					if ( current.AssertionOpeningContext >= 0 ) {
+						throw Invalid( current.AssertionOpeningContext, "unclosed assertion" );
+					}
 					// Preserve the recursive parser's outermost-unclosed-group diagnostic.
 					var opening = parents.LastOrDefault( frame => frame.OpeningOffset >= 0 )?.OpeningOffset
 						?? current.OpeningOffset;
@@ -60,7 +68,8 @@ internal sealed partial class PcreByteParser {
 					if ( current.OpeningOffset < 0 ) { return body; } // Parse diagnoses unmatched ')'.
 					index++;
 					RestoreGroupOptions( current.EntryOptions );
-					PcreByteNode completed = current.Number > 0 ? new PcreByteGroup( current.Number, body )
+					PcreByteNode completed = current.AssertionKind != 0 ? FinishLookahead( current, body )
+						: current.Number > 0 ? new PcreByteGroup( current.Number, body )
 						: current.Atomic ? new PcreByteAtomic( new PcreByteNoncapturingGroup( body ) )
 						: new PcreByteNoncapturingGroup( body );
 					var groupCaseless = current.EntryOptions.Caseless;
@@ -72,7 +81,8 @@ internal sealed partial class PcreByteParser {
 			}
 			var atomCaseless = caseless;
 			GroupFrame? child = null;
-			var atom = current.Quoting ? ParseQuotedLiteral() : ParseAtom( current.Depth, out child );
+			var atom = current.Quoting ? ParseQuotedLiteral()
+				: ParseAtom( current.Depth, current.AssertionOpeningContext, out child );
 			if ( child is not null ) {
 				parents.Push( current );
 				current = child;
@@ -93,11 +103,32 @@ internal sealed partial class PcreByteParser {
 		return new( frame.Branches );
 	}
 
+	private PcreByteNode FinishLookahead( GroupFrame frame, PcreByteAlternatives body ) {
+		// Retain the original literal instruction and its search/work behavior.
+		if ( body.Branches.Count == 1 ) {
+			var literals = body.Branches[0];
+			var bytes = new List<byte>();
+			Span<byte> encoded = stackalloc byte[4];
+			foreach ( var node in literals ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				if ( node is not PcreByteLiteral literal || literal.Caseless != frame.EntryOptions.Caseless ) {
+					return new PcreByteLookahead( body, frame.AssertionKind > 0 );
+				}
+				if ( utf8 ) {
+					var width = new Rune( literal.Value ).EncodeToUtf8( encoded );
+					for ( var byteIndex = 0; byteIndex < width; byteIndex++ ) { bytes.Add( encoded[byteIndex] ); }
+				} else { bytes.Add( (byte)literal.Value ); }
+			}
+			return new PcreByteLiteralAssertion( bytes.ToArray(), frame.AssertionKind > 0, false );
+		}
+		return new PcreByteLookahead( body, frame.AssertionKind > 0 );
+	}
+
 	private void AppendNode( GroupFrame frame, PcreByteNode atom, bool atomCaseless ) {
 		if ( atom.Caseless != atomCaseless ) { atom = atom with { Caseless = atomCaseless }; }
 		SkipPatternTrivia( ref frame.Quoting );
 		if ( !frame.Quoting && index < source.Length && source[index] is (byte)'*' or (byte)'+' or (byte)'?' or (byte)'{' ) {
-			if ( atom is PcreByteLiteralAssertion ) {
+			if ( atom is PcreByteLiteralAssertion or PcreByteLookahead ) {
 				throw Unsupported( index );
 			}
 			if ( atom is PcreByteMatchStartReset ) {
@@ -141,7 +172,7 @@ internal sealed partial class PcreByteParser {
 		frame.Nodes.Add( atom );
 	}
 
-	private PcreByteNode? ParseGroupOpening( int offset, int depth, out GroupFrame? group ) {
+	private PcreByteNode? ParseGroupOpening( int offset, int depth, int assertionOpeningContext, out GroupFrame? group ) {
 		group = null;
 		// PCRE2's (*...) directives and aliases are pending, not repeated empty groups.
 		if ( index < source.Length && source[index] == (byte)'*'
@@ -151,6 +182,7 @@ internal sealed partial class PcreByteParser {
 		var capturing = !noAutoCapture;
 		var atomic = false;
 		var branchReset = false;
+		var assertionKind = 0;
 		var entryOptions = CurrentGroupOptions;
 		string? name = null;
 		if ( index < source.Length && source[index] == (byte)'?' ) {
@@ -195,7 +227,10 @@ internal sealed partial class PcreByteParser {
 				}
 				var positive = source[index + (behind ? 2 : 1)] == (byte)'=';
 				index += behind ? 3 : 2;
-				return ParseLiteralAssertion( offset, positive, behind );
+				if ( behind ) { return ParseLiteralAssertion( offset, positive, true ); }
+				capturing = false;
+				assertionKind = positive ? 1 : -1;
+				if ( assertionOpeningContext < 0 ) { assertionOpeningContext = offset; }
 			}
 		}
 		if ( depth >= MaximumPatternDepth ) {
@@ -210,7 +245,8 @@ internal sealed partial class PcreByteParser {
 			) );
 		}
 		if ( name is not null ) { RegisterCaptureName( name, number, offset ); }
-		group = new GroupFrame( offset, depth + 1, number, atomic, branchReset, entryOptions, groupCount );
+		group = new GroupFrame( offset, depth + 1, number, atomic, branchReset, entryOptions, groupCount,
+			assertionKind, assertionOpeningContext );
 		return null;
 	}
 }

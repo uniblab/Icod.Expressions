@@ -78,6 +78,7 @@ internal sealed partial class PcreByteParser {
 				: throw Invalid( reference.Offset, "backreference has no capture name" ),
 			PcreByteGroup group => group with { Body = ResolveNamedReferences( group.Body ) },
 			PcreByteNoncapturingGroup group => group with { Body = ResolveNamedReferences( group.Body ) },
+			PcreByteLookahead assertion => assertion with { Body = ResolveNamedReferences( assertion.Body ) },
 			PcreByteRepeat repeat => repeat with { Child = ResolveNamedReference( repeat.Child ) },
 			PcreByteAtomic atomic => atomic with { Child = ResolveNamedReference( atomic.Child ) },
 			_ => node

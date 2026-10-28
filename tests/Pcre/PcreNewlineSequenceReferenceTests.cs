@@ -118,8 +118,8 @@ public sealed class PcreNewlineSequenceReferenceTests {
 	}
 
 	[Fact]
-	public void SequenceInGeneralLookaroundRemainsExplicitlyUnsupported() {
-		var result = PcreByteCompiler.Compile( @"(?=\R)"u8.ToArray() );
+	public void SequenceInLookbehindRemainsExplicitlyUnsupported() {
+		var result = PcreByteCompiler.Compile( @"(?<=\R)"u8.ToArray() );
 		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
 		Assert.Equal( 0, result.Diagnostic?.ByteOffset );
 	}

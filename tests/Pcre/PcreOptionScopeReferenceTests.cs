@@ -135,8 +135,8 @@ public sealed class PcreOptionScopeReferenceTests {
 	[InlineData( "a(?J)b", 1 )]
 	[InlineData( @"(?aD:\d)", 0 )]
 	[InlineData( @"(?i)(?aD:\d)", 4 )]
-	[InlineData( "(?i:(?=a|b))", 4 )]
-	[InlineData( "(?=(?i:a))", 0 )]
+	[InlineData( "(?i:(?<=a|b))", 4 )]
+	[InlineData( "(?<=(?i:a))", 0 )]
 	public void OtherOptionsAndGeneralAssertionBodiesRemainPending( string pattern, int offset ) {
 		Reference( pattern, true );
 		var result = PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( pattern ), new PcreByteOptions { Utf8 = true } );
