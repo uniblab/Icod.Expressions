@@ -149,6 +149,7 @@ internal static class PcreByteMatcher {
 			var backtrack = new Stack<Frame>();
 			var changes = new List<StateChange>();
 			var atomicDepths = new List<int>();
+			List<int>? assertionDepths = null;
 			// Keep the observed and cancellable path byte-for-byte accountable to Step().
 			foreach ( var fragment in fragments ) {
 				for ( var start = Math.Max( startOffset, fragment.Start ); start <= fragment.End; start++ ) {
@@ -174,6 +175,7 @@ internal static class PcreByteMatcher {
 					backtrack.Clear();
 					changes.Clear();
 					atomicDepths.Clear();
+					assertionDepths?.Clear();
 					while ( true ) {
 						Step(); // Instruction transition.
 						var instruction = program.Instructions[pc];
@@ -425,7 +427,8 @@ internal static class PcreByteMatcher {
 							if ( backtrack.Count >= MaximumBacktrackFrames ) {
 								throw new MatchLimitException( PcreByteDiagnosticCode.MatchDepthLimitExceeded, "backtrack stack limit exceeded" );
 							}
-							backtrack.Push( new Frame( instruction.Second, position, changes.Count, atomicDepths.Count ) );
+							backtrack.Push( new Frame( instruction.Second, position, changes.Count, atomicDepths.Count,
+								assertionDepths?.Count ?? 0 ) );
 							pc = instruction.First;
 							break;
 						case PcreByteOpcode.Jump:
@@ -453,6 +456,33 @@ internal static class PcreByteMatcher {
 							atomicDepths.RemoveAt( atomicDepths.Count - 1 );
 							pc++;
 							break;
+						case PcreByteOpcode.LookaheadEnter:
+							if ( backtrack.Count >= MaximumBacktrackFrames ) {
+								throw new MatchLimitException( PcreByteDiagnosticCode.MatchDepthLimitExceeded, "backtrack stack limit exceeded" );
+							}
+							assertionDepths ??= new();
+							var guard = new Frame( instruction.First, position, changes.Count, atomicDepths.Count,
+								assertionDepths.Count, instruction.Second == 1 ? FrameKind.PositiveAssertion : FrameKind.NegativeAssertion );
+							assertionDepths.Add( backtrack.Count );
+							backtrack.Push( guard ); // Forces body mutations into the shared journal.
+							pc++;
+							break;
+						case PcreByteOpcode.LookaheadExit:
+							var assertionBoundary = assertionDepths![^1];
+							while ( backtrack.Count > assertionBoundary + 1 ) { backtrack.Pop(); }
+							var completedGuard = backtrack.Pop();
+							position = completedGuard.Position;
+							pc = completedGuard.Pc;
+							if ( completedGuard.Kind == FrameKind.PositiveAssertion ) {
+								// First body success is atomic. Keep captures, including those beyond G0,
+								// journaled until any enclosing retry/guard can no longer restore them.
+								assertionDepths.RemoveAt( assertionDepths.Count - 1 );
+								if ( backtrack.Count == 0 ) { changes.Clear(); }
+							} else {
+								RestoreFrameState( completedGuard, changes, captures, captureStarts, marks, atomicDepths, assertionDepths );
+								failed = true; // A matching negative body makes the assertion fail.
+							}
+							break;
 						case PcreByteOpcode.Accept:
 							var reportedStart = captureStarts[0];
 							captures[0] = new( reportedStart, position - reportedStart );
@@ -461,22 +491,18 @@ internal static class PcreByteMatcher {
 							throw new InvalidOperationException( "Compiler produced an unknown PCRE byte instruction." );
 					}
 					if ( !failed ) { continue; }
-					if ( backtrack.Count == 0 ) { break; }
-					var frame = backtrack.Pop();
-					pc = frame.Pc;
-					position = frame.Position;
-					for ( var changeIndex = changes.Count - 1; changeIndex >= frame.ChangeCount; changeIndex-- ) {
-						var change = changes[changeIndex];
-						switch ( change.Kind ) {
-						case StateKind.Capture: captures[change.Index] = change.PriorCapture; break;
-						case StateKind.CaptureStart: captureStarts[change.Index] = change.PriorValue; break;
-						case StateKind.Mark: marks[change.Index] = change.PriorValue; break;
-						default: throw new InvalidOperationException( "Unknown PCRE journal entry." );
-						}
+					while ( failed && backtrack.Count > 0 ) {
+						var frame = backtrack.Pop();
+						if ( frame.Kind != FrameKind.Branch ) { Step(); } // Resolve an exhausted assertion body.
+						RestoreFrameState( frame, changes, captures, captureStarts, marks, atomicDepths, assertionDepths );
+						pc = frame.Pc;
+						position = frame.Position;
+						// A normal retry or exhausted negative body resumes. An exhausted
+						// positive body propagates failure to the next enclosing saved path.
+						failed = frame.Kind == FrameKind.PositiveAssertion;
+						if ( backtrack.Count == 0 ) { changes.Clear(); }
 					}
-					changes.RemoveRange( frame.ChangeCount, changes.Count - frame.ChangeCount );
-					atomicDepths.RemoveRange( frame.AtomicDepth, atomicDepths.Count - frame.AtomicDepth );
-					if ( backtrack.Count == 0 ) { changes.Clear(); }
+					if ( failed ) { break; }
 				}
 				if ( program.AnyCrLfNewline && !program.ExplicitNewline
 					&& start + 1 < fragment.End && input.Span[start] == (byte)'\r'
@@ -491,6 +517,23 @@ internal static class PcreByteMatcher {
 		} catch ( MatchLimitException error ) {
 			return new( null, new( error.Code, 0, error.Message ) );
 		}
+	}
+
+	private static void RestoreFrameState( Frame frame, List<StateChange> changes,
+		PcreByteCapture?[] captures, int[] captureStarts, int[] marks,
+		List<int> atomicDepths, List<int>? assertionDepths ) {
+		for ( var changeIndex = changes.Count - 1; changeIndex >= frame.ChangeCount; changeIndex-- ) {
+			var change = changes[changeIndex];
+			switch ( change.Kind ) {
+				case StateKind.Capture: captures[change.Index] = change.PriorCapture; break;
+				case StateKind.CaptureStart: captureStarts[change.Index] = change.PriorValue; break;
+				case StateKind.Mark: marks[change.Index] = change.PriorValue; break;
+				default: throw new InvalidOperationException( "Unknown PCRE journal entry." );
+			}
+		}
+		changes.RemoveRange( frame.ChangeCount, changes.Count - frame.ChangeCount );
+		atomicDepths.RemoveRange( frame.AtomicDepth, atomicDepths.Count - frame.AtomicDepth );
+		assertionDepths?.RemoveRange( frame.AssertionDepth, assertionDepths.Count - frame.AssertionDepth );
 	}
 
 	private static bool MissingRequiredLiteralSuffixWithinBudget( PcreByteProgram program,
@@ -660,7 +703,11 @@ internal static class PcreByteMatcher {
 		StateKind Kind, int Index, int PriorValue, PcreByteCapture? PriorCapture
 	);
 
-	private readonly record struct Frame( int Pc, int Position, int ChangeCount, int AtomicDepth );
+	private enum FrameKind : byte { Branch, PositiveAssertion, NegativeAssertion }
+
+	private readonly record struct Frame(
+		int Pc, int Position, int ChangeCount, int AtomicDepth, int AssertionDepth, FrameKind Kind = FrameKind.Branch
+	);
 
 	private sealed class MatchLimitException( PcreByteDiagnosticCode code, string message ) : Exception( message ) {
 		internal PcreByteDiagnosticCode Code { get; } = code;

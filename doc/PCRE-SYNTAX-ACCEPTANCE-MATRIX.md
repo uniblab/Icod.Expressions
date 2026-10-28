@@ -40,7 +40,8 @@ the matcher returns spans, leaving framing, status and output to Grep.
 | Bare decimal, absolute and signed relative numeric `\gN`/`\g{N}` backreferences | Default reference/octal disambiguation within 256 captures; braced g accepts edge space/tab. Subroutine forms remain pending, rejected | Backreference/capture tests, `PcreNumericEscapeReferenceTests`; current-branch numbering, leading-8/9 forward references and entire decimal runs |
 | Named captures and backreferences | Three unique declaration forms, five reference forms; compile-time aliases to numbered slots, forward references, case-sensitive names and a 128-byte name limit. UTF letters/digits use runtime categories. Duplicate-name options, subroutines and bracket-literal `\g`/`\k` remain pending | `PcreNamedCaptureReferenceTests`; all captures, rollback, UTF/invalid-UTF offsets, name grammar and boundaries; see `PCRE-NAMED-CAPTURES-DESIGN.md` |
 | `(?|...)` branch-reset captures | Parser-scoped numbering, highest-branch continuation, same-number name aliases and ordinary numbered capture/journal semantics | `PcreBranchResetReferenceTests`; unequal widths, nesting, relative references, aliases, repeated captures, invalid-UTF offsets and resource boundaries |
-| `(?=...)`, `(?!...)`, `(?<=...)`, `(?<!...)` | Fixed literal body only; classes, alternation, captures, variable lengths and PCRE2 aliases pending, rejected | Literal lookaround tests; define general assertion capture and length semantics before extending |
+| `(?=...)`, `(?!...)` atomic lookahead | General bodies over existing grammar, options, numbered/named captures, alternatives/repeats and nested assertions. Inline bytecode shares guards/journal; first success commits positive captures, negatives discard body state; original caller/fragment retained. Direct quantifiers and aliases remain pending | `PcreGeneralLookaheadReferenceTests`; capture transactions, spans beyond G0, UTF offsets, 256 depth and guard-inclusive saved-path/work limits |
+| `(?<=...)`, `(?<!...)` lookbehind | Fixed literal body only; general bodies/length rules and aliases pending, rejected | Existing literal lookaround and explicit diagnostic controls |
 | Leading/mid-pattern/scoped `i`, `m`, `n`, `s`, `U`, `x`/`xx`; leading UTF `aD` toggles | Compile-time branch propagation, local casing and group restoration. n suppresses unnamed slots; named groups still capture. U reverses ordinary/question-suffix repetition preference; possessive repeats stay greedy. x/xx ignore source trivia at token boundaries, with bracket-only SP/HT in xx; explicit x downgrades xx. Empty/reset/J/extra flags and scoped/mixed aD remain pending | `PcreOptionScopeReferenceTests`, `PcreCaptureRepeatOptionReferenceTests`, `PcreExtendedOptionReferenceTests`, `PcreLeadingOptionCombinationReferenceTests`; numbering, references, all quantifier families, UTF, limits/work and invalid-UTF/CRLF offsets |
 | `\Q...\E` literal quoting, isolated `\E` | Supported subset in ordinary patterns, ordinary brackets and fixed literal assertions; UTF-8 scalars and source-byte spans retained | `PcreQuotedLiteralTests`, pinned reference spans; see `PCRE-QUOTED-LITERALS-DESIGN.md` |
 | `\X\C`, other escapes | Pending, rejected; no literal reinterpretation | Representative compile-diagnostic assertions; prioritize by actual Grep patterns |
@@ -66,8 +67,9 @@ The [error/resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) now pins the
 internal saved-path boundary and identifies Grep's remaining command-level
 error and cancellation fixtures. Expand start-offset and resource parity
 cases, then implement the highest-priority pending families against
-the pinned reference. The most direct gaps are general lookaround/capture
-semantics, broader backreferences, option scope and Unicode table parity.
+the pinned reference. General atomic lookahead now has capture transactions;
+the most direct remaining gaps include broader lookbehind/length semantics,
+other references/options and Unicode table parity.
 Full workload measurements and command-level Grep comparisons follow before
 public API/release review. No CommandFramework ownership change belongs to
 this checkpoint.

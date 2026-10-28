@@ -58,10 +58,10 @@ public sealed class PcreByteLookaroundTests {
 
 	[Theory]
 	[InlineData( "(?<=a+)b", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( "(?=a|b)c", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( "(?<=a|b)c", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
 	[InlineData( "(?<=a(b))c", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( "(?=\\w)b", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( "(?=\\b)", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( "(?<=\\w)b", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( "(?<=\\b)", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
 	[InlineData( "(?<=\\k<x>)", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
 	[InlineData( "(?<=a", (int)PcreByteDiagnosticCode.InvalidSyntax )]
 	[InlineData( "(?=a", (int)PcreByteDiagnosticCode.InvalidSyntax )]
