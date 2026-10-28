@@ -38,4 +38,4 @@
 - [x] Add pinned reference spans, unset/iteration cases and diagnostics for signed forms.
 - [x] Verify the test-first CI run fails for the intended unsupported signed syntax.
 - [x] Resolve signed operands with bounded arithmetic and retain other `\g` rejections.
-- [ ] Update the syntax inventory and verify all six Staging jobs on the final head.
+- [x] Update the syntax inventory and verify all six Staging jobs on the final head.
