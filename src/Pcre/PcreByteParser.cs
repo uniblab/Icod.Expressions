@@ -21,6 +21,8 @@ internal sealed partial class PcreByteParser {
 	private bool caseless;
 	private bool multiline;
 	private bool asciiBsD;
+	private bool noAutoCapture;
+	private bool ungreedy;
 
 	internal PcreByteParser( byte[] source, bool caseless, bool utf8, bool ucp,
 		bool asciiBsD, bool anyCrLfNewline, CancellationToken cancellationToken ) {
@@ -48,7 +50,7 @@ internal sealed partial class PcreByteParser {
 				break;
 			}
 		}
-		var root = ParseAlternatives( false, 0 );
+		var root = ParseAlternatives();
 		if ( index != source.Length ) {
 			throw Invalid( index, "unmatched closing parenthesis" );
 		}
@@ -71,9 +73,13 @@ internal sealed partial class PcreByteParser {
 		var setI = false;
 		var setM = false;
 		var setS = false;
+		var setN = false;
+		var setU = false;
 		var unsetI = false;
 		var unsetM = false;
 		var unsetS = false;
+		var unsetN = false;
+		var unsetU = false;
 		while ( cursor < source.Length && source[cursor] is not (byte)')' and not (byte)':' ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			var value = source[cursor++];
@@ -81,13 +87,15 @@ internal sealed partial class PcreByteParser {
 				unsetting = true;
 				continue;
 			}
-			if ( value is not (byte)'i' and not (byte)'m' and not (byte)'s' ) { return false; }
+			if ( value is not (byte)'i' and not (byte)'m' and not (byte)'s' and not (byte)'n' and not (byte)'U' ) { return false; }
 			sawFlag = true;
 			if ( unsetting ) { sawUnsetFlag = true; }
 			switch ( value ) {
 				case (byte)'i': if ( unsetting ) { unsetI = true; } else { setI = true; } break;
 				case (byte)'m': if ( unsetting ) { unsetM = true; } else { setM = true; } break;
 				case (byte)'s': if ( unsetting ) { unsetS = true; } else { setS = true; } break;
+				case (byte)'n': if ( unsetting ) { unsetN = true; } else { setN = true; } break;
+				case (byte)'U': if ( unsetting ) { unsetU = true; } else { setU = true; } break;
 			}
 		}
 		if ( cursor >= source.Length || !sawFlag || unsetting && !sawUnsetFlag
@@ -96,87 +104,14 @@ internal sealed partial class PcreByteParser {
 		caseless = ( caseless || setI ) && !unsetI;
 		multiline = ( multiline || setM ) && !unsetM;
 		dotAll = ( dotAll || setS ) && !unsetS;
+		noAutoCapture = ( noAutoCapture || setN ) && !unsetN;
+		ungreedy = ( ungreedy || setU ) && !unsetU;
 		if ( !scoped && index < source.Length && source[index] is (byte)'*' or (byte)'+' or (byte)'?' or (byte)'{' ) {
 			var repeatOffset = index;
 			if ( source[index] == (byte)'{' ) { ParseCountedBounds( repeatOffset ); }
 			throw Invalid( repeatOffset, "an option setting cannot be repeated" );
 		}
 		return true;
-	}
-
-	private PcreByteAlternatives ParseAlternatives( bool inGroup, int depth, bool branchReset = false ) {
-		if ( depth > MaximumPatternDepth ) {
-			throw new PcreByteParseException( new(
-				PcreByteDiagnosticCode.PatternDepthLimitExceeded, index, "pattern nesting limit exceeded"
-			) );
-		}
-		var entryGroupCount = groupCount;
-		var maximumGroupCount = groupCount;
-		var branches = new List<IReadOnlyList<PcreByteNode>>();
-		while ( true ) {
-			cancellationToken.ThrowIfCancellationRequested();
-			var nodes = new List<PcreByteNode>();
-			var quoting = false;
-			while ( index < source.Length ) {
-				cancellationToken.ThrowIfCancellationRequested();
-				if ( TryConsumeQuoteDelimiter( ref quoting ) ) { continue; }
-				if ( !quoting && source[index] is (byte)'|' or (byte)')' ) { break; }
-				if ( !quoting && TryParseOptions( index, scoped: false ) ) { continue; }
-				var atomCaseless = caseless;
-				var atom = quoting ? ParseQuotedLiteral() : ParseAtom( depth );
-				if ( atom.Caseless != atomCaseless ) { atom = atom with { Caseless = atomCaseless }; }
-				while ( TryConsumeQuoteDelimiter( ref quoting ) ) { }
-				if ( !quoting && index < source.Length && source[index] is (byte)'*' or (byte)'+' or (byte)'?' or (byte)'{' ) {
-					if ( atom is PcreByteLiteralAssertion ) {
-						throw Unsupported( index );
-					}
-					if ( atom is PcreByteMatchStartReset ) {
-						throw Invalid( index, "a match-start reset cannot be repeated" );
-					}
-					if ( atom is PcreByteAnchor or PcreByteSearchStart or PcreByteLineAnchor or PcreByteEndBeforeFinalLf or PcreByteWordBoundary ) {
-						throw Invalid( index, "an anchor cannot be repeated" );
-					}
-					var quantifierOffset = index;
-					var counted = source[index] == (byte)'{';
-					var quantifier = counted ? (byte)0 : source[index++];
-					var bounds = counted ? ParseCountedBounds( quantifierOffset )
-						: (quantifier == (byte)'+' ? 1 : 0,
-							quantifier == (byte)'?' ? 1 : int.MaxValue);
-					var minimum = bounds.Item1;
-					var maximum = bounds.Item2;
-					repeatMarks += counted ? maximum == int.MaxValue ? 1 : 0
-						: quantifier == (byte)'+' ? 2 : quantifier == (byte)'*' ? 1 : 0;
-					if ( repeatMarks > MaximumRepeatMarks ) {
-						throw new PcreByteParseException( new(
-							PcreByteDiagnosticCode.PatternRepeatLimitExceeded, quantifierOffset, "repeat state limit exceeded"
-						) );
-					}
-					var greedy = index >= source.Length || source[index] != (byte)'?';
-					if ( !greedy ) { index++; }
-					atom = new PcreByteRepeat( atom, minimum, maximum, greedy,
-						counted ? quantifierOffset : -1 );
-					if ( greedy && index < source.Length && source[index] == (byte)'+' ) {
-						index++;
-						atom = new PcreByteAtomic( atom );
-					}
-					if ( index < source.Length && source[index] is (byte)'*' or (byte)'+' or (byte)'?' or (byte)'{' ) {
-						throw Invalid( index, "repeated quantifier" );
-					}
-				}
-				nodes.Add( atom );
-			}
-			branches.Add( nodes );
-			if ( branchReset ) { maximumGroupCount = Math.Max( maximumGroupCount, groupCount ); }
-			if ( index >= source.Length || source[index] == (byte)')' ) {
-				if ( inGroup && index >= source.Length ) {
-					throw Invalid( source.Length, "unclosed group" );
-				}
-				if ( branchReset ) { groupCount = maximumGroupCount; }
-				return new( branches );
-			}
-			index++; // Ordered alternative.
-			if ( branchReset ) { groupCount = entryGroupCount; }
-		}
 	}
 
 	private bool TryConsumeQuoteDelimiter( ref bool quoting ) {
@@ -250,94 +185,11 @@ internal sealed partial class PcreByteParser {
 		return index > start;
 	}
 
-	private PcreByteNode ParseAtom( int depth ) {
+	private PcreByteNode? ParseAtom( int depth, out GroupFrame? group ) {
+		group = null;
 		var offset = index;
 		var value = source[index++];
-		if ( value == (byte)'(' ) {
-			// PCRE2's (*...) directives and aliases are pending, not repeated empty groups.
-			if ( index < source.Length && source[index] == (byte)'*'
-				&& source.AsSpan( index + 1 ).IndexOf( (byte)')' ) >= 0 ) {
-				throw Unsupported( offset );
-			}
-			var capturing = true;
-			var atomic = false;
-			var branchReset = false;
-			var entryCaseless = caseless;
-			var entryMultiline = multiline;
-			var entryDotAll = dotAll;
-			string? name = null;
-			if ( index < source.Length && source[index] == (byte)'?' ) {
-				if ( TryParseOptions( offset, scoped: true ) ) {
-					capturing = false;
-				} else if ( index + 1 < source.Length && source[index + 1] == (byte)':' ) {
-					index += 2;
-					capturing = false;
-				} else if ( index + 1 < source.Length && source[index + 1] == (byte)'|' ) {
-					index += 2;
-					capturing = false;
-					branchReset = true;
-				} else if ( index + 1 < source.Length && source[index + 1] == (byte)'>' ) {
-					index += 2;
-					capturing = false;
-					atomic = true;
-				} else if ( source.AsSpan( index ).StartsWith( "?P="u8 ) ) {
-					index += 3;
-					return ParseNamedReference( (byte)')', offset );
-				} else if ( source.AsSpan( index ).StartsWith( "?P<"u8 ) ) {
-					index += 3;
-					name = ParseCaptureName( (byte)'>', offset );
-				} else if ( source.AsSpan( index ).StartsWith( "?'"u8 ) ) {
-					index += 2;
-					name = ParseCaptureName( (byte)'\'', offset );
-				} else if ( index + 1 < source.Length && source[index + 1] == (byte)'<'
-					&& ( index + 2 >= source.Length || source[index + 2] is not (byte)'=' and not (byte)'!' and not (byte)'*' ) ) {
-					index += 2;
-					name = ParseCaptureName( (byte)'>', offset );
-				} else {
-					var behind = index + 2 < source.Length && source[index + 1] == (byte)'<'
-						&& source[index + 2] is (byte)'=' or (byte)'!';
-					var ahead = index + 1 < source.Length && source[index + 1] is (byte)'=' or (byte)'!';
-					if ( !behind && !ahead ) { throw Unsupported( offset ); }
-					if ( depth >= MaximumPatternDepth ) {
-						throw new PcreByteParseException( new(
-							PcreByteDiagnosticCode.PatternDepthLimitExceeded, offset, "pattern nesting limit exceeded"
-						) );
-					}
-					var positive = source[index + (behind ? 2 : 1)] == (byte)'=';
-					index += behind ? 3 : 2;
-					return ParseLiteralAssertion( offset, positive, behind );
-				}
-			}
-			if ( depth >= MaximumPatternDepth ) {
-				throw new PcreByteParseException( new(
-					PcreByteDiagnosticCode.PatternDepthLimitExceeded, offset, "pattern nesting limit exceeded"
-				) );
-			}
-			var number = capturing ? ++groupCount : 0;
-			if ( groupCount > MaximumCaptureCount ) {
-				throw new PcreByteParseException( new(
-					PcreByteDiagnosticCode.PatternCaptureLimitExceeded, offset, "capture count limit exceeded"
-				) );
-			}
-			if ( name is not null ) { RegisterCaptureName( name, number, offset ); }
-			PcreByteAlternatives body;
-			try {
-				body = ParseAlternatives( true, depth + 1, branchReset );
-			} catch ( PcreByteParseException error ) when ( error.Diagnostic.Code == PcreByteDiagnosticCode.InvalidSyntax && error.Diagnostic.Message == "unclosed group" ) {
-				throw Invalid( offset, "unclosed group" );
-			} finally {
-				caseless = entryCaseless;
-				multiline = entryMultiline;
-				dotAll = entryDotAll;
-			}
-			if ( index >= source.Length || source[index] != (byte)')' ) {
-				throw Invalid( offset, "unclosed group" );
-			}
-			index++;
-			return capturing ? new PcreByteGroup( number, body )
-				: atomic ? new PcreByteAtomic( new PcreByteNoncapturingGroup( body ) )
-				: new PcreByteNoncapturingGroup( body );
-		}
+		if ( value == (byte)'(' ) { return ParseGroupOpening( offset, depth, out group ); }
 		if ( value == (byte)'^' ) {
 			return multiline ? new PcreByteLineAnchor( true ) : new PcreByteAnchor( true );
 		}
