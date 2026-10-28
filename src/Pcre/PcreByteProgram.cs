@@ -87,6 +87,9 @@ internal sealed class PcreByteProgramCompiler {
 
 	private static bool CanMatchEmptyAtAnyOffset( PcreByteNode node ) => node switch {
 		PcreByteSearchStart or PcreByteMatchStartReset => true,
+		// A participating capture may be empty. The VM still checks participation
+		// and forbids nonempty consumption across the synthetic fragment boundary.
+		PcreByteBackreference => true,
 		PcreByteGroup group => CanMatchEmptyAtAnyOffset( group.Body ),
 		PcreByteNoncapturingGroup group => CanMatchEmptyAtAnyOffset( group.Body ),
 		PcreByteAtomic atomic => CanMatchEmptyAtAnyOffset( atomic.Child ),

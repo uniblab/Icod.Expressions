@@ -4,7 +4,7 @@ using System.Text;
 namespace Icod.Expressions.Pcre;
 
 /// <summary>Parses only implemented byte-mode constructs, retaining syntax order.</summary>
-internal sealed class PcreByteParser {
+internal sealed partial class PcreByteParser {
 	private const int MaximumPatternDepth = 256;
 	private const int MaximumCaptureCount = 256;
 	private const int MaximumRepeatMarks = 256;
@@ -59,7 +59,7 @@ internal sealed class PcreByteParser {
 				throw Invalid( reference.Offset, "backreference has no capture group" );
 			}
 		}
-		return root;
+		return hasNamedReferences ? ResolveNamedReferences( root ) : root;
 	}
 
 	private bool TryParseLeadingOptions() {
@@ -248,6 +248,7 @@ internal sealed class PcreByteParser {
 			}
 			var capturing = true;
 			var atomic = false;
+			string? name = null;
 			if ( index < source.Length && source[index] == (byte)'?' ) {
 				if ( index + 1 < source.Length && source[index + 1] == (byte)':' ) {
 					index += 2;
@@ -256,6 +257,19 @@ internal sealed class PcreByteParser {
 					index += 2;
 					capturing = false;
 					atomic = true;
+				} else if ( source.AsSpan( index ).StartsWith( "?P="u8 ) ) {
+					index += 3;
+					return ParseNamedReference( (byte)')', offset );
+				} else if ( source.AsSpan( index ).StartsWith( "?P<"u8 ) ) {
+					index += 3;
+					name = ParseCaptureName( (byte)'>', offset );
+				} else if ( source.AsSpan( index ).StartsWith( "?'"u8 ) ) {
+					index += 2;
+					name = ParseCaptureName( (byte)'\'', offset );
+				} else if ( index + 1 < source.Length && source[index + 1] == (byte)'<'
+					&& ( index + 2 >= source.Length || source[index + 2] is not (byte)'=' and not (byte)'!' and not (byte)'*' ) ) {
+					index += 2;
+					name = ParseCaptureName( (byte)'>', offset );
 				} else {
 					var behind = index + 2 < source.Length && source[index + 1] == (byte)'<'
 						&& source[index + 2] is (byte)'=' or (byte)'!';
@@ -281,6 +295,9 @@ internal sealed class PcreByteParser {
 				throw new PcreByteParseException( new(
 					PcreByteDiagnosticCode.PatternCaptureLimitExceeded, offset, "capture count limit exceeded"
 				) );
+			}
+			if ( name is not null && !namedCaptures.TryAdd( name, number ) ) {
+				throw Invalid( offset, "duplicate capture name" );
 			}
 			PcreByteAlternatives body;
 			try {
@@ -652,7 +669,28 @@ internal sealed class PcreByteParser {
 			backreferences.Add( (number, offset) );
 			return new PcreByteBackreference( number );
 		}
-		if ( value == (byte)'g' ) { return ParseNumericBackreference( offset ); }
+		if ( value == (byte)'k' ) {
+			if ( inBracket ) { throw Unsupported( offset ); } // Literal bracket interpretation is pending.
+			if ( index >= source.Length || source[index] is not (byte)'<' and not (byte)'\'' and not (byte)'{' ) {
+				throw Invalid( offset, "named backreference requires a delimiter" );
+			}
+			var delimiter = source[index++];
+			return ParseNamedReference( delimiter == (byte)'<' ? (byte)'>'
+				: delimiter == (byte)'{' ? (byte)'}' : (byte)'\'', offset );
+		}
+		if ( value == (byte)'g' ) {
+			if ( inBracket ) { throw Unsupported( offset ); } // g is a literal in a PCRE2 bracket.
+			if ( index < source.Length && source[index] == (byte)'{' ) {
+				var opening = index++;
+				SkipBraceHorizontalSpace();
+				if ( index < source.Length && source[index] is not (>= (byte)'0' and <= (byte)'9')
+					and not (byte)'+' and not (byte)'-' ) {
+					return ParseNamedReference( (byte)'}', offset );
+				}
+				index = opening;
+			}
+			return ParseNumericBackreference( offset );
+		}
 		if ( value == (byte)'x' ) {
 			if ( index < source.Length && source[index] == (byte)'{' ) {
 				return new PcreByteLiteral( ParseBracedHex( offset ) );

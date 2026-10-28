@@ -47,7 +47,6 @@ public sealed class PcreGrepConsumerFixtureTests {
 	}
 
 	[Theory]
-	[InlineData( "(?<name>a)" )]
 	[InlineData( "(?|a)" )]
 	[InlineData( "(?R)" )]
 	[InlineData( "(?i:a)" )]
