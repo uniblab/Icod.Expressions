@@ -382,7 +382,7 @@ internal sealed class PcreByteParser {
 				throw Unsupported( openingOffset ); // Numeric escapes in brackets are octal.
 			}
 			PcreByteNode escaped;
-			try { escaped = ParseEscape( offset ); }
+			try { escaped = ParseEscape( offset, inBracket: true ); }
 			catch ( PcreByteParseException error ) when (
 				error.Diagnostic.Code == PcreByteDiagnosticCode.UnsupportedSyntax
 			) { throw Unsupported( openingOffset ); }
@@ -552,7 +552,7 @@ internal sealed class PcreByteParser {
 			if ( index < source.Length && source[index] is >= (byte)'1' and <= (byte)'9' ) {
 				throw Unsupported( offset ); // In a class, numeric escapes are octal characters.
 			}
-			var escape = ParseEscape( offset );
+			var escape = ParseEscape( offset, inBracket: true );
 			return escape switch {
 				PcreByteLiteral literal => (BracketLiteral( (byte)literal.Value ), (byte)literal.Value, true),
 				PcreByteClass characterClass => (characterClass.Set, null, false),
@@ -614,11 +614,15 @@ internal sealed class PcreByteParser {
 		return (negated ? set.Complement() : set, null, false);
 	}
 
-	private PcreByteNode ParseEscape( int offset ) {
+	private PcreByteNode ParseEscape( int offset, bool inBracket = false ) {
 		if ( index >= source.Length ) {
 			throw Invalid( offset, "trailing backslash" );
 		}
 		var value = source[index++];
+		if ( value == (byte)'R' ) {
+			if ( inBracket ) { throw Invalid( offset, "a newline sequence is not a character class member" ); }
+			return new PcreByteNewlineSequence();
+		}
 		if ( value == (byte)'A' ) { return new PcreByteAnchor( true ); }
 		if ( value == (byte)'z' ) { return new PcreByteAnchor( false ); }
 		if ( value == (byte)'Z' ) { return new PcreByteEndBeforeFinalLf(); }
