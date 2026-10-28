@@ -80,21 +80,21 @@ public sealed class PcreByteBackreferenceTests {
 	}
 
 	[Theory]
-	[InlineData( @"(a)\g12", PcreByteDiagnosticCode.InvalidSyntax )]
-	[InlineData( @"(a)\g{2}", PcreByteDiagnosticCode.InvalidSyntax )]
-	[InlineData( @"(a)\g{0}", PcreByteDiagnosticCode.InvalidSyntax )]
-	[InlineData( @"(a)\g{}", PcreByteDiagnosticCode.InvalidSyntax )]
-	[InlineData( @"(a)\g{99999999}", PcreByteDiagnosticCode.InvalidSyntax )]
-	[InlineData( @"(a)\g{+1}", PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( @"(a)\g{-1}", PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( @"(a)\g{name}", PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( @"(a)\g<1>", PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( @"(a)[\g{1}]", PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( @"(a)\g12", (int)PcreByteDiagnosticCode.InvalidSyntax )]
+	[InlineData( @"(a)\g{2}", (int)PcreByteDiagnosticCode.InvalidSyntax )]
+	[InlineData( @"(a)\g{0}", (int)PcreByteDiagnosticCode.InvalidSyntax )]
+	[InlineData( @"(a)\g{}", (int)PcreByteDiagnosticCode.InvalidSyntax )]
+	[InlineData( @"(a)\g{99999999}", (int)PcreByteDiagnosticCode.InvalidSyntax )]
+	[InlineData( @"(a)\g{+1}", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( @"(a)\g{-1}", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( @"(a)\g{name}", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( @"(a)\g<1>", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( @"(a)[\g{1}]", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
 	public void DiagnosesNonmatchingOrPendingGReferencesAtTheirEscape( string pattern,
-		PcreByteDiagnosticCode code ) {
+		int code ) {
 		var result = PcreByteCompiler.Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
 		Assert.False( result.IsSuccess );
-		Assert.Equal( code, result.Diagnostic?.Code );
+		Assert.Equal( (PcreByteDiagnosticCode)code, result.Diagnostic?.Code );
 		Assert.Equal( pattern.IndexOf( '\\' ), result.Diagnostic?.ByteOffset );
 	}
 
