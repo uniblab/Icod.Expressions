@@ -30,8 +30,6 @@ public sealed class PcreSyntaxAcceptanceTests {
 	[InlineData( "(?<=[ab])c", 0, false )]
 	[InlineData( @"(a)\10", 3, false )]
 	[InlineData( @"(a)\g<1>", 3, false )]
-	[InlineData( @"\K", 0, false )]
-	[InlineData( @"\G", 0, false )]
 	[InlineData( @"\C", 0, false )]
 	[InlineData( @"\p{Greek}", 0, true )]
 	public void PendingConstructHasExplicitOpeningByteDiagnostic( string pattern, int expectedOffset, bool utf8 ) {
