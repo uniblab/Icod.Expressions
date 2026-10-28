@@ -48,7 +48,6 @@ public sealed class PcreGrepConsumerFixtureTests {
 
 	[Theory]
 	[InlineData( "(?R)" )]
-	[InlineData( "(?i:a)" )]
 	[InlineData( "(?<=a+)b" )]
 	public void PendingSyntaxIsExplicitlyRejected( string pattern ) {
 		var result = PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( pattern ) );

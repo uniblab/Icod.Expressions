@@ -2,7 +2,9 @@ using System.Globalization;
 
 namespace Icod.Expressions.Pcre;
 
-internal abstract record PcreByteNode;
+internal abstract record PcreByteNode {
+	internal bool Caseless { get; init; }
+}
 
 internal sealed record PcreByteLiteral( int Value ) : PcreByteNode;
 

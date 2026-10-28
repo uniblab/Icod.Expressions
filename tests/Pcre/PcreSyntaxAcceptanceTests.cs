@@ -19,7 +19,6 @@ public sealed class PcreSyntaxAcceptanceTests {
 	[InlineData( "(*UCP)a", 0, true )]
 	[InlineData( "a(*SKIP)", 1, false )]
 	[InlineData( "(?i)(*FAIL)", 4, false )]
-	[InlineData( "(?i:a)", 0, false )]
 	[InlineData( "(?#comment)a", 0, false )]
 	[InlineData( "(?[a|b])", 0, false )]
 	[InlineData( "(a)(?(1)b|c)", 3, false )]

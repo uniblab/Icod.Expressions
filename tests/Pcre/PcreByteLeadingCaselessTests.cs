@@ -67,15 +67,6 @@ public sealed class PcreByteLeadingCaselessTests {
 		Assert.Null( highByteResult.Match );
 	}
 
-	[Theory]
-	[InlineData( "a(?i)b", 1 )]
-	[InlineData( "(?i:a)", 0 )]
-	public void RejectsUnsupportedFlagPlacementOrCombination( string pattern, int offset ) {
-		var result = PcreByteCompiler.Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
-		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
-		Assert.Equal( offset, result.Diagnostic?.ByteOffset );
-	}
-
 	[Fact]
 	public void CaselessReferenceComparisonRemainsBoundedAndCancellable() {
 		var pattern = System.Text.Encoding.ASCII.GetBytes( "(?i)(" + new string( 'a', 128 ) + @")\1" );

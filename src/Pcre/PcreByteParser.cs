@@ -34,7 +34,6 @@ internal sealed partial class PcreByteParser {
 	}
 
 	internal int GroupCount => groupCount;
-	internal bool Caseless => caseless;
 
 	internal PcreByteAlternatives Parse() {
 		while ( true ) {
@@ -45,7 +44,7 @@ internal sealed partial class PcreByteParser {
 			} else if ( utf8 && source.AsSpan( index ).StartsWith( "(?aD)"u8 ) ) {
 				index += 5;
 				asciiBsD = true;
-			} else if ( !TryParseLeadingOptions() ) {
+			} else if ( !TryParseOptions( index, scoped: false ) ) {
 				break;
 			}
 		}
@@ -62,10 +61,10 @@ internal sealed partial class PcreByteParser {
 		return hasNamedReferences ? ResolveNamedReferences( root ) : root;
 	}
 
-	private bool TryParseLeadingOptions() {
-		if ( index + 3 >= source.Length || source[index] != (byte)'('
-			|| source[index + 1] != (byte)'?' ) { return false; }
-		var cursor = index + 2;
+	private bool TryParseOptions( int openingOffset, bool scoped ) {
+		if ( openingOffset + 3 >= source.Length || source[openingOffset] != (byte)'('
+			|| source[openingOffset + 1] != (byte)'?' ) { return false; }
+		var cursor = openingOffset + 2;
 		var unsetting = false;
 		var sawFlag = false;
 		var sawUnsetFlag = false;
@@ -75,7 +74,7 @@ internal sealed partial class PcreByteParser {
 		var unsetI = false;
 		var unsetM = false;
 		var unsetS = false;
-		while ( cursor < source.Length && source[cursor] != (byte)')' ) {
+		while ( cursor < source.Length && source[cursor] is not (byte)')' and not (byte)':' ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			var value = source[cursor++];
 			if ( value == (byte)'-' && !unsetting ) {
@@ -91,11 +90,17 @@ internal sealed partial class PcreByteParser {
 				case (byte)'s': if ( unsetting ) { unsetS = true; } else { setS = true; } break;
 			}
 		}
-		if ( cursor >= source.Length || !sawFlag || unsetting && !sawUnsetFlag ) { return false; }
+		if ( cursor >= source.Length || !sawFlag || unsetting && !sawUnsetFlag
+			|| source[cursor] != ( scoped ? (byte)':' : (byte)')' ) ) { return false; }
 		index = cursor + 1;
 		caseless = ( caseless || setI ) && !unsetI;
 		multiline = ( multiline || setM ) && !unsetM;
 		dotAll = ( dotAll || setS ) && !unsetS;
+		if ( !scoped && index < source.Length && source[index] is (byte)'*' or (byte)'+' or (byte)'?' or (byte)'{' ) {
+			var repeatOffset = index;
+			if ( source[index] == (byte)'{' ) { ParseCountedBounds( repeatOffset ); }
+			throw Invalid( repeatOffset, "an option setting cannot be repeated" );
+		}
 		return true;
 	}
 
@@ -116,7 +121,10 @@ internal sealed partial class PcreByteParser {
 				cancellationToken.ThrowIfCancellationRequested();
 				if ( TryConsumeQuoteDelimiter( ref quoting ) ) { continue; }
 				if ( !quoting && source[index] is (byte)'|' or (byte)')' ) { break; }
+				if ( !quoting && TryParseOptions( index, scoped: false ) ) { continue; }
+				var atomCaseless = caseless;
 				var atom = quoting ? ParseQuotedLiteral() : ParseAtom( depth );
+				if ( atom.Caseless != atomCaseless ) { atom = atom with { Caseless = atomCaseless }; }
 				while ( TryConsumeQuoteDelimiter( ref quoting ) ) { }
 				if ( !quoting && index < source.Length && source[index] is (byte)'*' or (byte)'+' or (byte)'?' or (byte)'{' ) {
 					if ( atom is PcreByteLiteralAssertion ) {
@@ -254,9 +262,14 @@ internal sealed partial class PcreByteParser {
 			var capturing = true;
 			var atomic = false;
 			var branchReset = false;
+			var entryCaseless = caseless;
+			var entryMultiline = multiline;
+			var entryDotAll = dotAll;
 			string? name = null;
 			if ( index < source.Length && source[index] == (byte)'?' ) {
-				if ( index + 1 < source.Length && source[index + 1] == (byte)':' ) {
+				if ( TryParseOptions( offset, scoped: true ) ) {
+					capturing = false;
+				} else if ( index + 1 < source.Length && source[index + 1] == (byte)':' ) {
 					index += 2;
 					capturing = false;
 				} else if ( index + 1 < source.Length && source[index + 1] == (byte)'|' ) {
@@ -312,6 +325,10 @@ internal sealed partial class PcreByteParser {
 				body = ParseAlternatives( true, depth + 1, branchReset );
 			} catch ( PcreByteParseException error ) when ( error.Diagnostic.Code == PcreByteDiagnosticCode.InvalidSyntax && error.Diagnostic.Message == "unclosed group" ) {
 				throw Invalid( offset, "unclosed group" );
+			} finally {
+				caseless = entryCaseless;
+				multiline = entryMultiline;
+				dotAll = entryDotAll;
 			}
 			if ( index >= source.Length || source[index] != (byte)')' ) {
 				throw Invalid( offset, "unclosed group" );
