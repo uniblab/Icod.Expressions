@@ -11,7 +11,10 @@ Support `(?<name>...)`, `(?'name'...)`, `(?P<name>...)`, and references
 `\k<name>`, `\k'name'`, `\k{name}`, `\g{name}`, `(?P=name)`.
 Resolve forward names after parsing; an unset target still fails at match time.
 Unique names are ordinal and case sensitive, including under caseless matching.
-Duplicate names without the pending duplicate-name option are invalid.
+Different-number duplicate names without the pending duplicate-name option are invalid.
+The branch-reset extension permits repeated identical aliases for the same
+number, including unnamed declarations sharing that slot; different names for
+one number remain invalid. See [PCRE-BRANCH-RESET-DESIGN.md](PCRE-BRANCH-RESET-DESIGN.md).
 
 Follow the [PCRE2 pattern specification](https://www.pcre.org/current/doc/html/pcre2pattern.html):
 names have at most 128 code units (bytes in this 8-bit compiler). Byte names use
@@ -22,7 +25,7 @@ a release gate. Escapes are not expanded inside names. Braced references ignore
 space/tab after the opening brace and before the closing brace; other delimiters
 do not ignore whitespace.
 
-General assertions, duplicate-name options, branch reset, recursion and named
+General assertions, duplicate-name options, recursion and named
 subroutine calls remain pending. In particular `\g<name>` and `\g'name'` are
 subroutine syntax, not aliases for `\g{name}`. Literal `\g`/`\k` interpretation
 in ordinary brackets remains pending; general lookaround bodies retain

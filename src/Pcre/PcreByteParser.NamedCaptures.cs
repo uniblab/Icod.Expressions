@@ -5,10 +5,22 @@ namespace Icod.Expressions.Pcre;
 internal sealed partial class PcreByteParser {
 	private const int MaximumNameBytes = 128;
 	private readonly Dictionary<string, int> namedCaptures = new( StringComparer.Ordinal );
+	private readonly Dictionary<int, string> captureNames = new();
 	private bool hasNamedReferences;
 
 	// Temporary parser node only: resolved before the numbered program compiler runs.
 	private sealed record NamedReference( string Name, int Offset ) : PcreByteNode;
+
+	private void RegisterCaptureName( string name, int number, int offset ) {
+		if ( namedCaptures.TryGetValue( name, out var previousNumber ) && previousNumber != number ) {
+			throw Invalid( offset, "capture name identifies different group numbers" );
+		}
+		if ( captureNames.TryGetValue( number, out var previousName ) && previousName != name ) {
+			throw Invalid( offset, "capture group number has different names" );
+		}
+		namedCaptures[name] = number;
+		captureNames[number] = name;
+	}
 
 	private NamedReference ParseNamedReference( byte terminator, int offset ) {
 		var name = ParseCaptureName( terminator, offset );

@@ -99,12 +99,14 @@ internal sealed partial class PcreByteParser {
 		return true;
 	}
 
-	private PcreByteAlternatives ParseAlternatives( bool inGroup, int depth ) {
+	private PcreByteAlternatives ParseAlternatives( bool inGroup, int depth, bool branchReset = false ) {
 		if ( depth > MaximumPatternDepth ) {
 			throw new PcreByteParseException( new(
 				PcreByteDiagnosticCode.PatternDepthLimitExceeded, index, "pattern nesting limit exceeded"
 			) );
 		}
+		var entryGroupCount = groupCount;
+		var maximumGroupCount = groupCount;
 		var branches = new List<IReadOnlyList<PcreByteNode>>();
 		while ( true ) {
 			cancellationToken.ThrowIfCancellationRequested();
@@ -156,13 +158,16 @@ internal sealed partial class PcreByteParser {
 				nodes.Add( atom );
 			}
 			branches.Add( nodes );
+			if ( branchReset ) { maximumGroupCount = Math.Max( maximumGroupCount, groupCount ); }
 			if ( index >= source.Length || source[index] == (byte)')' ) {
 				if ( inGroup && index >= source.Length ) {
 					throw Invalid( source.Length, "unclosed group" );
 				}
+				if ( branchReset ) { groupCount = maximumGroupCount; }
 				return new( branches );
 			}
 			index++; // Ordered alternative.
+			if ( branchReset ) { groupCount = entryGroupCount; }
 		}
 	}
 
@@ -248,11 +253,16 @@ internal sealed partial class PcreByteParser {
 			}
 			var capturing = true;
 			var atomic = false;
+			var branchReset = false;
 			string? name = null;
 			if ( index < source.Length && source[index] == (byte)'?' ) {
 				if ( index + 1 < source.Length && source[index + 1] == (byte)':' ) {
 					index += 2;
 					capturing = false;
+				} else if ( index + 1 < source.Length && source[index + 1] == (byte)'|' ) {
+					index += 2;
+					capturing = false;
+					branchReset = true;
 				} else if ( index + 1 < source.Length && source[index + 1] == (byte)'>' ) {
 					index += 2;
 					capturing = false;
@@ -296,12 +306,10 @@ internal sealed partial class PcreByteParser {
 					PcreByteDiagnosticCode.PatternCaptureLimitExceeded, offset, "capture count limit exceeded"
 				) );
 			}
-			if ( name is not null && !namedCaptures.TryAdd( name, number ) ) {
-				throw Invalid( offset, "duplicate capture name" );
-			}
+			if ( name is not null ) { RegisterCaptureName( name, number, offset ); }
 			PcreByteAlternatives body;
 			try {
-				body = ParseAlternatives( true, depth + 1 );
+				body = ParseAlternatives( true, depth + 1, branchReset );
 			} catch ( PcreByteParseException error ) when ( error.Diagnostic.Code == PcreByteDiagnosticCode.InvalidSyntax && error.Diagnostic.Message == "unclosed group" ) {
 				throw Invalid( offset, "unclosed group" );
 			}

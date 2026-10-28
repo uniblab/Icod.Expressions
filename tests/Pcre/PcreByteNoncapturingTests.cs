@@ -95,7 +95,6 @@ public sealed class PcreByteNoncapturingTests {
 	[Theory]
 	[InlineData( "(?i:a)" )]
 	[InlineData( "(?=a|b)" )]
-	[InlineData( "(?|a)" )]
 	public void OtherSpecialGroupsRemainUnsupported( string pattern ) {
 		var result = PcreByteCompiler.Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
 		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
