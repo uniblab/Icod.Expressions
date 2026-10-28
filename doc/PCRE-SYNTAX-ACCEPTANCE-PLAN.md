@@ -26,9 +26,9 @@
 
 **Files:** `tests/Pcre/PcreSyntaxAcceptanceTests.cs`, `src/Pcre/PcreByteParser.cs`, `doc/PCRE-DESIGN.md`.
 
-- [ ] Add the representative valid-pending syntax diagnostic table and malformed-group control.
-- [ ] Run the new tests and observe the `(*...)` mismatch before changing the parser.
-- [ ] Classify the `(*...)` family at its opening parenthesis, retaining existing diagnostics for other groups.
-- [ ] Add the acceptance-matrix link to the roadmap and check the document against test evidence.
+- [x] Add the representative valid-pending syntax diagnostic table and malformed-group control.
+- [x] Run the new tests and observe the `(*...)` mismatch before changing the parser: Staging net8.0 reported 11 directive cases as `InvalidSyntax` where `UnsupportedSyntax` was expected; the pinned reference accepted `(*FAIL)|a` after correcting an initially wrong `(*SKIP)` fixture.
+- [x] Classify the `(*...)` family at its opening parenthesis, retaining existing diagnostics for other groups.
+- [x] Add the acceptance-matrix link to the roadmap and check the document against test evidence.
 - [ ] Run the Staging six-job suite, frozen corpus, workload smoke and package-only consumer.
 - [ ] Review the final diff and leave a PR for user merge.

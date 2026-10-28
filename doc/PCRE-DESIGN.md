@@ -73,6 +73,8 @@ The initial parser limits group nesting, total captures, and repeat-state marks 
 
 The matrix is the first consumer floor, not the complete PCRE2 syntax promise. Expand a tracked feature table from the [PCRE2 syntax reference](https://www.pcre.org/current/doc/html/pcre2syntax.html), and distinguish supported, intentionally rejected, and pending constructs. In particular, lookbehind length rules, option scope, backtracking verbs, recursion, and invalid UTF behavior need explicit decisions. PCRE2 documents invalid UTF matching as a compile option specific to the standard matcher in its [API reference](https://www.pcre.org/current/doc/html/pcre2api.html).
 
+[`PCRE-SYNTAX-ACCEPTANCE-MATRIX.md`](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md) records the current supported shapes, representative explicitly rejected PCRE2 families, consumer-owned behavior and the next conformance gates. A representative `(*...)` directive is now diagnosed as pending syntax at its opening byte rather than as a quantifier error; malformed groups remain invalid syntax. This inventory is a checkpoint for prioritizing issue #7, not a complete PCRE2 implementation claim.
+
 `tests/Pcre/PcreReferenceConformanceTests.cs` compares a finite supported-syntax matrix against Grep's pinned PCRE.NET 1.6.0 reference on original byte inputs. This is a test-only dependency and whole-match span gate; it does not establish full PCRE2 10.48 compatibility or add a production dependency.
 
 `tests/Pcre/PcreReferenceCaptureTests.cs` checks selected numbered group participation and source-byte spans against the same pinned reference. Unset and participating empty captures are distinct. This finite test-only matrix is another conformance gate, not a complete capture or syntax claim.

@@ -62,6 +62,7 @@ public sealed class PcreSyntaxAcceptanceTests {
 	[Theory]
 	[InlineData( "a(", 1 )]
 	[InlineData( "a\\", 1 )]
+	[InlineData( "(*", 1 )]
 	public void MalformedPatternRetainsInvalidSyntaxDiagnostic( string pattern, int expectedOffset ) {
 		var result = PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( pattern ) );
 		Assert.Equal( PcreByteDiagnosticCode.InvalidSyntax, result.Diagnostic?.Code );
