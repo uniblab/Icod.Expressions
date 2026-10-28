@@ -585,6 +585,7 @@ internal sealed class PcreByteParser {
 			backreferences.Add( (number, offset) );
 			return new PcreByteBackreference( number );
 		}
+		if ( value == (byte)'g' ) { return ParseAbsoluteBackreference( offset ); }
 		if ( value == (byte)'x' ) {
 			if ( index < source.Length && source[index] == (byte)'{' ) {
 				return new PcreByteLiteral( ParseBracedHex( offset ) );
@@ -643,6 +644,35 @@ internal sealed class PcreByteParser {
 		}
 		if ( utf8 && value >= 0x80 ) { throw Unsupported( offset ); }
 		return new PcreByteLiteral( value );
+	}
+
+	private PcreByteBackreference ParseAbsoluteBackreference( int offset ) {
+		var braced = index < source.Length && source[index] == (byte)'{';
+		if ( braced ) { index++; }
+		if ( index >= source.Length || source[index] is < (byte)'0' or > (byte)'9' ) {
+			if ( braced && index < source.Length && source[index] == (byte)'}' ) {
+				throw Invalid( offset, "numeric backreference requires a group number" );
+			}
+			throw Unsupported( offset ); // Relative, named and subroutine forms are pending.
+		}
+		var number = 0;
+		do {
+			cancellationToken.ThrowIfCancellationRequested();
+			var digit = source[index++] - (byte)'0';
+			if ( number > ( MaximumCaptureCount - digit ) / 10 ) {
+				throw Invalid( offset, "backreference has no capture group" );
+			}
+			number = number * 10 + digit;
+		} while ( index < source.Length && source[index] is >= (byte)'0' and <= (byte)'9' );
+		if ( braced ) {
+			if ( index >= source.Length || source[index] != (byte)'}' ) {
+				throw Invalid( offset, "unclosed numeric backreference" );
+			}
+			index++;
+		}
+		if ( number == 0 ) { throw Invalid( offset, "backreference must be positive" ); }
+		backreferences.Add( (number, offset) );
+		return new( number );
 	}
 
 	private int ParseBracedHex( int offset ) {
