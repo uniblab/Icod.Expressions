@@ -46,7 +46,7 @@ public sealed class PcreSyntaxAcceptanceTests {
 
 	[Fact]
 	public void PinnedReferenceAcceptsBacktrackingVerbWhichInternalCompilerRejects() {
-		const string pattern = "(*SKIP)(*FAIL)|a";
+		const string pattern = "(*FAIL)|a";
 		var bytes = Encoding.ASCII.GetBytes( pattern );
 		var reference = new PcreRegex8Bit( bytes, Encoding.Latin1, new PcreRegexSettings {
 			Options = PcreOptions.Compiled
