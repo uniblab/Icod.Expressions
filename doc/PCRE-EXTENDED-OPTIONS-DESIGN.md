@@ -33,6 +33,9 @@ The internal LF and AnyCRLF newline conventions control # comment termination;
 BSR and DotAll do not. Ordinary classes keep #, parentheses and comment-looking
 text literal. xx class skipping must preserve leading negation/closing-bracket
 rules, range endpoints, trailing hyphens, quoted/escaped spaces and POSIX tokens.
+Empty backslash-Q/backslash-E pairs and orphan backslash-E markers do not occupy
+the initial class position before or after negation; nonempty quotes remain
+literal. Independent review identified this boundary and pinned regressions.
 Fixed-literal assertions inherit the active lexical mode; broader assertion
 bodies and option changes inside them remain pending.
 

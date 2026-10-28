@@ -240,9 +240,7 @@ internal sealed partial class PcreByteParser {
 				: anyCrLfNewline ? PcreByteSet.DotAnyCrLf : PcreByteSet.Dot );
 
 	private PcreByteScalarSet ParseUtf8Bracket( int openingOffset ) {
-		SkipClassSpace();
-		var negated = index < source.Length && source[index] == (byte)'^';
-		if ( negated ) { index++; }
+		var negated = ParseClassNegation();
 		var quoting = false;
 		var ranges = new List<PcreByteScalarRange>();
 		var predicates = new List<PcreByteScalarPredicate>();
@@ -395,9 +393,7 @@ internal sealed partial class PcreByteParser {
 	}
 
 	private PcreByteNode ParseBracket( int openingOffset ) {
-		SkipClassSpace();
-		var negated = index < source.Length && source[index] == (byte)'^';
-		if ( negated ) { index++; }
+		var negated = ParseClassNegation();
 		var quoting = false;
 		var hasItem = false;
 		var explicitNewline = false;

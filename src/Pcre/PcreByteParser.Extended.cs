@@ -63,6 +63,22 @@ internal sealed partial class PcreByteParser {
 		return false;
 	}
 
+
+	private bool ParseClassNegation() {
+		var negated = false;
+		while ( index < source.Length ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			SkipClassSpace();
+			if ( source.AsSpan( index ).StartsWith( "\\E"u8 ) ) { index += 2; }
+			else if ( source.AsSpan( index ).StartsWith( "\\Q\\E"u8 ) ) { index += 4; }
+			else if ( !negated && index < source.Length && source[index] == (byte)'^' ) {
+				negated = true;
+				index++;
+			} else { break; }
+		}
+		return negated;
+	}
+
 	private void SkipClassSpace() {
 		while ( extended == ExtendedMode.More && index < source.Length && source[index] is (byte)' ' or (byte)'\t' ) {
 			cancellationToken.ThrowIfCancellationRequested();

@@ -36,6 +36,9 @@ with Parse/ParseAlternatives/AppendNode and ParseLiteralAssertion, preserving
 quote state and direct-option repetition checks. Keep internal numeric/header/
 name/property token readers unchanged. In byte/UTF brackets, skip xx SP/HT only
 at item/range boundaries, preserving negation, first ] and trailing hyphens.
+The class-initial reader also skips empty Q/E pairs and orphan E markers before
+and after the first caret, preserving nonempty quoted literals. Pin the review
+finding with failing byte/UTF fixtures before applying that correction.
 Update current inventories and obsolete rejection fixtures. Run whitespace and
 frozen-source checks; commit only the bounded parser change.
 
