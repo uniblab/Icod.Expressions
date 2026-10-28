@@ -37,6 +37,22 @@ options abstraction for two additional switches. Keep repeated modifiers and
 unsupported letters under existing diagnostics. No caller-side n/U properties
 are introduced: this tranche covers pattern settings, as the existing m/s do.
 
+## Parser stack safety found during verification
+
+The first implemented head passed five platforms, but macOS x64 net8 crashed
+in the existing over-depth compilation test: 257 recursive ParseAtom /
+ParseAlternatives frames exhausted the native thread stack. This is a concrete
+reason to replace group recursion, without changing the 256-level contract.
+
+Use bounded heap GroupFrame objects and an explicit parent stack, with group
+opening/depth/number/branch-reset counters, option snapshots, quote state and
+branch/node lists. Close a group into the same syntax node, restore its entry
+options, and only then parse its surrounding quantifier. Move this traversal,
+group-header handling and atom suffix logic to PcreByteParser.Groups.cs;
+ordinary atom readers remain shared. No retained spans or interior pointers.
+Preserve outermost-unclosed-group offsets and all existing limits. Failed
+compilations discard their parser, so exception unwinding needs no state reuse.
+
 ## Boundaries and verification
 
 Empty/reset options, x/xx/J and extra flags, scoped/mixed aD, general assertions,

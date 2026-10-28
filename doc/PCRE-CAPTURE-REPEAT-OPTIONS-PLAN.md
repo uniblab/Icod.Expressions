@@ -41,7 +41,21 @@ reverses the current U setting. Preserve repeat marks and diagnostic offsets.
 Update current design, acceptance and consumer inventories with this support
 and the remaining pending families. Leave historical tranche design docs intact.
 
-## Task 3: Review and verify
+## Task 3: Remove recursive group parsing after the observed stack overflow
+
+Run 40776896443 macOS x64 net8 aborts in the existing
+BoundsPatternNestingDuringCompilation test, with 257 ParseAtom /
+ParseAlternatives recursion pairs. Treat this existing test as the red
+regression. Move group traversal into PcreByteParser.Groups.cs with bounded
+GroupFrame objects and an explicit parent stack; retain source offsets,
+branch numbering, quote state, option restoration before quantifiers and the
+same nodes. Extract the unchanged suffix logic to AppendNode. Keep the
+256-level limit; do not change runner/test stacks. Add a mixed 256-group
+boundary and nested-unclosed diagnostic cases alongside existing depth tests.
+Review the transitions against the former recursive parser, then rerun the
+entire six-platform gate.
+
+## Task 4: Review and verify
 
 Review the whole diff directly. Check named branches, numbering/limits,
 restoration before quantifiers, greedy/possessive suffix independence and no

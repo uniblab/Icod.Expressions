@@ -195,6 +195,32 @@ public sealed class PcreCaptureRepeatOptionReferenceTests {
 			Encoding.ASCII.GetBytes( pattern ), cancellationToken: cancellation.Token ) );
 	}
 
+
+	[Fact]
+	public void MixedGroupOptionsCompileAtTheFullDepthBoundary() {
+		var openings = Enumerable.Range( 0, 256 ).Select( i => ( i % 6 ) switch {
+			0 => "(?nU:", 1 => "(?-nU:", 2 => "(?:", 3 => "(?|", 4 => "(?>", _ => $"(?<g{i}>"
+		} ).ToArray();
+		var pattern = string.Concat( openings ) + "a" + new string( ')', 256 );
+		var match = Compile( pattern ).Match( "a"u8.ToArray() ).Match;
+		Assert.Equal( 1, match?.ByteLength );
+		Assert.Equal( 43, match!.Captures.Count );
+		Assert.All( match.Captures, capture => Assert.Equal( new PcreByteCapture( 0, 1 ), capture ) );
+		var tooDeep = PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( "(?:" + pattern + ")" ) );
+		Assert.Equal( PcreByteDiagnosticCode.PatternDepthLimitExceeded, tooDeep.Diagnostic?.Code );
+		Assert.Equal( 3 + string.Concat( openings[..255] ).Length, tooDeep.Diagnostic?.ByteOffset );
+	}
+
+	[Theory]
+	[InlineData( "a(?n:(b(?U:c", 1 )]
+	[InlineData( "a(?n:(b(?U:c))", 1 )]
+	[InlineData( @"a(?n:\Q(b\E", 1 )]
+	public void UnclosedNestedGroupsRetainTheirOutermostOpeningDiagnostic( string pattern, int offset ) {
+		var result = PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( pattern ) );
+		Assert.Equal( PcreByteDiagnosticCode.InvalidSyntax, result.Diagnostic?.Code );
+		Assert.Equal( offset, result.Diagnostic?.ByteOffset );
+	}
+
 	private static void Compare( PcreRegex8Bit reference, byte[] subject, int offset,
 		PcreByteMatchResult actual, string context = "" ) {
 		var native = reference.Match( subject, offset );
