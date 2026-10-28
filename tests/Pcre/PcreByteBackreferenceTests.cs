@@ -79,6 +79,25 @@ public sealed class PcreByteBackreferenceTests {
 		Assert.Equal( pattern.IndexOf( '\\' ), result.Diagnostic?.ByteOffset );
 	}
 
+	[Theory]
+	[InlineData( @"(a)\g12", PcreByteDiagnosticCode.InvalidSyntax )]
+	[InlineData( @"(a)\g{2}", PcreByteDiagnosticCode.InvalidSyntax )]
+	[InlineData( @"(a)\g{0}", PcreByteDiagnosticCode.InvalidSyntax )]
+	[InlineData( @"(a)\g{}", PcreByteDiagnosticCode.InvalidSyntax )]
+	[InlineData( @"(a)\g{99999999}", PcreByteDiagnosticCode.InvalidSyntax )]
+	[InlineData( @"(a)\g{+1}", PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( @"(a)\g{-1}", PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( @"(a)\g{name}", PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( @"(a)\g<1>", PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( @"(a)[\g{1}]", PcreByteDiagnosticCode.UnsupportedSyntax )]
+	public void DiagnosesNonmatchingOrPendingGReferencesAtTheirEscape( string pattern,
+		PcreByteDiagnosticCode code ) {
+		var result = PcreByteCompiler.Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
+		Assert.False( result.IsSuccess );
+		Assert.Equal( code, result.Diagnostic?.Code );
+		Assert.Equal( pattern.IndexOf( '\\' ), result.Diagnostic?.ByteOffset );
+	}
+
 	[Fact]
 	public void CountsEachComparedReferenceByteAgainstWorkLimit() {
 		var pattern = System.Text.Encoding.ASCII.GetBytes( "(" + new string( 'a', 128 ) + @")\1" );
