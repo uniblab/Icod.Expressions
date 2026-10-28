@@ -159,7 +159,19 @@ internal static class PcreByteMatcher {
 			var atomicDepths = new List<int>();
 			List<int>? assertionDepths = null;
 			// Keep the observed and cancellable path byte-for-byte accountable to Step().
-			foreach ( var fragment in fragments ) {
+			var nullableInvalidCandidates = program.MatchInvalidUtf && program.CanMatchEmptyAtAnyOffset;
+			var previousFragmentEnd = -1;
+			for ( var fragmentIndex = 0; fragmentIndex < fragments.Count; ) {
+				var fragment = fragments[fragmentIndex];
+				if ( nullableInvalidCandidates && previousFragmentEnd >= 0
+					&& previousFragmentEnd < fragment.Start - 1 && startOffset < fragment.Start - 1 ) {
+					// Gaps contain only malformed bytes: valid UTF scalars remain whole
+					// fragments. Retry nullable paths at later bytes in an invalid run,
+					// without duplicating the explicitly requested candidate or storing gaps.
+					var gap = Math.Max( previousFragmentEnd + 1, startOffset + 1 );
+					fragment = new( gap, gap );
+				} else { fragmentIndex++; }
+				previousFragmentEnd = fragment.End;
 				for ( var start = Math.Max( startOffset, fragment.Start ); start <= fragment.End; start++ ) {
 					if ( program.Utf8 && start < fragment.End && ( input.Span[start] & 0xC0 ) == 0x80 ) {
 						continue; // Search candidate boundaries, never continuation bytes.
