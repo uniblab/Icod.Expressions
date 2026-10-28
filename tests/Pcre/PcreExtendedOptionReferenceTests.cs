@@ -307,6 +307,28 @@ public sealed class PcreExtendedOptionReferenceTests {
 			Encoding.ASCII.GetBytes( "(?x)#" + new string( ' ', 10000 ) ), cancellationToken: cancellation.Token ) );
 	}
 
+
+	[Theory]
+	[InlineData( @"(?xx)[ \Q\E ^ a ]", "b", true )]
+	[InlineData( @"(?xx)[ \Q\E ^ a ]", "a", false )]
+	[InlineData( @"(?xx)[ \E ^ \Q\E a ]", "b", true )]
+	[InlineData( @"(?xx)[ \E ^ \Q\E a ]", "a", false )]
+	[InlineData( @"(?xx)[ \E ^ \Q\E ^ a ]", "^", false )]
+	[InlineData( @"(?xx)[ \Q\E ^ ] a ]", "]", false )]
+	[InlineData( @"(?xx)[ \Q\E ^ ] a ]", "b", true )]
+	[InlineData( @"[\Q\E^a]", "b", true )]
+	[InlineData( @"[\E^a]", "a", false )]
+	[InlineData( @"(?xx)[ \Q^\E a ]", "^", true )]
+	[InlineData( @"(?xx)[ \Q^\E a ]", "b", false )]
+	public void EmptyQuotesBeforeClassNegationDoNotOccupyTheFirstItem( string pattern, string text, bool success ) {
+		foreach ( var utf8 in new[] { false, true } ) {
+			var subject = Encoding.ASCII.GetBytes( text );
+			var reference = Reference( pattern, utf8 );
+			Assert.Equal( success, reference.Match( subject ).Success );
+			Compare( reference, subject, 0, Compile( pattern, new PcreByteOptions { Utf8 = utf8 } ).Match( subject ), pattern );
+		}
+	}
+
 	private static void Compare( PcreRegex8Bit reference, byte[] subject, int offset,
 		PcreByteMatchResult actual, string context = "" ) {
 		var native = reference.Match( subject, offset );
