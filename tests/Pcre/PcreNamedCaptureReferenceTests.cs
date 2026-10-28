@@ -35,6 +35,8 @@ public sealed class PcreNamedCaptureReferenceTests {
 	[InlineData( @"(?<outer>(?<inner>a)b)\g{inner}\g{outer}", "6162616162", false, 0, 0, 5 )]
 	[InlineData( @"(?<x>\xFF)\k{x}", "FFFF", false, 0, 0, 2 )]
 	[InlineData( @"(?<x>\x00)\k'x'", "0000", false, 0, 0, 2 )]
+	[InlineData( "(?<x>a)\\k{ \tx\t }", "6161", false, 0, 0, 2 )]
+	[InlineData( "(?<x>a)\\g{ \tx\t }", "6161", false, 0, 0, 2 )]
 	[InlineData( @"(?i)(?<X>a)(?<x>b)\k<X>\k<x>", "41626142", false, 0, 0, 4 )]
 	[InlineData( @"(?<é>é)\k<é>", "C3A9C3A9", true, 0, 0, 4 )]
 	[InlineData( @"(?i)(?<é>é)\k<é>", "C389C3A9", true, 0, 0, 4 )]
@@ -65,6 +67,7 @@ public sealed class PcreNamedCaptureReferenceTests {
 	[InlineData( "1x", false )]
 	[InlineData( "a-b", false )]
 	[InlineData( "a b", false )]
+	[InlineData( " x", false )]
 	[InlineData( "é", false )]
 	[InlineData( "٢x", true )]
 	[InlineData( "á", true )]
@@ -90,8 +93,6 @@ public sealed class PcreNamedCaptureReferenceTests {
 	[InlineData( @"\k{x", 0 )]
 	[InlineData( @"\g{x", 0 )]
 	[InlineData( "(?P=x", 0 )]
-	[InlineData( @"[\k<x>]", 1 )]
-	[InlineData( @"[\g{x}]", 1 )]
 	public void MalformedOrUnknownNamesHaveControlledDiagnostics( string pattern, int offset ) {
 		AssertInvalid( pattern, false, offset );
 		AssertInvalid( pattern, true, offset );
@@ -139,6 +140,18 @@ public sealed class PcreNamedCaptureReferenceTests {
 		var result = PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( pattern ) );
 		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
 		Assert.Equal( offset, result.Diagnostic?.ByteOffset );
+	}
+
+	[Theory]
+	[InlineData( @"[\k<x>]" )]
+	[InlineData( @"[\g{x}]" )]
+	public void BracketLiteralInterpretationOfGAndKRemainsPending( string pattern ) {
+		foreach ( var utf8 in new[] { false, true } ) {
+			Assert.True( Reference( pattern, utf8, false ).Match( "x"u8.ToArray() ).Success );
+			var result = PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( pattern ), new PcreByteOptions { Utf8 = utf8 } );
+			Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
+			Assert.Equal( utf8 ? 0 : 1, result.Diagnostic?.ByteOffset );
+		}
 	}
 
 	private static void AssertInvalid( string pattern, bool utf8, int offset ) {

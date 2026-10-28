@@ -18,12 +18,16 @@ names have at most 128 code units (bytes in this 8-bit compiler). Byte names use
 ASCII letters, digits and underscore with a nondigit first character. UTF names
 also permit Unicode letters and decimal digits, with no leading digit. Unicode
 categories use the existing runtime policy; pinned-version table parity remains
-a release gate. Escapes are not expanded inside names.
+a release gate. Escapes are not expanded inside names. Braced references ignore
+space/tab after the opening brace and before the closing brace; other delimiters
+do not ignore whitespace.
 
 General assertions, duplicate-name options, branch reset, recursion and named
 subroutine calls remain pending. In particular `\g<name>` and `\g'name'` are
-subroutine syntax, not aliases for `\g{name}`. Named references are invalid in
-ordinary brackets; general lookaround bodies retain UnsupportedSyntax.
+subroutine syntax, not aliases for `\g{name}`. Literal `\g`/`\k` interpretation
+in ordinary brackets remains pending; general lookaround bodies retain
+UnsupportedSyntax. This bracket distinction was confirmed by the first reference
+run and the pinned 10.48 `pcre2_compile.c` escape handling.
 
 ## Approaches
 
