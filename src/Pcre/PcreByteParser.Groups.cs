@@ -2,7 +2,7 @@ namespace Icod.Expressions.Pcre;
 
 internal sealed partial class PcreByteParser {
 	private readonly record struct GroupOptions(
-		bool Caseless, bool Multiline, bool DotAll, bool NoAutoCapture, bool Ungreedy
+		bool Caseless, bool Multiline, bool DotAll, bool NoAutoCapture, bool Ungreedy, ExtendedMode Extended
 	);
 
 	// Bounded heap frames keep source nesting off the native call stack.
@@ -21,7 +21,7 @@ internal sealed partial class PcreByteParser {
 		internal List<PcreByteNode> Nodes { get; set; } = new();
 	}
 
-	private GroupOptions CurrentGroupOptions => new( caseless, multiline, dotAll, noAutoCapture, ungreedy );
+	private GroupOptions CurrentGroupOptions => new( caseless, multiline, dotAll, noAutoCapture, ungreedy, extended );
 
 	private void RestoreGroupOptions( GroupOptions options ) {
 		caseless = options.Caseless;
@@ -29,6 +29,7 @@ internal sealed partial class PcreByteParser {
 		dotAll = options.DotAll;
 		noAutoCapture = options.NoAutoCapture;
 		ungreedy = options.Ungreedy;
+		extended = options.Extended;
 	}
 
 	private PcreByteAlternatives ParseAlternatives() {
@@ -36,6 +37,7 @@ internal sealed partial class PcreByteParser {
 		var current = new GroupFrame( -1, 0, 0, false, false, CurrentGroupOptions, groupCount );
 		while ( true ) {
 			cancellationToken.ThrowIfCancellationRequested();
+			SkipPatternTrivia( ref current.Quoting );
 			if ( index >= source.Length ) {
 				if ( current.OpeningOffset >= 0 ) {
 					// Preserve the recursive parser's outermost-unclosed-group diagnostic.
@@ -45,7 +47,6 @@ internal sealed partial class PcreByteParser {
 				}
 				return FinishAlternatives( current );
 			}
-			if ( TryConsumeQuoteDelimiter( ref current.Quoting ) ) { continue; }
 			if ( !current.Quoting ) {
 				if ( source[index] == (byte)'|' ) {
 					FinishBranch( current );
@@ -94,7 +95,7 @@ internal sealed partial class PcreByteParser {
 
 	private void AppendNode( GroupFrame frame, PcreByteNode atom, bool atomCaseless ) {
 		if ( atom.Caseless != atomCaseless ) { atom = atom with { Caseless = atomCaseless }; }
-		while ( TryConsumeQuoteDelimiter( ref frame.Quoting ) ) { }
+		SkipPatternTrivia( ref frame.Quoting );
 		if ( !frame.Quoting && index < source.Length && source[index] is (byte)'*' or (byte)'+' or (byte)'?' or (byte)'{' ) {
 			if ( atom is PcreByteLiteralAssertion ) {
 				throw Unsupported( index );
@@ -120,9 +121,10 @@ internal sealed partial class PcreByteParser {
 					PcreByteDiagnosticCode.PatternRepeatLimitExceeded, quantifierOffset, "repeat state limit exceeded"
 				) );
 			}
-			var questionSuffix = index < source.Length && source[index] == (byte)'?';
+			SkipPatternTrivia( ref frame.Quoting );
+			var questionSuffix = !frame.Quoting && index < source.Length && source[index] == (byte)'?';
 			if ( questionSuffix ) { index++; }
-			var possessive = !questionSuffix && index < source.Length && source[index] == (byte)'+';
+			var possessive = !frame.Quoting && !questionSuffix && index < source.Length && source[index] == (byte)'+';
 			if ( possessive ) { index++; }
 			// U reverses ordinary/question-suffix preference; possessive is always greedy.
 			var greedy = possessive || ungreedy == questionSuffix;
@@ -131,7 +133,8 @@ internal sealed partial class PcreByteParser {
 			if ( possessive ) {
 				atom = new PcreByteAtomic( atom );
 			}
-			if ( index < source.Length && source[index] is (byte)'*' or (byte)'+' or (byte)'?' or (byte)'{' ) {
+			SkipPatternTrivia( ref frame.Quoting );
+			if ( !frame.Quoting && index < source.Length && source[index] is (byte)'*' or (byte)'+' or (byte)'?' or (byte)'{' ) {
 				throw Invalid( index, "repeated quantifier" );
 			}
 		}

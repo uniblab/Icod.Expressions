@@ -155,7 +155,7 @@ public sealed class PcreCaptureRepeatOptionReferenceTests {
 	}
 
 	[Theory]
-	[InlineData( "(?nU:a(?x)b)", 6 )]
+	[InlineData( "(?nU:a(?J)b)", 6 )]
 	[InlineData( "(?nU:(?=a|b))", 5 )]
 	[InlineData( "(?nJ)(a)", 0 )]
 	public void OtherOptionAndAssertionFamiliesRemainPending( string pattern, int offset ) {
