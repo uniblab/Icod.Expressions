@@ -39,4 +39,4 @@
 - [x] Run the Staging tests against the unchanged parser and confirm the accepted-form cases fail as `UnsupportedSyntax`.
 - [x] Parse only unsigned decimal absolute `\g` operands, enforce the capture ceiling and register the numeric reference for post-parse validation.
 - [x] Update the acceptance inventory and design status without widening the public API.
-- [ ] Verify all six Staging jobs and review the final diff before user merge.
+- [x] Verify all six Staging jobs and review the final diff before user merge.
