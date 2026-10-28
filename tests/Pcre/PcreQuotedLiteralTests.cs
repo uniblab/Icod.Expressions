@@ -16,6 +16,9 @@ public sealed class PcreQuotedLiteralTests {
 	[InlineData( @"[\Q]\E]", "]", 0, 1 )]
 	[InlineData( @"[\Q-\E]", "-", 0, 1 )]
 	[InlineData( @"[\Qab\E]", "b", 0, 1 )]
+	[InlineData( @"[\Qa\E-z]", "b", 0, 1 )]
+	[InlineData( @"[a-\Qz\E]", "b", 0, 1 )]
+	[InlineData( @"[\Qa-z\E]", "-", 0, 1 )]
 	[InlineData( @"(?<=\Qa.\E)b", "a.b", 2, 1 )]
 	public void QuotedSyntaxMatchesLiteralBytes( string pattern, string subject, int start, int length ) {
 		var compiled = PcreByteCompiler.Compile( Encoding.Latin1.GetBytes( pattern ) );
@@ -29,6 +32,8 @@ public sealed class PcreQuotedLiteralTests {
 	[Theory]
 	[InlineData( @"\Qé.\E", "é.", 3 )]
 	[InlineData( @"[\Qé]\E]", "é", 2 )]
+	[InlineData( @"[\Qé\E-ë]", "ê", 2 )]
+	[InlineData( @"[é-\Që\E]", "ê", 2 )]
 	[InlineData( @"(?<=\Qé.\E)x", "é.x", 1 )]
 	public void QuotedUtf8ScalarsPreserveSubjectByteSpans( string pattern, string subject, int length ) {
 		var compiled = PcreByteCompiler.Compile( Encoding.UTF8.GetBytes( pattern ), new PcreByteOptions { Utf8 = true } );
