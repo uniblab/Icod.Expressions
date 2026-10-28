@@ -12,7 +12,7 @@ The parser will track whether it is quoting in each syntactic context, consume `
 
 - Keep source-byte offsets, caseless matching, UTF validation, work limits, and cancellation from the current parser and VM.
 - Treat special syntax inside quotes as literals, including `|`, `)`, `]`, and `*`; after `\E`, ordinary syntax resumes.
-- Quoted characters in classes are individual members. A hyphen inside the quoted run is a member, not a range operator.
+- A hyphen inside the quoted run is a member, not a range operator. A quoted character can be a range endpoint if the hyphen is outside the quoted run; the parser must resume range recognition at `\E` and accept `\Q` immediately after the hyphen.
 - Support quotes inside the current fixed literal lookaround body without broadening general lookaround syntax.
 - Keep other pending escapes unsupported. No production edits to Grep or CommandFramework.
 

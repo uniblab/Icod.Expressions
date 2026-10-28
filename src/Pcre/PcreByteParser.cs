@@ -339,16 +339,18 @@ internal sealed class PcreByteParser {
 				return new( caseless ? PcreUtf8CaseFold.CloseRanges( ranges, cancellationToken )
 					: ranges.ToArray(), predicates.ToArray(), negated );
 			}
-			var firstQuoted = quoting;
 			var first = quoting ? ParseQuotedLiteral() : ParseUtf8BracketItem( openingOffset );
 			while ( TryConsumeQuoteDelimiter( ref quoting ) ) { }
-			if ( !firstQuoted && !quoting && index + 1 < source.Length && source[index] == (byte)'-'
+			if ( !quoting && index + 1 < source.Length && source[index] == (byte)'-'
 				&& source[index + 1] != (byte)']' ) {
 				if ( first is not PcreByteLiteral start ) {
 					throw Invalid( openingOffset, "a character class cannot start a range" );
 				}
 				index++;
-				var last = ParseUtf8BracketItem( openingOffset );
+				while ( TryConsumeQuoteDelimiter( ref quoting ) ) { }
+				if ( index >= source.Length ) { throw Invalid( openingOffset, "unclosed bracket class" ); }
+				var last = quoting ? ParseQuotedLiteral() : ParseUtf8BracketItem( openingOffset );
+				while ( TryConsumeQuoteDelimiter( ref quoting ) ) { }
 				if ( last is not PcreByteLiteral end || end.Value < start.Value ) {
 					throw Invalid( openingOffset, "range endpoints must be ordered literal scalars" );
 				}
@@ -496,7 +498,6 @@ internal sealed class PcreByteParser {
 				index++;
 				return new PcreByteClass( negated ? set.Complement() : set, !negated && explicitNewline );
 			}
-			var itemQuoted = quoting;
 			var item = quoting ? QuotedBracketLiteral() : ParseBracketItem( ref specialScanCursor, ref nextClosingBracket );
 			while ( TryConsumeQuoteDelimiter( ref quoting ) ) { }
 			if ( item.Value is (byte)'\r' or (byte)'\n' ) { explicitNewline = true; }
@@ -504,10 +505,13 @@ internal sealed class PcreByteParser {
 				&& index + 1 < source.Length && source[index + 1] != (byte)']' ) {
 				throw Invalid( index, "a character class cannot start a range" );
 			}
-			if ( !itemQuoted && !quoting && item.Value.HasValue && item.MayStartRange && index < source.Length
+			if ( !quoting && item.Value.HasValue && item.MayStartRange && index < source.Length
 				&& source[index] == (byte)'-' && index + 1 < source.Length && source[index + 1] != (byte)']' ) {
 				var hyphenOffset = index++;
-				var end = ParseBracketItem( ref specialScanCursor, ref nextClosingBracket );
+				while ( TryConsumeQuoteDelimiter( ref quoting ) ) { }
+				if ( index >= source.Length ) { throw Invalid( openingOffset, "unclosed bracket class" ); }
+				var end = quoting ? QuotedBracketLiteral() : ParseBracketItem( ref specialScanCursor, ref nextClosingBracket );
+				while ( TryConsumeQuoteDelimiter( ref quoting ) ) { }
 				if ( !end.Value.HasValue || end.Value.Value < item.Value.Value ) {
 					throw Invalid( hyphenOffset, "range endpoints must be ordered literal bytes" );
 				}
@@ -527,7 +531,7 @@ internal sealed class PcreByteParser {
 
 	private (PcreByteSet Set, byte? Value, bool MayStartRange) QuotedBracketLiteral() {
 		var value = source[index++];
-		return (BracketLiteral( value ), value, false);
+		return (BracketLiteral( value ), value, true);
 	}
 
 	private (PcreByteSet Set, byte? Value, bool MayStartRange) ParseBracketItem(
