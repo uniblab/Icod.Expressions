@@ -2,6 +2,9 @@
 
 **Status:** issue #7, following merged #92; internal implementation only.
 
+**Historical scope:** The lookbehind exclusion below records #93. Bounded
+consumed calls are added by `PCRE-SUBROUTINE-LOOKBEHIND-DESIGN.md`.
+
 ## Intent and scope
 
 Add nonrecursive calls to existing numbered/named capture definitions, including

@@ -52,7 +52,7 @@ the matcher returns spans, leaving framing, status and output to Grep.
 | `\X\C`, other escapes | Pending, rejected; no literal reinterpretation | Representative compile-diagnostic assertions; prioritize by actual Grep patterns |
 | `(?#...)` and x/xx line comments | Supported at token boundaries, including quantifier/suffix joins and fixed assertion bodies. Quotes/escapes and ordinary classes retain literal text; LF/AnyCRLF govern line termination | `PcreExtendedOptionReferenceTests`; original byte diagnostics and pinned whitespace/range rules |
 | `(?[...])` extended classes | Pending, rejected | Representative compile-diagnostic assertions; separate class algebra design |
-| Nonrecursive subroutine calls | Numbered/named, forward/relative and g angle/quoted forms; first syntactic target, definition options, non-atomic retries and numbered capture restoration through bounded integer call guards/shared journal. Whole-pattern/cyclic calls, returned-capture lists, consumed calls in lookbehind and targets with suppressed unresolved behinds remain rejected | `PcreSubroutineReferenceTests`; see `PCRE-SUBROUTINES-DESIGN.md` |
+| Nonrecursive subroutine calls | Numbered/named, forward/relative and g angle/quoted forms; first syntactic target, definition options, non-atomic retries and numbered capture restoration through bounded integer call guards/shared journal. Bounded consumed calls in lookbehind share the heap dependency width evaluator, including first duplicate-name/branch-reset definitions. Whole-pattern/cyclic calls, returned-capture lists and targets with suppressed unresolved behinds remain rejected | `PcreSubroutineReferenceTests`, `PcreSubroutineLookbehindReferenceTests`; see `PCRE-SUBROUTINES-DESIGN.md` and `PCRE-SUBROUTINE-LOOKBEHIND-DESIGN.md` |
 | Recursion conditions, recursion and callouts | Pending, rejected | Representative compile-diagnostic assertions; evaluate consumer need and bounded resource design |
 | `(*...)` directives, newline/BSR settings, control verbs and other group forms | Pending, rejected at opening `(`; implemented atomic/assertion aliases are listed above; current internal newline choice is a compile option | Representative compile-diagnostic assertions; decide which directives Grep needs |
 | Pattern-side malformed input, invalid UTF subjects and start offsets | Controlled diagnostics and finite conformance matrices, not exhaustive parity | Invalid UTF one/two/three-byte and capture/offset suites; expand error and resource fixtures |
@@ -74,7 +74,7 @@ internal saved-path boundary and identifies Grep's remaining command-level
 error and cancellation fixtures. Expand start-offset and resource parity
 cases, then implement the highest-priority pending families against
 the pinned reference. General atomic lookahead now has capture transactions;
-the remaining gaps include recursion and recursion conditions, returned-capture lists, consumed subroutine calls in lookbehind, Unicode table parity, character-set algebra and other unsupported syntax.
+the remaining gaps include recursion and recursion conditions, returned-capture lists, Unicode table parity, character-set algebra and other unsupported syntax.
 Full workload measurements and command-level Grep comparisons follow before
 public API/release review. No CommandFramework ownership change belongs to
 this checkpoint.

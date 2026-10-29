@@ -150,5 +150,11 @@ mutation. Numbered captures/starts and private repeat marks restore; G0/K persis
 Callable bodies compile once per referenced target after main Accept, sharing
 4,096 instruction/visit and256 repeat-mark ceilings. No capture snapshots,
 span/pointer frames or runtime native fallback. Recursion, returned capture lists,
-consumed-behind calls and unresolved suppressed-behind targets stay rejected.
-See `PcreSubroutineReferenceTests` and `PCRE-SUBROUTINES-DESIGN.md`.
+unresolved suppressed-behind targets stay rejected. Bounded consumed subroutine
+calls in lookbehind now use the existing min/max dependency heap and first
+definitions, with variable255/all-fixed65535/intermediate65535 width limits.
+Calls and backreferences share active dependency validation, including before
+zero-count erasure; existing backreference duplicate/lexical restrictions remain.
+No additional runtime/compiler instruction or frame state is required.
+See `PcreSubroutineReferenceTests`, `PcreSubroutineLookbehindReferenceTests`,
+`PCRE-SUBROUTINES-DESIGN.md` and `PCRE-SUBROUTINE-LOOKBEHIND-DESIGN.md`.
