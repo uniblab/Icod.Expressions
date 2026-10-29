@@ -12,8 +12,9 @@ bounded transitive reference chains participate in the same analysis.
 Pinned PCRE.NET 1.6.0 / PCRE2 10.48 Compiled/JIT remains the oracle. Reject
 unbounded target bodies, lexical self-references, cyclic consumed dependencies
 and consumed references when any `(?|` was parsed, even if it has no captures.
-References inside nested lookahead contribute no outer width; nested behind
-still validates independently. Duplicate-name J, subroutines and other pending
+References inside nested lookahead contribute no outer width. Nested behind
+validation retains the active capture dependency chain, including when found
+inside lookahead; it must not hide recursion by contributing zero width. Duplicate-name J, subroutines and other pending
 syntax remain outside this tranche.
 
 ## Architecture
@@ -34,7 +35,8 @@ behind contributes zero to its enclosing group's width.
 Extend the existing reference-keyed heap min/max evaluator with consumed-reference
 edges to capture body nodes and active-node cycle detection. Cache successful
 widths within each evaluation; assertions contribute zero without adding ordinary
-lookahead reference edges. Analyze children before applying zero counts, preserving
+lookahead reference edges. Nested behind bodies add validation dependencies to
+the same active chain, and failures retain their own assertion opener. Analyze children before applying zero counts, preserving
 intermediate 65,535-character failures. The 255 variable limit applies only to
 final behind ranges, so a finite wider reference erased by `{0}` may be legal.
 Capture count remains at most 256; graph and rewrite state live on the heap,

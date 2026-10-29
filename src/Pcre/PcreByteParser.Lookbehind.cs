@@ -7,74 +7,108 @@ internal sealed partial class PcreByteParser {
 
 	private PcreByteLookbehind FinishLookbehind( PcreByteAlternatives body, bool positive, int openingOffset,
 		LookbehindContext context ) {
-		// Reference keys avoid recursively hashing the record tree. Neither width
-		// evaluation nor parser source nesting consumes the native call stack.
+		// Width edges and nested assertion validation share the active dependency
+		// chain. Reference keys avoid recursively hashing the record tree.
 		var widths = new Dictionary<PcreByteNode, LookbehindWidth>( ReferenceEqualityComparer.Instance );
-		var pending = new Stack<(PcreByteNode Node, bool Ready)>();
+		var pending = new Stack<(PcreByteNode Node, bool Ready, int Opening)>();
 		var active = new HashSet<PcreByteNode>( ReferenceEqualityComparer.Instance );
-		void ScheduleBody( PcreByteAlternatives alternatives ) {
-			foreach ( var branch in alternatives.Branches ) {
-				foreach ( var child in branch ) {
+		void ScheduleBody( PcreByteAlternatives alternatives, int opening ) {
+			for ( var branch = alternatives.Branches.Count - 1; branch >= 0; branch-- ) {
+				var nodes = alternatives.Branches[branch];
+				for ( var index = nodes.Count - 1; index >= 0; index-- ) {
 					cancellationToken.ThrowIfCancellationRequested();
-					pending.Push( (child, false) );
+					pending.Push( (nodes[index], false, opening) );
 				}
 			}
 		}
-		PcreByteGroup ReferenceTarget( PcreByteBackreference reference ) {
+		void ScheduleNestedBehinds( PcreByteAlternatives alternatives ) {
+			// Native lookahead width analysis ignores ordinary references but
+			// checks every nested behind with the current capture dependency chain.
+			var scan = new Stack<(PcreByteNode Node, bool Ready)>();
+			PushTreeBody( scan, alternatives );
+			while ( scan.TryPop( out var item ) ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				if ( item.Node is PcreByteLookbehind assertion ) {
+					pending.Push( (assertion, false, assertion.OpeningOffset) );
+				} else { PushTreeChildren( scan, item.Node ); }
+			}
+		}
+		PcreByteGroup ReferenceTarget( PcreByteBackreference reference, int opening ) {
 			if ( hasBranchReset || !context.Captures.TryGetValue( reference.Number, out var capture ) ) {
-				throw Unsupported( openingOffset );
+				throw Unsupported( opening );
 			}
 			var position = context.Positions[reference];
-			if ( position > capture.Start && position < capture.End ) { throw Unsupported( openingOffset ); }
+			if ( position > capture.Start && position < capture.End ) { throw Unsupported( opening ); }
 			return capture.Group;
 		}
-		LookbehindWidth CheckedWidth( long minimum, long maximum ) {
-			if ( maximum > MaximumLookbehindLength ) { throw Unsupported( openingOffset ); }
+		LookbehindWidth CheckedWidth( long minimum, long maximum, int opening ) {
+			if ( maximum > MaximumLookbehindLength ) { throw Unsupported( opening ); }
 			return new( (int)minimum, (int)maximum );
 		}
-		LookbehindWidth SequenceWidth( IReadOnlyList<PcreByteNode> nodes ) {
+		LookbehindWidth SequenceWidth( IReadOnlyList<PcreByteNode> nodes, int opening ) {
 			var width = new LookbehindWidth( 0, 0 );
 			foreach ( var node in nodes ) {
 				cancellationToken.ThrowIfCancellationRequested();
 				var child = widths[node];
-				width = CheckedWidth( (long)width.Minimum + child.Minimum, (long)width.Maximum + child.Maximum );
+				width = CheckedWidth( (long)width.Minimum + child.Minimum, (long)width.Maximum + child.Maximum, opening );
 			}
 			return width;
 		}
-		LookbehindWidth GroupWidth( PcreByteAlternatives alternatives ) {
+		LookbehindWidth GroupWidth( PcreByteAlternatives alternatives, int opening ) {
 			var minimum = int.MaxValue;
 			var maximum = 0;
 			foreach ( var branch in alternatives.Branches ) {
-				var current = SequenceWidth( branch );
+				var current = SequenceWidth( branch, opening );
 				minimum = Math.Min( minimum, current.Minimum );
 				maximum = Math.Max( maximum, current.Maximum );
 			}
 			return new( minimum == int.MaxValue ? 0 : minimum, maximum );
 		}
-		LookbehindWidth RepeatWidth( PcreByteRepeat repeat ) {
+		LookbehindWidth RepeatWidth( PcreByteRepeat repeat, int opening ) {
 			if ( repeat.Maximum == int.MaxValue
 				|| repeat.UnboundedAssertion && repeat.Child is PcreByteLookbehind or PcreByteLiteralAssertion { IsBehind: true } ) {
-				throw Unsupported( openingOffset );
+				throw Unsupported( opening );
 			}
 			var child = widths[repeat.Child];
-			return CheckedWidth( (long)child.Minimum * repeat.Minimum, (long)child.Maximum * repeat.Maximum );
+			return CheckedWidth( (long)child.Minimum * repeat.Minimum, (long)child.Maximum * repeat.Maximum, opening );
+		}
+		(int[] Lengths, int Minimum) BranchBounds( PcreByteAlternatives alternatives, int opening ) {
+			var lengths = new int[alternatives.Branches.Count];
+			var minimum = int.MaxValue;
+			var maximum = 0;
+			var variable = false;
+			for ( var branch = 0; branch < lengths.Length; branch++ ) {
+				var width = SequenceWidth( alternatives.Branches[branch], opening );
+				lengths[branch] = width.Maximum;
+				minimum = Math.Min( minimum, width.Minimum );
+				maximum = Math.Max( maximum, width.Maximum );
+				variable |= width.Minimum != width.Maximum;
+			}
+			if ( variable && maximum > 255 ) { throw Unsupported( opening ); }
+			return (lengths, variable ? minimum : -1);
+		}
+		LookbehindWidth ValidateNestedBehind( PcreByteLookbehind assertion ) {
+			BranchBounds( assertion.Body, assertion.OpeningOffset );
+			return new( 0, 0 );
 		}
 
-		ScheduleBody( body );
+		ScheduleBody( body, openingOffset );
 		while ( pending.TryPop( out var item ) ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			if ( widths.ContainsKey( item.Node ) ) { continue; }
 			if ( !item.Ready ) {
-				if ( !active.Add( item.Node ) ) { throw Unsupported( openingOffset ); }
-				pending.Push( (item.Node, true) );
+				if ( !active.Add( item.Node ) ) { throw Unsupported( item.Opening ); }
+				pending.Push( (item.Node, true, item.Opening) );
 				switch ( item.Node ) {
-					case PcreByteGroup group: ScheduleBody( group.Body ); break;
-					case PcreByteBackreference reference: pending.Push( (ReferenceTarget( reference ), false) ); break;
-					case PcreByteNoncapturingGroup group: ScheduleBody( group.Body ); break;
-					case PcreByteAtomic atomic: pending.Push( (atomic.Child, false) ); break;
-					// Validate erased children too: an outer {0} must not hide
-					// an unbounded group from the native-compatible width policy.
-					case PcreByteRepeat repeat: pending.Push( (repeat.Child, false) ); break;
+					case PcreByteGroup group: ScheduleBody( group.Body, item.Opening ); break;
+					case PcreByteBackreference reference:
+						pending.Push( (ReferenceTarget( reference, item.Opening ), false, item.Opening) ); break;
+					case PcreByteNoncapturingGroup group: ScheduleBody( group.Body, item.Opening ); break;
+					case PcreByteLookbehind assertion: ScheduleBody( assertion.Body, assertion.OpeningOffset ); break;
+					case PcreByteLookahead assertion: ScheduleNestedBehinds( assertion.Body ); break;
+					case PcreByteAtomic atomic: pending.Push( (atomic.Child, false, item.Opening) ); break;
+					// Erased children still validate before applying their zero count.
+					case PcreByteRepeat repeat: pending.Push( (repeat.Child, false, item.Opening) ); break;
 				}
 				continue;
 			}
@@ -82,28 +116,18 @@ internal sealed partial class PcreByteParser {
 				PcreByteLiteral or PcreByteAny or PcreByteClass or PcreByteScalarClass or PcreByteScalarSet => new( 1, 1 ),
 				PcreByteNewlineSequence => new( 1, 2 ),
 				PcreByteAnchor or PcreByteSearchStart or PcreByteLineAnchor or PcreByteEndBeforeFinalLf
-					or PcreByteWordBoundary or PcreByteLiteralAssertion or PcreByteLookahead or PcreByteLookbehind => new( 0, 0 ),
-				PcreByteGroup group => GroupWidth( group.Body ),
-				PcreByteBackreference reference => widths[ReferenceTarget( reference )],
-				PcreByteNoncapturingGroup group => GroupWidth( group.Body ),
+					or PcreByteWordBoundary or PcreByteLiteralAssertion or PcreByteLookahead => new( 0, 0 ),
+				PcreByteLookbehind assertion => ValidateNestedBehind( assertion ),
+				PcreByteGroup group => GroupWidth( group.Body, item.Opening ),
+				PcreByteBackreference reference => widths[ReferenceTarget( reference, item.Opening )],
+				PcreByteNoncapturingGroup group => GroupWidth( group.Body, item.Opening ),
 				PcreByteAtomic atomic => widths[atomic.Child],
-				PcreByteRepeat repeat => RepeatWidth( repeat ),
-				_ => throw Unsupported( openingOffset )
+				PcreByteRepeat repeat => RepeatWidth( repeat, item.Opening ),
+				_ => throw Unsupported( item.Opening )
 			};
 			active.Remove( item.Node );
 		}
-		var lengths = new int[body.Branches.Count];
-		var minimum = int.MaxValue;
-		var maximum = 0;
-		var variable = false;
-		for ( var branch = 0; branch < lengths.Length; branch++ ) {
-			var width = SequenceWidth( body.Branches[branch] );
-			lengths[branch] = width.Maximum;
-			minimum = Math.Min( minimum, width.Minimum );
-			maximum = Math.Max( maximum, width.Maximum );
-			variable |= width.Minimum != width.Maximum;
-		}
-		if ( variable && maximum > 255 ) { throw Unsupported( openingOffset ); }
-		return new( body, positive, lengths, variable ? minimum : -1, openingOffset );
+		var bounds = BranchBounds( body, openingOffset );
+		return new( body, positive, bounds.Lengths, bounds.Minimum, openingOffset );
 	}
 }

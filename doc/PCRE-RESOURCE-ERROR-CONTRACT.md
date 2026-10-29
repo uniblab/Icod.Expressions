@@ -42,7 +42,7 @@ that the depth limit is ignored by JIT matching. Do not equate the internal
 saved-path count with PCRE2's depth limit or compare numeric thresholds across
 engines. Test the selected Grep workloads and error behavior separately.
 
-General fixed-length lookbehind validates character widths at parser closure with
+General fixed-length lookbehind validates character widths after complete parsing and name resolution with
 heap traversal and bounded sums/products (65,535 per new general branch). Byte
 and UTF scalar rewind spends match work and observes cancellation within the
 current valid fragment. Bounded variable lengths use min/max analysis and cap every branch at255 if
