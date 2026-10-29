@@ -74,7 +74,7 @@ internal saved-path boundary and identifies Grep's remaining command-level
 error and cancellation fixtures. Expand start-offset and resource parity
 cases, then implement the highest-priority pending families against
 the pinned reference. General atomic lookahead now has capture transactions;
-the remaining gaps include recursion conditions, subroutines, Unicode table parity, character-set algebra and other unsupported syntax.
+the remaining gaps include recursion and recursion conditions, returned-capture lists, consumed subroutine calls in lookbehind, Unicode table parity, character-set algebra and other unsupported syntax.
 Full workload measurements and command-level Grep comparisons follow before
 public API/release review. No CommandFramework ownership change belongs to
 this checkpoint.
