@@ -34,7 +34,8 @@ internal sealed partial class PcreByteParser {
 			}
 		}
 		PcreByteGroup ReferenceTarget( PcreByteBackreference reference, int opening ) {
-			if ( hasBranchReset || !context.Captures.TryGetValue( reference.Number, out var capture ) ) {
+			if ( hasBranchReset || !reference.DuplicateNumbers.IsEmpty
+				|| !context.Captures.TryGetValue( reference.Number, out var capture ) ) {
 				throw Unsupported( opening );
 			}
 			var position = context.Positions[reference];
