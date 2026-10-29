@@ -58,8 +58,10 @@ branch-analysis accounting is not a managed numeric-limit parity claim.
 Empty/reset option headers add no runtime state or work units. Bare settings
 consume neither a capture slot nor a nesting frame; scoped empty/reset groups
 use the existing nesting ceiling. Reset n restores ordinary capture allocation;
-reset preserves U and ASCII restrictions. Scoped/mixed aD uses the same reader
-and snapshots; its immutable digit predicates need no VM state.
+reset preserves U and ASCII restrictions. Scoped/mixed ASCII restrictions use the same reader
+and a five-bit snapshot; immutable class predicates and existing b/B metadata
+need no VM state. `PcreAsciiRestrictionReferenceTests` covers mask algebra,
+policy scopes and unchanged depth/capture/work/cancellation limits.
 `PcreAsciiDigitOptionReferenceTests` and `PcreResetOptionReferenceTests` pin
 these boundaries and unchanged match-work/cancellation outcomes.
 

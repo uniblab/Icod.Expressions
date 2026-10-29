@@ -1,5 +1,9 @@
 # Internal PCRE scoped ASCII digit options
 
+**Historical checkpoint:** This document records its original tranche. Current
+ASCII option support is in `PCRE-ASCII-RESTRICTIONS-DESIGN.md` and the current
+`PCRE-SYNTAX-ACCEPTANCE-MATRIX.md`.
+
 ## Intent
 
 Continue issue #7 after #82 by bringing the existing aD restriction into the

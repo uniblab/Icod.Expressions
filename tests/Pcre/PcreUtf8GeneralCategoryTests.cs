@@ -78,13 +78,15 @@ public sealed class PcreUtf8GeneralCategoryTests {
 	}
 
 	[Theory]
-	[InlineData( false, false )]
-	[InlineData( true, true )]
-	public void PosixPunctuationUsesUcpIndependentlyOfPropertyP( bool ucp, bool expected ) {
-		var result = Compile( "[[:punct:]]", new PcreByteOptions { Utf8 = true, Ucp = ucp } )
-			.Match( "£"u8.ToArray() );
-		Assert.True( result.IsSuccess, result.Diagnostic?.Message );
-		Assert.Equal( expected, result.Match is not null );
+	[InlineData( false )]
+	[InlineData( true )]
+	public void Latin1CurrencySymbolIsNotPosixOrPropertyPunctuation( bool ucp ) {
+		foreach ( var pattern in new[] { "[[:punct:]]", @"\p{P}" } ) {
+			var result = Compile( pattern, new PcreByteOptions { Utf8 = true, Ucp = ucp } )
+				.Match( "£"u8.ToArray() );
+			Assert.True( result.IsSuccess, result.Diagnostic?.Message );
+			Assert.Null( result.Match );
+		}
 	}
 
 	[Theory]

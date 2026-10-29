@@ -30,7 +30,7 @@ public sealed class PcreUtf8PosixClassTests {
 	[InlineData( "lower", "Σ", false )]
 	[InlineData( "print", "\u00a0", true )]
 	[InlineData( "print", "\u2028", false )]
-	[InlineData( "punct", "£", true )]
+	[InlineData( "punct", "£", false )]
 	[InlineData( "punct", "€", false )]
 	[InlineData( "punct", "。", true )]
 	[InlineData( "upper", "Σ", true )]

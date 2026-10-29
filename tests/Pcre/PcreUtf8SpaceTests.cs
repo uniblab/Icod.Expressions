@@ -79,7 +79,6 @@ public sealed class PcreUtf8SpaceTests {
 
 	[Theory]
 	[InlineData( "[[:nosuch:]]" )]
-	[InlineData( "(?aS)\\s" )]
 	public void BroaderUtfBracketAndSpaceOptionSyntaxRemainUnsupported( string pattern ) {
 		var result = PcreByteCompiler.Compile( Encoding.UTF8.GetBytes( pattern ), GrepOptions );
 		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
