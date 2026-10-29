@@ -5,6 +5,12 @@ namespace Icod.Expressions.Pcre;
 
 /// <summary>Parses only implemented byte-mode constructs, retaining syntax order.</summary>
 internal sealed partial class PcreByteParser {
+	[Flags]
+	private enum AsciiRestriction : byte {
+		None = 0, BackslashD = 1, BackslashS = 2, BackslashW = 4, Posix = 8, PosixDigit = 16,
+		All = BackslashD | BackslashS | BackslashW | Posix | PosixDigit
+	}
+
 	private const int MaximumPatternDepth = 256;
 	private const int MaximumCaptureCount = 256;
 	private const int MaximumRepeatMarks = 256;
@@ -20,7 +26,7 @@ internal sealed partial class PcreByteParser {
 	private bool dotAll;
 	private bool caseless;
 	private bool multiline;
-	private bool asciiBsD;
+	private AsciiRestriction asciiRestrictions;
 	private bool noAutoCapture;
 	private bool ungreedy;
 	private bool hasBranchReset;
@@ -33,12 +39,15 @@ internal sealed partial class PcreByteParser {
 		this.caseless = caseless;
 		this.utf8 = utf8;
 		this.ucp = ucp;
-		this.asciiBsD = asciiBsD;
+		asciiRestrictions = asciiBsD ? AsciiRestriction.BackslashD : AsciiRestriction.None;
 		this.anyCrLfNewline = anyCrLfNewline;
 		this.cancellationToken = cancellationToken;
 	}
 
 	internal int GroupCount => groupCount;
+
+	private bool HasAsciiRestriction( AsciiRestriction restriction ) =>
+		( asciiRestrictions & restriction ) != AsciiRestriction.None;
 
 	internal PcreByteAlternatives Parse() {
 		while ( true ) {
@@ -74,7 +83,7 @@ internal sealed partial class PcreByteParser {
 		var setS = false;
 		var setN = false;
 		var setU = false;
-		var setAsciiBsD = false;
+		var setAscii = AsciiRestriction.None;
 		var setX = false;
 		var setXx = false;
 		var unsetX = false;
@@ -83,7 +92,7 @@ internal sealed partial class PcreByteParser {
 		var unsetS = false;
 		var unsetN = false;
 		var unsetU = false;
-		var unsetAsciiBsD = false;
+		var unsetAscii = AsciiRestriction.None;
 		while ( cursor < source.Length && source[cursor] is not (byte)')' and not (byte)':' ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			var value = source[cursor++];
@@ -94,9 +103,17 @@ internal sealed partial class PcreByteParser {
 			if ( value is not (byte)'i' and not (byte)'m' and not (byte)'s' and not (byte)'n' and not (byte)'U' and not (byte)'x' and not (byte)'a' ) { return false; }
 			switch ( value ) {
 				case (byte)'a':
-					if ( cursor >= source.Length || source[cursor] != (byte)'D' ) { return false; }
-					cursor++;
-					if ( unsetting ) { unsetAsciiBsD = true; } else { setAsciiBsD = true; }
+					var restriction = cursor < source.Length ? source[cursor] switch {
+						(byte)'D' => AsciiRestriction.BackslashD,
+						(byte)'S' => AsciiRestriction.BackslashS,
+						(byte)'W' => AsciiRestriction.BackslashW,
+						(byte)'P' => AsciiRestriction.Posix | AsciiRestriction.PosixDigit,
+						(byte)'T' => AsciiRestriction.PosixDigit,
+						_ => AsciiRestriction.None
+					} : AsciiRestriction.None;
+					if ( restriction == AsciiRestriction.None ) { restriction = AsciiRestriction.All; }
+					else { cursor++; }
+					if ( unsetting ) { unsetAscii |= restriction; } else { setAscii |= restriction; }
 					break;
 				case (byte)'i': if ( unsetting ) { unsetI = true; } else { setI = true; } break;
 				case (byte)'m': if ( unsetting ) { unsetM = true; } else { setM = true; } break;
@@ -125,7 +142,7 @@ internal sealed partial class PcreByteParser {
 		dotAll = ( dotAll || setS ) && !unsetS;
 		noAutoCapture = ( noAutoCapture || setN ) && !unsetN;
 		ungreedy = ( ungreedy || setU ) && !unsetU;
-		asciiBsD = ( asciiBsD || setAsciiBsD ) && !unsetAsciiBsD;
+		asciiRestrictions = ( asciiRestrictions | setAscii ) & ~unsetAscii;
 		extended = unsetX ? ExtendedMode.None : setX ? setXx ? ExtendedMode.More : ExtendedMode.Extended : extended;
 		if ( !scoped ) { SkipIgnoredPatternText(); }
 		if ( !scoped && index < source.Length && source[index] is (byte)'*' or (byte)'+' or (byte)'?' or (byte)'{' ) {
@@ -331,21 +348,23 @@ internal sealed partial class PcreByteParser {
 			throw Unsupported( openingOffset );
 		}
 		var name = Encoding.ASCII.GetString( source, nameStart, index - nameStart );
+		var unicodePosix = ucp && !HasAsciiRestriction( AsciiRestriction.Posix );
+		var unicodeDigits = unicodePosix && !HasAsciiRestriction( AsciiRestriction.PosixDigit );
 		var kind = name switch {
-			"alnum" => ucp ? PcreByteScalarClassKind.UnicodeAlnum : PcreByteScalarClassKind.AsciiAlnum,
-			"alpha" => ucp ? PcreByteScalarClassKind.Letter : PcreByteScalarClassKind.AsciiAlpha,
+			"alnum" => unicodePosix ? PcreByteScalarClassKind.UnicodeAlnum : PcreByteScalarClassKind.AsciiAlnum,
+			"alpha" => unicodePosix ? PcreByteScalarClassKind.Letter : PcreByteScalarClassKind.AsciiAlpha,
 			"ascii" => PcreByteScalarClassKind.Ascii,
-			"blank" => ucp ? PcreByteScalarClassKind.UnicodeBlank : PcreByteScalarClassKind.AsciiBlank,
-			"cntrl" => ucp ? PcreByteScalarClassKind.UnicodeControl : PcreByteScalarClassKind.AsciiControl,
-			"digit" => ucp ? PcreByteScalarClassKind.DecimalDigit : PcreByteScalarClassKind.AsciiDigit,
-			"graph" => ucp ? PcreByteScalarClassKind.UnicodeGraph : PcreByteScalarClassKind.AsciiGraph,
-			"lower" => ucp ? PcreByteScalarClassKind.UnicodeLower : PcreByteScalarClassKind.AsciiLower,
-			"print" => ucp ? PcreByteScalarClassKind.UnicodePrintable : PcreByteScalarClassKind.AsciiPrintable,
-			"punct" => ucp ? PcreByteScalarClassKind.UnicodePunctuation : PcreByteScalarClassKind.AsciiPunctuation,
-			"word" => ucp ? PcreByteScalarClassKind.UnicodeWord : PcreByteScalarClassKind.AsciiWord,
-			"space" => ucp ? PcreByteScalarClassKind.UnicodeSpace : PcreByteScalarClassKind.AsciiSpace,
-			"upper" => ucp ? PcreByteScalarClassKind.UnicodeUpper : PcreByteScalarClassKind.AsciiUpper,
-			"xdigit" => ucp ? PcreByteScalarClassKind.UnicodeHexDigit : PcreByteScalarClassKind.AsciiHexDigit,
+			"blank" => unicodePosix ? PcreByteScalarClassKind.UnicodeBlank : PcreByteScalarClassKind.AsciiBlank,
+			"cntrl" => unicodePosix ? PcreByteScalarClassKind.UnicodeControl : PcreByteScalarClassKind.AsciiControl,
+			"digit" => unicodeDigits ? PcreByteScalarClassKind.DecimalDigit : PcreByteScalarClassKind.AsciiDigit,
+			"graph" => unicodePosix ? PcreByteScalarClassKind.UnicodeGraph : PcreByteScalarClassKind.AsciiGraph,
+			"lower" => unicodePosix ? PcreByteScalarClassKind.UnicodeLower : PcreByteScalarClassKind.AsciiLower,
+			"print" => unicodePosix ? PcreByteScalarClassKind.UnicodePrintable : PcreByteScalarClassKind.AsciiPrintable,
+			"punct" => unicodePosix ? PcreByteScalarClassKind.UnicodePunctuation : PcreByteScalarClassKind.AsciiPunctuation,
+			"word" => unicodePosix ? PcreByteScalarClassKind.UnicodeWord : PcreByteScalarClassKind.AsciiWord,
+			"space" => unicodePosix ? PcreByteScalarClassKind.UnicodeSpace : PcreByteScalarClassKind.AsciiSpace,
+			"upper" => unicodePosix ? PcreByteScalarClassKind.UnicodeUpper : PcreByteScalarClassKind.AsciiUpper,
+			"xdigit" => unicodeDigits ? PcreByteScalarClassKind.UnicodeHexDigit : PcreByteScalarClassKind.AsciiHexDigit,
 			_ => throw Unsupported( openingOffset )
 		};
 		index += 2; // POSIX ':]' belongs to this member; the outer class has its own ']'.
@@ -512,7 +531,7 @@ internal sealed partial class PcreByteParser {
 			return ParseUnicodeProperty( offset, value == (byte)'P' );
 		}
 		if ( value == (byte)'b' || value == (byte)'B' ) {
-			return new PcreByteWordBoundary( value == (byte)'b', ucp );
+			return new PcreByteWordBoundary( value == (byte)'b', ucp && !HasAsciiRestriction( AsciiRestriction.BackslashW ) );
 		}
 		if ( value is >= (byte)'0' and <= (byte)'9' ) { return ParseDecimalOrOctalEscape( value, offset, inBracket ); }
 		if ( value == (byte)'o' ) { return ParseBracedOctal( offset ); }
@@ -564,16 +583,16 @@ internal sealed partial class PcreByteParser {
 			return new PcreByteClass( negated ? set.Complement() : set );
 		}
 		if ( utf8 && ( value is (byte)'d' or (byte)'D' ) ) {
-			return new PcreByteScalarClass( ucp && !asciiBsD
+			return new PcreByteScalarClass( ucp && !HasAsciiRestriction( AsciiRestriction.BackslashD )
 				? PcreByteScalarClassKind.DecimalDigit : PcreByteScalarClassKind.AsciiDigit,
 				value == (byte)'D' );
 		}
 		if ( utf8 && ( value is (byte)'w' or (byte)'W' ) ) {
-			return new PcreByteScalarClass( ucp ? PcreByteScalarClassKind.UnicodeWord
+			return new PcreByteScalarClass( ucp && !HasAsciiRestriction( AsciiRestriction.BackslashW ) ? PcreByteScalarClassKind.UnicodeWord
 				: PcreByteScalarClassKind.AsciiWord, value == (byte)'W' );
 		}
 		if ( utf8 && ( value is (byte)'s' or (byte)'S' ) ) {
-			return new PcreByteScalarClass( ucp ? PcreByteScalarClassKind.UnicodeSpace
+			return new PcreByteScalarClass( ucp && !HasAsciiRestriction( AsciiRestriction.BackslashS ) ? PcreByteScalarClassKind.UnicodeSpace
 				: PcreByteScalarClassKind.AsciiSpace, value == (byte)'S' );
 		}
 		PcreByteSet? characterClass = value switch {
