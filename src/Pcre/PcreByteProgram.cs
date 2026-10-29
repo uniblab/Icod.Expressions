@@ -11,6 +11,7 @@ internal enum PcreByteOpcode {
 	Class,
 	Backreference,
 	CaptureTest,
+	RecursionTest,
 	Call,
 	Return,
 	WordBoundary,
@@ -97,7 +98,7 @@ internal sealed class PcreByteProgramCompiler {
 			}
 			Emit( PcreByteOpcode.Return );
 		}
-		foreach ( var call in calls ) { Patch( call.Instruction, entries[call.Number] ); }
+		foreach ( var call in calls ) { Patch( call.Instruction, entries[call.Number], call.Number ); }
 		return new( instructions.ToArray(), markCount, hasCaselessComparisons, utf8, matchInvalidUtf,
 			FindRequiredLiteralSuffix( root ), anyCrLfNewline, HasExplicitNewline( root ), CanMatchEmptyAtAnyOffset( root ) );
 	}
@@ -129,6 +130,8 @@ internal sealed class PcreByteProgramCompiler {
 		PcreByteNoncapturingGroup group => CanMatchEmptyAtAnyOffset( group.Body ),
 		PcreByteCaptureConditional conditional => conditional.Body.Branches.Count == 1
 			|| CanMatchEmptyAtAnyOffset( conditional.Body ),
+		PcreByteRecursionConditional conditional => conditional.Body.Branches.Count == 1
+			|| CanMatchEmptyAtAnyOffset( conditional.Body ),
 		PcreByteAssertionConditional conditional => conditional.Body.Branches.Count == 1
 			|| CanMatchEmptyAtAnyOffset( conditional.Body ),
 		PcreByteStaticConditional conditional => !conditional.Value && conditional.Body.Branches.Count == 1
@@ -158,6 +161,7 @@ internal sealed class PcreByteProgramCompiler {
 		PcreByteGroup group => HasExplicitNewline( group.Body ),
 		PcreByteNoncapturingGroup group => HasExplicitNewline( group.Body ),
 		PcreByteCaptureConditional conditional => HasExplicitNewline( conditional.Body ),
+		PcreByteRecursionConditional conditional => HasExplicitNewline( conditional.Body ),
 		PcreByteStaticConditional conditional => HasExplicitNewline( conditional.Body ),
 		PcreByteAssertionConditional conditional => HasExplicitNewline( conditional.Assertion )
 			|| HasExplicitNewline( conditional.Body ),
@@ -324,7 +328,10 @@ internal sealed class PcreByteProgramCompiler {
 				CompileAlternatives( noncapturing.Body );
 				break;
 			case PcreByteCaptureConditional conditional:
-				CompileConditional( conditional );
+				CompileConditional( conditional.Body, PcreByteOpcode.CaptureTest, conditional.CaptureNumbers );
+				break;
+			case PcreByteRecursionConditional conditional:
+				CompileConditional( conditional.Body, PcreByteOpcode.RecursionTest, conditional.GroupNumbers );
 				break;
 			case PcreByteAssertionConditional conditional:
 				CompileAssertionConditional( conditional );
@@ -345,10 +352,10 @@ internal sealed class PcreByteProgramCompiler {
 		}
 	}
 
-	private void CompileConditional( PcreByteCaptureConditional conditional ) {
+	private void CompileConditional( PcreByteAlternatives body, PcreByteOpcode opcode, ReadOnlyMemory<int> targets ) {
 		// A condition chooses once. Only alternatives inside its selected body
 		// may save paths; never offer the other conditional branch as a retry.
-		var test = Emit( PcreByteOpcode.CaptureTest, captureNumbers: conditional.CaptureNumbers );
+		var test = Emit( opcode, captureNumbers: targets );
 		var yes = instructions.Count;
 		compileWork.Push( () => {
 			var endJump = Emit( PcreByteOpcode.Jump );
@@ -357,9 +364,9 @@ internal sealed class PcreByteProgramCompiler {
 				Patch( test, yes, no );
 				Patch( endJump, instructions.Count );
 			} );
-			if ( conditional.Body.Branches.Count > 1 ) { CompileSequence( conditional.Body.Branches[1], 0 ); }
+			if ( body.Branches.Count > 1 ) { CompileSequence( body.Branches[1], 0 ); }
 		} );
-		CompileSequence( conditional.Body.Branches[0], 0 );
+		CompileSequence( body.Branches[0], 0 );
 	}
 
 	private void CompileStaticConditional( PcreByteStaticConditional conditional ) {

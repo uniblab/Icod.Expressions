@@ -118,14 +118,6 @@ public sealed class PcreCaptureConditionReferenceTests {
 		ConditionDiagnostic( pattern, PcreByteDiagnosticCode.InvalidSyntax );
 	}
 
-	[Theory]
-	[InlineData( "(?(R)a|b)" )]
-	[InlineData( "(a)(?(R1)b|c)" )]
-	public void OtherConditionFamiliesRemainPending( string pattern ) {
-		_ = Reference( pattern );
-		ConditionDiagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax );
-	}
-
 	[Fact]
 	public void LongerBareVersionPrefixesAreInvalidEvenWhenNamed() {
 		const string pattern = "(?<VERSIONX>a)(?(VERSIONX)b|c)";

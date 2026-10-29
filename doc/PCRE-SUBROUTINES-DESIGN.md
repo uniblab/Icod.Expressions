@@ -3,7 +3,9 @@
 **Status:** issue #7, following merged #92; internal implementation only.
 
 **Historical scope:** The lookbehind exclusion below records #93. Bounded
-consumed calls are added by `PCRE-SUBROUTINE-LOOKBEHIND-DESIGN.md`.
+consumed calls are added by `PCRE-SUBROUTINE-LOOKBEHIND-DESIGN.md`. Recursion
+conditions and the fourth call-arena integer are added by
+`PCRE-RECURSION-CONDITIONS-DESIGN.md`.
 
 ## Intent and scope
 

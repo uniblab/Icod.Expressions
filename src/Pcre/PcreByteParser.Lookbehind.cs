@@ -108,6 +108,7 @@ internal sealed partial class PcreByteParser {
 						pending.Push( (context.CallTargets[call.Number], false, item.Opening) ); break;
 					case PcreByteNoncapturingGroup group: ScheduleBody( group.Body, item.Opening ); break;
 					case PcreByteCaptureConditional conditional: ScheduleBody( conditional.Body, item.Opening ); break;
+					case PcreByteRecursionConditional conditional: ScheduleBody( conditional.Body, item.Opening ); break;
 					// Native consumed-width scans skip DEFINE completely. A lookahead's
 					// global nested-behind scan still traverses it through PushTreeChildren.
 					case PcreByteStaticConditional { IsDefinition: true }: break;
@@ -136,6 +137,7 @@ internal sealed partial class PcreByteParser {
 				PcreByteNoncapturingGroup group => GroupWidth( group.Body, item.Opening ),
 				// Native width analysis sees explicit branches only, even without an else.
 				PcreByteCaptureConditional conditional => GroupWidth( conditional.Body, item.Opening ),
+				PcreByteRecursionConditional conditional => GroupWidth( conditional.Body, item.Opening ),
 				PcreByteStaticConditional { IsDefinition: true } => new( 0, 0 ),
 				PcreByteStaticConditional conditional => GroupWidth( conditional.Body, item.Opening ),
 				PcreByteAssertionConditional conditional => GroupWidth( conditional.Body, item.Opening ),
