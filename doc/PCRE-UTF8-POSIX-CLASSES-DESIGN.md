@@ -1,5 +1,9 @@
 # UTF-8 POSIX bracket classes
 
+**Historical checkpoint:** This document records its original tranche. Current
+ASCII option support is in `PCRE-ASCII-RESTRICTIONS-DESIGN.md` and the current
+`PCRE-SYNTAX-ACCEPTANCE-MATRIX.md`.
+
 **Status:** internal PCRE syntax slice under issue #7.
 
 ## Intent and boundaries

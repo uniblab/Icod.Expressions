@@ -159,11 +159,6 @@ public sealed class PcreAsciiDigitOptionReferenceTests {
 	}
 
 	[Theory]
-	[InlineData( @"(?a:\d)" )]
-	[InlineData( @"(?aS:\s)" )]
-	[InlineData( @"(?aW:\w)" )]
-	[InlineData( @"(?aP:[[:digit:]])" )]
-	[InlineData( @"(?aT:[[:digit:]])" )]
 	[InlineData( @"(?aDJ:\d)" )]
 	[InlineData( @"(?aDr:\d)" )]
 	public void OtherOptionFamiliesRemainExplicitlyPending( string pattern ) {
