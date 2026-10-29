@@ -210,7 +210,7 @@ internal static class PcreByteMatcher {
 							if ( position < subjectEnd && ( program.Utf8
 								? PcreUtf8.TryRead( input.Span, position, out var scalar, out literalWidth )
 									&& literalWidth <= subjectEnd - position
-									&& ( instruction.Caseless ? PcreUtf8CaseFold.Equals( scalar, instruction.First )
+									&& ( instruction.Caseless ? PcreUtf8CaseFold.Equals( scalar, instruction.First, instruction.CaselessRestricted )
 										: scalar == instruction.First )
 								: ScalarEquals( input.Span[position], instruction.First, instruction.Caseless ) ) ) {
 								position += literalWidth;
@@ -248,7 +248,7 @@ internal static class PcreByteMatcher {
 								break;
 							}
 							var contained = false;
-							var rangeScalar = instruction.Caseless ? PcreUtf8CaseFold.Fold( setScalar ) : setScalar;
+							var rangeScalar = instruction.Caseless ? PcreUtf8CaseFold.Fold( setScalar, instruction.CaselessRestricted ) : setScalar;
 							foreach ( var range in instruction.Ranges.Span ) {
 								Step(); // Each attempted interval inspection consumes work.
 								if ( rangeScalar >= range.Start && rangeScalar <= range.End ) { contained = true; break; }
@@ -293,7 +293,7 @@ internal static class PcreByteMatcher {
 										|| capturedOffset + captureWidth > capturedEnd
 										|| !PcreUtf8.TryRead( input.Span, candidate, out var referenceScalar, out var referenceWidth )
 										|| candidate + referenceWidth > subjectEnd
-										|| !PcreUtf8CaseFold.Equals( captureScalar, referenceScalar ) ) {
+										|| !PcreUtf8CaseFold.Equals( captureScalar, referenceScalar, instruction.CaselessRestricted ) ) {
 										failed = true;
 										break;
 									}
@@ -417,7 +417,7 @@ internal static class PcreByteMatcher {
 											|| !PcreUtf8.TryRead( literal, patternOffset, out var assertionScalar, out var assertionWidth )
 											|| !PcreUtf8.TryRead( input.Span, subjectOffset, out var subjectScalar, out var subjectWidth )
 											|| subjectOffset + subjectWidth > subjectEnd
-											|| !PcreUtf8CaseFold.Equals( assertionScalar, subjectScalar ) ) {
+											|| !PcreUtf8CaseFold.Equals( assertionScalar, subjectScalar, instruction.CaselessRestricted ) ) {
 											scalarEquals = false;
 											break;
 										}
@@ -735,8 +735,6 @@ internal static class PcreByteMatcher {
 				or UnicodeCategory.LetterNumber or UnicodeCategory.OtherNumber,
 			PcreByteScalarClassKind.UnicodeControl => category == UnicodeCategory.Control,
 			PcreByteScalarClassKind.UnicodeGraph => UnicodeGraphContains( category, scalar ),
-			PcreByteScalarClassKind.UnicodeLower or PcreByteScalarClassKind.UnicodeUpper when caseless
-				=> IsCasedCategory( category ),
 			PcreByteScalarClassKind.UnicodeLower => category == UnicodeCategory.LowercaseLetter,
 			PcreByteScalarClassKind.UnicodePrintable => category == UnicodeCategory.SpaceSeparator
 				|| UnicodeGraphContains( category, scalar ),

@@ -4,10 +4,11 @@ namespace Icod.Expressions.Pcre;
 
 /// <summary>Provisional Unicode scalar equivalence for the internal UTF-8 matcher.</summary>
 internal static class PcreUtf8CaseFold {
-	internal static bool Equals( int left, int right ) => left == right || Fold( left ) == Fold( right );
+	internal static bool Equals( int left, int right, bool restricted = false ) =>
+		left == right || Fold( left, restricted ) == Fold( right, restricted );
 
 	internal static PcreByteScalarRange[] CloseRanges(
-		IReadOnlyList<PcreByteScalarRange> ranges, CancellationToken cancellationToken
+		IReadOnlyList<PcreByteScalarRange> ranges, CancellationToken cancellationToken, bool restricted = false
 	) {
 		cancellationToken.ThrowIfCancellationRequested();
 		if ( ranges.Count == 0 ) { return Array.Empty<PcreByteScalarRange>(); }
@@ -37,7 +38,7 @@ internal static class PcreUtf8CaseFold {
 			for ( var scalar = range.Start; scalar <= range.End; scalar++ ) {
 				if ( ( scalar & 1023 ) == 0 ) { cancellationToken.ThrowIfCancellationRequested(); }
 				if ( !Rune.IsValid( scalar ) ) { continue; } // A range may straddle the surrogate gap.
-				var key = Fold( scalar );
+				var key = Fold( scalar, restricted );
 				bitmap[key >> 5] |= 1u << ( key & 31 );
 				minimum = Math.Min( minimum, key );
 				maximum = Math.Max( maximum, key );
@@ -59,7 +60,13 @@ internal static class PcreUtf8CaseFold {
 		return intervals.ToArray();
 	}
 
-	internal static int Fold( int scalar ) {
+	internal static int Fold( int scalar, bool restricted = false ) {
+		var key = FoldUnrestricted( scalar );
+		// The pinned default cross-boundary sets each have one non-ASCII member.
+		return restricted && scalar >= 0x80 && key < 0x80 ? scalar : key;
+	}
+
+	private static int FoldUnrestricted( int scalar ) {
 		// PCRE2's default mode keeps dotted and dotless Turkish I separate from ASCII I/i.
 		if ( scalar is 0x0130 or 0x0131 ) { return scalar; }
 		// These three simple folds have more than the usual two case equivalents.

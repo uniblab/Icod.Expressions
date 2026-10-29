@@ -62,7 +62,9 @@ internal sealed partial class PcreByteParser {
 	private PcreByteAlternatives ResolveNamedReferences( PcreByteAlternatives alternatives ) =>
 		RewriteTree( alternatives, node => node is NamedReference reference
 			? namedCaptures.TryGetValue( reference.Name, out var number )
-				? new PcreByteBackreference( number ) { Caseless = reference.Caseless }
+				? new PcreByteBackreference( number ) {
+					Caseless = reference.Caseless, CaselessRestricted = reference.CaselessRestricted
+				}
 				: throw Invalid( reference.Offset, "backreference has no capture name" )
 			: node );
 }

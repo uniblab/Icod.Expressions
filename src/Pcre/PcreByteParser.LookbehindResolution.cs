@@ -32,7 +32,7 @@ internal sealed partial class PcreByteParser {
 		}
 		return RewriteTree( root, node => node is PcreByteLookbehind assertion
 			? FinishLookbehind( assertion.Body, assertion.IsPositive, assertion.OpeningOffset, context )
-				with { Caseless = assertion.Caseless }
+				with { Caseless = assertion.Caseless, CaselessRestricted = assertion.CaselessRestricted }
 			: node );
 	}
 }

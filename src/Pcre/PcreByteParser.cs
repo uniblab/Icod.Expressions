@@ -25,6 +25,7 @@ internal sealed partial class PcreByteParser {
 	private int repeatMarks;
 	private bool dotAll;
 	private bool caseless;
+	private bool caselessRestricted;
 	private bool multiline;
 	private AsciiRestriction asciiRestrictions;
 	private bool noAutoCapture;
@@ -79,6 +80,7 @@ internal sealed partial class PcreByteParser {
 		if ( reset ) { cursor++; }
 		var unsetting = false;
 		var setI = false;
+		var setR = false;
 		var setM = false;
 		var setS = false;
 		var setN = false;
@@ -88,6 +90,7 @@ internal sealed partial class PcreByteParser {
 		var setXx = false;
 		var unsetX = false;
 		var unsetI = false;
+		var unsetR = false;
 		var unsetM = false;
 		var unsetS = false;
 		var unsetN = false;
@@ -100,7 +103,7 @@ internal sealed partial class PcreByteParser {
 				unsetting = true;
 				continue;
 			}
-			if ( value is not (byte)'i' and not (byte)'m' and not (byte)'s' and not (byte)'n' and not (byte)'U' and not (byte)'x' and not (byte)'a' ) { return false; }
+			if ( value is not (byte)'i' and not (byte)'m' and not (byte)'s' and not (byte)'n' and not (byte)'U' and not (byte)'x' and not (byte)'a' and not (byte)'r' ) { return false; }
 			switch ( value ) {
 				case (byte)'a':
 					var restriction = cursor < source.Length ? source[cursor] switch {
@@ -116,6 +119,7 @@ internal sealed partial class PcreByteParser {
 					if ( unsetting ) { unsetAscii |= restriction; } else { setAscii |= restriction; }
 					break;
 				case (byte)'i': if ( unsetting ) { unsetI = true; } else { setI = true; } break;
+				case (byte)'r': if ( unsetting ) { unsetR = true; } else { setR = true; } break;
 				case (byte)'m': if ( unsetting ) { unsetM = true; } else { setM = true; } break;
 				case (byte)'s': if ( unsetting ) { unsetS = true; } else { setS = true; } break;
 				case (byte)'n': if ( unsetting ) { unsetN = true; } else { setN = true; } break;
@@ -133,11 +137,12 @@ internal sealed partial class PcreByteParser {
 			|| source[cursor] != ( scoped ? (byte)':' : (byte)')' ) ) { return false; }
 		index = cursor + 1;
 		if ( reset ) {
-			// PCRE resets Perl options; U and ASCII restrictions survive.
-			caseless = multiline = dotAll = noAutoCapture = false;
+			// PCRE's reset keeps U and ASCII restrictions.
+			caseless = caselessRestricted = multiline = dotAll = noAutoCapture = false;
 			extended = ExtendedMode.None;
 		}
 		caseless = ( caseless || setI ) && !unsetI;
+		caselessRestricted = ( caselessRestricted || setR ) && !unsetR;
 		multiline = ( multiline || setM ) && !unsetM;
 		dotAll = ( dotAll || setS ) && !unsetS;
 		noAutoCapture = ( noAutoCapture || setN ) && !unsetN;
@@ -279,7 +284,7 @@ internal sealed partial class PcreByteParser {
 			if ( index >= source.Length ) { break; }
 			if ( !quoting && source[index] == (byte)']' && ( ranges.Count > 0 || predicates.Count > 0 ) ) {
 				index++;
-				return new( caseless ? PcreUtf8CaseFold.CloseRanges( ranges, cancellationToken )
+				return new( caseless ? PcreUtf8CaseFold.CloseRanges( ranges, cancellationToken, caselessRestricted )
 					: ranges.ToArray(), predicates.ToArray(), negated );
 			}
 			var first = quoting ? ParseQuotedLiteral() : ParseUtf8BracketItem( openingOffset );
