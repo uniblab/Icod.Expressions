@@ -65,7 +65,7 @@ internal sealed record PcreByteLiteralAssertion( ReadOnlyMemory<byte> Bytes, boo
 internal sealed record PcreByteLookahead( PcreByteAlternatives Body, bool IsPositive ) : PcreByteNode;
 
 internal sealed record PcreByteLookbehind(
-	PcreByteAlternatives Body, bool IsPositive, ReadOnlyMemory<int> BranchLengths
+	PcreByteAlternatives Body, bool IsPositive, ReadOnlyMemory<int> BranchLengths, int Minimum = -1
 ) : PcreByteNode;
 
 internal sealed record PcreByteRepeat(

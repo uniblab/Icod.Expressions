@@ -24,7 +24,7 @@ public sealed class PcreSyntaxAcceptanceTests {
 	[InlineData( "(a)(?(1)b|c)", 3, false )]
 	[InlineData( "(?R)", 0, false )]
 	[InlineData( "(?C1)a", 0, false )]
-	[InlineData( "(?<=[ab]{1,2})c", 0, false )]
+	[InlineData( "(*plb:[ab])c", 0, false )]
 	[InlineData( @"(a)\g<1>", 3, false )]
 	[InlineData( @"\C", 0, false )]
 	[InlineData( @"\p{Greek}", 0, true )]

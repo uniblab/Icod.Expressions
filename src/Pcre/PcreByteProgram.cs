@@ -13,6 +13,8 @@ internal enum PcreByteOpcode {
 	WordBoundary,
 	AssertLiteral,
 	Reverse,
+	ReverseRange,
+	ReverseEnd,
 	AssertionEnter,
 	AssertionExit,
 	Start,
@@ -184,29 +186,32 @@ internal sealed class PcreByteProgramCompiler {
 		instructions[index] = instructions[index] with { First = first, Second = second };
 	}
 
-	private void CompileAlternatives( PcreByteAlternatives alternatives, ReadOnlyMemory<int> reverseLengths = default ) {
+	private void CompileAlternatives( PcreByteAlternatives alternatives, ReadOnlyMemory<int> reverseLengths = default, int reverseMinimum = -1 ) {
 		var endJumps = new List<int>();
-		compileWork.Push( () => CompileBranch( alternatives, 0, endJumps, reverseLengths ) );
+		compileWork.Push( () => CompileBranch( alternatives, 0, endJumps, reverseLengths, reverseMinimum ) );
 	}
 
 	private void CompileBranch( PcreByteAlternatives alternatives, int index, List<int> endJumps,
-		ReadOnlyMemory<int> reverseLengths ) {
+		ReadOnlyMemory<int> reverseLengths, int reverseMinimum ) {
 		var split = index + 1 < alternatives.Branches.Count ? Emit( PcreByteOpcode.Split ) : -1;
 		var first = instructions.Count;
+		var ranged = !reverseLengths.IsEmpty && reverseMinimum >= 0 && reverseLengths.Span[index] > reverseMinimum;
 		compileWork.Push( () => {
+			if ( ranged ) { Emit( PcreByteOpcode.ReverseEnd ); }
 			if ( split >= 0 ) {
 				endJumps.Add( Emit( PcreByteOpcode.Jump ) );
 				Patch( split, first, instructions.Count );
 			}
 			if ( index + 1 < alternatives.Branches.Count ) {
-				CompileBranch( alternatives, index + 1, endJumps, reverseLengths );
+				CompileBranch( alternatives, index + 1, endJumps, reverseLengths, reverseMinimum );
 			} else {
 				foreach ( var jump in endJumps ) { Patch( jump, instructions.Count ); }
 			}
 		} );
 		// Split saves the original endpoint; each branch rewinds independently.
 		if ( !reverseLengths.IsEmpty && reverseLengths.Span[index] > 0 ) {
-			Emit( PcreByteOpcode.Reverse, reverseLengths.Span[index] );
+			Emit( ranged ? PcreByteOpcode.ReverseRange : PcreByteOpcode.Reverse, reverseLengths.Span[index],
+				ranged ? reverseMinimum : 0 );
 		}
 		CompileSequence( alternatives.Branches[index], 0 );
 	}
@@ -260,7 +265,7 @@ internal sealed class PcreByteProgramCompiler {
 				CompileAssertion( assertion.Body, assertion.IsPositive );
 				break;
 			case PcreByteLookbehind assertion:
-				CompileAssertion( assertion.Body, assertion.IsPositive, assertion.BranchLengths );
+				CompileAssertion( assertion.Body, assertion.IsPositive, assertion.BranchLengths, assertion.Minimum );
 				break;
 			case PcreByteAnchor anchor:
 				Emit( anchor.IsStart ? PcreByteOpcode.Start : PcreByteOpcode.End );
@@ -313,13 +318,15 @@ internal sealed class PcreByteProgramCompiler {
 		return new PcreByteAtomic( new PcreByteNoncapturingGroup( new PcreByteAlternatives( branches ) ) );
 	}
 
-	private void CompileAssertion( PcreByteAlternatives body, bool positive, ReadOnlyMemory<int> reverseLengths = default ) {
-		var enter = Emit( PcreByteOpcode.AssertionEnter, second: positive ? 1 : 0 );
+	private void CompileAssertion( PcreByteAlternatives body, bool positive,
+		ReadOnlyMemory<int> reverseLengths = default, int reverseMinimum = -1 ) {
+		var flags = ( positive ? 1 : 0 ) | ( reverseMinimum >= 0 ? 2 : 0 );
+		var enter = Emit( PcreByteOpcode.AssertionEnter, second: flags );
 		compileWork.Push( () => {
 			Emit( PcreByteOpcode.AssertionExit );
-			Patch( enter, instructions.Count, positive ? 1 : 0 );
+			Patch( enter, instructions.Count, flags );
 		} );
-		CompileAlternatives( body, reverseLengths );
+		CompileAlternatives( body, reverseLengths, reverseMinimum );
 	}
 
 	private void CompileRepeat( PcreByteRepeat repeat ) {
