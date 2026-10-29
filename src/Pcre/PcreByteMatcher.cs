@@ -744,7 +744,7 @@ internal static class PcreByteMatcher {
 				UnicodeCategory.ConnectorPunctuation or UnicodeCategory.DashPunctuation
 				or UnicodeCategory.OpenPunctuation or UnicodeCategory.ClosePunctuation
 				or UnicodeCategory.InitialQuotePunctuation or UnicodeCategory.FinalQuotePunctuation
-				or UnicodeCategory.OtherPunctuation || ( scalar < 0x100 && category is
+				or UnicodeCategory.OtherPunctuation || ( scalar < 0x80 && category is
 				UnicodeCategory.MathSymbol or UnicodeCategory.CurrencySymbol
 				or UnicodeCategory.ModifierSymbol or UnicodeCategory.OtherSymbol ),
 			PcreByteScalarClassKind.UnicodeUpper => category == UnicodeCategory.UppercaseLetter,
