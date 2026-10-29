@@ -5,7 +5,7 @@ namespace Icod.Expressions.Pcre;
 internal sealed partial class PcreByteParser {
 	private readonly record struct GroupOptions(
 		bool Caseless, bool Multiline, bool DotAll, bool NoAutoCapture, bool Ungreedy,
-		ExtendedMode Extended, AsciiRestriction AsciiRestrictions
+		ExtendedMode Extended, AsciiRestriction AsciiRestrictions, bool CaselessRestricted
 	);
 
 	// Bounded heap frames keep source nesting off the native call stack.
@@ -27,10 +27,11 @@ internal sealed partial class PcreByteParser {
 		internal List<PcreByteNode> Nodes { get; set; } = new();
 	}
 
-	private GroupOptions CurrentGroupOptions => new( caseless, multiline, dotAll, noAutoCapture, ungreedy, extended, asciiRestrictions );
+	private GroupOptions CurrentGroupOptions => new( caseless, multiline, dotAll, noAutoCapture, ungreedy, extended, asciiRestrictions, caselessRestricted );
 
 	private void RestoreGroupOptions( GroupOptions options ) {
 		caseless = options.Caseless;
+		caselessRestricted = options.CaselessRestricted;
 		multiline = options.Multiline;
 		dotAll = options.DotAll;
 		noAutoCapture = options.NoAutoCapture;
@@ -75,13 +76,15 @@ internal sealed partial class PcreByteParser {
 						: current.Atomic ? new PcreByteAtomic( new PcreByteNoncapturingGroup( body ) )
 						: new PcreByteNoncapturingGroup( body );
 					var groupCaseless = current.EntryOptions.Caseless;
+					var groupCaselessRestricted = current.EntryOptions.CaselessRestricted;
 					current = parents.Pop();
-					AppendNode( current, completed, groupCaseless );
+					AppendNode( current, completed, groupCaseless, groupCaselessRestricted );
 					continue;
 				}
 				if ( TryParseOptions( index, scoped: false ) ) { continue; }
 			}
 			var atomCaseless = caseless;
+			var atomCaselessRestricted = caselessRestricted;
 			GroupFrame? child = null;
 			PcreByteNode? atom;
 			try {
@@ -97,7 +100,7 @@ internal sealed partial class PcreByteParser {
 				current = child;
 				continue;
 			}
-			AppendNode( current, atom!, atomCaseless );
+			AppendNode( current, atom!, atomCaseless, atomCaselessRestricted );
 		}
 	}
 
@@ -120,7 +123,8 @@ internal sealed partial class PcreByteParser {
 			Span<byte> encoded = stackalloc byte[4];
 			foreach ( var node in literals ) {
 				cancellationToken.ThrowIfCancellationRequested();
-				if ( node is not PcreByteLiteral literal || literal.Caseless != frame.EntryOptions.Caseless ) {
+				if ( node is not PcreByteLiteral literal || literal.Caseless != frame.EntryOptions.Caseless
+					|| utf8 && literal.Caseless && literal.CaselessRestricted != frame.EntryOptions.CaselessRestricted ) {
 					return FinishGeneralAssertion( frame, body );
 				}
 				if ( utf8 ) {
@@ -138,8 +142,10 @@ internal sealed partial class PcreByteParser {
 			? DeferLookbehind( body, frame.AssertionKind > 0, frame.OpeningOffset )
 			: new PcreByteLookahead( body, frame.AssertionKind > 0 );
 
-	private void AppendNode( GroupFrame frame, PcreByteNode atom, bool atomCaseless ) {
-		if ( atom.Caseless != atomCaseless ) { atom = atom with { Caseless = atomCaseless }; }
+	private void AppendNode( GroupFrame frame, PcreByteNode atom, bool atomCaseless, bool atomCaselessRestricted ) {
+		if ( atom.Caseless != atomCaseless || atom.CaselessRestricted != atomCaselessRestricted ) {
+			atom = atom with { Caseless = atomCaseless, CaselessRestricted = atomCaselessRestricted };
+		}
 		SkipPatternTrivia( ref frame.Quoting );
 		if ( !frame.Quoting && index < source.Length && source[index] is (byte)'*' or (byte)'+' or (byte)'?' or (byte)'{' ) {
 			var assertion = atom is PcreByteLiteralAssertion or PcreByteLookahead or PcreByteLookbehind;

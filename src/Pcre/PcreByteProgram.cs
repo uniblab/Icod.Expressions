@@ -38,7 +38,7 @@ internal sealed record PcreByteInstruction(
 	PcreByteOpcode Opcode, int First = 0, int Second = 0, PcreByteSet Set = default,
 	ReadOnlyMemory<byte> Bytes = default, ReadOnlyMemory<PcreByteScalarRange> Ranges = default,
 	ReadOnlyMemory<PcreByteScalarPredicate> Predicates = default, UnicodeCategory? Category = null,
-	bool Caseless = false
+	bool Caseless = false, bool CaselessRestricted = false
 );
 
 internal sealed record PcreByteProgram(
@@ -172,11 +172,11 @@ internal sealed class PcreByteProgramCompiler {
 	private int Emit( PcreByteOpcode opcode, int first = 0, int second = 0, PcreByteSet set = default,
 		ReadOnlyMemory<byte> bytes = default, ReadOnlyMemory<PcreByteScalarRange> ranges = default,
 		ReadOnlyMemory<PcreByteScalarPredicate> predicates = default, UnicodeCategory? category = null,
-		bool caseless = false ) {
+		bool caseless = false, bool caselessRestricted = false ) {
 		cancellationToken.ThrowIfCancellationRequested();
 		if ( instructions.Count >= MaximumInstructions ) { throw RepeatExpansionLimit(); }
 		var index = instructions.Count;
-		instructions.Add( new( opcode, first, second, set, bytes, ranges, predicates, category, caseless ) );
+		instructions.Add( new( opcode, first, second, set, bytes, ranges, predicates, category, caseless, caselessRestricted ) );
 		hasCaselessComparisons |= caseless;
 		return index;
 	}
@@ -229,7 +229,7 @@ internal sealed class PcreByteProgramCompiler {
 		if ( ++compileVisits > MaximumInstructions ) { throw RepeatExpansionLimit(); }
 		switch ( node ) {
 			case PcreByteLiteral literal:
-				Emit( PcreByteOpcode.Literal, literal.Value, caseless: literal.Caseless );
+				Emit( PcreByteOpcode.Literal, literal.Value, caseless: literal.Caseless, caselessRestricted: literal.CaselessRestricted );
 				break;
 			case PcreByteAny any:
 				Emit( PcreByteOpcode.Any, any.DotAll ? 1 : 0 );
@@ -241,17 +241,17 @@ internal sealed class PcreByteProgramCompiler {
 				break;
 			case PcreByteScalarClass scalarClass:
 				Emit( PcreByteOpcode.ScalarClass, (int)scalarClass.Kind, scalarClass.Negated ? 1 : 0,
-					category: scalarClass.Category, caseless: scalarClass.Caseless );
+					category: scalarClass.Category, caseless: scalarClass.Caseless, caselessRestricted: scalarClass.CaselessRestricted );
 				break;
 			case PcreByteScalarSet scalarSet:
 				Emit( PcreByteOpcode.ScalarSet, second: scalarSet.Negated ? 1 : 0,
-					ranges: scalarSet.Ranges, predicates: scalarSet.Predicates, caseless: scalarSet.Caseless );
+					ranges: scalarSet.Ranges, predicates: scalarSet.Predicates, caseless: scalarSet.Caseless, caselessRestricted: scalarSet.CaselessRestricted );
 				break;
 			case PcreByteClass characterClass:
-				Emit( PcreByteOpcode.Class, set: characterClass.Set, caseless: characterClass.Caseless );
+				Emit( PcreByteOpcode.Class, set: characterClass.Set, caseless: characterClass.Caseless, caselessRestricted: characterClass.CaselessRestricted );
 				break;
 			case PcreByteBackreference reference:
-				Emit( PcreByteOpcode.Backreference, reference.Number, caseless: reference.Caseless );
+				Emit( PcreByteOpcode.Backreference, reference.Number, caseless: reference.Caseless, caselessRestricted: reference.CaselessRestricted );
 				break;
 			case PcreByteWordBoundary boundary:
 				Emit( PcreByteOpcode.WordBoundary, boundary.IsBoundary ? 1 : 0,
@@ -259,7 +259,7 @@ internal sealed class PcreByteProgramCompiler {
 				break;
 			case PcreByteLiteralAssertion assertion:
 				Emit( PcreByteOpcode.AssertLiteral, assertion.IsPositive ? 1 : 0,
-					assertion.IsBehind ? 1 : 0, bytes: assertion.Bytes, caseless: assertion.Caseless );
+					assertion.IsBehind ? 1 : 0, bytes: assertion.Bytes, caseless: assertion.Caseless, caselessRestricted: assertion.CaselessRestricted );
 				break;
 			case PcreByteLookahead assertion:
 				CompileAssertion( assertion.Body, assertion.IsPositive );

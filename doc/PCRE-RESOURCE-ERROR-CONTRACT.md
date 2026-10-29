@@ -65,6 +65,13 @@ policy scopes and unchanged depth/capture/work/cancellation limits.
 `PcreAsciiDigitOptionReferenceTests` and `PcreResetOptionReferenceTests` pin
 these boundaries and unchanged match-work/cancellation outcomes.
 
+Local r uses immutable node/instruction comparison metadata, with no option
+stack or saved-frame changes. Restricted range keys remain in the existing
+scalar-domain bitmap and retain cancellation polling. UCP POSIX Ll/Lu stay
+category-specific independently of explicit property case widening.
+`PcreCaselessRestrictionReferenceTests` covers scope, captures, optimized/general
+assertions, range closure and unchanged depth/capture/work/cancellation limits.
+
 ## Remaining release work
 
 The bounded internal taxonomy is testable now. Before migration, add

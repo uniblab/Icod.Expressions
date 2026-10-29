@@ -4,6 +4,7 @@ namespace Icod.Expressions.Pcre;
 
 internal abstract record PcreByteNode {
 	internal bool Caseless { get; init; }
+	internal bool CaselessRestricted { get; init; }
 }
 
 internal sealed record PcreByteLiteral( int Value ) : PcreByteNode;
