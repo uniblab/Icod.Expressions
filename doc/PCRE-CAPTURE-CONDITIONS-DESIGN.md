@@ -3,6 +3,9 @@
 > Historical scope: traditional atomic assertion conditions are added by
 > `PCRE-ASSERTION-CONDITIONS-DESIGN.md`; their pending status below describes #89.
 
+> `PCRE-STATIC-CONDITIONS-DESIGN.md` adds DEFINE/VERSION and classifies malformed
+> reserved VERSION prefixes as invalid; their pending status below is historical.
+
 ## Intent and approach
 
 Continue issue #7 after #88 with conditions that test whether a capture has

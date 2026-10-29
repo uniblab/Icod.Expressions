@@ -122,6 +122,15 @@ and match-work budgets; valid-shaped overflow/reversed counts remain errors.
 No compiler/VM state or limits change. `PcreBraceGrammarReferenceTests` pins these
 distinctions, source byte diagnostics and existing resource outcomes.
 
+Static DEFINE/VERSION conditions use existing Jump instructions with no saved
+path, scope or journal state. Both bodies compile and count toward existing
+instruction/node budgets. Ignored-runtime false-one-branch repeats retain their
+AST widths and logical repeat-count compile charge without runtime marks or
+expansion. Global capture/reference validation remains; DEFINE nested behind
+width checks follow native global-versus-consumed scan context. Version tuples
+cap each component at1000 and use internal compatibility10.48, independently of
+package version. `PcreStaticConditionReferenceTests` pins these contracts.
+
 ## Remaining release work
 
 The bounded internal taxonomy is testable now. Before migration, add
