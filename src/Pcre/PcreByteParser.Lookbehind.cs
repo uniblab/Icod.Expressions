@@ -104,6 +104,8 @@ internal sealed partial class PcreByteParser {
 					case PcreByteGroup group: ScheduleBody( group.Body, item.Opening ); break;
 					case PcreByteBackreference reference:
 						pending.Push( (ReferenceTarget( reference, item.Opening ), false, item.Opening) ); break;
+					case PcreByteSubroutineCall call:
+						pending.Push( (context.CallTargets[call.Number], false, item.Opening) ); break;
 					case PcreByteNoncapturingGroup group: ScheduleBody( group.Body, item.Opening ); break;
 					case PcreByteCaptureConditional conditional: ScheduleBody( conditional.Body, item.Opening ); break;
 					// Native consumed-width scans skip DEFINE completely. A lookahead's
@@ -130,6 +132,7 @@ internal sealed partial class PcreByteParser {
 				PcreByteLookbehind assertion => ValidateNestedBehind( assertion ),
 				PcreByteGroup group => GroupWidth( group.Body, item.Opening ),
 				PcreByteBackreference reference => widths[ReferenceTarget( reference, item.Opening )],
+				PcreByteSubroutineCall call => widths[context.CallTargets[call.Number]],
 				PcreByteNoncapturingGroup group => GroupWidth( group.Body, item.Opening ),
 				// Native width analysis sees explicit branches only, even without an else.
 				PcreByteCaptureConditional conditional => GroupWidth( conditional.Body, item.Opening ),
