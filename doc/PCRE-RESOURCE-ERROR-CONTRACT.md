@@ -115,6 +115,13 @@ introduced. Conditional plus inner assertion each count toward source depth.
 `PcreAssertionConditionReferenceTests` pins guard accounting, sibling arena
 reclamation, work/cancellation and unchanged compile ceilings.
 
+Ordinary brace classification scans a local source cursor and polls cancellation
+while checking complete count grammar before numeric decoding. Non-counted
+source becomes ordinary literal nodes and therefore spends existing instruction
+and match-work budgets; valid-shaped overflow/reversed counts remain errors.
+No compiler/VM state or limits change. `PcreBraceGrammarReferenceTests` pins these
+distinctions, source byte diagnostics and existing resource outcomes.
+
 ## Remaining release work
 
 The bounded internal taxonomy is testable now. Before migration, add

@@ -27,11 +27,9 @@ public sealed class PcreCountedRepeatTests {
 	[InlineData( "a{2,1}", "InvalidSyntax", 1 )]
 	[InlineData( "a{65536}", "InvalidSyntax", 1 )]
 	[InlineData( "a{999999999999999999999}", "InvalidSyntax", 1 )]
-	[InlineData( "a{2,3", "InvalidSyntax", 1 )]
 	[InlineData( "a{2}*", "InvalidSyntax", 4 )]
 	[InlineData( "^{2}", "InvalidSyntax", 1 )]
-	[InlineData( "a{foo}", "UnsupportedSyntax", 1 )]
-	public void RejectsInvalidOrPendingBraceSyntax( string pattern, string code, int offset ) {
+	public void RejectsInvalidCountedQuantifierSyntax( string pattern, string code, int offset ) {
 		var result = PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( pattern ) );
 		Assert.Equal( code, result.Diagnostic?.Code.ToString() );
 		Assert.Equal( offset, result.Diagnostic?.ByteOffset );

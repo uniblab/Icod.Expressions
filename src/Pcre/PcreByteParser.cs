@@ -156,7 +156,7 @@ internal sealed partial class PcreByteParser {
 		asciiRestrictions = ( asciiRestrictions | setAscii ) & ~unsetAscii;
 		extended = unsetX ? ExtendedMode.None : setX ? setXx ? ExtendedMode.More : ExtendedMode.Extended : extended;
 		if ( !scoped ) { SkipIgnoredPatternText(); }
-		if ( !scoped && index < source.Length && source[index] is (byte)'*' or (byte)'+' or (byte)'?' or (byte)'{' ) {
+		if ( !scoped && IsRepeatQuantifier( index ) ) {
 			var repeatOffset = index;
 			if ( source[index] == (byte)'{' ) { ParseCountedBounds( repeatOffset ); }
 			throw Invalid( repeatOffset, "an option setting cannot be repeated" );
@@ -189,52 +189,6 @@ internal sealed partial class PcreByteParser {
 		return new( source[index++] );
 	}
 
-	private (int Minimum, int Maximum) ParseCountedBounds( int offset ) {
-		index++; // Opening brace.
-		SkipBraceHorizontalSpace();
-		var hasMinimum = ReadCount( offset, out var minimum );
-		SkipBraceHorizontalSpace();
-		var comma = index < source.Length && source[index] == (byte)',';
-		var hasMaximum = false;
-		var maximum = minimum;
-		if ( comma ) {
-			index++;
-			SkipBraceHorizontalSpace();
-			hasMaximum = ReadCount( offset, out maximum );
-			SkipBraceHorizontalSpace();
-			if ( !hasMinimum && !hasMaximum ) { throw Unsupported( offset ); }
-			if ( !hasMinimum ) { minimum = 0; }
-			if ( !hasMaximum ) { maximum = int.MaxValue; }
-		} else if ( !hasMinimum ) { throw Unsupported( offset ); }
-		if ( index >= source.Length || source[index] != (byte)'}' ) {
-			throw Invalid( offset, "unclosed counted quantifier" );
-		}
-		index++;
-		if ( maximum < minimum ) { throw Invalid( offset, "repeat maximum is less than minimum" ); }
-		return (minimum, maximum);
-	}
-
-	private void SkipBraceHorizontalSpace() {
-		while ( index < source.Length && source[index] is (byte)' ' or (byte)'\t' ) {
-			cancellationToken.ThrowIfCancellationRequested();
-			index++;
-		}
-	}
-
-	private bool ReadCount( int offset, out int count ) {
-		count = 0;
-		var start = index;
-		while ( index < source.Length && source[index] is >= (byte)'0' and <= (byte)'9' ) {
-			cancellationToken.ThrowIfCancellationRequested();
-			var digit = source[index++] - (byte)'0';
-			if ( count > ( 65535 - digit ) / 10 ) {
-				throw Invalid( offset, "repeat count exceeds 65535" );
-			}
-			count = count * 10 + digit;
-		}
-		return index > start;
-	}
-
 	private PcreByteNode? ParseAtom( int depth, int assertionOpeningContext, out GroupFrame? group ) {
 		group = null;
 		var offset = index;
@@ -263,8 +217,10 @@ internal sealed partial class PcreByteParser {
 		if ( value is (byte)'*' or (byte)'+' or (byte)'?' ) {
 			throw Invalid( offset, "quantifier without an atom" );
 		}
-		if ( value is (byte)'{' or (byte)'}' ) {
-			throw Unsupported( offset );
+		if ( value == (byte)'{' && IsCountedQuantifier( offset ) ) {
+			index = offset;
+			ParseCountedBounds( offset ); // Preserve numeric errors before no-atom errors.
+			throw Invalid( offset, "quantifier without an atom" );
 		}
 		if ( utf8 && value >= 0x80 ) {
 			PcreUtf8.TryRead( source, offset, out var scalar, out var width ); // Validated at compile entry.

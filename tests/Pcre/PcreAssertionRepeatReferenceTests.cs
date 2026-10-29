@@ -99,7 +99,6 @@ public sealed class PcreAssertionRepeatReferenceTests {
 	[Theory]
 	[InlineData( "(?=[a]){2,1}", 7 )]
 	[InlineData( "(?=[a]){65536}", 7 )]
-	[InlineData( "(?=[a]){2", 7 )]
 	[InlineData( "(?=[a])**", 8 )]
 	[InlineData( "(?=[a])+?+", 9 )]
 	public void InvalidQuantifiersRetainSourceByteDiagnostics( string pattern, int offset ) {

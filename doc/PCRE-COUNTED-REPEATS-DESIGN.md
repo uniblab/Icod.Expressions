@@ -2,6 +2,10 @@
 
 **Status:** next internal syntax tranche under issue #7. Grep and CommandFramework production code remain untouched.
 
+> Historical scope: `PCRE-BRACE-GRAMMAR-DESIGN.md` adds ordinary literal-brace
+> fallback after complete counted-form recognition; older pending-brace statements
+> below describe the earlier tranche.
+
 ## Intent and scope
 
 Accept the ordinary PCRE2 counted forms `{n}`, `{n,m}`, `{n,}`, and `{,m}` for already supported consuming atoms and groups, in byte and UTF-8 modes. Permit PCRE2's horizontal whitespace just inside the braces and around the comma. Values are decimal and at most 65535; a finite maximum must be at least the minimum. A following `?` selects lazy order; a possessive `+` stays explicitly unsupported. A quantifier on a nonrepeatable anchor is invalid and on a currently restricted fixed literal assertion stays unsupported. Unrecognized brace constructs remain explicit unsupported diagnostics, never silent literals.
