@@ -486,10 +486,10 @@ internal static class PcreByteMatcher {
 							} else { failed = true; }
 							break;
 						case PcreByteOpcode.EndLine:
+							// JIT tests the current newline character, including LF after
+							// a consumed CR. Candidate advancement handles CRLF separately.
 							if ( position == absoluteEnd || ( position < subjectEnd
 							&& ( input.Span[position] == (byte)'\n'
-								&& ( !program.AnyCrLfNewline || position == startOffset || position == 0
-									|| input.Span[position - 1] != (byte)'\r' )
 								|| program.AnyCrLfNewline && input.Span[position] == (byte)'\r' ) ) ) {
 								pc++;
 							} else { failed = true; }

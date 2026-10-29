@@ -82,6 +82,11 @@ names; depth256/capture256/instructions4096/saved paths1024/work/cancellation.
 Replace the obsolete capture-condition-pending row; retain other condition kinds.
 Update current inventories and relevant historical notices.
 
+The CRLF sweep also pins the existing multiline `$` path: PCRE2 JIT checks the
+current newline character and accepts LF after a consumed CR. This is separate
+from unanchored candidate advancement over CRLF. Assertion-condition aliases
+beginning with `*` remain unsupported just like their `?` spellings.
+
 No public API/version/dependency/release/consumer change. Reuse integer frames,
 scope arena and journal; no recursion, capture snapshots or saved spans. Existing
 default work1,000,000 and compile/runtime ceilings remain. Per-name candidate

@@ -35,7 +35,7 @@ internal sealed partial class PcreByteParser {
 			return new( 0, wrapped, offset );
 		}
 		var remaining = source.AsSpan( index );
-		if ( first == (byte)'?' || remaining.StartsWith( "R&"u8 )
+		if ( first is (byte)'?' or (byte)'*' || remaining.StartsWith( "R&"u8 )
 			|| remaining.StartsWith( "DEFINE)"u8 )
 			|| remaining.StartsWith( "VERSION"u8 ) && remaining.Length > 7 && remaining[7] != (byte)')' ) {
 			throw Unsupported( offset );
