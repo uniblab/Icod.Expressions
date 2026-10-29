@@ -169,6 +169,22 @@ public sealed class PcreLookbehindReferenceLengthTests {
 	}
 
 	[Theory]
+	[InlineData( @"(?<x>a(?<=\k<y>))(?<y>\k<x>)", 6 )]
+	[InlineData( @"(?<x>a(?<=\k<y>))(?<y>b(?<=\k<x>))(?<=\k<x>)", 6 )]
+	[InlineData( @"(?<x>a(?=(?<=\k<y>)))(?<y>\k<x>)", 9 )]
+	public void NestedBehindValidationRetainsTheActiveCaptureDependencyChain( string pattern, int opening ) {
+		Assert.Throws<PcrePatternException>( () => Reference( pattern ) );
+		AssertDiagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax, opening );
+	}
+
+	[Theory]
+	[InlineData( @"(?<x>(?=\k<x>)a)(?<=\k<x>)", "61", -1, 0, "" )]
+	[InlineData( @"(?<x>a(?<=a))(?<=\k<x>)b", "6162", 0, 2, "0:2,0:1" )]
+	public void OrdinaryAheadReferencesAndIndependentBehindChecksDoNotCreateFalseCycles(
+		string pattern, string hex, int index, int length, string captures ) =>
+		AssertOutcome( pattern, hex, false, 0, index, length, captures );
+
+	[Theory]
 	[InlineData( @"(?<=\k<missing>)b", 4 )]
 	[InlineData( @"(?<!\g{missing})b", 4 )]
 	[InlineData( @"(?<=\1)b", 4 )]
