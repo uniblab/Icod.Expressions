@@ -133,7 +133,7 @@ internal sealed partial class PcreByteParser {
 
 	private PcreByteNode FinishGeneralAssertion( GroupFrame frame, PcreByteAlternatives body ) =>
 		Math.Abs( frame.AssertionKind ) == 2
-			? FinishLookbehind( body, frame.AssertionKind > 0, frame.OpeningOffset )
+			? DeferLookbehind( body, frame.AssertionKind > 0, frame.OpeningOffset )
 			: new PcreByteLookahead( body, frame.AssertionKind > 0 );
 
 	private void AppendNode( GroupFrame frame, PcreByteNode atom, bool atomCaseless ) {
@@ -209,6 +209,7 @@ internal sealed partial class PcreByteParser {
 				index += 2;
 				capturing = false;
 				branchReset = true;
+				hasBranchReset = true;
 			} else if ( index + 1 < source.Length && source[index + 1] == (byte)'>' ) {
 				index += 2;
 				capturing = false;

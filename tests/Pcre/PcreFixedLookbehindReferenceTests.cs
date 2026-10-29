@@ -145,9 +145,6 @@ public sealed class PcreFixedLookbehindReferenceTests {
 
 	[Theory]
 	[InlineData( "(?<=[a]+)b", 0 )]
-	[InlineData( @"(a)(?<=\1)b", 3 )]
-	[InlineData( @"(?<=(a)\g{-1})b", 0 )]
-	[InlineData( @"(?<x>a)(?<=\k<x>)b", 7 )]
 	[InlineData( "x(?<=[a]*)b", 1 )]
 	[InlineData( "(?<=(?:^)*a)b", 0 )]
 	[InlineData( "(?<=(?:^)+a)b", 0 )]

@@ -5,11 +5,13 @@ internal sealed partial class PcreByteParser {
 
 	private readonly record struct LookbehindWidth( int Minimum, int Maximum );
 
-	private PcreByteLookbehind FinishLookbehind( PcreByteAlternatives body, bool positive, int openingOffset ) {
+	private PcreByteLookbehind FinishLookbehind( PcreByteAlternatives body, bool positive, int openingOffset,
+		LookbehindContext context ) {
 		// Reference keys avoid recursively hashing the record tree. Neither width
 		// evaluation nor parser source nesting consumes the native call stack.
 		var widths = new Dictionary<PcreByteNode, LookbehindWidth>( ReferenceEqualityComparer.Instance );
 		var pending = new Stack<(PcreByteNode Node, bool Ready)>();
+		var active = new HashSet<PcreByteNode>( ReferenceEqualityComparer.Instance );
 		void ScheduleBody( PcreByteAlternatives alternatives ) {
 			foreach ( var branch in alternatives.Branches ) {
 				foreach ( var child in branch ) {
@@ -17,6 +19,14 @@ internal sealed partial class PcreByteParser {
 					pending.Push( (child, false) );
 				}
 			}
+		}
+		PcreByteGroup ReferenceTarget( PcreByteBackreference reference ) {
+			if ( hasBranchReset || !context.Captures.TryGetValue( reference.Number, out var capture ) ) {
+				throw Unsupported( openingOffset );
+			}
+			var position = context.Positions[reference];
+			if ( position > capture.Start && position < capture.End ) { throw Unsupported( openingOffset ); }
+			return capture.Group;
 		}
 		LookbehindWidth CheckedWidth( long minimum, long maximum ) {
 			if ( maximum > MaximumLookbehindLength ) { throw Unsupported( openingOffset ); }
@@ -55,9 +65,11 @@ internal sealed partial class PcreByteParser {
 			cancellationToken.ThrowIfCancellationRequested();
 			if ( widths.ContainsKey( item.Node ) ) { continue; }
 			if ( !item.Ready ) {
+				if ( !active.Add( item.Node ) ) { throw Unsupported( openingOffset ); }
 				pending.Push( (item.Node, true) );
 				switch ( item.Node ) {
 					case PcreByteGroup group: ScheduleBody( group.Body ); break;
+					case PcreByteBackreference reference: pending.Push( (ReferenceTarget( reference ), false) ); break;
 					case PcreByteNoncapturingGroup group: ScheduleBody( group.Body ); break;
 					case PcreByteAtomic atomic: pending.Push( (atomic.Child, false) ); break;
 					// Validate erased children too: an outer {0} must not hide
@@ -72,11 +84,13 @@ internal sealed partial class PcreByteParser {
 				PcreByteAnchor or PcreByteSearchStart or PcreByteLineAnchor or PcreByteEndBeforeFinalLf
 					or PcreByteWordBoundary or PcreByteLiteralAssertion or PcreByteLookahead or PcreByteLookbehind => new( 0, 0 ),
 				PcreByteGroup group => GroupWidth( group.Body ),
+				PcreByteBackreference reference => widths[ReferenceTarget( reference )],
 				PcreByteNoncapturingGroup group => GroupWidth( group.Body ),
 				PcreByteAtomic atomic => widths[atomic.Child],
 				PcreByteRepeat repeat => RepeatWidth( repeat ),
 				_ => throw Unsupported( openingOffset )
 			};
+			active.Remove( item.Node );
 		}
 		var lengths = new int[body.Branches.Count];
 		var minimum = int.MaxValue;
@@ -90,6 +104,6 @@ internal sealed partial class PcreByteParser {
 			variable |= width.Minimum != width.Maximum;
 		}
 		if ( variable && maximum > 255 ) { throw Unsupported( openingOffset ); }
-		return new( body, positive, lengths, variable ? minimum : -1 );
+		return new( body, positive, lengths, variable ? minimum : -1, openingOffset );
 	}
 }

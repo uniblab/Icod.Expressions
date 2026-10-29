@@ -175,16 +175,13 @@ public sealed class PcreVariableLookbehindReferenceTests {
 	[InlineData( "x(?<=[a]+)b", 1 )]
 	[InlineData( "(?<=(?:a+))b", 0 )]
 	[InlineData( "(?<=(?:^)*[a])b", 0 )]
-	[InlineData( @"(a)(?<=\1)b", 3 )]
-	[InlineData( @"(?<x>a)(?<=\k<x>)b", 7 )]
-	[InlineData( @"(?<=(a)\g{-1})b", 0 )]
 	[InlineData( @"x(?<=\X)b", 1 )]
 	[InlineData( "(?<=[a]*){0}b", 0 )]
 	[InlineData( "(?<=(?:[a]*){0})b", 0 )]
 	[InlineData( "(?<=(?<=a)*)b", 0 )]
 	[InlineData( "(?<=(?<=a)+)b", 0 )]
 	[InlineData( "(?<=(?<=[a]{1,2})*)b", 0 )]
-	public void UnboundedUnknownAndConsumedBackreferencesRemainUnsupportedAtTheOpening( string pattern, int offset ) =>
+	public void UnboundedAndUnknownBodiesRemainUnsupportedAtTheOpening( string pattern, int offset ) =>
 		AssertDiagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax, offset );
 
 	[Theory]
