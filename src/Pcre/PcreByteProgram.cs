@@ -89,13 +89,16 @@ internal sealed class PcreByteProgramCompiler {
 
 	private static bool CanMatchEmptyAtAnyOffset( PcreByteAlternatives alternatives ) {
 		foreach ( var branch in alternatives.Branches ) {
-			var empty = true;
-			foreach ( var node in branch ) {
-				if ( !CanMatchEmptyAtAnyOffset( node ) ) { empty = false; break; }
-			}
-			if ( empty ) { return true; }
+			if ( CanMatchEmptyAtAnyOffset( branch ) ) { return true; }
 		}
 		return false;
+	}
+
+	private static bool CanMatchEmptyAtAnyOffset( IReadOnlyList<PcreByteNode> nodes ) {
+		foreach ( var node in nodes ) {
+			if ( !CanMatchEmptyAtAnyOffset( node ) ) { return false; }
+		}
+		return true;
 	}
 
 	private static bool CanMatchEmptyAtAnyOffset( PcreByteNode node ) => node switch {
@@ -113,6 +116,8 @@ internal sealed class PcreByteProgramCompiler {
 			|| CanMatchEmptyAtAnyOffset( conditional.Body ),
 		PcreByteAssertionConditional conditional => conditional.Body.Branches.Count == 1
 			|| CanMatchEmptyAtAnyOffset( conditional.Body ),
+		PcreByteStaticConditional conditional => !conditional.Value && conditional.Body.Branches.Count == 1
+			|| CanMatchEmptyAtAnyOffset( conditional.Body.Branches[conditional.Value ? 0 : 1] ),
 		PcreByteAtomic atomic => CanMatchEmptyAtAnyOffset( atomic.Child ),
 		PcreByteRepeat repeat => repeat.Minimum == 0 || CanMatchEmptyAtAnyOffset( repeat.Child ),
 		_ => false
@@ -138,6 +143,7 @@ internal sealed class PcreByteProgramCompiler {
 		PcreByteGroup group => HasExplicitNewline( group.Body ),
 		PcreByteNoncapturingGroup group => HasExplicitNewline( group.Body ),
 		PcreByteCaptureConditional conditional => HasExplicitNewline( conditional.Body ),
+		PcreByteStaticConditional conditional => HasExplicitNewline( conditional.Body ),
 		PcreByteAssertionConditional conditional => HasExplicitNewline( conditional.Assertion )
 			|| HasExplicitNewline( conditional.Body ),
 		PcreByteAtomic atomic => HasExplicitNewline( atomic.Child ),
@@ -305,6 +311,9 @@ internal sealed class PcreByteProgramCompiler {
 			case PcreByteAssertionConditional conditional:
 				CompileAssertionConditional( conditional );
 				break;
+			case PcreByteStaticConditional conditional:
+				CompileStaticConditional( conditional );
+				break;
 			case PcreByteAtomic atomic:
 				Emit( PcreByteOpcode.AtomicEnter );
 				compileWork.Push( () => Emit( PcreByteOpcode.AtomicExit ) );
@@ -332,6 +341,22 @@ internal sealed class PcreByteProgramCompiler {
 			} );
 			if ( conditional.Body.Branches.Count > 1 ) { CompileSequence( conditional.Body.Branches[1], 0 ); }
 		} );
+		CompileSequence( conditional.Body.Branches[0], 0 );
+	}
+
+	private void CompileStaticConditional( PcreByteStaticConditional conditional ) {
+		var choice = Emit( PcreByteOpcode.Jump );
+		var yes = instructions.Count;
+		compileWork.Push( () => {
+			var endJump = Emit( PcreByteOpcode.Jump );
+			var no = instructions.Count;
+			compileWork.Push( () => {
+				Patch( choice, conditional.Value ? yes : no );
+				Patch( endJump, instructions.Count );
+			} );
+			if ( conditional.Body.Branches.Count > 1 ) { CompileSequence( conditional.Body.Branches[1], 0 ); }
+		} );
+		// Unreachable declarations still resolve and compile within shared budgets.
 		CompileSequence( conditional.Body.Branches[0], 0 );
 	}
 
@@ -395,7 +420,13 @@ internal sealed class PcreByteProgramCompiler {
 			if ( countedOffset < 0 ) { countedOffset = repeat.Offset; }
 			lastCountedOffset = countedOffset;
 			compileWork.Push( () => countedOffset = previousOffset );
-			CompileCountedRepeat( repeat, 0 );
+			if ( repeat.Child is PcreByteStaticConditional { Value: false, Body.Branches.Count: 1 } ) {
+				CompileIgnoredStaticRepeat( repeat );
+			} else { CompileCountedRepeat( repeat, 0 ); }
+			return;
+		}
+		if ( repeat.Child is PcreByteStaticConditional { Value: false, Body.Branches.Count: 1 } ) {
+			CompileIgnoredStaticRepeat( repeat );
 			return;
 		}
 		if ( repeat.Maximum == 1 ) {
@@ -416,6 +447,16 @@ internal sealed class PcreByteProgramCompiler {
 		} else {
 			CompileUnboundedRepeat( repeat );
 		}
+	}
+
+	private void CompileIgnoredStaticRepeat( PcreByteRepeat repeat ) {
+		// Native ignores execution but still budgets its original repeat. Retain
+		// the AST for width analysis and charge logical visits without expansion.
+		var count = repeat.Maximum == int.MaxValue ? repeat.Minimum + 1 : repeat.Maximum;
+		var charge = Math.Max( count - 1, 0 );
+		if ( charge > MaximumInstructions - compileVisits ) { throw RepeatExpansionLimit(); }
+		compileVisits += charge;
+		ScheduleNode( repeat.Child );
 	}
 
 	private void CompileUnboundedRepeat( PcreByteRepeat repeat, int initialProgress = -1 ) {

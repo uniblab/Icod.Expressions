@@ -121,19 +121,16 @@ public sealed class PcreCaptureConditionReferenceTests {
 	[Theory]
 	[InlineData( "(?(R)a|b)" )]
 	[InlineData( "(a)(?(R1)b|c)" )]
-	[InlineData( "(?(DEFINE)a)" )]
-	[InlineData( "(?<DEFINE>a)(?(DEFINE)b)" )]
-	[InlineData( "(?(VERSION>=10.0)a|b)" )]
 	public void OtherConditionFamiliesRemainPending( string pattern ) {
 		_ = Reference( pattern );
 		ConditionDiagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax );
 	}
 
 	[Fact]
-	public void LongerBareVersionPrefixesRemainReservedEvenWhenNamed() {
+	public void LongerBareVersionPrefixesAreInvalidEvenWhenNamed() {
 		const string pattern = "(?<VERSIONX>a)(?(VERSIONX)b|c)";
 		Assert.Throws<PcrePatternException>( () => Reference( pattern ) );
-		ConditionDiagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax );
+		ConditionDiagnostic( pattern, PcreByteDiagnosticCode.InvalidSyntax );
 		const string assertion = @"é(?=()(?(1)\K))";
 		Assert.Throws<PcrePatternException>( () => Reference( assertion ) );
 		Diagnostic( assertion, PcreByteDiagnosticCode.InvalidSyntax, 2 );
