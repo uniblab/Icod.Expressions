@@ -5,6 +5,7 @@ internal sealed partial class PcreByteParser {
 
 	private sealed class LookbehindContext {
 		internal Dictionary<int, LookbehindCapture> Captures { get; } = new();
+		internal Dictionary<int, PcreByteGroup> CallTargets { get; } = new();
 		internal Dictionary<PcreByteNode, int> Positions { get; } = new( ReferenceEqualityComparer.Instance );
 	}
 
@@ -26,6 +27,9 @@ internal sealed partial class PcreByteParser {
 			cancellationToken.ThrowIfCancellationRequested();
 			if ( !item.Ready ) {
 				context.Positions[item.Node] = sequence++;
+				// Calls use the first syntactic definition even for duplicate slots/names.
+				// Keep backreference targets and lexical intervals independent.
+				if ( item.Node is PcreByteGroup first ) { context.CallTargets.TryAdd( first.Number, first ); }
 				pending.Push( (item.Node, true) );
 				PushTreeChildren( pending, item.Node );
 			} else if ( item.Node is PcreByteGroup group ) {

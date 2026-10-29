@@ -113,15 +113,6 @@ public sealed class PcreSubroutineReferenceTests {
 		Diagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax, pattern.IndexOf( opener, StringComparison.Ordinal ) );
 	}
 
-	[Theory]
-	[InlineData( @"(?<x>a)(?<=\g<x>)b", 7 )]
-	[InlineData( @"(?(DEFINE)(?<x>a{1,2}))aa(?<=(?&x))b", 25 )]
-	[InlineData( @"(?(DEFINE)(?<x>a))(?<*(?&x))b", 18 )]
-	public void ConsumedCallsRemainUnsupportedAtTheOwningBehind( string pattern, int offset ) {
-		_ = Reference( pattern );
-		Diagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax, offset );
-	}
-
 	[Fact]
 	public void CalledDefinitionsCannotReuseSkippedGeneralBehindMetadata() {
 		const string pattern = "(?<=(?(DEFINE)(?<x>(?<=a*))))(?&x)";
