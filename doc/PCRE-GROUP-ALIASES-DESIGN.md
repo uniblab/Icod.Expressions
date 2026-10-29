@@ -1,5 +1,9 @@
 # Internal PCRE atomic group and lookaround aliases
 
+Historical tranche boundary: non-atomic positive ahead/behind now extend the shared
+engine with bounded resumable scopes; see `PCRE-NONATOMIC-ASSERTIONS-DESIGN.md`.
+Earlier pending-variant or scope-depth descriptions below describe that tranche.
+
 ## Intent and approach
 
 Continue issue #7 after #86 by accepting PCRE2's alternative spellings for

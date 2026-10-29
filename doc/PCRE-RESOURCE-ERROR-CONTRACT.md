@@ -48,7 +48,7 @@ and UTF scalar rewind spends match work and observes cancellation within the
 current valid fragment. Bounded variable lengths use min/max analysis and cap every branch at255 if
 any branch varies. Reverse retry frames share saved-path/journal ceilings, use
 a byte-sized remaining count and spend work. Scoped end limits restore through
-existing assertion-depth checkpoints. Consumed references resolve bounded capture-body widths through a global heap
+stable saved assertion-scope IDs. Consumed references resolve bounded capture-body widths through a global heap
 map and consumed-only dependency traversal; lexical self/cycles, unbounded bodies
 and global branch reset remain controlled unsupported syntax. Erased references
 still validate their target. Name/tree reconstruction and width dependency
@@ -88,6 +88,16 @@ semantic lowering: one nesting level, no capture slot and no added matching work
 Exact byte headers preserve original source offsets and assertion context; all
 width, journal, saved-path and work/cancellation gates remain shared.
 `PcreGroupAliasReferenceTests` covers the nine prefixes and distinct pending forms.
+
+Non-atomic positive assertions retain body retries and guards under the same1024
+saved-frame ceiling. A scope arena stores five integers per live guard (at most
+20KiB of integer payload); every guard pop/prune releases its last arena node.
+Frames store integer current/parent IDs, never spans or capture snapshots. On
+success, scope limits hide behind the parent ID; retry restores the original
+context while the journal rolls back captures and marks. All atomic/negative
+pruning shares this scope lifetime path. The arena resets with candidate state.
+`PcreNonAtomicAssertionReferenceTests` pins retries, scope reuse, width/cap ordering
+and unchanged compile, saved-path, match-work and cancellation boundaries.
 
 ## Remaining release work
 

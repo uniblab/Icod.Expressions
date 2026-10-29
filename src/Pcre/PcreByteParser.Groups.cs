@@ -11,7 +11,7 @@ internal sealed partial class PcreByteParser {
 	// Bounded heap frames keep source nesting off the native call stack.
 	private sealed class GroupFrame( int openingOffset, int depth, int number, bool atomic,
 		bool branchReset, GroupOptions entryOptions, int entryGroupCount,
-		int assertionKind, int assertionOpeningContext ) {
+		int assertionKind, int assertionOpeningContext, bool nonAtomic = false ) {
 		internal int OpeningOffset { get; } = openingOffset;
 		internal int Depth { get; } = depth;
 		internal int Number { get; } = number;
@@ -19,6 +19,7 @@ internal sealed partial class PcreByteParser {
 		internal bool BranchReset { get; } = branchReset;
 		internal int AssertionKind { get; } = assertionKind;
 		internal int AssertionOpeningContext { get; } = assertionOpeningContext;
+		internal bool NonAtomic { get; } = nonAtomic;
 		internal GroupOptions EntryOptions { get; } = entryOptions;
 		internal int EntryGroupCount { get; } = entryGroupCount;
 		internal int MaximumGroupCount { get; set; } = entryGroupCount;
@@ -118,7 +119,7 @@ internal sealed partial class PcreByteParser {
 
 	private PcreByteNode FinishAssertion( GroupFrame frame, PcreByteAlternatives body ) {
 		// Retain the original literal instruction and its search/work behavior.
-		if ( body.Branches.Count == 1 ) {
+		if ( !frame.NonAtomic && body.Branches.Count == 1 ) {
 			var literals = body.Branches[0];
 			var bytes = new List<byte>();
 			Span<byte> encoded = stackalloc byte[4];
@@ -140,8 +141,8 @@ internal sealed partial class PcreByteParser {
 
 	private PcreByteNode FinishGeneralAssertion( GroupFrame frame, PcreByteAlternatives body ) =>
 		Math.Abs( frame.AssertionKind ) == 2
-			? DeferLookbehind( body, frame.AssertionKind > 0, frame.OpeningOffset )
-			: new PcreByteLookahead( body, frame.AssertionKind > 0 );
+			? DeferLookbehind( body, frame.AssertionKind > 0, frame.OpeningOffset, frame.NonAtomic )
+			: new PcreByteLookahead( body, frame.AssertionKind > 0, frame.NonAtomic );
 
 	private void AppendNode( GroupFrame frame, PcreByteNode atom, bool atomCaseless, bool atomCaselessRestricted ) {
 		if ( atom.Caseless != atomCaseless || atom.CaselessRestricted != atomCaselessRestricted ) {
@@ -201,9 +202,10 @@ internal sealed partial class PcreByteParser {
 		var atomic = false;
 		var branchReset = false;
 		var assertionKind = 0;
+		var nonAtomic = false;
 		var entryOptions = CurrentGroupOptions;
 		string? name = null;
-		if ( TryParseGroupAlias( out atomic, out assertionKind ) ) {
+		if ( TryParseGroupAlias( out atomic, out assertionKind, out nonAtomic ) ) {
 			capturing = false;
 			if ( assertionKind != 0 && assertionOpeningContext < 0 ) { assertionOpeningContext = offset; }
 		} else if ( index < source.Length && source[index] == (byte)'*'
@@ -243,15 +245,17 @@ internal sealed partial class PcreByteParser {
 				capturing = true;
 			} else {
 				var behind = index + 2 < source.Length && source[index + 1] == (byte)'<'
-					&& source[index + 2] is (byte)'=' or (byte)'!';
-				var ahead = index + 1 < source.Length && source[index + 1] is (byte)'=' or (byte)'!';
+					&& source[index + 2] is (byte)'=' or (byte)'!' or (byte)'*';
+				var ahead = index + 1 < source.Length && source[index + 1] is (byte)'=' or (byte)'!' or (byte)'*';
 				if ( !behind && !ahead ) { throw Unsupported( offset ); }
 				if ( depth >= MaximumPatternDepth ) {
 					throw new PcreByteParseException( new(
 						PcreByteDiagnosticCode.PatternDepthLimitExceeded, offset, "pattern nesting limit exceeded"
 					) );
 				}
-				var positive = source[index + (behind ? 2 : 1)] == (byte)'=';
+				var assertionSymbol = source[index + (behind ? 2 : 1)];
+				var positive = assertionSymbol != (byte)'!';
+				nonAtomic = assertionSymbol == (byte)'*';
 				index += behind ? 3 : 2;
 				capturing = false;
 				assertionKind = ( positive ? 1 : -1 ) * ( behind ? 2 : 1 );
@@ -271,7 +275,7 @@ internal sealed partial class PcreByteParser {
 		}
 		if ( name is not null ) { RegisterCaptureName( name, number, offset ); }
 		group = new GroupFrame( offset, depth + 1, number, atomic, branchReset, entryOptions, groupCount,
-			assertionKind, assertionOpeningContext );
+			assertionKind, assertionOpeningContext, nonAtomic );
 		return null;
 	}
 }

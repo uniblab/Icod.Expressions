@@ -8,9 +8,10 @@ internal sealed partial class PcreByteParser {
 		internal Dictionary<PcreByteNode, int> Positions { get; } = new( ReferenceEqualityComparer.Instance );
 	}
 
-	private PcreByteLookbehind DeferLookbehind( PcreByteAlternatives body, bool positive, int openingOffset ) {
+	private PcreByteLookbehind DeferLookbehind( PcreByteAlternatives body, bool positive, int openingOffset,
+		bool nonAtomic = false ) {
 		hasGeneralLookbehinds = true;
-		return new( body, positive, ReadOnlyMemory<int>.Empty, OpeningOffset: openingOffset );
+		return new( body, positive, ReadOnlyMemory<int>.Empty, OpeningOffset: openingOffset, NonAtomic: nonAtomic );
 	}
 
 	private PcreByteAlternatives ResolveLookbehindLengths( PcreByteAlternatives root ) {
@@ -32,7 +33,8 @@ internal sealed partial class PcreByteParser {
 		}
 		return RewriteTree( root, node => node is PcreByteLookbehind assertion
 			? FinishLookbehind( assertion.Body, assertion.IsPositive, assertion.OpeningOffset, context )
-				with { Caseless = assertion.Caseless, CaselessRestricted = assertion.CaselessRestricted }
+				with { Caseless = assertion.Caseless, CaselessRestricted = assertion.CaselessRestricted,
+					NonAtomic = assertion.NonAtomic }
 			: node );
 	}
 }

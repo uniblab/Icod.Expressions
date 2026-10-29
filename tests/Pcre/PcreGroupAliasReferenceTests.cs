@@ -108,12 +108,6 @@ public sealed class PcreGroupAliasReferenceTests {
 	}
 
 	[Theory]
-	[InlineData( "(*napla:a)a" )]
-	[InlineData( "(*naplb:a)b" )]
-	[InlineData( "(*non_atomic_positive_lookahead:a)a" )]
-	[InlineData( "(*non_atomic_positive_lookbehind:a)b" )]
-	[InlineData( "(?*a)a" )]
-	[InlineData( "(?<*a)b" )]
 	[InlineData( "(*sr:a)" )]
 	[InlineData( "(*asr:a)" )]
 	[InlineData( "(*ACCEPT)" )]
