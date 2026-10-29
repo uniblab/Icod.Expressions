@@ -17,6 +17,7 @@ internal sealed partial class PcreByteParser {
 			case PcreByteNoncapturingGroup group: PushTreeBody( pending, group.Body ); break;
 			case ParsedCaptureConditional conditional: PushTreeBody( pending, conditional.Body ); break;
 			case PcreByteCaptureConditional conditional: PushTreeBody( pending, conditional.Body ); break;
+			case PcreByteStaticConditional conditional: PushTreeBody( pending, conditional.Body ); break;
 			case PcreByteAssertionConditional conditional:
 				PushTreeBody( pending, conditional.Body );
 				pending.Push( (conditional.Assertion, false) );
@@ -60,6 +61,7 @@ internal sealed partial class PcreByteParser {
 				PcreByteNoncapturingGroup group => group with { Body = RewriteTreeBody( group.Body, rewritten ) },
 				ParsedCaptureConditional conditional => conditional with { Body = RewriteTreeBody( conditional.Body, rewritten ) },
 				PcreByteCaptureConditional conditional => conditional with { Body = RewriteTreeBody( conditional.Body, rewritten ) },
+				PcreByteStaticConditional conditional => conditional with { Body = RewriteTreeBody( conditional.Body, rewritten ) },
 				PcreByteAssertionConditional conditional => conditional with {
 					Assertion = rewritten[conditional.Assertion], Body = RewriteTreeBody( conditional.Body, rewritten )
 				},

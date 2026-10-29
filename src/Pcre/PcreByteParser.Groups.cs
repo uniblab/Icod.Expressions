@@ -12,7 +12,7 @@ internal sealed partial class PcreByteParser {
 	private sealed class GroupFrame( int openingOffset, int depth, int number, bool atomic,
 		bool branchReset, GroupOptions entryOptions, int entryGroupCount,
 		int assertionKind, int assertionOpeningContext, bool nonAtomic = false, CaptureCondition? condition = null,
-		bool assertionConditional = false ) {
+		bool assertionConditional = false, StaticCondition? staticCondition = null ) {
 		internal int OpeningOffset { get; } = openingOffset;
 		internal int Depth { get; } = depth;
 		internal int Number { get; } = number;
@@ -26,6 +26,7 @@ internal sealed partial class PcreByteParser {
 		internal PcreByteNode? ConditionAssertion { get; set; }
 		internal bool IsConditionAssertion { get; set; }
 		internal bool WaitingForCondition => AssertionConditional && ConditionAssertion is null;
+		internal StaticCondition? StaticCondition { get; } = staticCondition;
 		internal GroupOptions EntryOptions { get; } = entryOptions;
 		internal int EntryGroupCount { get; } = entryGroupCount;
 		internal int MaximumGroupCount { get; set; } = entryGroupCount;
@@ -68,7 +69,11 @@ internal sealed partial class PcreByteParser {
 			}
 			if ( !current.Quoting ) {
 				if ( source[index] == (byte)'|' ) {
-					if ( ( current.Condition.HasValue || current.AssertionConditional ) && current.Branches.Count != 0 ) {
+					if ( current.StaticCondition is { IsDefinition: true } ) {
+						throw Invalid( current.OpeningOffset, "a DEFINE group has only one branch" );
+					}
+					if ( ( current.Condition.HasValue || current.AssertionConditional || current.StaticCondition.HasValue )
+						&& current.Branches.Count != 0 ) {
 						throw Invalid( current.OpeningOffset, "conditional group has more than two branches" );
 					}
 					FinishBranch( current );
@@ -84,6 +89,7 @@ internal sealed partial class PcreByteParser {
 					index++;
 					RestoreGroupOptions( current.EntryOptions );
 					PcreByteNode completed = current.Condition is { } condition ? new ParsedCaptureConditional( condition, body )
+						: current.StaticCondition is { } constant ? new PcreByteStaticConditional( constant.Value, body, constant.IsDefinition )
 						: current.AssertionConditional ? new PcreByteAssertionConditional( current.ConditionAssertion!, body )
 						: current.AssertionKind != 0 ? FinishAssertion( current, body )
 						: current.Number > 0 ? new PcreByteGroup( current.Number, body )
@@ -181,6 +187,7 @@ internal sealed partial class PcreByteParser {
 		SkipPatternTrivia( ref frame.Quoting );
 		if ( !frame.Quoting && IsRepeatQuantifier( index ) ) {
 			var assertion = atom is PcreByteLiteralAssertion or PcreByteLookahead or PcreByteLookbehind;
+			var ignoredStatic = atom is PcreByteStaticConditional { Value: false, Body.Branches.Count: 1 };
 			var quantifierOffset = index;
 			var counted = source[index] == (byte)'{';
 			var quantifier = counted ? (byte)0 : source[index++];
@@ -199,7 +206,7 @@ internal sealed partial class PcreByteParser {
 			// Unlimited assertion bounds become finite; no progress marks are needed.
 			var unboundedAssertion = assertion && maximum == int.MaxValue;
 			if ( unboundedAssertion ) { maximum = minimum + 1; }
-			repeatMarks += assertion ? 0 : counted ? maximum == int.MaxValue ? 1 : 0
+			repeatMarks += assertion || ignoredStatic ? 0 : counted ? maximum == int.MaxValue ? 1 : 0
 				: quantifier == (byte)'+' ? 2 : quantifier == (byte)'*' ? 1 : 0;
 			if ( repeatMarks > MaximumRepeatMarks ) {
 				throw new PcreByteParseException( new(
@@ -215,7 +222,7 @@ internal sealed partial class PcreByteParser {
 			var greedy = possessive || ungreedy == questionSuffix;
 			atom = new PcreByteRepeat( atom, minimum, maximum, greedy,
 				counted || assertion ? quantifierOffset : -1, unboundedAssertion );
-			if ( possessive ) {
+			if ( possessive && !ignoredStatic ) {
 				atom = new PcreByteAtomic( atom );
 			}
 			SkipPatternTrivia( ref frame.Quoting );
@@ -237,6 +244,7 @@ internal sealed partial class PcreByteParser {
 		var nonAtomic = false;
 		CaptureCondition? condition = null;
 		var assertionConditional = false;
+		StaticCondition? staticCondition = null;
 		var entryOptions = CurrentGroupOptions;
 		string? name = null;
 		if ( TryParseGroupAlias( out atomic, out assertionKind, out nonAtomic ) ) {
@@ -256,6 +264,8 @@ internal sealed partial class PcreByteParser {
 					// and assertion context end before the yes/no branches begin.
 					index--;
 					assertionConditional = true;
+				} else if ( TryParseStaticCondition( offset, out var parsedStatic ) ) {
+					staticCondition = parsedStatic;
 				} else { condition = ParseCaptureCondition( offset ); }
 				capturing = false;
 			} else if ( index + 1 < source.Length && source[index + 1] == (byte)':' ) {
@@ -318,7 +328,7 @@ internal sealed partial class PcreByteParser {
 		}
 		if ( name is not null ) { RegisterCaptureName( name, number, offset ); }
 		group = new GroupFrame( offset, depth + 1, number, atomic, branchReset, entryOptions, groupCount,
-			assertionKind, assertionOpeningContext, nonAtomic, condition, assertionConditional );
+			assertionKind, assertionOpeningContext, nonAtomic, condition, assertionConditional, staticCondition );
 		return null;
 	}
 }

@@ -15,6 +15,7 @@ internal sealed partial class PcreByteParser {
 	}
 
 	private PcreByteAlternatives ResolveLookbehindLengths( PcreByteAlternatives root ) {
+		var suppressed = SuppressedDefinitionBehinds( root );
 		// Collect definitions and lexical spans from the same resolved node identities.
 		// Assertions and erased children still belong to their lexical capture scope.
 		var context = new LookbehindContext();
@@ -31,10 +32,38 @@ internal sealed partial class PcreByteParser {
 				context.Captures[group.Number] = new( group, context.Positions[group], sequence );
 			}
 		}
-		return RewriteTree( root, node => node is PcreByteLookbehind assertion
+		return RewriteTree( root, node => node is PcreByteLookbehind assertion && !suppressed.Contains( assertion.OpeningOffset )
 			? FinishLookbehind( assertion.Body, assertion.IsPositive, assertion.OpeningOffset, context )
 				with { Caseless = assertion.Caseless, CaselessRestricted = assertion.CaselessRestricted,
 					NonAtomic = assertion.NonAtomic }
 			: node );
+	}
+
+	private HashSet<int> SuppressedDefinitionBehinds( PcreByteAlternatives root ) {
+		// Native switches between a global scan and consumed-width analysis. A
+		// behind enters width mode; an ahead reenters global mode. DEFINE reached
+		// in width mode suppresses ALL descendants. Keep source offsets because
+		// RewriteTree rebuilds node identities before invoking its callback.
+		var suppressed = new HashSet<int>();
+		var pending = new Stack<(PcreByteNode Node, bool Width, bool Suppressed)>();
+		var children = new Stack<(PcreByteNode Node, bool Ready)>();
+		PushTreeBody( children, root );
+		while ( children.TryPop( out var rootChild ) ) { pending.Push( (rootChild.Node, false, false) ); }
+		while ( pending.TryPop( out var item ) ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			var width = item.Width;
+			var skip = item.Suppressed;
+			if ( item.Node is PcreByteLookbehind assertion ) {
+				if ( skip ) { suppressed.Add( assertion.OpeningOffset ); }
+				width = true;
+			} else if ( item.Node is PcreByteLookahead ) {
+				width = false;
+			} else if ( width && item.Node is PcreByteStaticConditional { IsDefinition: true } ) {
+				skip = true;
+			}
+			PushTreeChildren( children, item.Node );
+			while ( children.TryPop( out var descendant ) ) { pending.Push( (descendant.Node, width, skip) ); }
+		}
+		return suppressed;
 	}
 }

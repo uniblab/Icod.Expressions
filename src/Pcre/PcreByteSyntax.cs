@@ -69,6 +69,10 @@ internal sealed record PcreByteAssertionConditional(
 	PcreByteNode Assertion, PcreByteAlternatives Body
 ) : PcreByteNode;
 
+internal sealed record PcreByteStaticConditional(
+	bool Value, PcreByteAlternatives Body, bool IsDefinition = false
+) : PcreByteNode;
+
 internal sealed record PcreByteAtomic( PcreByteNode Child ) : PcreByteNode;
 
 internal sealed record PcreByteLiteralAssertion( ReadOnlyMemory<byte> Bytes, bool IsPositive, bool IsBehind ) : PcreByteNode;
