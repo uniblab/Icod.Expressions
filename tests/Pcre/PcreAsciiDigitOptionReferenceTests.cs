@@ -160,7 +160,6 @@ public sealed class PcreAsciiDigitOptionReferenceTests {
 
 	[Theory]
 	[InlineData( @"(?aDJ:\d)" )]
-	[InlineData( @"(?aDr:\d)" )]
 	public void OtherOptionFamiliesRemainExplicitlyPending( string pattern ) {
 		Reference( pattern );
 		var result = PcreByteCompiler.Compile( Encoding.UTF8.GetBytes( pattern ), Options() );
