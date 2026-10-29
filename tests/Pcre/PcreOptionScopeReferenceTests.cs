@@ -130,8 +130,6 @@ public sealed class PcreOptionScopeReferenceTests {
 	}
 
 	[Theory]
-	[InlineData( "(?)a", 0 )]
-	[InlineData( "(?^i:a)", 0 )]
 	[InlineData( "a(?J)b", 1 )]
 	[InlineData( @"(?aD:\d)", 0 )]
 	[InlineData( @"(?i)(?aD:\d)", 4 )]

@@ -55,6 +55,12 @@ still validate their target. Name/tree reconstruction and width dependency
 traversal use explicit heap frames with cancellation. Native's independent 2,000
 branch-analysis accounting is not a managed numeric-limit parity claim.
 
+Empty/reset option headers add no runtime state or work units. Bare settings
+consume neither a capture slot nor a nesting frame; scoped empty/reset groups
+use the existing nesting ceiling. Reset n restores ordinary capture allocation;
+reset preserves U and ASCII restrictions. `PcreResetOptionReferenceTests` pins
+these boundaries and unchanged match-work/cancellation outcomes.
+
 ## Remaining release work
 
 The bounded internal taxonomy is testable now. Before migration, add
