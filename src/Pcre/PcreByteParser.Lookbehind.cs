@@ -127,7 +127,7 @@ internal sealed partial class PcreByteParser {
 			widths[item.Node] = item.Node switch {
 				PcreByteLiteral or PcreByteAny or PcreByteClass or PcreByteScalarClass or PcreByteScalarSet => new( 1, 1 ),
 				PcreByteNewlineSequence => new( 1, 2 ),
-				PcreByteAnchor or PcreByteSearchStart or PcreByteLineAnchor or PcreByteEndBeforeFinalLf
+				PcreByteAnchor or PcreByteSearchStart or PcreByteMatchStartReset or PcreByteLineAnchor or PcreByteEndBeforeFinalLf
 					or PcreByteWordBoundary or PcreByteLiteralAssertion or PcreByteLookahead => new( 0, 0 ),
 				PcreByteLookbehind assertion => ValidateNestedBehind( assertion ),
 				PcreByteGroup group => GroupWidth( group.Body, item.Opening ),
