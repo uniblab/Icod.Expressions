@@ -157,7 +157,7 @@ internal static class PcreByteMatcher {
 			var backtrack = new Stack<Frame>();
 			var changes = new List<StateChange>();
 			var atomicDepths = new List<int>();
-			List<int>? assertionDepths = null;
+			List<AssertionScope>? assertionScopes = null;
 			// Keep the observed and cancellable path byte-for-byte accountable to Step().
 			var nullableInvalidCandidates = program.MatchInvalidUtf && program.CanMatchEmptyAtAnyOffset;
 			var previousFragmentEnd = -1;
@@ -195,17 +195,21 @@ internal static class PcreByteMatcher {
 					backtrack.Clear();
 					changes.Clear();
 					atomicDepths.Clear();
-					assertionDepths?.Clear();
+					assertionScopes?.Clear();
 					while ( true ) {
 						Step(); // Instruction transition.
 						var instruction = program.Instructions[pc];
+						var endLimit = assertionScopes is { Count: > 0 } ? assertionScopes[^1].LimitEnd : -1;
+						var subjectEnd = endLimit >= 0 ? Math.Min( fragment.End, endLimit ) : fragment.End;
+						var absoluteEnd = endLimit >= 0 ? endLimit : input.Length;
 						var failed = false;
 						switch ( instruction.Opcode ) {
 						case PcreByteOpcode.Literal:
 							Step(); // Attempted scalar/byte comparison.
 							var literalWidth = 1;
-							if ( position < fragment.End && ( program.Utf8
+							if ( position < subjectEnd && ( program.Utf8
 								? PcreUtf8.TryRead( input.Span, position, out var scalar, out literalWidth )
+									&& literalWidth <= subjectEnd - position
 									&& ( instruction.Caseless ? PcreUtf8CaseFold.Equals( scalar, instruction.First )
 										: scalar == instruction.First )
 								: ScalarEquals( input.Span[position], instruction.First, instruction.Caseless ) ) ) {
@@ -215,8 +219,9 @@ internal static class PcreByteMatcher {
 							break;
 						case PcreByteOpcode.Any:
 							Step(); // Attempted scalar consumption.
-							if ( position < fragment.End
+							if ( position < subjectEnd
 								&& PcreUtf8.TryRead( input.Span, position, out var value, out var scalarWidth )
+								&& scalarWidth <= subjectEnd - position
 								&& ( instruction.First == 1 || value != (int)'\n'
 									&& ( !program.AnyCrLfNewline || value != (int)'\r' ) ) ) {
 								position += scalarWidth;
@@ -225,8 +230,9 @@ internal static class PcreByteMatcher {
 							break;
 						case PcreByteOpcode.ScalarClass:
 							Step(); // Attempted scalar class evaluation.
-							if ( position < fragment.End
+							if ( position < subjectEnd
 								&& PcreUtf8.TryRead( input.Span, position, out var propertyScalar, out var propertyWidth )
+								&& propertyWidth <= subjectEnd - position
 								&& ScalarClassContains( (PcreByteScalarClassKind)instruction.First, propertyScalar,
 									instruction.Category, program.Utf8 && instruction.Caseless )
 									!= ( instruction.Second == 1 ) ) {
@@ -236,8 +242,8 @@ internal static class PcreByteMatcher {
 							break;
 						case PcreByteOpcode.ScalarSet:
 							Step(); // Attempted scalar-set evaluation.
-							if ( position >= fragment.End
-								|| !PcreUtf8.TryRead( input.Span, position, out var setScalar, out var setWidth ) ) {
+							if ( position >= subjectEnd
+								|| !PcreUtf8.TryRead( input.Span, position, out var setScalar, out var setWidth ) || setWidth > subjectEnd - position ) {
 								failed = true;
 								break;
 							}
@@ -264,7 +270,7 @@ internal static class PcreByteMatcher {
 							break;
 						case PcreByteOpcode.Class:
 							Step(); // Attempted byte set membership.
-							if ( position < fragment.End && instruction.Set.Contains( input.Span[position] ) ) {
+							if ( position < subjectEnd && instruction.Set.Contains( input.Span[position] ) ) {
 								position++;
 								pc++;
 							} else { failed = true; }
@@ -282,11 +288,11 @@ internal static class PcreByteMatcher {
 								var candidate = position;
 								while ( capturedOffset < capturedEnd ) {
 									Step(); // Attempted captured-scalar comparison.
-									if ( candidate >= fragment.End
+									if ( candidate >= subjectEnd
 										|| !PcreUtf8.TryRead( input.Span, capturedOffset, out var captureScalar, out var captureWidth )
 										|| capturedOffset + captureWidth > capturedEnd
 										|| !PcreUtf8.TryRead( input.Span, candidate, out var referenceScalar, out var referenceWidth )
-										|| candidate + referenceWidth > fragment.End
+										|| candidate + referenceWidth > subjectEnd
 										|| !PcreUtf8CaseFold.Equals( captureScalar, referenceScalar ) ) {
 										failed = true;
 										break;
@@ -297,13 +303,13 @@ internal static class PcreByteMatcher {
 								if ( !failed ) { position = candidate; pc++; }
 								break;
 							}
-							if ( captured.ByteLength > fragment.End - position ) {
+							if ( captured.ByteLength > subjectEnd - position ) {
 								failed = true;
 								break;
 							}
 							for ( var byteIndex = 0; byteIndex < captured.ByteLength; byteIndex++ ) {
 								Step(); // Attempted captured-byte comparison.
-								if ( byteIndex >= input.Length - position
+								if ( byteIndex >= absoluteEnd - position
 									|| !ScalarEquals( input.Span[captured.ByteIndex + byteIndex], input.Span[position + byteIndex], instruction.Caseless ) ) {
 									failed = true;
 									break;
@@ -319,7 +325,7 @@ internal static class PcreByteMatcher {
 							// both sides reject both b and B. A synthetic/gap candidate has
 							// no valid preceding scalar; subject start and EOF are distinct.
 							if ( program.MatchInvalidUtf && position > 0 && position == fragment.Start
-								&& position < input.Length && !PcreUtf8.TryRead( input.Span, position, out _, out _ ) ) {
+								&& position < absoluteEnd && !PcreUtf8.TryRead( input.Span, position, out _, out _ ) ) {
 								failed = true;
 								break;
 							}
@@ -334,7 +340,7 @@ internal static class PcreByteMatcher {
 								} else { beforeWord = PcreByteSet.Word.Contains( input.Span[position - 1] ); }
 							}
 							var afterWord = false;
-							if ( position < fragment.End ) {
+							if ( position < subjectEnd ) {
 								Step(); // Classify the following source byte or UTF-8 scalar.
 								if ( instruction.Second == 1 ) {
 									PcreUtf8.TryRead( input.Span, position, out var afterScalar, out _ );
@@ -345,22 +351,45 @@ internal static class PcreByteMatcher {
 							else { failed = true; }
 							break;
 						case PcreByteOpcode.Reverse:
+						case PcreByteOpcode.ReverseRange:
+							var rangedReverse = instruction.Opcode == PcreByteOpcode.ReverseRange;
+							var minimumReverse = rangedReverse ? instruction.Second : instruction.First;
 							var reversed = position;
-							for ( var count = 0; count < instruction.First; count++ ) {
+							var reversedCount = 0;
+							while ( reversedCount < instruction.First ) {
 								Step(); // One asserted character of left context.
-								if ( reversed <= fragment.Start ) { failed = true; break; }
+								if ( reversed <= fragment.Start ) {
+									// Pinned invalid-UTF JIT fails optional rewind at malformed barriers.
+									failed = reversedCount < minimumReverse || rangedReverse && program.MatchInvalidUtf && fragment.Start > 0;
+									break;
+								}
 								var reverseEnd = reversed;
 								reversed--;
 								if ( program.Utf8 ) {
 									while ( reversed > fragment.Start && ( input.Span[reversed] & 0xC0 ) == 0x80 ) {
-										Step(); // Traverse continuation bytes only within this valid fragment.
+										Step();
 										reversed--;
 									}
 									if ( !PcreUtf8.TryRead( input.Span, reversed, out _, out var reverseWidth )
 										|| reversed + reverseWidth != reverseEnd ) { failed = true; break; }
 								}
+								reversedCount++;
 							}
-							if ( !failed ) { position = reversed; pc++; }
+							if ( !failed ) {
+								position = reversed;
+								if ( rangedReverse && reversedCount > minimumReverse ) {
+									if ( backtrack.Count >= MaximumBacktrackFrames ) {
+										throw new MatchLimitException( PcreByteDiagnosticCode.MatchDepthLimitExceeded, "backtrack stack limit exceeded" );
+									}
+									backtrack.Push( new Frame( pc + 1, NextReverseStart( input.Span, position, program.Utf8 ),
+										changes.Count, atomicDepths.Count, assertionScopes!.Count, FrameKind.ReverseRetry,
+										(byte)( reversedCount - minimumReverse - 1 ) ) );
+								}
+								pc++;
+							}
+							break;
+						case PcreByteOpcode.ReverseEnd:
+							if ( position == subjectEnd ) { pc++; } else { failed = true; }
 							break;
 						case PcreByteOpcode.AssertLiteral:
 							var literal = instruction.Bytes.Span;
@@ -384,10 +413,10 @@ internal static class PcreByteMatcher {
 									var subjectOffset = scalarAdjacent;
 									for ( var patternOffset = 0; patternOffset < literal.Length; ) {
 										Step(); // Attempted assertion-scalar comparison.
-										if ( subjectOffset >= fragment.End
+										if ( subjectOffset >= subjectEnd
 											|| !PcreUtf8.TryRead( literal, patternOffset, out var assertionScalar, out var assertionWidth )
 											|| !PcreUtf8.TryRead( input.Span, subjectOffset, out var subjectScalar, out var subjectWidth )
-											|| subjectOffset + subjectWidth > fragment.End
+											|| subjectOffset + subjectWidth > subjectEnd
 											|| !PcreUtf8CaseFold.Equals( assertionScalar, subjectScalar ) ) {
 											scalarEquals = false;
 											break;
@@ -402,7 +431,7 @@ internal static class PcreByteMatcher {
 								break;
 							}
 							var adjacent = instruction.Second == 1 ? position - literal.Length : position;
-							var equals = adjacent >= fragment.Start && literal.Length <= fragment.End - adjacent;
+							var equals = adjacent >= fragment.Start && literal.Length <= subjectEnd - adjacent;
 							if ( equals ) {
 								for ( var byteIndex = 0; byteIndex < literal.Length; byteIndex++ ) {
 									Step(); // Attempted assertion byte comparison.
@@ -422,11 +451,11 @@ internal static class PcreByteMatcher {
 							if ( position == startOffset ) { pc++; } else { failed = true; }
 							break;
 						case PcreByteOpcode.End:
-							if ( position == input.Length ) { pc++; } else { failed = true; }
+							if ( position == absoluteEnd ) { pc++; } else { failed = true; }
 							break;
 						case PcreByteOpcode.StartLine:
 							if ( position == 0 || ( position > fragment.Start
-							&& ( position < fragment.End || position == fragment.End && position < input.Length )
+							&& ( position < subjectEnd || position == subjectEnd && position < absoluteEnd )
 								&& ( input.Span[position - 1] == (byte)'\n'
 									|| program.AnyCrLfNewline && input.Span[position - 1] == (byte)'\r'
 										&& ( input.Span[position] != (byte)'\n' || position == startOffset ) ) ) ) {
@@ -434,7 +463,7 @@ internal static class PcreByteMatcher {
 							} else { failed = true; }
 							break;
 						case PcreByteOpcode.EndLine:
-							if ( position == input.Length || ( position < fragment.End
+							if ( position == absoluteEnd || ( position < subjectEnd
 							&& ( input.Span[position] == (byte)'\n'
 								&& ( !program.AnyCrLfNewline || position == startOffset || position == 0
 									|| input.Span[position - 1] != (byte)'\r' )
@@ -443,7 +472,7 @@ internal static class PcreByteMatcher {
 							} else { failed = true; }
 							break;
 						case PcreByteOpcode.EndBeforeFinalLf:
-							var end = instruction.First == 1 ? fragment.End : input.Length;
+							var end = instruction.First == 1 ? subjectEnd : absoluteEnd;
 							if ( position == end || ( position == end - 1 && input.Span[position] == (byte)'\n'
 								&& ( !program.AnyCrLfNewline || position == startOffset || position == 0
 									|| input.Span[position - 1] != (byte)'\r' ) )
@@ -474,7 +503,7 @@ internal static class PcreByteMatcher {
 								throw new MatchLimitException( PcreByteDiagnosticCode.MatchDepthLimitExceeded, "backtrack stack limit exceeded" );
 							}
 							backtrack.Push( new Frame( instruction.Second, position, changes.Count, atomicDepths.Count,
-								assertionDepths?.Count ?? 0 ) );
+								assertionScopes?.Count ?? 0 ) );
 							pc = instruction.First;
 							break;
 						case PcreByteOpcode.Jump:
@@ -506,15 +535,15 @@ internal static class PcreByteMatcher {
 							if ( backtrack.Count >= MaximumBacktrackFrames ) {
 								throw new MatchLimitException( PcreByteDiagnosticCode.MatchDepthLimitExceeded, "backtrack stack limit exceeded" );
 							}
-							assertionDepths ??= new();
+							assertionScopes ??= new();
 							var guard = new Frame( instruction.First, position, changes.Count, atomicDepths.Count,
-								assertionDepths.Count, instruction.Second == 1 ? FrameKind.PositiveAssertion : FrameKind.NegativeAssertion );
-							assertionDepths.Add( backtrack.Count );
+								assertionScopes.Count, ( instruction.Second & 1 ) != 0 ? FrameKind.PositiveAssertion : FrameKind.NegativeAssertion );
+							assertionScopes.Add( new( backtrack.Count, ( instruction.Second & 2 ) != 0 ? position : endLimit ) );
 							backtrack.Push( guard ); // Forces body mutations into the shared journal.
 							pc++;
 							break;
 						case PcreByteOpcode.AssertionExit:
-							var assertionBoundary = assertionDepths![^1];
+							var assertionBoundary = assertionScopes![^1].Boundary;
 							while ( backtrack.Count > assertionBoundary + 1 ) { backtrack.Pop(); }
 							var completedGuard = backtrack.Pop();
 							position = completedGuard.Position;
@@ -522,10 +551,10 @@ internal static class PcreByteMatcher {
 							if ( completedGuard.Kind == FrameKind.PositiveAssertion ) {
 								// First body success is atomic. Keep captures, including those beyond G0,
 								// journaled until any enclosing retry/guard can no longer restore them.
-								assertionDepths.RemoveAt( assertionDepths.Count - 1 );
+								assertionScopes.RemoveAt( assertionScopes.Count - 1 );
 								if ( backtrack.Count == 0 ) { changes.Clear(); }
 							} else {
-								RestoreFrameState( completedGuard, changes, captures, captureStarts, marks, atomicDepths, assertionDepths );
+								RestoreFrameState( completedGuard, changes, captures, captureStarts, marks, atomicDepths, assertionScopes );
 								failed = true; // A matching negative body makes the assertion fail.
 							}
 							break;
@@ -539,10 +568,17 @@ internal static class PcreByteMatcher {
 					if ( !failed ) { continue; }
 					while ( failed && backtrack.Count > 0 ) {
 						var frame = backtrack.Pop();
-						if ( frame.Kind != FrameKind.Branch ) { Step(); } // Resolve an exhausted assertion body.
-						RestoreFrameState( frame, changes, captures, captureStarts, marks, atomicDepths, assertionDepths );
+						if ( frame.Kind != FrameKind.Branch ) { Step(); } // Resolve a guard or retry another reverse start.
+						RestoreFrameState( frame, changes, captures, captureStarts, marks, atomicDepths, assertionScopes );
 						pc = frame.Pc;
 						position = frame.Position;
+						if ( frame.Kind == FrameKind.ReverseRetry && frame.ReverseRemaining > 0 ) {
+							// The popped retry frees its slot; keep only one pending next start.
+							backtrack.Push( frame with {
+								Position = NextReverseStart( input.Span, position, program.Utf8 ),
+								ReverseRemaining = (byte)( frame.ReverseRemaining - 1 )
+							} );
+						}
 						// A normal retry or exhausted negative body resumes. An exhausted
 						// positive body propagates failure to the next enclosing saved path.
 						failed = frame.Kind == FrameKind.PositiveAssertion;
@@ -567,7 +603,7 @@ internal static class PcreByteMatcher {
 
 	private static void RestoreFrameState( Frame frame, List<StateChange> changes,
 		PcreByteCapture?[] captures, int[] captureStarts, int[] marks,
-		List<int> atomicDepths, List<int>? assertionDepths ) {
+		List<int> atomicDepths, List<AssertionScope>? assertionScopes ) {
 		for ( var changeIndex = changes.Count - 1; changeIndex >= frame.ChangeCount; changeIndex-- ) {
 			var change = changes[changeIndex];
 			switch ( change.Kind ) {
@@ -579,7 +615,7 @@ internal static class PcreByteMatcher {
 		}
 		changes.RemoveRange( frame.ChangeCount, changes.Count - frame.ChangeCount );
 		atomicDepths.RemoveRange( frame.AtomicDepth, atomicDepths.Count - frame.AtomicDepth );
-		assertionDepths?.RemoveRange( frame.AssertionDepth, assertionDepths.Count - frame.AssertionDepth );
+		assertionScopes?.RemoveRange( frame.AssertionDepth, assertionScopes.Count - frame.AssertionDepth );
 	}
 
 	private static bool MissingRequiredLiteralSuffixWithinBudget( PcreByteProgram program,
@@ -595,6 +631,12 @@ internal static class PcreByteMatcher {
 	}
 
 	private readonly record struct Fragment( int Start, int End );
+
+	private static int NextReverseStart( ReadOnlySpan<byte> input, int position, bool utf8 ) {
+		if ( !utf8 ) { return position + 1; }
+		PcreUtf8.TryRead( input, position, out _, out var width );
+		return position + width;
+	}
 
 	private static bool ScalarEquals( int left, int right, bool caseless ) {
 		if ( left == right ) { return true; }
@@ -749,10 +791,13 @@ internal static class PcreByteMatcher {
 		StateKind Kind, int Index, int PriorValue, PcreByteCapture? PriorCapture
 	);
 
-	private enum FrameKind : byte { Branch, PositiveAssertion, NegativeAssertion }
+	private enum FrameKind : byte { Branch, PositiveAssertion, NegativeAssertion, ReverseRetry }
+
+	private readonly record struct AssertionScope( int Boundary, int LimitEnd );
 
 	private readonly record struct Frame(
-		int Pc, int Position, int ChangeCount, int AtomicDepth, int AssertionDepth, FrameKind Kind = FrameKind.Branch
+		int Pc, int Position, int ChangeCount, int AtomicDepth, int AssertionDepth,
+		FrameKind Kind = FrameKind.Branch, byte ReverseRemaining = 0
 	);
 
 	private sealed class MatchLimitException( PcreByteDiagnosticCode code, string message ) : Exception( message ) {

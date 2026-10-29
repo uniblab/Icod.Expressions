@@ -145,12 +145,6 @@ public sealed class PcreFixedLookbehindReferenceTests {
 
 	[Theory]
 	[InlineData( "(?<=[a]+)b", 0 )]
-	[InlineData( "(?<![a]?)b", 0 )]
-	[InlineData( "(?<=[a]{1,2})b", 0 )]
-	[InlineData( "(?<=(?:a|bc))d", 0 )]
-	[InlineData( "(?<=(?>a|bc))d", 0 )]
-	[InlineData( "(?<=(a|bc))d", 0 )]
-	[InlineData( @"(?<=\R)b", 0 )]
 	[InlineData( @"(a)(?<=\1)b", 3 )]
 	[InlineData( @"(?<=(a)\g{-1})b", 0 )]
 	[InlineData( @"(?<x>a)(?<=\k<x>)b", 7 )]
@@ -159,7 +153,7 @@ public sealed class PcreFixedLookbehindReferenceTests {
 	[InlineData( "(?<=(?:^)+a)b", 0 )]
 	[InlineData( "(?<=[a]*){0}", 0 )]
 	[InlineData( "(?<=[a]+){0}", 0 )]
-	public void VariableConsumedBodiesRemainUnsupportedAtTheirOpening( string pattern, int offset ) {
+	public void UnboundedOrUnknownConsumedBodiesRemainUnsupportedAtTheirOpening( string pattern, int offset ) {
 		AssertDiagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax, offset );
 	}
 

@@ -64,6 +64,7 @@ public sealed class PcreVariableLookbehindReferenceTests {
 	// PCRE2 10.48 JIT caps the subject end for the entire assertion if it emits any VREVERSE.
 	// In the mixed case the first branch's fixed REVERSE equals the global minimum; the cap still applies.
 	[InlineData( "(?<=[a]{1,2}(?=b))b", "6162", -1, 0, "" )]
+	[InlineData( "(?<=a{1,2}(?<=a(?=b)))b", "6162", -1, 0, "" )]
 	[InlineData( "(?<=[a](?=b))b", "6162", 1, 1, "1:1" )]
 	[InlineData( "(?<=[a](?=b)|[x]{1,2})b", "6162", -1, 0, "" )]
 	[InlineData( @"(?<=[a]{1,2}\z)b", "6162", 1, 1, "1:1" )]
@@ -149,9 +150,11 @@ public sealed class PcreVariableLookbehindReferenceTests {
 		var subject = Encoding.ASCII.GetBytes( new string( 'a', 255 ) + "b" );
 		AssertOutcome( "(?<=([a]{1,255}))b", Convert.ToHexString( subject ), false, 0, 255, 1, "255:1,0:255" );
 		AssertOutcome( "(?<=[a]{255}|[x]{1,2})b", Convert.ToHexString( subject ), false, 0, 255, 1, "255:1" );
+		// Intermediate bounded width is erased before the assertion-wide variable cap.
+		AssertOutcome( "(?<=(?:[a]{1,256}){0})b", "62", false, 0, 0, 1, "0:1" );
 		foreach ( var pattern in new[] { "(?<=[a]{1,256})b", "(?<=[a]{256}|[x]{1,2})b", "(?<=[x]{1,2}|[a]{256})b",
 			"(?<=[a]{1,255}[b])c", "(?<=(?:[a]{1,128}){2})b", "(?<=[a]{1,256}){0}b",
-			"(?<=[a]{256}|[x]{1,2}){0}b", "(?<=(?:[a]{1,256}){0})b" } ) {
+			"(?<=[a]{256}|[x]{1,2}){0}b" } ) {
 			Assert.Throws<PcrePatternException>( () => Reference( pattern ) );
 			AssertDiagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax, 0 );
 		}

@@ -142,7 +142,7 @@ public sealed class PcreGeneralLookaheadReferenceTests {
 	}
 
 	[Theory]
-	[InlineData( "(?<=[a]{1,2})b" )]
+	[InlineData( "(?<=[a]{1,})b" )]
 	[InlineData( "(?<!a+)b" )]
 	[InlineData( "(*pla:[a])" )]
 	[InlineData( "(?*[a])" )]

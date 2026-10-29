@@ -3,10 +3,12 @@ namespace Icod.Expressions.Pcre;
 internal sealed partial class PcreByteParser {
 	private const int MaximumLookbehindLength = 65535;
 
-	private int[] GetFixedLookbehindLengths( PcreByteAlternatives body, int openingOffset ) {
+	private readonly record struct LookbehindWidth( int Minimum, int Maximum );
+
+	private PcreByteLookbehind FinishLookbehind( PcreByteAlternatives body, bool positive, int openingOffset ) {
 		// Reference keys avoid recursively hashing the record tree. Neither width
 		// evaluation nor parser source nesting consumes the native call stack.
-		var widths = new Dictionary<PcreByteNode, int>( ReferenceEqualityComparer.Instance );
+		var widths = new Dictionary<PcreByteNode, LookbehindWidth>( ReferenceEqualityComparer.Instance );
 		var pending = new Stack<(PcreByteNode Node, bool Ready)>();
 		void ScheduleBody( PcreByteAlternatives alternatives ) {
 			foreach ( var branch in alternatives.Branches ) {
@@ -16,35 +18,36 @@ internal sealed partial class PcreByteParser {
 				}
 			}
 		}
-		int SequenceWidth( IReadOnlyList<PcreByteNode> nodes ) {
-			var width = 0;
+		LookbehindWidth CheckedWidth( long minimum, long maximum ) {
+			if ( maximum > MaximumLookbehindLength ) { throw Unsupported( openingOffset ); }
+			return new( (int)minimum, (int)maximum );
+		}
+		LookbehindWidth SequenceWidth( IReadOnlyList<PcreByteNode> nodes ) {
+			var width = new LookbehindWidth( 0, 0 );
 			foreach ( var node in nodes ) {
 				cancellationToken.ThrowIfCancellationRequested();
-				width += widths[node];
-				if ( width > MaximumLookbehindLength ) { throw Unsupported( openingOffset ); }
+				var child = widths[node];
+				width = CheckedWidth( (long)width.Minimum + child.Minimum, (long)width.Maximum + child.Maximum );
 			}
 			return width;
 		}
-		int GroupWidth( PcreByteAlternatives alternatives ) {
-			int? width = null;
+		LookbehindWidth GroupWidth( PcreByteAlternatives alternatives ) {
+			var minimum = int.MaxValue;
+			var maximum = 0;
 			foreach ( var branch in alternatives.Branches ) {
 				var current = SequenceWidth( branch );
-				if ( width.HasValue && width.Value != current ) { throw Unsupported( openingOffset ); }
-				width = current;
+				minimum = Math.Min( minimum, current.Minimum );
+				maximum = Math.Max( maximum, current.Maximum );
 			}
-			return width ?? 0;
+			return new( minimum == int.MaxValue ? 0 : minimum, maximum );
 		}
-		int RepeatWidth( PcreByteRepeat repeat ) {
+		LookbehindWidth RepeatWidth( PcreByteRepeat repeat ) {
 			if ( repeat.Maximum == int.MaxValue
 				|| repeat.UnboundedAssertion && repeat.Child is PcreByteLookbehind or PcreByteLiteralAssertion { IsBehind: true } ) {
 				throw Unsupported( openingOffset );
 			}
-			if ( repeat.Maximum == 0 ) { return 0; }
 			var child = widths[repeat.Child];
-			if ( child != 0 && repeat.Minimum != repeat.Maximum ) { throw Unsupported( openingOffset ); }
-			var width = (long)child * repeat.Minimum;
-			if ( width > MaximumLookbehindLength ) { throw Unsupported( openingOffset ); }
-			return (int)width;
+			return CheckedWidth( (long)child.Minimum * repeat.Minimum, (long)child.Maximum * repeat.Maximum );
 		}
 
 		ScheduleBody( body );
@@ -64,9 +67,10 @@ internal sealed partial class PcreByteParser {
 				continue;
 			}
 			widths[item.Node] = item.Node switch {
-				PcreByteLiteral or PcreByteAny or PcreByteClass or PcreByteScalarClass or PcreByteScalarSet => 1,
+				PcreByteLiteral or PcreByteAny or PcreByteClass or PcreByteScalarClass or PcreByteScalarSet => new( 1, 1 ),
+				PcreByteNewlineSequence => new( 1, 2 ),
 				PcreByteAnchor or PcreByteSearchStart or PcreByteLineAnchor or PcreByteEndBeforeFinalLf
-					or PcreByteWordBoundary or PcreByteLiteralAssertion or PcreByteLookahead or PcreByteLookbehind => 0,
+					or PcreByteWordBoundary or PcreByteLiteralAssertion or PcreByteLookahead or PcreByteLookbehind => new( 0, 0 ),
 				PcreByteGroup group => GroupWidth( group.Body ),
 				PcreByteNoncapturingGroup group => GroupWidth( group.Body ),
 				PcreByteAtomic atomic => widths[atomic.Child],
@@ -75,9 +79,17 @@ internal sealed partial class PcreByteParser {
 			};
 		}
 		var lengths = new int[body.Branches.Count];
+		var minimum = int.MaxValue;
+		var maximum = 0;
+		var variable = false;
 		for ( var branch = 0; branch < lengths.Length; branch++ ) {
-			lengths[branch] = SequenceWidth( body.Branches[branch] );
+			var width = SequenceWidth( body.Branches[branch] );
+			lengths[branch] = width.Maximum;
+			minimum = Math.Min( minimum, width.Minimum );
+			maximum = Math.Max( maximum, width.Maximum );
+			variable |= width.Minimum != width.Maximum;
 		}
-		return lengths;
+		if ( variable && maximum > 255 ) { throw Unsupported( openingOffset ); }
+		return new( body, positive, lengths, variable ? minimum : -1 );
 	}
 }

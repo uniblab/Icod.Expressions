@@ -45,8 +45,11 @@ engines. Test the selected Grep workloads and error behavior separately.
 General fixed-length lookbehind validates character widths at parser closure with
 heap traversal and bounded sums/products (65,535 per new general branch). Byte
 and UTF scalar rewind spends match work and observes cancellation within the
-current valid fragment. Variable consumed lengths and references remain explicit
-unsupported syntax; compilation does not use native stack recursion for analysis.
+current valid fragment. Bounded variable lengths use min/max analysis and cap every branch at255 if
+any branch varies. Reverse retry frames share saved-path/journal ceilings, use
+a byte-sized remaining count and spend work. Scoped end limits restore through
+existing assertion-depth checkpoints. Consumed references and unlimited groups
+remain explicit unsupported syntax; analysis uses no native stack recursion.
 
 ## Remaining release work
 
