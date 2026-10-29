@@ -156,7 +156,6 @@ public sealed class PcreBranchResetReferenceTests {
 	[Theory]
 	[InlineData( @"(?|(a)|(b))\g<1>", 11 )]
 	[InlineData( "(?|(a)|(b))(?1)", 11 )]
-	[InlineData( @"(*plb:(?|(a)|(bb)))", 0 )]
 	public void SubroutinesAndAssertionAliasesRemainPending( string pattern, int offset ) {
 		Reference( pattern, false );
 		var result = PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( pattern ) );

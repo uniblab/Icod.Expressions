@@ -1,5 +1,9 @@
 # Internal PCRE atomic groups and possessive repetition
 
+Historical tranche boundary: exact atomic-group and atomic-lookaround aliases now
+share these existing semantic paths; see `PCRE-GROUP-ALIASES-DESIGN.md`. Earlier
+alias-pending notes below describe the original tranche.
+
 **Status:** implementation tranche under issue #7. No public API or consumer migration.
 
 ## Intent and scope

@@ -154,15 +154,6 @@ public sealed class PcreCaptureRepeatOptionReferenceTests {
 		Assert.Equal( offset, result.Diagnostic?.ByteOffset );
 	}
 
-	[Theory]
-	[InlineData( "(?nU:(*plb:a))", 5 )]
-	public void OtherOptionAndAssertionFamiliesRemainPending( string pattern, int offset ) {
-		Reference( pattern, false );
-		var result = PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( pattern ) );
-		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
-		Assert.Equal( offset, result.Diagnostic?.ByteOffset );
-	}
-
 	[Fact]
 	public void CaptureOptionsKeepDepthAndNamedCaptureLimits() {
 		var nested = "(?n)" + new string( '(', 256 ) + "a" + new string( ')', 256 );
@@ -192,7 +183,6 @@ public sealed class PcreCaptureRepeatOptionReferenceTests {
 		Assert.Throws<OperationCanceledException>( () => PcreByteCompiler.Compile(
 			Encoding.ASCII.GetBytes( pattern ), cancellationToken: cancellation.Token ) );
 	}
-
 
 	[Fact]
 	public void MixedGroupOptionsCompileAtTheFullDepthBoundary() {

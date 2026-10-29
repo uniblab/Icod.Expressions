@@ -83,6 +83,12 @@ lookbehind width analysis; J-only, numeric and lookahead-only controls remain va
 `PcreDuplicateNameReferenceTests` pins source-order/empty/mismatch selection, scope,
 registration errors and compile/match budgets.
 
+Atomic-group and atomic-lookaround aliases reuse the same heap GroupFrame and
+semantic lowering: one nesting level, no capture slot and no added matching work.
+Exact byte headers preserve original source offsets and assertion context; all
+width, journal, saved-path and work/cancellation gates remain shared.
+`PcreGroupAliasReferenceTests` covers the nine prefixes and distinct pending forms.
+
 ## Remaining release work
 
 The bounded internal taxonomy is testable now. Before migration, add

@@ -206,11 +206,9 @@ public sealed class PcreFixedLookbehindReferenceTests {
 	}
 
 	[Theory]
-	[InlineData( "(*plb:[a])" )]
-	[InlineData( "(*nlb:[a])" )]
 	[InlineData( "(?<*[a])" )]
 	[InlineData( "(?(?<=[a])b|c)" )]
-	public void GeneralAssertionAliasesAndConditionsRemainPending( string pattern ) =>
+	public void NonAtomicAssertionsAndConditionsRemainPending( string pattern ) =>
 		AssertDiagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax, 0 );
 
 	[Fact]
