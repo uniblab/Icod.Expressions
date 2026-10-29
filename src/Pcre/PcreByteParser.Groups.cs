@@ -98,8 +98,7 @@ internal sealed partial class PcreByteParser {
 						// A condition is not a directly repeatable assertion. Leave the
 						// outer conditional's eventual quantifier on the ordinary group path.
 						SkipPatternTrivia( ref current.Quoting );
-						if ( !current.Quoting && index < source.Length
-							&& source[index] is (byte)'*' or (byte)'+' or (byte)'?' or (byte)'{' ) {
+						if ( !current.Quoting && IsRepeatQuantifier( index ) ) {
 							var repeatOffset = index;
 							if ( source[index] == (byte)'{' ) { ParseCountedBounds( repeatOffset ); }
 							throw Invalid( repeatOffset, "a condition assertion cannot be repeated" );
@@ -180,20 +179,20 @@ internal sealed partial class PcreByteParser {
 			atom = atom with { Caseless = atomCaseless, CaselessRestricted = atomCaselessRestricted };
 		}
 		SkipPatternTrivia( ref frame.Quoting );
-		if ( !frame.Quoting && index < source.Length && source[index] is (byte)'*' or (byte)'+' or (byte)'?' or (byte)'{' ) {
+		if ( !frame.Quoting && IsRepeatQuantifier( index ) ) {
 			var assertion = atom is PcreByteLiteralAssertion or PcreByteLookahead or PcreByteLookbehind;
-			if ( atom is PcreByteMatchStartReset ) {
-				throw Invalid( index, "a match-start reset cannot be repeated" );
-			}
-			if ( atom is PcreByteAnchor or PcreByteSearchStart or PcreByteLineAnchor or PcreByteEndBeforeFinalLf or PcreByteWordBoundary ) {
-				throw Invalid( index, "an anchor cannot be repeated" );
-			}
 			var quantifierOffset = index;
 			var counted = source[index] == (byte)'{';
 			var quantifier = counted ? (byte)0 : source[index++];
 			var bounds = counted ? ParseCountedBounds( quantifierOffset )
 				: (quantifier == (byte)'+' ? 1 : 0,
 					quantifier == (byte)'?' ? 1 : int.MaxValue);
+			if ( atom is PcreByteMatchStartReset ) {
+				throw Invalid( quantifierOffset, "a match-start reset cannot be repeated" );
+			}
+			if ( atom is PcreByteAnchor or PcreByteSearchStart or PcreByteLineAnchor or PcreByteEndBeforeFinalLf or PcreByteWordBoundary ) {
+				throw Invalid( quantifierOffset, "an anchor cannot be repeated" );
+			}
 			var minimum = bounds.Item1;
 			var maximum = bounds.Item2;
 			// PCRE2 permits useful capture side effects in repeated assertions.
@@ -220,8 +219,10 @@ internal sealed partial class PcreByteParser {
 				atom = new PcreByteAtomic( atom );
 			}
 			SkipPatternTrivia( ref frame.Quoting );
-			if ( !frame.Quoting && index < source.Length && source[index] is (byte)'*' or (byte)'+' or (byte)'?' or (byte)'{' ) {
-				throw Invalid( index, "repeated quantifier" );
+			if ( !frame.Quoting && IsRepeatQuantifier( index ) ) {
+				var repeatOffset = index;
+				if ( source[index] == (byte)'{' ) { ParseCountedBounds( repeatOffset ); }
+				throw Invalid( repeatOffset, "repeated quantifier" );
 			}
 		}
 		frame.Nodes.Add( atom );
