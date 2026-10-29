@@ -1,5 +1,8 @@
 # Internal PCRE capture-participation conditions
 
+> `PCRE-RECURSION-CONDITIONS-DESIGN.md` adds R/Rdigits/R&name tests; their
+> pending status below describes the original capture-condition tranche.
+
 > Historical scope: traditional atomic assertion conditions are added by
 > `PCRE-ASSERTION-CONDITIONS-DESIGN.md`; their pending status below describes #89.
 

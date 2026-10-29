@@ -144,7 +144,7 @@ Grep and CommandFramework production code remain unchanged here.
 
 Nonrecursive subroutines share the1,024 saved-frame ceiling: every call guard
 counts, including successful inactive calls retained for backtracking. Integer
-call-scope IDs and a three-integer guard-owned arena record preserve retries;
+call-scope IDs and a four-integer guard-owned arena record preserve retries;
 return compensation uses the shared journal and spends work per inspected
 mutation. Numbered captures/starts and private repeat marks restore; G0/K persists.
 Callable bodies compile once per referenced target after main Accept, sharing
@@ -158,3 +158,11 @@ zero-count erasure; existing backreference duplicate/lexical restrictions remain
 No additional runtime/compiler instruction or frame state is required.
 See `PcreSubroutineReferenceTests`, `PcreSubroutineLookbehindReferenceTests`,
 `PCRE-SUBROUTINES-DESIGN.md` and `PCRE-SUBROUTINE-LOOKBEHIND-DESIGN.md`.
+
+Recursion conditions reuse active call IDs and the call target number retained in
+the fourth arena integer (at most16KiB integer payload under the same1024 guard
+ceiling). They never scan inactive saved guards or ancestor calls. Duplicate named
+target tests spend work per candidate and poll cancellation; no capture mutation,
+new saved-frame fields or journal copies. R/R0 mean any call; exact global names
+win bare R/digit ambiguity. See `PcreRecursionConditionReferenceTests` and
+`PCRE-RECURSION-CONDITIONS-DESIGN.md`.
