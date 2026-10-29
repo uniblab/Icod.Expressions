@@ -154,11 +154,10 @@ public sealed class PcreBranchResetReferenceTests {
 	}
 
 	[Theory]
-	[InlineData( "(?J)(?|(?<x>a)|(?<x>b))", 0 )]
 	[InlineData( @"(?|(a)|(b))\g<1>", 11 )]
 	[InlineData( "(?|(a)|(b))(?1)", 11 )]
 	[InlineData( @"(*plb:(?|(a)|(bb)))", 0 )]
-	public void DuplicateNameOptionsSubroutinesAndGeneralAssertionsRemainPending( string pattern, int offset ) {
+	public void SubroutinesAndAssertionAliasesRemainPending( string pattern, int offset ) {
 		Reference( pattern, false );
 		var result = PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( pattern ) );
 		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );

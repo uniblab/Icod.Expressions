@@ -38,7 +38,7 @@ internal sealed record PcreByteInstruction(
 	PcreByteOpcode Opcode, int First = 0, int Second = 0, PcreByteSet Set = default,
 	ReadOnlyMemory<byte> Bytes = default, ReadOnlyMemory<PcreByteScalarRange> Ranges = default,
 	ReadOnlyMemory<PcreByteScalarPredicate> Predicates = default, UnicodeCategory? Category = null,
-	bool Caseless = false, bool CaselessRestricted = false
+	bool Caseless = false, bool CaselessRestricted = false, ReadOnlyMemory<int> CaptureNumbers = default
 );
 
 internal sealed record PcreByteProgram(
@@ -172,11 +172,11 @@ internal sealed class PcreByteProgramCompiler {
 	private int Emit( PcreByteOpcode opcode, int first = 0, int second = 0, PcreByteSet set = default,
 		ReadOnlyMemory<byte> bytes = default, ReadOnlyMemory<PcreByteScalarRange> ranges = default,
 		ReadOnlyMemory<PcreByteScalarPredicate> predicates = default, UnicodeCategory? category = null,
-		bool caseless = false, bool caselessRestricted = false ) {
+		bool caseless = false, bool caselessRestricted = false, ReadOnlyMemory<int> captureNumbers = default ) {
 		cancellationToken.ThrowIfCancellationRequested();
 		if ( instructions.Count >= MaximumInstructions ) { throw RepeatExpansionLimit(); }
 		var index = instructions.Count;
-		instructions.Add( new( opcode, first, second, set, bytes, ranges, predicates, category, caseless, caselessRestricted ) );
+		instructions.Add( new( opcode, first, second, set, bytes, ranges, predicates, category, caseless, caselessRestricted, captureNumbers ) );
 		hasCaselessComparisons |= caseless;
 		return index;
 	}
@@ -251,7 +251,8 @@ internal sealed class PcreByteProgramCompiler {
 				Emit( PcreByteOpcode.Class, set: characterClass.Set, caseless: characterClass.Caseless, caselessRestricted: characterClass.CaselessRestricted );
 				break;
 			case PcreByteBackreference reference:
-				Emit( PcreByteOpcode.Backreference, reference.Number, caseless: reference.Caseless, caselessRestricted: reference.CaselessRestricted );
+				Emit( PcreByteOpcode.Backreference, reference.Number, caseless: reference.Caseless,
+					caselessRestricted: reference.CaselessRestricted, captureNumbers: reference.DuplicateNumbers );
 				break;
 			case PcreByteWordBoundary boundary:
 				Emit( PcreByteOpcode.WordBoundary, boundary.IsBoundary ? 1 : 0,

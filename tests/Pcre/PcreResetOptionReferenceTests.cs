@@ -194,15 +194,6 @@ public sealed class PcreResetOptionReferenceTests {
 		Assert.Equal( 2, result.Diagnostic?.ByteOffset );
 	}
 
-	[Theory]
-	[InlineData( "(?^J)a" )]
-	public void NewOptionFamiliesStayExplicitlyPending( string pattern ) {
-		Reference( pattern, true );
-		var result = PcreByteCompiler.Compile( Encoding.UTF8.GetBytes( pattern ), new PcreByteOptions { Utf8 = true } );
-		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
-		Assert.Equal( 0, result.Diagnostic?.ByteOffset );
-	}
-
 	[Fact]
 	public void ScopedSettingsKeepDepthAndRestoredCaptureLimits() {
 		var nested = string.Concat( Enumerable.Repeat( "(?^:", 256 ) ) + "a" + new string( ')', 256 );

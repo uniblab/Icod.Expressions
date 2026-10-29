@@ -58,7 +58,7 @@ branch-analysis accounting is not a managed numeric-limit parity claim.
 Empty/reset option headers add no runtime state or work units. Bare settings
 consume neither a capture slot nor a nesting frame; scoped empty/reset groups
 use the existing nesting ceiling. Reset n restores ordinary capture allocation;
-reset preserves U and ASCII restrictions. Scoped/mixed ASCII restrictions use the same reader
+reset preserves U, J and ASCII restrictions. Scoped/mixed ASCII restrictions use the same reader
 and a five-bit snapshot; immutable class predicates and existing b/B metadata
 need no VM state. `PcreAsciiRestrictionReferenceTests` covers mask algebra,
 policy scopes and unchanged depth/capture/work/cancellation limits.
@@ -71,6 +71,17 @@ scalar-domain bitmap and retain cancellation polling. UCP POSIX Ll/Lu stay
 category-specific independently of explicit property case widening.
 `PcreCaselessRestrictionReferenceTests` covers scope, captures, optimized/general
 assertions, range closure and unchanged depth/capture/work/cancellation limits.
+
+Duplicate named references share immutable declaration-ordered slot lists, each
+bounded by capture256. Native ordered registration may let an earlier matching
+name preempt a later number conflict; distinct names remain bounded by256, with
+aggregate name/slot pairs at most65,536 and candidate integer storage at most256KiB.
+Every participation lookup spends match work and polls cancellation.
+Selection commits before the existing comparison and allocates no matching state.
+Unique names retain the numbered fast path. Actual duplicate consumed names reject
+lookbehind width analysis; J-only, numeric and lookahead-only controls remain valid.
+`PcreDuplicateNameReferenceTests` pins source-order/empty/mismatch selection, scope,
+registration errors and compile/match budgets.
 
 ## Remaining release work
 

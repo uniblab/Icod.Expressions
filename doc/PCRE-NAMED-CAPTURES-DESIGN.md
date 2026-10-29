@@ -1,5 +1,11 @@
 # Internal PCRE named captures
 
+Historical tranche boundary: local J and duplicate names are now implemented by
+`PCRE-DUPLICATE-NAMES-DESIGN.md`; reset preserves J and multi-slot references use
+declaration-ordered participation selection and native collision-scan precedence
+(including an earlier name preempting a later number conflict). Earlier scope notes below describe
+this document's original tranche.
+
 ## Intent and boundary
 
 Advance issue #7 with capture names and references in the internal byte/UTF-8

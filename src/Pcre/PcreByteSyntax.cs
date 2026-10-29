@@ -41,7 +41,9 @@ internal sealed record PcreByteScalarSet(
 
 internal sealed record PcreByteClass( PcreByteSet Set, bool ExplicitNewline = false ) : PcreByteNode;
 
-internal sealed record PcreByteBackreference( int Number ) : PcreByteNode;
+internal sealed record PcreByteBackreference(
+	int Number, ReadOnlyMemory<int> DuplicateNumbers = default
+) : PcreByteNode;
 
 internal sealed record PcreByteAnchor( bool IsStart ) : PcreByteNode;
 

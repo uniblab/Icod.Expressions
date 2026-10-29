@@ -4,22 +4,37 @@ namespace Icod.Expressions.Pcre;
 
 internal sealed partial class PcreByteParser {
 	private const int MaximumNameBytes = 128;
-	private readonly Dictionary<string, int> namedCaptures = new( StringComparer.Ordinal );
-	private readonly Dictionary<int, string> captureNames = new();
+	private readonly Dictionary<string, List<int>> namedCaptures = new( StringComparer.Ordinal );
+	private readonly List<(string Name, int Number)> captureNames = new();
 	private bool hasNamedReferences;
 
 	// Temporary parser node only: resolved before the numbered program compiler runs.
 	private sealed record NamedReference( string Name, int Offset ) : PcreByteNode;
 
 	private void RegisterCaptureName( string name, int number, int offset ) {
-		if ( namedCaptures.TryGetValue( name, out var previousNumber ) && previousNumber != number ) {
-			throw Invalid( offset, "capture name identifies different group numbers" );
+		foreach ( var previous in captureNames ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( previous.Name == name ) {
+				if ( previous.Number == number ) { return; }
+				if ( !duplicateNames ) { throw Invalid( offset, "capture name identifies different group numbers" ); }
+				// Native stops collision checks at the first matching name. A later
+				// different-name number collision must not preempt this declaration.
+				break;
+			}
+			if ( previous.Number == number ) { throw Invalid( offset, "capture group number has different names" ); }
 		}
-		if ( captureNames.TryGetValue( number, out var previousName ) && previousName != name ) {
-			throw Invalid( offset, "capture group number has different names" );
+		if ( !namedCaptures.TryGetValue( name, out var numbers ) ) {
+			numbers = new();
+			namedCaptures.Add( name, numbers );
 		}
-		namedCaptures[name] = number;
-		captureNames[number] = name;
+		// Check the first historical number before deduplicating aliases. Under
+		// branch reset, declaration order need not be numerical order.
+		foreach ( var previousNumber in numbers ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( previousNumber == number ) { return; }
+		}
+		numbers.Add( number );
+		captureNames.Add( (name, number) );
 	}
 
 	private NamedReference ParseNamedReference( byte terminator, int offset ) {
@@ -59,12 +74,21 @@ internal sealed partial class PcreByteParser {
 		return ( utf8 ? Encoding.UTF8 : Encoding.ASCII ).GetString( source, start, length );
 	}
 
-	private PcreByteAlternatives ResolveNamedReferences( PcreByteAlternatives alternatives ) =>
-		RewriteTree( alternatives, node => node is NamedReference reference
-			? namedCaptures.TryGetValue( reference.Name, out var number )
-				? new PcreByteBackreference( number ) {
-					Caseless = reference.Caseless, CaselessRestricted = reference.CaselessRestricted
-				}
-				: throw Invalid( reference.Offset, "backreference has no capture name" )
-			: node );
+	private PcreByteAlternatives ResolveNamedReferences( PcreByteAlternatives alternatives ) {
+		var duplicates = new Dictionary<string, ReadOnlyMemory<int>>( StringComparer.Ordinal );
+		return RewriteTree( alternatives, node => {
+			if ( node is not NamedReference reference ) { return node; }
+			if ( !namedCaptures.TryGetValue( reference.Name, out var numbers ) ) {
+				throw Invalid( reference.Offset, "backreference has no capture name" );
+			}
+			ReadOnlyMemory<int> candidates = default;
+			if ( numbers.Count > 1 && !duplicates.TryGetValue( reference.Name, out candidates ) ) {
+				candidates = numbers.ToArray();
+				duplicates.Add( reference.Name, candidates );
+			}
+			return new PcreByteBackreference( numbers[0], candidates ) {
+				Caseless = reference.Caseless, CaselessRestricted = reference.CaselessRestricted
+			};
+		} );
+	}
 }

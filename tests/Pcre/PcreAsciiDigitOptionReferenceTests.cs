@@ -158,13 +158,15 @@ public sealed class PcreAsciiDigitOptionReferenceTests {
 		Assert.Equal( offset, result.Diagnostic?.ByteOffset );
 	}
 
-	[Theory]
-	[InlineData( @"(?aDJ:\d)" )]
-	public void OtherOptionFamiliesRemainExplicitlyPending( string pattern ) {
-		Reference( pattern );
-		var result = PcreByteCompiler.Compile( Encoding.UTF8.GetBytes( pattern ), Options() );
-		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
-		Assert.Equal( 0, result.Diagnostic?.ByteOffset );
+	[Fact]
+	public void DuplicateNameOptionLeavesAsciiDigitPolicyIndependent() {
+		const string pattern = @"(?aDJ:\d)";
+		var reference = Reference( pattern );
+		foreach ( var text in new[] { "3", "٣" } ) {
+			var subject = Encoding.UTF8.GetBytes( text );
+			AssertExpected( reference, subject, text == "3" ? 0 : -1, 1, 1 );
+			Compare( reference, subject, 0, Compile( pattern ).Match( subject ), pattern );
+		}
 	}
 
 	[Fact]
