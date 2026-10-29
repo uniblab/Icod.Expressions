@@ -18,7 +18,7 @@ No compiler or VM state is added.
 - Root project/solution; src source, tests tests; UTF-8 LF; no Python.
 - Local Debug, six PR Staging OS/architecture jobs; no local SDK, CI red/green.
 - Preserve caller AsciiBsD bool interface and UCP-without-UTF rejection.
-- No public API/version/dependency, VM/frame/journal or consumer changes.
+- No public API/version/dependency, VM architecture/frame/journal or consumer changes.
 - Preserve depth256, capture256, compiled instructions4096, saved paths1024,
   default match work1,000,000 and cancellation policies.
 
@@ -64,3 +64,20 @@ PosixDigit and All; constructor bool unchanged. GroupOptions retains the enum.
 - [ ] Inspect exact final head/tree and six successful Staging job logs, complete
   full/frozen counts per framework plus configured workload/consumer gates.
 - [ ] Record evidence, mark PR ready; user retains merge control.
+
+### Integration regression: POSIX punctuation bound
+
+**Files:** `tests/Pcre/PcreAsciiRestrictionReferenceTests.cs`,
+`tests/Pcre/PcreUtf8PosixClassTests.cs`, `src/Pcre/PcreByteMatcher.cs` and the
+POSIX/design inventories.
+
+- [ ] Pin native baseline and aT punctuation for £/©/× misses, ASCII dollar and
+  Unicode punctuation successes; inner/outer negation, case and literal unions.
+- [ ] Observe managed failures in CI before changing the predicate.
+- [ ] Change only the UnicodePunctuation supplemental-symbol threshold from
+  0x100 to0x80, matching all three pinned implementation paths.
+- [ ] Run final full matrix and complete the existing review/readiness gate.
+
+This bounded correction follows verified native execution when the pinned
+manual prose conflicts; no additional user choice is needed under the selected
+reference contract.

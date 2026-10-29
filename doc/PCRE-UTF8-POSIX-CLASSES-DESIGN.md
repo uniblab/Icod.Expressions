@@ -20,8 +20,17 @@ Complete the fourteen ordinary POSIX bracket names already available in byte mod
 
 ## Semantics
 
-Without UCP, names use the established ASCII `PcreByteSet` definitions, so scalars above U+007F fail a positive class. With UCP, `alnum` is Unicode L or N, `alpha` is L, `blank` is PCRE2's fixed `\h` list, `cntrl` is Cc, `digit` is Nd, `lower` is Ll, `upper` is Lu, `space` and `word` keep their existing semantics. `graph` is L/M/N/P/S/Cf, excluding U+061C, U+180E, and U+2066–U+2069; `print` adds Zs; `punct` is P plus S below U+0100; `xdigit` is ASCII hex plus fullwidth counterparts. `ascii` remains U+0000–U+007F. Inner `[:^name:]` complements one predicate; outer `[^...]` complements the union. Positive and negative classes consume only one valid scalar. These mappings follow [PCRE2's POSIX class specification](https://www.pcre.org/current/doc/html/pcre2pattern.html#SEC14); .NET's Unicode category data can differ by runtime and host, so version-wide PCRE2 conformance stays pending.
+Without UCP, names use the established ASCII `PcreByteSet` definitions, so scalars above U+007F fail a positive class. With UCP, `alnum` is Unicode L or N, `alpha` is L, `blank` is PCRE2's fixed `\h` list, `cntrl` is Cc, `digit` is Nd, `lower` is Ll, `upper` is Lu, `space` and `word` keep their existing semantics. `graph` is L/M/N/P/S/Cf, excluding U+061C, U+180E, and U+2066–U+2069; `print` adds Zs; `punct` is P plus S below U+0080; `xdigit` is ASCII hex plus fullwidth counterparts. `ascii` remains U+0000–U+007F. Inner `[:^name:]` complements one predicate; outer `[^...]` complements the union. Positive and negative classes consume only one valid scalar. These mappings follow [PCRE2's POSIX class specification](https://www.pcre.org/current/doc/html/pcre2pattern.html#SEC14); .NET's Unicode category data can differ by runtime and host, so version-wide PCRE2 conformance stays pending.
 
 ## Verification
 
 Characterize each newly supported name in UCP and non-UCP modes, including non-ASCII boundaries and the PCRE2 exceptions above. Exercise nested unions, both negations, byte spans, malformed subject barriers, invalid range endpoints, diagnostics for unknown names, work limits and cancellation. Keep byte-mode behavior and the frozen GNU corpus green across Staging's six OS/architecture jobs and three .NET targets.
+
+## Pinned punctuation correction
+
+Native PCRE2 10.48 Compiled/JIT matching rejects Latin-1 symbols such as £/©/×
+for Unicode POSIX punct; only ASCII symbols supplement Unicode P. The pinned
+manual still says below256, but compile-class bitmap construction, interpreter
+and JIT all implement below128. The reference fixtures and managed predicate
+follow that verified implementation. ASCII dollar and Unicode punctuation such
+as ¡/。 still match. See `PCRE-ASCII-RESTRICTIONS-DESIGN.md`.

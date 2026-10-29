@@ -52,7 +52,7 @@ apply and reset preservation. Add a small mask query helper. Select existing
 predicates in ParseEscape and ParseUtf8PosixItem, and choose b/B's existing
 UnicodeWord flag using BackslashW. In `PcreByteParser.Groups.cs`, snapshot and
 restore the mask instead of its former single bit. No syntax node, bytecode,
-compiler, matcher, runtime frame, journal or resource policy changes.
+compiler, execution-state, runtime frame, journal or resource policy changes.
 
 ## Verification and boundaries
 
@@ -81,3 +81,14 @@ CommandFramework removal still waits for all known consumer migrations.
 option scanner5036–5142; word-boundary lowering8370–8385. Native compile/match
 probes request JIT_COMPLETE and confirm strict ASCII versus literal folding and
 mask-overlap controls. Current .NET Unicode predicates remain provisional.
+
+## Integration finding: pinned POSIX punctuation
+
+The native fixture exposed a preexisting predicate mismatch: managed Unicode
+POSIX punct added symbols below256, following the pinned manual, whereas the
+10.48 compiler/interpreter/JIT implement symbols below128. Actual JIT probes
+confirm baseline and aT reject £/©/× while accepting dollar/¡/。. Correct the one
+threshold in `PcreByteMatcher.ScalarClassContains`, update the old fixture and
+record focused baseline/negation/union/caseless regressions before the fix. This
+is the only matcher predicate change; bytecode, frame/journal and budgets stay
+intact. The selected reference remains actual pinned Compiled/JIT behavior.

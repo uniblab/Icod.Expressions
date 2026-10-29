@@ -68,7 +68,7 @@ public sealed class PcreAsciiRestrictionReferenceTests {
 	[InlineData( "graph", "\u200d", "!", true )]
 	[InlineData( "lower", "ß", "a", true )]
 	[InlineData( "print", "\u00a0", " ", true )]
-	[InlineData( "punct", "£", "!", true )]
+	[InlineData( "punct", "。", "!", true )]
 	[InlineData( "space", "\u2003", "\t", true )]
 	[InlineData( "upper", "Σ", "A", true )]
 	[InlineData( "word", "é", "_", true )]
@@ -126,6 +126,21 @@ public sealed class PcreAsciiRestrictionReferenceTests {
 	[InlineData( @"(?aW)(?-aW)a\b", "aé", -1, 0, 0 )]
 	[InlineData( @"(?iaW)\BK", "K", 0, 3, 1 )]
 	public void OnlyWordRestrictionChangesWordBoundaryClassification( string pattern,
+		string text, int index, int length, int groups ) => Check( pattern, text, index, length, groups );
+
+	[Theory]
+	[InlineData( @"[[:punct:]]", "£", -1, 0, 0 )]
+	[InlineData( @"(?aT:[[:punct:]])", "£", -1, 0, 0 )]
+	[InlineData( @"[[:punct:]]", "©", -1, 0, 0 )]
+	[InlineData( @"[[:punct:]]", "×", -1, 0, 0 )]
+	[InlineData( @"[[:punct:]]", "$", 0, 1, 1 )]
+	[InlineData( @"[[:punct:]]", "¡", 0, 2, 1 )]
+	[InlineData( @"[[:punct:]]", "。", 0, 3, 1 )]
+	[InlineData( @"[[:^punct:]]", "£", 0, 2, 1 )]
+	[InlineData( @"[^[:punct:]]", "£", 0, 2, 1 )]
+	[InlineData( @"(?i)[[:punct:]]", "£", -1, 0, 0 )]
+	[InlineData( @"[[:punct:]£]", "£", 0, 2, 1 )]
+	public void PinnedUnicodePunctuationAddsOnlyAsciiSymbolsToUnicodePunctuation( string pattern,
 		string text, int index, int length, int groups ) => Check( pattern, text, index, length, groups );
 
 	[Theory]
