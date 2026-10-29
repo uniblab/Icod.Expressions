@@ -144,8 +144,7 @@ public sealed class PcreGeneralLookaheadReferenceTests {
 	[Theory]
 	[InlineData( "(?<=[a]{1,})b" )]
 	[InlineData( "(?<!a+)b" )]
-	[InlineData( "(?(?=[a])a|b)" )]
-	public void UnboundedLookbehindAssertionConditionsRemainPending( string pattern ) =>
+	public void UnboundedLookbehindsRemainPending( string pattern ) =>
 		AssertDiagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax, 0 );
 
 	[Fact]

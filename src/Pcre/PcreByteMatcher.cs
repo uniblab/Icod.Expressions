@@ -560,7 +560,8 @@ internal static class PcreByteMatcher {
 							}
 							assertionScopes ??= new();
 							var guard = new Frame( instruction.First, position, changes.Count, atomicDepths.Count,
-								activeScope, ( instruction.Second & 4 ) != 0 ? FrameKind.NonAtomicAssertion
+								activeScope, ( instruction.Second & 8 ) != 0 ? FrameKind.ConditionalAssertion
+									: ( instruction.Second & 4 ) != 0 ? FrameKind.NonAtomicAssertion
 									: ( instruction.Second & 1 ) != 0 ? FrameKind.PositiveAssertion : FrameKind.NegativeAssertion );
 							var scopeId = assertionScopes.Count;
 							assertionScopes.Add( new( backtrack.Count, ( instruction.Second & 2 ) != 0 ? position : endLimit,
@@ -581,8 +582,8 @@ internal static class PcreByteMatcher {
 							while ( backtrack.Count > scope.Boundary + 1 ) { PopFrame( backtrack, assertionScopes ); }
 							var completedGuard = PopFrame( backtrack, assertionScopes );
 							position = completedGuard.Position;
-							pc = completedGuard.Pc;
-							if ( completedGuard.Kind == FrameKind.PositiveAssertion ) {
+							pc = ( instruction.Second & 8 ) != 0 ? instruction.First : completedGuard.Pc;
+							if ( completedGuard.Kind is FrameKind.PositiveAssertion or FrameKind.ConditionalAssertion ) {
 								// First body success is atomic. Keep captures, including those beyond G0,
 								// journaled until any enclosing retry/guard can no longer restore them.
 								if ( backtrack.Count == 0 ) { changes.Clear(); }
@@ -653,7 +654,8 @@ internal static class PcreByteMatcher {
 
 	private static Frame PopFrame( Stack<Frame> backtrack, List<AssertionScope>? assertionScopes ) {
 		var frame = backtrack.Pop();
-		if ( frame.Kind is FrameKind.PositiveAssertion or FrameKind.NegativeAssertion or FrameKind.NonAtomicAssertion ) {
+		if ( frame.Kind is FrameKind.PositiveAssertion or FrameKind.NegativeAssertion
+			or FrameKind.NonAtomicAssertion or FrameKind.ConditionalAssertion ) {
 			// Guards and arena nodes share creation/LIFO order, including inactive siblings.
 			var scopes = assertionScopes!;
 			scopes.RemoveAt( scopes.Count - 1 );
@@ -832,7 +834,7 @@ internal static class PcreByteMatcher {
 		StateKind Kind, int Index, int PriorValue, PcreByteCapture? PriorCapture
 	);
 
-	private enum FrameKind : byte { Branch, PositiveAssertion, NegativeAssertion, ReverseRetry, NonAtomicAssertion }
+	private enum FrameKind : byte { Branch, PositiveAssertion, NegativeAssertion, ReverseRetry, NonAtomicAssertion, ConditionalAssertion }
 
 	private readonly record struct AssertionScope( int Boundary, int LimitEnd, int Parent, int ReturnPc, int Position );
 

@@ -11,7 +11,8 @@ internal sealed partial class PcreByteParser {
 	// Bounded heap frames keep source nesting off the native call stack.
 	private sealed class GroupFrame( int openingOffset, int depth, int number, bool atomic,
 		bool branchReset, GroupOptions entryOptions, int entryGroupCount,
-		int assertionKind, int assertionOpeningContext, bool nonAtomic = false, CaptureCondition? condition = null ) {
+		int assertionKind, int assertionOpeningContext, bool nonAtomic = false, CaptureCondition? condition = null,
+		bool assertionConditional = false ) {
 		internal int OpeningOffset { get; } = openingOffset;
 		internal int Depth { get; } = depth;
 		internal int Number { get; } = number;
@@ -21,6 +22,10 @@ internal sealed partial class PcreByteParser {
 		internal int AssertionOpeningContext { get; } = assertionOpeningContext;
 		internal bool NonAtomic { get; } = nonAtomic;
 		internal CaptureCondition? Condition { get; } = condition;
+		internal bool AssertionConditional { get; } = assertionConditional;
+		internal PcreByteNode? ConditionAssertion { get; set; }
+		internal bool IsConditionAssertion { get; set; }
+		internal bool WaitingForCondition => AssertionConditional && ConditionAssertion is null;
 		internal GroupOptions EntryOptions { get; } = entryOptions;
 		internal int EntryGroupCount { get; } = entryGroupCount;
 		internal int MaximumGroupCount { get; set; } = entryGroupCount;
@@ -63,7 +68,7 @@ internal sealed partial class PcreByteParser {
 			}
 			if ( !current.Quoting ) {
 				if ( source[index] == (byte)'|' ) {
-					if ( current.Condition.HasValue && current.Branches.Count != 0 ) {
+					if ( ( current.Condition.HasValue || current.AssertionConditional ) && current.Branches.Count != 0 ) {
 						throw Invalid( current.OpeningOffset, "conditional group has more than two branches" );
 					}
 					FinishBranch( current );
@@ -73,22 +78,36 @@ internal sealed partial class PcreByteParser {
 					continue;
 				}
 				if ( source[index] == (byte)')' ) {
+					if ( current.WaitingForCondition ) { throw Invalid( current.OpeningOffset, "conditional group requires an assertion" ); }
 					var body = FinishAlternatives( current );
 					if ( current.OpeningOffset < 0 ) { return body; } // Parse diagnoses unmatched ')'.
 					index++;
 					RestoreGroupOptions( current.EntryOptions );
 					PcreByteNode completed = current.Condition is { } condition ? new ParsedCaptureConditional( condition, body )
+						: current.AssertionConditional ? new PcreByteAssertionConditional( current.ConditionAssertion!, body )
 						: current.AssertionKind != 0 ? FinishAssertion( current, body )
 						: current.Number > 0 ? new PcreByteGroup( current.Number, body )
 						: current.Atomic ? new PcreByteAtomic( new PcreByteNoncapturingGroup( body ) )
 						: new PcreByteNoncapturingGroup( body );
 					var groupCaseless = current.EntryOptions.Caseless;
 					var groupCaselessRestricted = current.EntryOptions.CaselessRestricted;
+					var conditionAssertion = current.IsConditionAssertion;
 					current = parents.Pop();
-					AppendNode( current, completed, groupCaseless, groupCaselessRestricted );
+					if ( conditionAssertion ) {
+						current.ConditionAssertion = completed with { Caseless = groupCaseless, CaselessRestricted = groupCaselessRestricted };
+						// A condition is not a directly repeatable assertion. Leave the
+						// outer conditional's eventual quantifier on the ordinary group path.
+						SkipPatternTrivia( ref current.Quoting );
+						if ( !current.Quoting && index < source.Length
+							&& source[index] is (byte)'*' or (byte)'+' or (byte)'?' or (byte)'{' ) {
+							var repeatOffset = index;
+							if ( source[index] == (byte)'{' ) { ParseCountedBounds( repeatOffset ); }
+							throw Invalid( repeatOffset, "a condition assertion cannot be repeated" );
+						}
+					} else { AppendNode( current, completed, groupCaseless, groupCaselessRestricted ); }
 					continue;
 				}
-				if ( TryParseOptions( index, scoped: false ) ) { continue; }
+				if ( !current.WaitingForCondition && TryParseOptions( index, scoped: false ) ) { continue; }
 			}
 			var atomCaseless = caseless;
 			var atomCaselessRestricted = caselessRestricted;
@@ -103,10 +122,17 @@ internal sealed partial class PcreByteParser {
 				throw Unsupported( current.OpeningOffset );
 			}
 			if ( child is not null ) {
+				if ( current.WaitingForCondition ) {
+					if ( child.AssertionKind == 0 || child.NonAtomic ) {
+						throw Invalid( child.OpeningOffset, "a condition requires an atomic assertion" );
+					}
+					child.IsConditionAssertion = true;
+				}
 				parents.Push( current );
 				current = child;
 				continue;
 			}
+			if ( current.WaitingForCondition ) { throw Invalid( current.OpeningOffset, "conditional group requires an assertion" ); }
 			AppendNode( current, atom!, atomCaseless, atomCaselessRestricted );
 		}
 	}
@@ -124,7 +150,7 @@ internal sealed partial class PcreByteParser {
 
 	private PcreByteNode FinishAssertion( GroupFrame frame, PcreByteAlternatives body ) {
 		// Retain the original literal instruction and its search/work behavior.
-		if ( !frame.NonAtomic && body.Branches.Count == 1 ) {
+		if ( !frame.NonAtomic && !frame.IsConditionAssertion && body.Branches.Count == 1 ) {
 			var literals = body.Branches[0];
 			var bytes = new List<byte>();
 			Span<byte> encoded = stackalloc byte[4];
@@ -209,6 +235,7 @@ internal sealed partial class PcreByteParser {
 		var assertionKind = 0;
 		var nonAtomic = false;
 		CaptureCondition? condition = null;
+		var assertionConditional = false;
 		var entryOptions = CurrentGroupOptions;
 		string? name = null;
 		if ( TryParseGroupAlias( out atomic, out assertionKind, out nonAtomic ) ) {
@@ -223,7 +250,12 @@ internal sealed partial class PcreByteParser {
 				capturing = false;
 			} else if ( index + 1 < source.Length && source[index + 1] == (byte)'(' ) {
 				index += 2;
-				condition = ParseCaptureCondition( offset );
+				if ( index < source.Length && source[index] is (byte)'?' or (byte)'*' ) {
+					// Parse the actual inner '(' with another heap frame. Its options
+					// and assertion context end before the yes/no branches begin.
+					index--;
+					assertionConditional = true;
+				} else { condition = ParseCaptureCondition( offset ); }
 				capturing = false;
 			} else if ( index + 1 < source.Length && source[index + 1] == (byte)':' ) {
 				index += 2;
@@ -285,7 +317,7 @@ internal sealed partial class PcreByteParser {
 		}
 		if ( name is not null ) { RegisterCaptureName( name, number, offset ); }
 		group = new GroupFrame( offset, depth + 1, number, atomic, branchReset, entryOptions, groupCount,
-			assertionKind, assertionOpeningContext, nonAtomic, condition );
+			assertionKind, assertionOpeningContext, nonAtomic, condition, assertionConditional );
 		return null;
 	}
 }

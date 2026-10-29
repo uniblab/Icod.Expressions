@@ -205,11 +205,6 @@ public sealed class PcreFixedLookbehindReferenceTests {
 		}
 	}
 
-	[Theory]
-	[InlineData( "(?(?<=[a])b|c)" )]
-	public void AssertionConditionsRemainPending( string pattern ) =>
-		AssertDiagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax, 0 );
-
 	[Fact]
 	public void FixedLookbehindKeepsTheHeapParserDepthBoundary() {
 		var atLimit = string.Concat( Enumerable.Repeat( "(?<=", 256 ) ) + "[a]" + new string( ')', 256 );

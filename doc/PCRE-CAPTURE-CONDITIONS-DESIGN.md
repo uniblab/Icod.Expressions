@@ -1,5 +1,8 @@
 # Internal PCRE capture-participation conditions
 
+> Historical scope: traditional atomic assertion conditions are added by
+> `PCRE-ASSERTION-CONDITIONS-DESIGN.md`; their pending status below describes #89.
+
 ## Intent and approach
 
 Continue issue #7 after #88 with conditions that test whether a capture has
