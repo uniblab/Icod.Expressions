@@ -66,6 +66,10 @@ public sealed class PcreSubroutineLookbehindReferenceTests {
 	[InlineData( @"(?(DEFINE)(?<x>\R))(?<=(?&x))b", "0D0A62", false, 0, 2, 1, "2:1,-", false, true )]
 	[InlineData( @"(?(DEFINE)(?<x>.))(?<=(?&x))b", "0D0A62", false, 0, -1, 0, "", false, true )]
 	[InlineData( @"^(?<x>(?<y>a|b))b(?<=(?&x))c\k<y>$", "61626361", false, 0, 0, 4, "0:4,0:1,0:1", false, false )]
+	[InlineData( @"(?(DEFINE)(?<x>a\Kb))(?<=(?&x))c", "616263", false, 0, 1, 2, "1:2,-", false, false )]
+	[InlineData( @"(?(DEFINE)(?<x>a\Kx|ab))(?<=(?&x))c", "616263", false, 0, 2, 1, "2:1,-", false, false )]
+	[InlineData( @"(?(DEFINE)(?<x>a{1,2}\Kb))(?<=(?&x))c", "61616263", false, 0, 2, 2, "2:2,-", false, false )]
+	[InlineData( @"(?(DEFINE)(?<x>a\Kb))(?<=(?&x){0})c", "63", false, 0, 0, 1, "0:1,-", false, false )]
 	public void CallsUseDefinitionBodyWidthsAndRestoreCallerCaptures( string pattern, string hex,
 		bool utf8, int offset, int index, int length, string captures, bool invalidUtf, bool anyCrLf ) =>
 		AssertOutcome( pattern, hex, utf8, offset, index, length, captures, invalidUtf, anyCrLf );
