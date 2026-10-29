@@ -129,16 +129,6 @@ public sealed class PcreOptionScopeReferenceTests {
 		Assert.Equal( offset, result.Diagnostic?.ByteOffset );
 	}
 
-	[Theory]
-	[InlineData( "(?i:(*plb:a))", 4 )]
-	[InlineData( "(*plb:(?i:a))", 0 )]
-	public void OtherOptionsAndGeneralAssertionBodiesRemainPending( string pattern, int offset ) {
-		Reference( pattern, true );
-		var result = PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( pattern ), new PcreByteOptions { Utf8 = true } );
-		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
-		Assert.Equal( offset, result.Diagnostic?.ByteOffset );
-	}
-
 	private static void Compare( PcreRegex8Bit reference, byte[] subject, int offset,
 		PcreByteMatchResult actual, string context = "" ) {
 		var native = reference.Match( subject, offset );

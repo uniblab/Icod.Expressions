@@ -1,5 +1,9 @@
 # Internal PCRE general fixed-length lookbehind
 
+Historical tranche boundary: exact atomic-group and atomic-lookaround aliases now
+share these existing semantic paths; see `PCRE-GROUP-ALIASES-DESIGN.md`. Earlier
+alias-pending notes below describe the original tranche.
+
 ## Goal and scope
 
 Extend atomic positive/negative lookbehind beyond literal bodies. Support classes,

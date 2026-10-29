@@ -1,5 +1,9 @@
 # Internal PCRE atomic lookahead bodies and captures
 
+Historical tranche boundary: exact atomic-group and atomic-lookaround aliases now
+share these existing semantic paths; see `PCRE-GROUP-ALIASES-DESIGN.md`. Earlier
+alias-pending notes below describe the original tranche.
+
 ## Goal and reference
 
 Advance issue #7 with general atomic (?=...) and (?!...) bodies using the
