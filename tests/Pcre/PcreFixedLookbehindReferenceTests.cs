@@ -161,6 +161,42 @@ public sealed class PcreFixedLookbehindReferenceTests {
 	}
 
 	[Theory]
+	[InlineData( "(?<=(?:a*){0})b" )]
+	[InlineData( @"(?<=(?:\R*){0})b" )]
+	public void ErasedGroupsStillValidateTheirUnboundedConsumedBodies( string pattern ) {
+		Assert.Throws<PcrePatternException>( () => Reference( pattern, false ) );
+		AssertDiagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax, 0 );
+	}
+
+	[Theory]
+	[InlineData( "(?<=(?<=a)*)b" )]
+	[InlineData( "(?<=(?<=a)+)b" )]
+	public void UnboundedDirectNestedBehindRemainsUnsupported( string pattern ) {
+		Assert.Throws<PcrePatternException>( () => Reference( pattern, false ) );
+		AssertDiagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax, 0 );
+	}
+
+	[Theory]
+	[InlineData( "(?<=[a]{65535}[b])c" )]
+	[InlineData( "(?<=(?:[a]{65535}){2})b" )]
+	[InlineData( "(?<=(?:[a]{65535}){65535})b" )]
+	public void GeneralWidthSumsAndProductsRemainBounded( string pattern ) =>
+		AssertDiagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax, 0 );
+
+	[Fact]
+	public void MaximumFixedWidthCanBeValidatedWithoutEmittingItsErasedBody() {
+		var result = Compile( "(?<=[a]{65535}){0}b" ).Match( "b"u8.ToArray() );
+		Assert.Null( result.Diagnostic );
+		Assert.Equal( new PcreByteCapture( 0, 1 ), result.Match?.Captures[0] );
+	}
+
+	[Theory]
+	[InlineData( @"x(?<=\X)a" )]
+	[InlineData( @"x(?<!\C)a" )]
+	public void UnsupportedBodyEscapesKeepTheLegacyBehindOpeningDiagnostic( string pattern ) =>
+		AssertDiagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax, 1 );
+
+	[Theory]
 	[InlineData( @"(?<=\K)" )]
 	[InlineData( @"(?<!\K)" )]
 	[InlineData( @"(?<=(?:[a]\K))" )]
