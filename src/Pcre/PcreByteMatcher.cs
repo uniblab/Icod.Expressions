@@ -292,6 +292,21 @@ internal static class PcreByteMatcher {
 							}
 							pc = participated ? instruction.First : instruction.Second;
 							break;
+						case PcreByteOpcode.RecursionTest:
+							var inCall = activeCall >= 0;
+							if ( inCall && !instruction.CaptureNumbers.IsEmpty ) {
+								inCall = false;
+								var currentCallNumber = callScopes![activeCall].Number;
+								for ( var slot = 0; slot < instruction.CaptureNumbers.Length; slot++ ) {
+									Step(); // One current-call target lookup, never an ancestor/guard scan.
+									if ( instruction.CaptureNumbers.Span[slot] == currentCallNumber ) {
+										inCall = true;
+										break;
+									}
+								}
+							}
+							pc = inCall ? instruction.First : instruction.Second;
+							break;
 						case PcreByteOpcode.Backreference:
 							PcreByteCapture? capture;
 							if ( instruction.CaptureNumbers.IsEmpty ) {
@@ -542,7 +557,7 @@ internal static class PcreByteMatcher {
 							backtrack.Push( new Frame( pc + 1, position, changes.Count, atomicDepths.Count,
 								activeScope, FrameKind.Call, CallScope: activeCall ) );
 							var callId = callScopes.Count;
-							callScopes.Add( new( pc + 1, activeCall, changes.Count ) );
+							callScopes.Add( new( pc + 1, activeCall, changes.Count, instruction.Second ) );
 							activeCall = callId;
 							pc = instruction.First;
 							break;
@@ -889,7 +904,7 @@ internal static class PcreByteMatcher {
 
 	private enum FrameKind : byte { Branch, PositiveAssertion, NegativeAssertion, ReverseRetry, NonAtomicAssertion, ConditionalAssertion, Call }
 
-	private readonly record struct CallScope( int ReturnPc, int Parent, int ChangeCount );
+	private readonly record struct CallScope( int ReturnPc, int Parent, int ChangeCount, int Number );
 
 	private readonly record struct AssertionScope( int Boundary, int LimitEnd, int Parent, int ReturnPc, int Position );
 

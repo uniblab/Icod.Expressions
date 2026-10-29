@@ -67,6 +67,10 @@ internal sealed record PcreByteCaptureConditional(
 	ReadOnlyMemory<int> CaptureNumbers, PcreByteAlternatives Body
 ) : PcreByteNode;
 
+internal sealed record PcreByteRecursionConditional(
+	ReadOnlyMemory<int> GroupNumbers, PcreByteAlternatives Body
+) : PcreByteNode;
+
 internal sealed record PcreByteAssertionConditional(
 	PcreByteNode Assertion, PcreByteAlternatives Body
 ) : PcreByteNode;

@@ -2,7 +2,8 @@ namespace Icod.Expressions.Pcre;
 
 internal sealed partial class PcreByteParser {
 	private bool hasCaptureConditions;
-	private readonly record struct CaptureCondition( int Number, string? Name, int Offset, bool RecursionFallback = false );
+	private readonly record struct CaptureCondition( int Number, string? Name, int Offset,
+		bool RecursionFallback = false, bool RecursionTest = false );
 	// Resolve after all declarations, before lookbehind analysis and compilation.
 	private sealed record ParsedCaptureConditional( CaptureCondition Condition, PcreByteAlternatives Body ) : PcreByteNode;
 
@@ -35,7 +36,11 @@ internal sealed partial class PcreByteParser {
 			return new( 0, wrapped, offset );
 		}
 		var remaining = source.AsSpan( index );
-		if ( first is (byte)'?' or (byte)'*' || remaining.StartsWith( "R&"u8 ) ) {
+		if ( remaining.StartsWith( "R&"u8 ) ) {
+			index += 2;
+			return new( 0, ParseCaptureName( (byte)')', offset ), offset, RecursionTest: true );
+		}
+		if ( first is (byte)'?' or (byte)'*' ) {
 			throw Unsupported( offset );
 		}
 		var name = ParseCaptureName( (byte)')', offset );
@@ -70,7 +75,23 @@ internal sealed partial class PcreByteParser {
 			ReadOnlyMemory<int> targets;
 			if ( condition.Name is { } name ) {
 				if ( !namedCaptures.TryGetValue( name, out var numbers ) ) {
-					if ( condition.RecursionFallback ) { throw Unsupported( condition.Offset ); }
+					if ( condition.RecursionFallback ) {
+						// Only absent names fall back to numeric recursion tests.
+						// R and every all-zero suffix mean any active call.
+						var number = 0;
+						for ( var digitIndex = 1; digitIndex < name.Length; digitIndex++ ) {
+							cancellationToken.ThrowIfCancellationRequested();
+							var digit = name[digitIndex] - '0';
+							if ( number > ( MaximumCaptureCount - digit ) / 10 ) {
+								throw Invalid( condition.Offset, "recursion condition target exceeds capture limit" );
+							}
+							number = number * 10 + digit;
+						}
+						if ( number > groupCount ) { throw Invalid( condition.Offset, "recursion condition has no capture group" ); }
+						return new PcreByteRecursionConditional( number == 0 ? ReadOnlyMemory<int>.Empty : NumericTarget( number ), parsed.Body ) {
+							Caseless = parsed.Caseless, CaselessRestricted = parsed.CaselessRestricted
+						};
+					}
 					throw Invalid( condition.Offset, "capture condition has no capture name" );
 				}
 				if ( !namedTargets.TryGetValue( name, out targets ) ) {
@@ -82,6 +103,11 @@ internal sealed partial class PcreByteParser {
 					throw Invalid( condition.Offset, "capture condition has no capture group" );
 				}
 				targets = NumericTarget( condition.Number );
+			}
+			if ( condition.RecursionTest ) {
+				return new PcreByteRecursionConditional( targets, parsed.Body ) {
+					Caseless = parsed.Caseless, CaselessRestricted = parsed.CaselessRestricted
+				};
 			}
 			return new PcreByteCaptureConditional( targets, parsed.Body ) {
 				Caseless = parsed.Caseless, CaselessRestricted = parsed.CaselessRestricted
