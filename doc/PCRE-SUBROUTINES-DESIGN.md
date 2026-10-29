@@ -64,8 +64,9 @@ inactive successful siblings. Atomic/assertion pruning and failure release them.
 
 Return keeps the guard and internal alternatives so later failure may retry the
 callee. Restore numbered captures and their start slots and private repeat
-marks to entry values by walking the original fixed journal interval backward
-and appending compensating mutations. Preserve original entries for interior
+marks to entry values by walking the original fixed journal interval forward
+and appending the first compensating mutation per field. Reuse integer generation tags per field (no capture values) to avoid doubling
+nested-call history. Preserve original entries for interior
 retries. Do not restore slot0: a callee's `\K` updates the reported match start.
 The root target capture is never set by a call; nested captures are temporarily
 visible to references/conditions and restore on return. Outer capture values

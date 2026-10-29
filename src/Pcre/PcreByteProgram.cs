@@ -11,6 +11,8 @@ internal enum PcreByteOpcode {
 	Class,
 	Backreference,
 	CaptureTest,
+	Call,
+	Return,
 	WordBoundary,
 	AssertLiteral,
 	Reverse,
@@ -66,6 +68,7 @@ internal sealed class PcreByteProgramCompiler {
 	private int countedOffset = -1;
 	private int lastCountedOffset = -1;
 	private int compileVisits;
+	private readonly List<(int Instruction, int Number)> calls = new();
 
 	internal PcreByteProgramCompiler( CancellationToken cancellationToken, bool utf8, bool matchInvalidUtf,
 		bool anyCrLfNewline, bool bsrAnyCrLf ) {
@@ -76,13 +79,25 @@ internal sealed class PcreByteProgramCompiler {
 		this.bsrAnyCrLf = bsrAnyCrLf;
 	}
 
-	internal PcreByteProgram Compile( PcreByteAlternatives root ) {
+	internal PcreByteProgram Compile( PcreByteAlternatives root, IReadOnlyDictionary<int, PcreByteGroup> targets ) {
 		CompileAlternatives( root );
 		while ( compileWork.TryPop( out var next ) ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			next();
 		}
 		Emit( PcreByteOpcode.Accept );
+		var entries = new Dictionary<int, int>();
+		foreach ( var target in targets ) {
+			entries.Add( target.Key, instructions.Count );
+			// A subroutine calls the body, bypassing its root capture and exterior repeat.
+			CompileAlternatives( target.Value.Body );
+			while ( compileWork.TryPop( out var next ) ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				next();
+			}
+			Emit( PcreByteOpcode.Return );
+		}
+		foreach ( var call in calls ) { Patch( call.Instruction, entries[call.Number] ); }
 		return new( instructions.ToArray(), markCount, hasCaselessComparisons, utf8, matchInvalidUtf,
 			FindRequiredLiteralSuffix( root ), anyCrLfNewline, HasExplicitNewline( root ), CanMatchEmptyAtAnyOffset( root ) );
 	}
@@ -105,7 +120,7 @@ internal sealed class PcreByteProgramCompiler {
 		PcreByteSearchStart or PcreByteMatchStartReset => true,
 		// A participating capture may be empty. The VM still checks participation
 		// and forbids nonempty consumption across the synthetic fragment boundary.
-		PcreByteBackreference => true,
+		PcreByteBackreference or PcreByteSubroutineCall => true,
 		// A negative or empty literal assertion can accept without reading the
 		// requested code unit, just like a nullable general assertion.
 		PcreByteLiteralAssertion assertion => !assertion.IsPositive || assertion.Bytes.IsEmpty,
@@ -267,6 +282,9 @@ internal sealed class PcreByteProgramCompiler {
 			case PcreByteBackreference reference:
 				Emit( PcreByteOpcode.Backreference, reference.Number, caseless: reference.Caseless,
 					caselessRestricted: reference.CaselessRestricted, captureNumbers: reference.DuplicateNumbers );
+				break;
+			case PcreByteSubroutineCall call:
+				calls.Add( (Emit( PcreByteOpcode.Call ), call.Number) );
 				break;
 			case PcreByteWordBoundary boundary:
 				Emit( PcreByteOpcode.WordBoundary, boundary.IsBoundary ? 1 : 0,

@@ -71,7 +71,10 @@ internal sealed partial class PcreByteParser {
 		}
 		if ( hasNamedReferences ) { root = ResolveNamedReferences( root ); }
 		if ( hasCaptureConditions ) { root = ResolveCaptureConditions( root ); }
-		return hasGeneralLookbehinds ? ResolveLookbehindLengths( root ) : root;
+		if ( hasSubroutines ) { root = ResolveSubroutines( root ); }
+		if ( hasGeneralLookbehinds ) { root = ResolveLookbehindLengths( root ); }
+		if ( hasSubroutines ) { FinishSubroutineTargets( root ); }
+		return root;
 	}
 
 	private bool TryParseOptions( int openingOffset, bool scoped ) {
@@ -513,6 +516,10 @@ internal sealed partial class PcreByteParser {
 		}
 		if ( value == (byte)'g' ) {
 			if ( inBracket ) { throw Unsupported( offset ); } // g is a literal in a PCRE2 bracket.
+			if ( index < source.Length && source[index] is (byte)'<' or (byte)'\'' ) {
+				var delimiter = source[index++];
+				return ParseSubroutineCall( delimiter == (byte)'<' ? (byte)'>' : (byte)'\'', offset );
+			}
 			if ( index < source.Length && source[index] == (byte)'{' ) {
 				var opening = index++;
 				SkipBraceHorizontalSpace();

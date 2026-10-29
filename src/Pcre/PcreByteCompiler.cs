@@ -40,7 +40,7 @@ internal static class PcreByteCompiler {
 			var program = new PcreByteProgramCompiler(
 				cancellationToken, utf8, options.MatchInvalidUtf, options.AnyCrLfNewline,
 				options.BsrAnyCrLf
-			).Compile( root );
+			).Compile( root, parser.SubroutineTargets );
 			return new(
 				new PcreCompiledBytePattern( program, parser.GroupCount, options.MatchWorkLimit, options.WorkObserver ),
 				null

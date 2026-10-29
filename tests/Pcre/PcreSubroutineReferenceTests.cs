@@ -114,13 +114,12 @@ public sealed class PcreSubroutineReferenceTests {
 	}
 
 	[Theory]
-	[InlineData( @"(?<x>a)(?<=\g<x>)b" )]
-	[InlineData( @"(?(DEFINE)(?<x>a{1,2}))aa(?<=(?&x))b" )]
-	[InlineData( @"(?(DEFINE)(?<x>a))(?<*(?&x))b" )]
-	public void ConsumedCallsRemainUnsupportedAtTheOwningBehind( string pattern ) {
+	[InlineData( @"(?<x>a)(?<=\g<x>)b", 7 )]
+	[InlineData( @"(?(DEFINE)(?<x>a{1,2}))aa(?<=(?&x))b", 25 )]
+	[InlineData( @"(?(DEFINE)(?<x>a))(?<*(?&x))b", 18 )]
+	public void ConsumedCallsRemainUnsupportedAtTheOwningBehind( string pattern, int offset ) {
 		_ = Reference( pattern );
-		Diagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax,
-			pattern.IndexOf( "(?<", pattern.IndexOf( ')', StringComparison.Ordinal ) + 1, StringComparison.Ordinal ) );
+		Diagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax, offset );
 	}
 
 	[Fact]
@@ -191,6 +190,15 @@ public sealed class PcreSubroutineReferenceTests {
 				}
 			}
 		}
+	}
+
+	[Fact]
+	public void NestedCallRestorationDoesNotDuplicateJournalHistoryExponentially() {
+		var pattern = "^(?(DEFINE)";
+		for ( var index = 0; index < 20; index++ ) {
+			pattern += "(?<g" + index + ">()" + ( index == 19 ? "a" : "(?&g" + ( index + 1 ) + ")" ) + ")";
+		}
+		Check( pattern + ")(?&g0)$", "a", 0, 1, 41 );
 	}
 
 	[Fact]
