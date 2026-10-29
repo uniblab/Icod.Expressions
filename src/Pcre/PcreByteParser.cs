@@ -23,6 +23,8 @@ internal sealed partial class PcreByteParser {
 	private bool asciiBsD;
 	private bool noAutoCapture;
 	private bool ungreedy;
+	private bool hasBranchReset;
+	private bool hasGeneralLookbehinds;
 	private ExtendedMode extended;
 
 	internal PcreByteParser( byte[] source, bool caseless, bool utf8, bool ucp,
@@ -62,7 +64,8 @@ internal sealed partial class PcreByteParser {
 				throw Invalid( reference.Offset, "backreference has no capture group" );
 			}
 		}
-		return hasNamedReferences ? ResolveNamedReferences( root ) : root;
+		if ( hasNamedReferences ) { root = ResolveNamedReferences( root ); }
+		return hasGeneralLookbehinds ? ResolveLookbehindLengths( root ) : root;
 	}
 
 	private bool TryParseOptions( int openingOffset, bool scoped ) {

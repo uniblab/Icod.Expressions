@@ -42,14 +42,18 @@ that the depth limit is ignored by JIT matching. Do not equate the internal
 saved-path count with PCRE2's depth limit or compare numeric thresholds across
 engines. Test the selected Grep workloads and error behavior separately.
 
-General fixed-length lookbehind validates character widths at parser closure with
+General fixed-length lookbehind validates character widths after complete parsing and name resolution with
 heap traversal and bounded sums/products (65,535 per new general branch). Byte
 and UTF scalar rewind spends match work and observes cancellation within the
 current valid fragment. Bounded variable lengths use min/max analysis and cap every branch at255 if
 any branch varies. Reverse retry frames share saved-path/journal ceilings, use
 a byte-sized remaining count and spend work. Scoped end limits restore through
-existing assertion-depth checkpoints. Consumed references and unlimited groups
-remain explicit unsupported syntax; analysis uses no native stack recursion.
+existing assertion-depth checkpoints. Consumed references resolve bounded capture-body widths through a global heap
+map and consumed-only dependency traversal; lexical self/cycles, unbounded bodies
+and global branch reset remain controlled unsupported syntax. Erased references
+still validate their target. Name/tree reconstruction and width dependency
+traversal use explicit heap frames with cancellation. Native's independent 2,000
+branch-analysis accounting is not a managed numeric-limit parity claim.
 
 ## Remaining release work
 

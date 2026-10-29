@@ -59,30 +59,10 @@ internal sealed partial class PcreByteParser {
 		return ( utf8 ? Encoding.UTF8 : Encoding.ASCII ).GetString( source, start, length );
 	}
 
-	private PcreByteAlternatives ResolveNamedReferences( PcreByteAlternatives alternatives ) {
-		var branches = new IReadOnlyList<PcreByteNode>[alternatives.Branches.Count];
-		for ( var branch = 0; branch < branches.Length; branch++ ) {
-			var original = alternatives.Branches[branch];
-			var nodes = new PcreByteNode[original.Count];
-			for ( var n = 0; n < nodes.Length; n++ ) { nodes[n] = ResolveNamedReference( original[n] ); }
-			branches[branch] = nodes;
-		}
-		return new( branches );
-	}
-
-	private PcreByteNode ResolveNamedReference( PcreByteNode node ) {
-		cancellationToken.ThrowIfCancellationRequested();
-		return node switch {
-			NamedReference reference => namedCaptures.TryGetValue( reference.Name, out var number )
+	private PcreByteAlternatives ResolveNamedReferences( PcreByteAlternatives alternatives ) =>
+		RewriteTree( alternatives, node => node is NamedReference reference
+			? namedCaptures.TryGetValue( reference.Name, out var number )
 				? new PcreByteBackreference( number ) { Caseless = reference.Caseless }
-				: throw Invalid( reference.Offset, "backreference has no capture name" ),
-			PcreByteGroup group => group with { Body = ResolveNamedReferences( group.Body ) },
-			PcreByteNoncapturingGroup group => group with { Body = ResolveNamedReferences( group.Body ) },
-			PcreByteLookahead assertion => assertion with { Body = ResolveNamedReferences( assertion.Body ) },
-			PcreByteLookbehind assertion => assertion with { Body = ResolveNamedReferences( assertion.Body ) },
-			PcreByteRepeat repeat => repeat with { Child = ResolveNamedReference( repeat.Child ) },
-			PcreByteAtomic atomic => atomic with { Child = ResolveNamedReference( atomic.Child ) },
-			_ => node
-		};
-	}
+				: throw Invalid( reference.Offset, "backreference has no capture name" )
+			: node );
 }

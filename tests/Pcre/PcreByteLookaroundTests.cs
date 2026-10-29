@@ -62,7 +62,7 @@ public sealed class PcreByteLookaroundTests {
 	[InlineData( "(?<=a(b+))c", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
 	[InlineData( "(?<=\\w{1,})b", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
 	[InlineData( "(?<=(?:a+))", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( "(?<=\\k<x>)", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( "(?<=a*)", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
 	[InlineData( "(?<=a", (int)PcreByteDiagnosticCode.InvalidSyntax )]
 	[InlineData( "(?=a", (int)PcreByteDiagnosticCode.InvalidSyntax )]
 	public void DiagnosesBodiesOutsideTheLiteralSubset( string pattern, int code ) {
