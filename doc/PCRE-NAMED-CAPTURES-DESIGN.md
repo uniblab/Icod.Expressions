@@ -1,5 +1,9 @@
 # Internal PCRE named captures
 
+Historical tranche boundary: named capture-participation conditions now share
+numbered capture state and test ANY participating duplicate slot; see
+`PCRE-CAPTURE-CONDITIONS-DESIGN.md`. Earlier pending-condition notes are historical.
+
 Historical tranche boundary: local J and duplicate names are now implemented by
 `PCRE-DUPLICATE-NAMES-DESIGN.md`; reset preserves J and multi-slot references use
 declaration-ordered participation selection and native collision-scan precedence

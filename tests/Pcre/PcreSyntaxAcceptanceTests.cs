@@ -18,7 +18,6 @@ public sealed class PcreSyntaxAcceptanceTests {
 	[InlineData( "a(*SKIP)", 1, false )]
 	[InlineData( "(?i)(*FAIL)", 4, false )]
 	[InlineData( "(?[a|b])", 0, false )]
-	[InlineData( "(a)(?(1)b|c)", 3, false )]
 	[InlineData( "(?R)", 0, false )]
 	[InlineData( "(?C1)a", 0, false )]
 	[InlineData( @"(a)\g<1>", 3, false )]
