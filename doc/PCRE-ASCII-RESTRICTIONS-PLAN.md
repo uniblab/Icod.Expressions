@@ -68,7 +68,8 @@ PosixDigit and All; constructor bool unchanged. GroupOptions retains the enum.
 ### Integration regression: POSIX punctuation bound
 
 **Files:** `tests/Pcre/PcreAsciiRestrictionReferenceTests.cs`,
-`tests/Pcre/PcreUtf8PosixClassTests.cs`, `src/Pcre/PcreByteMatcher.cs` and the
+`tests/Pcre/PcreUtf8PosixClassTests.cs`,
+`tests/Pcre/PcreUtf8GeneralCategoryTests.cs`, `src/Pcre/PcreByteMatcher.cs` and the
 POSIX/design inventories.
 
 - [ ] Pin native baseline and aT punctuation for £/©/× misses, ASCII dollar and
