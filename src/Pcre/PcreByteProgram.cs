@@ -111,6 +111,8 @@ internal sealed class PcreByteProgramCompiler {
 		PcreByteNoncapturingGroup group => CanMatchEmptyAtAnyOffset( group.Body ),
 		PcreByteCaptureConditional conditional => conditional.Body.Branches.Count == 1
 			|| CanMatchEmptyAtAnyOffset( conditional.Body ),
+		PcreByteAssertionConditional conditional => conditional.Body.Branches.Count == 1
+			|| CanMatchEmptyAtAnyOffset( conditional.Body ),
 		PcreByteAtomic atomic => CanMatchEmptyAtAnyOffset( atomic.Child ),
 		PcreByteRepeat repeat => repeat.Minimum == 0 || CanMatchEmptyAtAnyOffset( repeat.Child ),
 		_ => false
@@ -136,6 +138,8 @@ internal sealed class PcreByteProgramCompiler {
 		PcreByteGroup group => HasExplicitNewline( group.Body ),
 		PcreByteNoncapturingGroup group => HasExplicitNewline( group.Body ),
 		PcreByteCaptureConditional conditional => HasExplicitNewline( conditional.Body ),
+		PcreByteAssertionConditional conditional => HasExplicitNewline( conditional.Assertion )
+			|| HasExplicitNewline( conditional.Body ),
 		PcreByteAtomic atomic => HasExplicitNewline( atomic.Child ),
 		PcreByteRepeat repeat => HasExplicitNewline( repeat.Child ),
 		_ => false
@@ -298,6 +302,9 @@ internal sealed class PcreByteProgramCompiler {
 			case PcreByteCaptureConditional conditional:
 				CompileConditional( conditional );
 				break;
+			case PcreByteAssertionConditional conditional:
+				CompileAssertionConditional( conditional );
+				break;
 			case PcreByteAtomic atomic:
 				Emit( PcreByteOpcode.AtomicEnter );
 				compileWork.Push( () => Emit( PcreByteOpcode.AtomicExit ) );
@@ -326,6 +333,34 @@ internal sealed class PcreByteProgramCompiler {
 			if ( conditional.Body.Branches.Count > 1 ) { CompileSequence( conditional.Body.Branches[1], 0 ); }
 		} );
 		CompileSequence( conditional.Body.Branches[0], 0 );
+	}
+
+	private void CompileAssertionConditional( PcreByteAssertionConditional conditional ) {
+		var (body, positive, lengths, minimum) = conditional.Assertion switch {
+			PcreByteLookahead assertion => (assertion.Body, assertion.IsPositive, ReadOnlyMemory<int>.Empty, -1),
+			PcreByteLookbehind assertion => (assertion.Body, assertion.IsPositive, assertion.BranchLengths, assertion.Minimum),
+			_ => throw new InvalidOperationException( "A condition requires a general atomic assertion." )
+		};
+		var flags = ( positive ? 1 : 0 ) | ( minimum >= 0 ? 2 : 0 ) | 8;
+		var enter = Emit( PcreByteOpcode.AssertionEnter, second: flags );
+		compileWork.Push( () => {
+			var exit = Emit( PcreByteOpcode.AssertionExit, second: 8 );
+			var yes = instructions.Count;
+			compileWork.Push( () => {
+				var endJump = Emit( PcreByteOpcode.Jump );
+				var no = instructions.Count;
+				compileWork.Push( () => {
+					// Body exhaustion restores the guard; body match commits either
+					// polarity's captures. Neither outcome saves its sibling branch.
+					Patch( enter, positive ? no : yes, flags );
+					Patch( exit, positive ? yes : no, 8 );
+					Patch( endJump, instructions.Count );
+				} );
+				if ( conditional.Body.Branches.Count > 1 ) { CompileSequence( conditional.Body.Branches[1], 0 ); }
+			} );
+			CompileSequence( conditional.Body.Branches[0], 0 );
+		} );
+		CompileAlternatives( body, lengths, minimum );
 	}
 
 	private PcreByteAtomic LowerNewlineSequence() {

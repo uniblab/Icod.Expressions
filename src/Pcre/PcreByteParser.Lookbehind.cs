@@ -106,6 +106,10 @@ internal sealed partial class PcreByteParser {
 						pending.Push( (ReferenceTarget( reference, item.Opening ), false, item.Opening) ); break;
 					case PcreByteNoncapturingGroup group: ScheduleBody( group.Body, item.Opening ); break;
 					case PcreByteCaptureConditional conditional: ScheduleBody( conditional.Body, item.Opening ); break;
+					case PcreByteAssertionConditional conditional:
+						ScheduleBody( conditional.Body, item.Opening );
+						pending.Push( (conditional.Assertion, false, item.Opening) );
+						break;
 					case PcreByteLookbehind assertion: ScheduleBody( assertion.Body, assertion.OpeningOffset ); break;
 					case PcreByteLookahead assertion: ScheduleNestedBehinds( assertion.Body ); break;
 					case PcreByteAtomic atomic: pending.Push( (atomic.Child, false, item.Opening) ); break;
@@ -125,6 +129,7 @@ internal sealed partial class PcreByteParser {
 				PcreByteNoncapturingGroup group => GroupWidth( group.Body, item.Opening ),
 				// Native width analysis sees explicit branches only, even without an else.
 				PcreByteCaptureConditional conditional => GroupWidth( conditional.Body, item.Opening ),
+				PcreByteAssertionConditional conditional => GroupWidth( conditional.Body, item.Opening ),
 				PcreByteAtomic atomic => widths[atomic.Child],
 				PcreByteRepeat repeat => RepeatWidth( repeat, item.Opening ),
 				_ => throw Unsupported( item.Opening )
