@@ -1,5 +1,9 @@
 # Internal PCRE atomic lookahead bodies and captures
 
+Historical tranche boundary: non-atomic positive ahead/behind now extend the shared
+engine with bounded resumable scopes; see `PCRE-NONATOMIC-ASSERTIONS-DESIGN.md`.
+Earlier pending-variant or scope-depth descriptions below describe that tranche.
+
 Historical tranche boundary: exact atomic-group and atomic-lookaround aliases now
 share these existing semantic paths; see `PCRE-GROUP-ALIASES-DESIGN.md`. Earlier
 alias-pending notes below describe the original tranche.

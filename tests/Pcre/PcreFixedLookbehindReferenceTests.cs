@@ -206,9 +206,8 @@ public sealed class PcreFixedLookbehindReferenceTests {
 	}
 
 	[Theory]
-	[InlineData( "(?<*[a])" )]
 	[InlineData( "(?(?<=[a])b|c)" )]
-	public void NonAtomicAssertionsAndConditionsRemainPending( string pattern ) =>
+	public void AssertionConditionsRemainPending( string pattern ) =>
 		AssertDiagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax, 0 );
 
 	[Fact]

@@ -1,5 +1,9 @@
 # Internal PCRE bounded variable-length lookbehind
 
+Historical tranche boundary: non-atomic positive ahead/behind now extend the shared
+engine with bounded resumable scopes; see `PCRE-NONATOMIC-ASSERTIONS-DESIGN.md`.
+Earlier pending-variant or scope-depth descriptions below describe that tranche.
+
 ## Goal and boundaries
 
 Extend #79's shared lookbehind machinery to bounded consuming repeats, unequal
