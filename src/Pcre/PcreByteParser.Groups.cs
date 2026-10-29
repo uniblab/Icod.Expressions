@@ -255,9 +255,14 @@ internal sealed partial class PcreByteParser {
 			// Other directives/group forms remain pending, not repeated empty groups.
 			throw Unsupported( offset );
 		} else if ( index < source.Length && source[index] == (byte)'?' ) {
+			if ( utf8 && index + 1 < source.Length && source[index + 1] >= 0x80
+				&& PcreUtf8.TryRead( source, index + 1, out var callScalar, out _ )
+				&& Rune.IsDigit( new Rune( callScalar ) ) ) { throw Invalid( offset, "subroutine numbers require ASCII digits" ); }
 			if ( TryParseOptions( offset, scoped: true ) ) {
 				capturing = false;
-			} else if ( index + 1 < source.Length && source[index + 1] is >= (byte)'0' and <= (byte)'9' or (byte)'+' or (byte)'-' ) {
+			} else if ( index + 1 < source.Length && ( source[index + 1] is >= (byte)'0' and <= (byte)'9' or (byte)'+'
+				|| source[index + 1] == (byte)'-' && index + 2 < source.Length
+					&& source[index + 2] is >= (byte)'0' and <= (byte)'9' ) ) {
 				index++;
 				return ParseSubroutineCall( (byte)')', offset );
 			} else if ( source.AsSpan( index ).StartsWith( "?&"u8 ) || source.AsSpan( index ).StartsWith( "?P>"u8 ) ) {
