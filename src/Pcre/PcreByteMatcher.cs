@@ -276,6 +276,17 @@ internal static class PcreByteMatcher {
 								pc++;
 							} else { failed = true; }
 							break;
+						case PcreByteOpcode.CaptureTest:
+							var participated = false;
+							for ( var slot = 0; slot < instruction.CaptureNumbers.Length; slot++ ) {
+								Step(); // Each declaration-ordered participation lookup is bounded work.
+								if ( captures[instruction.CaptureNumbers.Span[slot]].HasValue ) {
+									participated = true;
+									break; // Empty captures participate too.
+								}
+							}
+							pc = participated ? instruction.First : instruction.Second;
+							break;
 						case PcreByteOpcode.Backreference:
 							PcreByteCapture? capture;
 							if ( instruction.CaptureNumbers.IsEmpty ) {

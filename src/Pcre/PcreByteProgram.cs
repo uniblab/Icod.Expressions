@@ -10,6 +10,7 @@ internal enum PcreByteOpcode {
 	ScalarSet,
 	Class,
 	Backreference,
+	CaptureTest,
 	WordBoundary,
 	AssertLiteral,
 	Reverse,
@@ -108,6 +109,8 @@ internal sealed class PcreByteProgramCompiler {
 		PcreByteLookahead or PcreByteLookbehind => true,
 		PcreByteGroup group => CanMatchEmptyAtAnyOffset( group.Body ),
 		PcreByteNoncapturingGroup group => CanMatchEmptyAtAnyOffset( group.Body ),
+		PcreByteCaptureConditional conditional => conditional.Body.Branches.Count == 1
+			|| CanMatchEmptyAtAnyOffset( conditional.Body ),
 		PcreByteAtomic atomic => CanMatchEmptyAtAnyOffset( atomic.Child ),
 		PcreByteRepeat repeat => repeat.Minimum == 0 || CanMatchEmptyAtAnyOffset( repeat.Child ),
 		_ => false
@@ -132,6 +135,7 @@ internal sealed class PcreByteProgramCompiler {
 		PcreByteLookbehind assertion => HasExplicitNewline( assertion.Body ),
 		PcreByteGroup group => HasExplicitNewline( group.Body ),
 		PcreByteNoncapturingGroup group => HasExplicitNewline( group.Body ),
+		PcreByteCaptureConditional conditional => HasExplicitNewline( conditional.Body ),
 		PcreByteAtomic atomic => HasExplicitNewline( atomic.Child ),
 		PcreByteRepeat repeat => HasExplicitNewline( repeat.Child ),
 		_ => false
@@ -291,6 +295,9 @@ internal sealed class PcreByteProgramCompiler {
 			case PcreByteNoncapturingGroup noncapturing:
 				CompileAlternatives( noncapturing.Body );
 				break;
+			case PcreByteCaptureConditional conditional:
+				CompileConditional( conditional );
+				break;
 			case PcreByteAtomic atomic:
 				Emit( PcreByteOpcode.AtomicEnter );
 				compileWork.Push( () => Emit( PcreByteOpcode.AtomicExit ) );
@@ -302,6 +309,23 @@ internal sealed class PcreByteProgramCompiler {
 			default:
 				throw new InvalidOperationException( "Parser produced an unknown PCRE byte node." );
 		}
+	}
+
+	private void CompileConditional( PcreByteCaptureConditional conditional ) {
+		// A condition chooses once. Only alternatives inside its selected body
+		// may save paths; never offer the other conditional branch as a retry.
+		var test = Emit( PcreByteOpcode.CaptureTest, captureNumbers: conditional.CaptureNumbers );
+		var yes = instructions.Count;
+		compileWork.Push( () => {
+			var endJump = Emit( PcreByteOpcode.Jump );
+			var no = instructions.Count;
+			compileWork.Push( () => {
+				Patch( test, yes, no );
+				Patch( endJump, instructions.Count );
+			} );
+			if ( conditional.Body.Branches.Count > 1 ) { CompileSequence( conditional.Body.Branches[1], 0 ); }
+		} );
+		CompileSequence( conditional.Body.Branches[0], 0 );
 	}
 
 	private PcreByteAtomic LowerNewlineSequence() {

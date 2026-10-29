@@ -70,6 +70,7 @@ internal sealed partial class PcreByteParser {
 			}
 		}
 		if ( hasNamedReferences ) { root = ResolveNamedReferences( root ); }
+		if ( hasCaptureConditions ) { root = ResolveCaptureConditions( root ); }
 		return hasGeneralLookbehinds ? ResolveLookbehindLengths( root ) : root;
 	}
 
