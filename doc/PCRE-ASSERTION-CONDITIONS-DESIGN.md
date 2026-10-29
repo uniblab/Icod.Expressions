@@ -1,5 +1,9 @@
 # Internal PCRE assertion conditions
 
+> Historical scope: `PCRE-BRACE-GRAMMAR-DESIGN.md` adds ordinary literal-brace
+> fallback after complete counted-form recognition; older pending-brace statements
+> below describe the earlier tranche.
+
 ## Intent and choice
 
 Continue issue #7 after merged #89 with traditional atomic assertion conditions:
