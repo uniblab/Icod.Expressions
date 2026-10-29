@@ -197,18 +197,20 @@ internal sealed partial class PcreByteParser {
 
 	private PcreByteNode? ParseGroupOpening( int offset, int depth, int assertionOpeningContext, out GroupFrame? group ) {
 		group = null;
-		// PCRE2's (*...) directives and aliases are pending, not repeated empty groups.
-		if ( index < source.Length && source[index] == (byte)'*'
-			&& source.AsSpan( index + 1 ).IndexOf( (byte)')' ) >= 0 ) {
-			throw Unsupported( offset );
-		}
 		var capturing = !noAutoCapture;
 		var atomic = false;
 		var branchReset = false;
 		var assertionKind = 0;
 		var entryOptions = CurrentGroupOptions;
 		string? name = null;
-		if ( index < source.Length && source[index] == (byte)'?' ) {
+		if ( TryParseGroupAlias( out atomic, out assertionKind ) ) {
+			capturing = false;
+			if ( assertionKind != 0 && assertionOpeningContext < 0 ) { assertionOpeningContext = offset; }
+		} else if ( index < source.Length && source[index] == (byte)'*'
+			&& source.AsSpan( index + 1 ).IndexOf( (byte)')' ) >= 0 ) {
+			// Other directives/group forms remain pending, not repeated empty groups.
+			throw Unsupported( offset );
+		} else if ( index < source.Length && source[index] == (byte)'?' ) {
 			if ( TryParseOptions( offset, scoped: true ) ) {
 				capturing = false;
 			} else if ( index + 1 < source.Length && source[index + 1] == (byte)':' ) {
