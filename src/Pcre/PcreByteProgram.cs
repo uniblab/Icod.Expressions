@@ -263,10 +263,10 @@ internal sealed class PcreByteProgramCompiler {
 					assertion.IsBehind ? 1 : 0, bytes: assertion.Bytes, caseless: assertion.Caseless, caselessRestricted: assertion.CaselessRestricted );
 				break;
 			case PcreByteLookahead assertion:
-				CompileAssertion( assertion.Body, assertion.IsPositive );
+				CompileAssertion( assertion.Body, assertion.IsPositive, nonAtomic: assertion.NonAtomic );
 				break;
 			case PcreByteLookbehind assertion:
-				CompileAssertion( assertion.Body, assertion.IsPositive, assertion.BranchLengths, assertion.Minimum );
+				CompileAssertion( assertion.Body, assertion.IsPositive, assertion.BranchLengths, assertion.Minimum, assertion.NonAtomic );
 				break;
 			case PcreByteAnchor anchor:
 				Emit( anchor.IsStart ? PcreByteOpcode.Start : PcreByteOpcode.End );
@@ -320,11 +320,11 @@ internal sealed class PcreByteProgramCompiler {
 	}
 
 	private void CompileAssertion( PcreByteAlternatives body, bool positive,
-		ReadOnlyMemory<int> reverseLengths = default, int reverseMinimum = -1 ) {
-		var flags = ( positive ? 1 : 0 ) | ( reverseMinimum >= 0 ? 2 : 0 );
+		ReadOnlyMemory<int> reverseLengths = default, int reverseMinimum = -1, bool nonAtomic = false ) {
+		var flags = ( positive ? 1 : 0 ) | ( reverseMinimum >= 0 ? 2 : 0 ) | ( nonAtomic ? 4 : 0 );
 		var enter = Emit( PcreByteOpcode.AssertionEnter, second: flags );
 		compileWork.Push( () => {
-			Emit( PcreByteOpcode.AssertionExit );
+			Emit( PcreByteOpcode.AssertionExit, second: nonAtomic ? 4 : 0 );
 			Patch( enter, instructions.Count, flags );
 		} );
 		CompileAlternatives( body, reverseLengths, reverseMinimum );

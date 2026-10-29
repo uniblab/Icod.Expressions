@@ -65,10 +65,13 @@ internal sealed record PcreByteAtomic( PcreByteNode Child ) : PcreByteNode;
 
 internal sealed record PcreByteLiteralAssertion( ReadOnlyMemory<byte> Bytes, bool IsPositive, bool IsBehind ) : PcreByteNode;
 
-internal sealed record PcreByteLookahead( PcreByteAlternatives Body, bool IsPositive ) : PcreByteNode;
+internal sealed record PcreByteLookahead(
+	PcreByteAlternatives Body, bool IsPositive, bool NonAtomic = false
+) : PcreByteNode;
 
 internal sealed record PcreByteLookbehind(
-	PcreByteAlternatives Body, bool IsPositive, ReadOnlyMemory<int> BranchLengths, int Minimum = -1, int OpeningOffset = -1
+	PcreByteAlternatives Body, bool IsPositive, ReadOnlyMemory<int> BranchLengths, int Minimum = -1,
+	int OpeningOffset = -1, bool NonAtomic = false
 ) : PcreByteNode;
 
 internal sealed record PcreByteRepeat(
