@@ -15,6 +15,8 @@ internal sealed partial class PcreByteParser {
 		switch ( node ) {
 			case PcreByteGroup group: PushTreeBody( pending, group.Body ); break;
 			case PcreByteNoncapturingGroup group: PushTreeBody( pending, group.Body ); break;
+			case ParsedCaptureConditional conditional: PushTreeBody( pending, conditional.Body ); break;
+			case PcreByteCaptureConditional conditional: PushTreeBody( pending, conditional.Body ); break;
 			case PcreByteLookahead assertion: PushTreeBody( pending, assertion.Body ); break;
 			case PcreByteLookbehind assertion: PushTreeBody( pending, assertion.Body ); break;
 			case PcreByteAtomic atomic: pending.Push( (atomic.Child, false) ); break;
@@ -52,6 +54,8 @@ internal sealed partial class PcreByteParser {
 			var node = item.Node switch {
 				PcreByteGroup group => group with { Body = RewriteTreeBody( group.Body, rewritten ) },
 				PcreByteNoncapturingGroup group => group with { Body = RewriteTreeBody( group.Body, rewritten ) },
+				ParsedCaptureConditional conditional => conditional with { Body = RewriteTreeBody( conditional.Body, rewritten ) },
+				PcreByteCaptureConditional conditional => conditional with { Body = RewriteTreeBody( conditional.Body, rewritten ) },
 				PcreByteLookahead assertion => assertion with { Body = RewriteTreeBody( assertion.Body, rewritten ) },
 				PcreByteLookbehind assertion => assertion with { Body = RewriteTreeBody( assertion.Body, rewritten ) },
 				PcreByteAtomic atomic => atomic with { Child = rewritten[atomic.Child] },

@@ -11,7 +11,7 @@ internal sealed partial class PcreByteParser {
 	// Bounded heap frames keep source nesting off the native call stack.
 	private sealed class GroupFrame( int openingOffset, int depth, int number, bool atomic,
 		bool branchReset, GroupOptions entryOptions, int entryGroupCount,
-		int assertionKind, int assertionOpeningContext, bool nonAtomic = false ) {
+		int assertionKind, int assertionOpeningContext, bool nonAtomic = false, CaptureCondition? condition = null ) {
 		internal int OpeningOffset { get; } = openingOffset;
 		internal int Depth { get; } = depth;
 		internal int Number { get; } = number;
@@ -20,6 +20,7 @@ internal sealed partial class PcreByteParser {
 		internal int AssertionKind { get; } = assertionKind;
 		internal int AssertionOpeningContext { get; } = assertionOpeningContext;
 		internal bool NonAtomic { get; } = nonAtomic;
+		internal CaptureCondition? Condition { get; } = condition;
 		internal GroupOptions EntryOptions { get; } = entryOptions;
 		internal int EntryGroupCount { get; } = entryGroupCount;
 		internal int MaximumGroupCount { get; set; } = entryGroupCount;
@@ -62,6 +63,9 @@ internal sealed partial class PcreByteParser {
 			}
 			if ( !current.Quoting ) {
 				if ( source[index] == (byte)'|' ) {
+					if ( current.Condition.HasValue && current.Branches.Count != 0 ) {
+						throw Invalid( current.OpeningOffset, "conditional group has more than two branches" );
+					}
 					FinishBranch( current );
 					current.Nodes = new();
 					index++;
@@ -73,7 +77,8 @@ internal sealed partial class PcreByteParser {
 					if ( current.OpeningOffset < 0 ) { return body; } // Parse diagnoses unmatched ')'.
 					index++;
 					RestoreGroupOptions( current.EntryOptions );
-					PcreByteNode completed = current.AssertionKind != 0 ? FinishAssertion( current, body )
+					PcreByteNode completed = current.Condition is { } condition ? new ParsedCaptureConditional( condition, body )
+						: current.AssertionKind != 0 ? FinishAssertion( current, body )
 						: current.Number > 0 ? new PcreByteGroup( current.Number, body )
 						: current.Atomic ? new PcreByteAtomic( new PcreByteNoncapturingGroup( body ) )
 						: new PcreByteNoncapturingGroup( body );
@@ -203,6 +208,7 @@ internal sealed partial class PcreByteParser {
 		var branchReset = false;
 		var assertionKind = 0;
 		var nonAtomic = false;
+		CaptureCondition? condition = null;
 		var entryOptions = CurrentGroupOptions;
 		string? name = null;
 		if ( TryParseGroupAlias( out atomic, out assertionKind, out nonAtomic ) ) {
@@ -214,6 +220,10 @@ internal sealed partial class PcreByteParser {
 			throw Unsupported( offset );
 		} else if ( index < source.Length && source[index] == (byte)'?' ) {
 			if ( TryParseOptions( offset, scoped: true ) ) {
+				capturing = false;
+			} else if ( index + 1 < source.Length && source[index + 1] == (byte)'(' ) {
+				index += 2;
+				condition = ParseCaptureCondition( offset );
 				capturing = false;
 			} else if ( index + 1 < source.Length && source[index + 1] == (byte)':' ) {
 				index += 2;
@@ -275,7 +285,7 @@ internal sealed partial class PcreByteParser {
 		}
 		if ( name is not null ) { RegisterCaptureName( name, number, offset ); }
 		group = new GroupFrame( offset, depth + 1, number, atomic, branchReset, entryOptions, groupCount,
-			assertionKind, assertionOpeningContext, nonAtomic );
+			assertionKind, assertionOpeningContext, nonAtomic, condition );
 		return null;
 	}
 }

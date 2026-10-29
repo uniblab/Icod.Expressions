@@ -99,6 +99,14 @@ pruning shares this scope lifetime path. The arena resets with candidate state.
 `PcreNonAtomicAssertionReferenceTests` pins retries, scope reuse, width/cap ordering
 and unchanged compile, saved-path, match-work and cancellation boundaries.
 
+Capture-participation conditions add no saved path or journal state: CaptureTest
+spends work and polls cancellation for each target lookup, then chooses exactly
+one branch. Targets resolve globally into shared immutable arrays; empty captures
+participate and duplicate names test ANY slot. All explicit bodies validate and
+contribute native behind widths; omitted runtime else is empty independently of
+width analysis. `PcreCaptureConditionReferenceTests` pins branch commitment, name
+priority, forward/relative numbering, width quirks and compile/match resource gates.
+
 ## Remaining release work
 
 The bounded internal taxonomy is testable now. Before migration, add
