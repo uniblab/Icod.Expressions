@@ -29,6 +29,7 @@ public sealed class PcreRecursionConditionReferenceTests {
 
 	[Theory]
 	[InlineData( @"(?J)^(?(DEFINE)(?<x>X)(?<x>(?(R&x)a|X)))(?2)$", "a", 0, 1, "0:1,-,-" )]
+	[InlineData( @"(?J)^(?|(?<x>(?(R&x)a|b))|(?<x>X))(?1)$", "ba", 0, 2, "0:2,0:1" )]
 	[InlineData( @"(?J)^(?<R>a)?(?<R>b)(?(R)c|d)$", "bc", 0, 2, "0:2,-,0:1" )]
 	[InlineData( @"^(?(R65536)b|c)(?<R65536>a)$", "ca", 0, 2, "0:2,1:1" )]
 	[InlineData( @"^(?(R1)b|c)(?<R1>a)$", "ca", 0, 2, "0:2,1:1" )]
