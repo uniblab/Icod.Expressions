@@ -344,6 +344,24 @@ internal static class PcreByteMatcher {
 							if ( ( beforeWord != afterWord ) == ( instruction.First == 1 ) ) { pc++; }
 							else { failed = true; }
 							break;
+						case PcreByteOpcode.Reverse:
+							var reversed = position;
+							for ( var count = 0; count < instruction.First; count++ ) {
+								Step(); // One asserted character of left context.
+								if ( reversed <= fragment.Start ) { failed = true; break; }
+								var reverseEnd = reversed;
+								reversed--;
+								if ( program.Utf8 ) {
+									while ( reversed > fragment.Start && ( input.Span[reversed] & 0xC0 ) == 0x80 ) {
+										Step(); // Traverse continuation bytes only within this valid fragment.
+										reversed--;
+									}
+									if ( !PcreUtf8.TryRead( input.Span, reversed, out _, out var reverseWidth )
+										|| reversed + reverseWidth != reverseEnd ) { failed = true; break; }
+								}
+							}
+							if ( !failed ) { position = reversed; pc++; }
+							break;
 						case PcreByteOpcode.AssertLiteral:
 							var literal = instruction.Bytes.Span;
 							if ( program.Utf8 && instruction.Caseless ) {
@@ -484,7 +502,7 @@ internal static class PcreByteMatcher {
 							atomicDepths.RemoveAt( atomicDepths.Count - 1 );
 							pc++;
 							break;
-						case PcreByteOpcode.LookaheadEnter:
+						case PcreByteOpcode.AssertionEnter:
 							if ( backtrack.Count >= MaximumBacktrackFrames ) {
 								throw new MatchLimitException( PcreByteDiagnosticCode.MatchDepthLimitExceeded, "backtrack stack limit exceeded" );
 							}
@@ -495,7 +513,7 @@ internal static class PcreByteMatcher {
 							backtrack.Push( guard ); // Forces body mutations into the shared journal.
 							pc++;
 							break;
-						case PcreByteOpcode.LookaheadExit:
+						case PcreByteOpcode.AssertionExit:
 							var assertionBoundary = assertionDepths![^1];
 							while ( backtrack.Count > assertionBoundary + 1 ) { backtrack.Pop(); }
 							var completedGuard = backtrack.Pop();
