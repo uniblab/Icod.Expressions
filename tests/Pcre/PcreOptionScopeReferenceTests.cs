@@ -131,8 +131,6 @@ public sealed class PcreOptionScopeReferenceTests {
 
 	[Theory]
 	[InlineData( "a(?J)b", 1 )]
-	[InlineData( @"(?aD:\d)", 0 )]
-	[InlineData( @"(?i)(?aD:\d)", 4 )]
 	[InlineData( "(?i:(*plb:a))", 4 )]
 	[InlineData( "(*plb:(?i:a))", 0 )]
 	public void OtherOptionsAndGeneralAssertionBodiesRemainPending( string pattern, int offset ) {

@@ -61,7 +61,6 @@ public sealed class PcreLeadingOptionCombinationReferenceTests {
 	[Theory]
 	[InlineData( "(?im-J)a", 0 )]
 	[InlineData( "(?i)(?J)a", 4 )]
-	[InlineData( "(?im-aD)a", 0 )]
 	public void OtherOptionSyntaxRemainsExplicitlyUnsupported( string pattern, int offset ) {
 		var result = PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( pattern ) );
 		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
