@@ -126,6 +126,9 @@ public sealed class PcreCaptureConditionReferenceTests {
 	[InlineData( "(?(VERSION>=10.0)a|b)" )]
 	[InlineData( "(?(?=a)a|b)" )]
 	[InlineData( "(?(?<!a)b|c)" )]
+	[InlineData( "(?(*pla:a)a|b)" )]
+	[InlineData( "(?(*positive_lookahead:a)a|b)" )]
+	[InlineData( "é(?(*nla:a)b|a)" )]
 	public void OtherConditionFamiliesRemainPending( string pattern ) {
 		_ = Reference( pattern );
 		ConditionDiagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax );
@@ -215,7 +218,8 @@ public sealed class PcreCaptureConditionReferenceTests {
 	private static void Compare( PcreRegex8Bit reference, byte[] subject, int offset, PcreByteMatchResult actual, string context ) {
 		var native = reference.Match( subject, offset );
 		Assert.True( actual.IsSuccess, $"{context}: {actual.Diagnostic?.Message}" );
-		Assert.True( ( native.Success ? native.Index : -1 ) == ( actual.Match?.ByteIndex ?? -1 ), context );
+		Assert.True( ( native.Success ? native.Index : -1 ) == ( actual.Match?.ByteIndex ?? -1 ),
+			$"{context}: native index {( native.Success ? native.Index : -1 )}, managed index {actual.Match?.ByteIndex ?? -1}" );
 		if ( !native.Success ) { return; }
 		Assert.Equal( native.Length, actual.Match!.ByteLength );
 		Assert.Equal( native.Groups.Count, actual.Match.Captures.Count );
