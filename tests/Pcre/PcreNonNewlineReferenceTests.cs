@@ -133,10 +133,10 @@ public sealed class PcreNonNewlineReferenceTests {
 	}
 
 	[Fact]
-	public void BareNonNewlineInGeneralLookaroundRemainsUnsupported() {
-		var result = PcreByteCompiler.Compile( @"(?<=\N)x"u8.ToArray() );
-		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
-		Assert.Equal( 0, result.Diagnostic?.ByteOffset );
+	public void BareNonNewlineInFixedLookbehindKeepsTheSubjectPosition() {
+		var result = Compile( @"(?<=\N)x" ).Match( "ax"u8.ToArray() );
+		Assert.Null( result.Diagnostic );
+		Assert.Equal( new PcreByteCapture( 1, 1 ), result.Match?.Captures[0] );
 	}
 
 	[Fact]

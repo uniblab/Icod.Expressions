@@ -12,8 +12,9 @@ internal enum PcreByteOpcode {
 	Backreference,
 	WordBoundary,
 	AssertLiteral,
-	LookaheadEnter,
-	LookaheadExit,
+	Reverse,
+	AssertionEnter,
+	AssertionExit,
 	Start,
 	SearchStart,
 	End,
@@ -99,11 +100,10 @@ internal sealed class PcreByteProgramCompiler {
 		// A participating capture may be empty. The VM still checks participation
 		// and forbids nonempty consumption across the synthetic fragment boundary.
 		PcreByteBackreference => true,
-		// A negative or empty literal lookahead can accept without reading the
+		// A negative or empty literal assertion can accept without reading the
 		// requested code unit, just like a nullable general assertion.
-		PcreByteLiteralAssertion assertion => !assertion.IsBehind
-			&& ( !assertion.IsPositive || assertion.Bytes.IsEmpty ),
-		PcreByteLookahead => true,
+		PcreByteLiteralAssertion assertion => !assertion.IsPositive || assertion.Bytes.IsEmpty,
+		PcreByteLookahead or PcreByteLookbehind => true,
 		PcreByteGroup group => CanMatchEmptyAtAnyOffset( group.Body ),
 		PcreByteNoncapturingGroup group => CanMatchEmptyAtAnyOffset( group.Body ),
 		PcreByteAtomic atomic => CanMatchEmptyAtAnyOffset( atomic.Child ),
@@ -127,6 +127,7 @@ internal sealed class PcreByteProgramCompiler {
 		PcreByteLiteralAssertion assertion => assertion.Bytes.Span.IndexOf( (byte)'\r' ) >= 0
 			|| assertion.Bytes.Span.IndexOf( (byte)'\n' ) >= 0,
 		PcreByteLookahead assertion => HasExplicitNewline( assertion.Body ),
+		PcreByteLookbehind assertion => HasExplicitNewline( assertion.Body ),
 		PcreByteGroup group => HasExplicitNewline( group.Body ),
 		PcreByteNoncapturingGroup group => HasExplicitNewline( group.Body ),
 		PcreByteAtomic atomic => HasExplicitNewline( atomic.Child ),
@@ -183,12 +184,13 @@ internal sealed class PcreByteProgramCompiler {
 		instructions[index] = instructions[index] with { First = first, Second = second };
 	}
 
-	private void CompileAlternatives( PcreByteAlternatives alternatives ) {
+	private void CompileAlternatives( PcreByteAlternatives alternatives, ReadOnlyMemory<int> reverseLengths = default ) {
 		var endJumps = new List<int>();
-		compileWork.Push( () => CompileBranch( alternatives, 0, endJumps ) );
+		compileWork.Push( () => CompileBranch( alternatives, 0, endJumps, reverseLengths ) );
 	}
 
-	private void CompileBranch( PcreByteAlternatives alternatives, int index, List<int> endJumps ) {
+	private void CompileBranch( PcreByteAlternatives alternatives, int index, List<int> endJumps,
+		ReadOnlyMemory<int> reverseLengths ) {
 		var split = index + 1 < alternatives.Branches.Count ? Emit( PcreByteOpcode.Split ) : -1;
 		var first = instructions.Count;
 		compileWork.Push( () => {
@@ -197,11 +199,15 @@ internal sealed class PcreByteProgramCompiler {
 				Patch( split, first, instructions.Count );
 			}
 			if ( index + 1 < alternatives.Branches.Count ) {
-				CompileBranch( alternatives, index + 1, endJumps );
+				CompileBranch( alternatives, index + 1, endJumps, reverseLengths );
 			} else {
 				foreach ( var jump in endJumps ) { Patch( jump, instructions.Count ); }
 			}
 		} );
+		// Split saves the original endpoint; each branch rewinds independently.
+		if ( !reverseLengths.IsEmpty && reverseLengths.Span[index] > 0 ) {
+			Emit( PcreByteOpcode.Reverse, reverseLengths.Span[index] );
+		}
 		CompileSequence( alternatives.Branches[index], 0 );
 	}
 
@@ -251,12 +257,10 @@ internal sealed class PcreByteProgramCompiler {
 					assertion.IsBehind ? 1 : 0, bytes: assertion.Bytes, caseless: assertion.Caseless );
 				break;
 			case PcreByteLookahead assertion:
-				var enter = Emit( PcreByteOpcode.LookaheadEnter, second: assertion.IsPositive ? 1 : 0 );
-				compileWork.Push( () => {
-					Emit( PcreByteOpcode.LookaheadExit );
-					Patch( enter, instructions.Count, assertion.IsPositive ? 1 : 0 );
-				} );
-				CompileAlternatives( assertion.Body );
+				CompileAssertion( assertion.Body, assertion.IsPositive );
+				break;
+			case PcreByteLookbehind assertion:
+				CompileAssertion( assertion.Body, assertion.IsPositive, assertion.BranchLengths );
 				break;
 			case PcreByteAnchor anchor:
 				Emit( anchor.IsStart ? PcreByteOpcode.Start : PcreByteOpcode.End );
@@ -307,6 +311,15 @@ internal sealed class PcreByteProgramCompiler {
 			branches.Add( new[] { single } );
 		}
 		return new PcreByteAtomic( new PcreByteNoncapturingGroup( new PcreByteAlternatives( branches ) ) );
+	}
+
+	private void CompileAssertion( PcreByteAlternatives body, bool positive, ReadOnlyMemory<int> reverseLengths = default ) {
+		var enter = Emit( PcreByteOpcode.AssertionEnter, second: positive ? 1 : 0 );
+		compileWork.Push( () => {
+			Emit( PcreByteOpcode.AssertionExit );
+			Patch( enter, instructions.Count, positive ? 1 : 0 );
+		} );
+		CompileAlternatives( body, reverseLengths );
 	}
 
 	private void CompileRepeat( PcreByteRepeat repeat ) {

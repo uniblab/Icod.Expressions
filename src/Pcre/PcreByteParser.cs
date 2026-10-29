@@ -358,44 +358,6 @@ internal sealed partial class PcreByteParser {
 		return false;
 	}
 
-	private PcreByteLiteralAssertion ParseLiteralAssertion( int openingOffset, bool positive, bool behind ) {
-		var bytes = new List<byte>();
-		Span<byte> encoded = stackalloc byte[4];
-		var quoting = false;
-		while ( index < source.Length ) {
-			cancellationToken.ThrowIfCancellationRequested();
-			SkipPatternTrivia( ref quoting );
-			if ( index >= source.Length ) { break; }
-			if ( !quoting && source[index] == (byte)')' ) {
-				index++;
-				return new( bytes.ToArray(), positive, behind );
-			}
-			var value = source[index++];
-			if ( quoting ) { bytes.Add( value ); }
-			else if ( value == (byte)'\\' ) {
-				PcreByteNode escaped;
-				try {
-					escaped = ParseEscape( index - 1 );
-				} catch ( PcreByteParseException error ) when ( error.Diagnostic.Code == PcreByteDiagnosticCode.UnsupportedSyntax ) {
-					throw Unsupported( openingOffset );
-				}
-				if ( escaped is PcreByteMatchStartReset ) { throw Invalid( openingOffset, "a match-start reset is not allowed in an assertion" ); }
-				if ( escaped is not PcreByteLiteral literal ) { throw Unsupported( openingOffset ); }
-				if ( utf8 ) {
-					var width = new Rune( literal.Value ).EncodeToUtf8( encoded );
-					for ( var byteIndex = 0; byteIndex < width; byteIndex++ ) { bytes.Add( encoded[byteIndex] ); }
-				} else { bytes.Add( (byte)literal.Value ); }
-			} else if ( value is (byte)'|' or (byte)'(' or (byte)'[' or (byte)'.'
-				or (byte)'^' or (byte)'$' or (byte)'*' or (byte)'+' or (byte)'?'
-				or (byte)'{' or (byte)'}' ) {
-				throw Unsupported( openingOffset );
-			} else {
-				bytes.Add( value );
-			}
-		}
-		throw Invalid( openingOffset, "unclosed assertion" );
-	}
-
 	private PcreByteNode ParseBracket( int openingOffset ) {
 		var negated = ParseClassNegation();
 		var quoting = false;

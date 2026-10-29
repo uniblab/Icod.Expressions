@@ -68,7 +68,7 @@ internal sealed partial class PcreByteParser {
 					if ( current.OpeningOffset < 0 ) { return body; } // Parse diagnoses unmatched ')'.
 					index++;
 					RestoreGroupOptions( current.EntryOptions );
-					PcreByteNode completed = current.AssertionKind != 0 ? FinishLookahead( current, body )
+					PcreByteNode completed = current.AssertionKind != 0 ? FinishAssertion( current, body )
 						: current.Number > 0 ? new PcreByteGroup( current.Number, body )
 						: current.Atomic ? new PcreByteAtomic( new PcreByteNoncapturingGroup( body ) )
 						: new PcreByteNoncapturingGroup( body );
@@ -103,7 +103,7 @@ internal sealed partial class PcreByteParser {
 		return new( frame.Branches );
 	}
 
-	private PcreByteNode FinishLookahead( GroupFrame frame, PcreByteAlternatives body ) {
+	private PcreByteNode FinishAssertion( GroupFrame frame, PcreByteAlternatives body ) {
 		// Retain the original literal instruction and its search/work behavior.
 		if ( body.Branches.Count == 1 ) {
 			var literals = body.Branches[0];
@@ -112,23 +112,28 @@ internal sealed partial class PcreByteParser {
 			foreach ( var node in literals ) {
 				cancellationToken.ThrowIfCancellationRequested();
 				if ( node is not PcreByteLiteral literal || literal.Caseless != frame.EntryOptions.Caseless ) {
-					return new PcreByteLookahead( body, frame.AssertionKind > 0 );
+					return FinishGeneralAssertion( frame, body );
 				}
 				if ( utf8 ) {
 					var width = new Rune( literal.Value ).EncodeToUtf8( encoded );
 					for ( var byteIndex = 0; byteIndex < width; byteIndex++ ) { bytes.Add( encoded[byteIndex] ); }
 				} else { bytes.Add( (byte)literal.Value ); }
 			}
-			return new PcreByteLiteralAssertion( bytes.ToArray(), frame.AssertionKind > 0, false );
+			return new PcreByteLiteralAssertion( bytes.ToArray(), frame.AssertionKind > 0, Math.Abs( frame.AssertionKind ) == 2 );
 		}
-		return new PcreByteLookahead( body, frame.AssertionKind > 0 );
+		return FinishGeneralAssertion( frame, body );
 	}
+
+	private PcreByteNode FinishGeneralAssertion( GroupFrame frame, PcreByteAlternatives body ) =>
+		Math.Abs( frame.AssertionKind ) == 2
+			? new PcreByteLookbehind( body, frame.AssertionKind > 0, GetFixedLookbehindLengths( body, frame.OpeningOffset ) )
+			: new PcreByteLookahead( body, frame.AssertionKind > 0 );
 
 	private void AppendNode( GroupFrame frame, PcreByteNode atom, bool atomCaseless ) {
 		if ( atom.Caseless != atomCaseless ) { atom = atom with { Caseless = atomCaseless }; }
 		SkipPatternTrivia( ref frame.Quoting );
 		if ( !frame.Quoting && index < source.Length && source[index] is (byte)'*' or (byte)'+' or (byte)'?' or (byte)'{' ) {
-			var assertion = atom is PcreByteLiteralAssertion or PcreByteLookahead;
+			var assertion = atom is PcreByteLiteralAssertion or PcreByteLookahead or PcreByteLookbehind;
 			if ( atom is PcreByteMatchStartReset ) {
 				throw Invalid( index, "a match-start reset cannot be repeated" );
 			}
@@ -228,9 +233,8 @@ internal sealed partial class PcreByteParser {
 				}
 				var positive = source[index + (behind ? 2 : 1)] == (byte)'=';
 				index += behind ? 3 : 2;
-				if ( behind ) { return ParseLiteralAssertion( offset, positive, true ); }
 				capturing = false;
-				assertionKind = positive ? 1 : -1;
+				assertionKind = ( positive ? 1 : -1 ) * ( behind ? 2 : 1 );
 				if ( assertionOpeningContext < 0 ) { assertionOpeningContext = offset; }
 			}
 		}
