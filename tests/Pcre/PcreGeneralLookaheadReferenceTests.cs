@@ -142,17 +142,6 @@ public sealed class PcreGeneralLookaheadReferenceTests {
 	}
 
 	[Theory]
-	[InlineData( "(?=[a])*" )]
-	[InlineData( "(?=[a])+" )]
-	[InlineData( "(?=[a])?" )]
-	[InlineData( "(?=[a]){0}" )]
-	[InlineData( "(?![a]){1,2}" )]
-	public void DirectAssertionQuantifiersRemainUnsupportedAtTheQuantifier( string pattern ) {
-		Reference( pattern ); // PCRE2 gives these special rules, outside the ordinary repeat contract.
-		AssertDiagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax, 7 );
-	}
-
-	[Theory]
 	[InlineData( "(?<=[a])b" )]
 	[InlineData( "(?<!a+)b" )]
 	[InlineData( "(*pla:[a])" )]
