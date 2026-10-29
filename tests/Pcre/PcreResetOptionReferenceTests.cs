@@ -30,6 +30,7 @@ public sealed class PcreResetOptionReferenceTests {
 	[InlineData( @"(?n)(?^)(a)\1", "aa", 0, 2, 2 )]
 	[InlineData( "(?n)(?^n)(a)", "a", 0, 1, 1 )]
 	[InlineData( "(?U)(?^)a+", "aaa", 0, 1, 1 )]
+	[InlineData( "(?^U)a+", "aaa", 0, 1, 1 )]
 	[InlineData( "(?U)(?^U)a+?", "aaa", 0, 3, 1 )]
 	[InlineData( "(?U)(?^:a+)(a*)", "aaa", 0, 1, 2 )]
 	[InlineData( "(?U)(?^:a)+", "aaa", 0, 1, 1 )]
