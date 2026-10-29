@@ -132,9 +132,8 @@ public sealed class PcreNamedCaptureReferenceTests {
 	[InlineData( @"(?<x>a)\g<x>", 7 )]
 	[InlineData( @"(?<x>a)\g'x'", 7 )]
 	[InlineData( "(?<x>a)(?&x)", 7 )]
-	[InlineData( "(?J)(?<x>a)(?<x>b)", 0 )]
 	[InlineData( "(?<*a)b", 0 )]
-	public void SubroutinesAndGeneralAssertionsRemainUnsupported( string pattern, int offset ) {
+	public void SubroutinesAndNonAtomicAssertionsRemainUnsupported( string pattern, int offset ) {
 		Reference( pattern, false, false ); // Valid PCRE2 syntax, distinct from implemented aliases.
 		var result = PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( pattern ) );
 		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );

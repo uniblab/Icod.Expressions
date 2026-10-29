@@ -1,5 +1,10 @@
 # Internal PCRE empty and reset option groups
 
+Historical tranche boundary: local J and duplicate names are now implemented by
+`PCRE-DUPLICATE-NAMES-DESIGN.md`; reset preserves J and multi-slot references use
+declaration-ordered participation selection. Earlier scope notes below describe
+this document's original tranche.
+
 ## Intent and scope
 
 Continue the internal PCRE conformance gate after #81 by accepting empty option

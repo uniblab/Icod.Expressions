@@ -155,9 +155,7 @@ public sealed class PcreCaptureRepeatOptionReferenceTests {
 	}
 
 	[Theory]
-	[InlineData( "(?nU:a(?J)b)", 6 )]
 	[InlineData( "(?nU:(*plb:a))", 5 )]
-	[InlineData( "(?nJ)(a)", 0 )]
 	public void OtherOptionAndAssertionFamiliesRemainPending( string pattern, int offset ) {
 		Reference( pattern, false );
 		var result = PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( pattern ) );
