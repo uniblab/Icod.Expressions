@@ -72,8 +72,11 @@ category-specific independently of explicit property case widening.
 `PcreCaselessRestrictionReferenceTests` covers scope, captures, optimized/general
 assertions, range closure and unchanged depth/capture/work/cancellation limits.
 
-Duplicate named references share immutable declaration-ordered slot lists, bounded
-by capture256; every participation lookup spends match work and polls cancellation.
+Duplicate named references share immutable declaration-ordered slot lists, each
+bounded by capture256. Native ordered registration may let an earlier matching
+name preempt a later number conflict; distinct names remain bounded by256, with
+aggregate name/slot pairs at most65,536 and candidate integer storage at most256KiB.
+Every participation lookup spends match work and polls cancellation.
 Selection commits before the existing comparison and allocates no matching state.
 Unique names retain the numbered fast path. Actual duplicate consumed names reject
 lookbehind width analysis; J-only, numeric and lookahead-only controls remain valid.

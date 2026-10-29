@@ -104,7 +104,7 @@ public sealed class PcreDuplicateNameReferenceTests {
 	[InlineData( @"(?J)(?|(?<y>a)(?<x>b)|(?<x>c))" )]
 	[InlineData( @"(?J)(?|(a)(?<x>b)|(?<x>c)(d)|(?-J)(?<x>e))" )]
 	[InlineData( @"é(?J:(?<x>a))(?<x>b)" )]
-	public void DuplicatePermissionIsCheckedLocallyAndEachSlotHasAtMostOneName( string pattern ) {
+	public void DeclarationPermissionAndNumberConflictsFollowSourceOrder( string pattern ) {
 		Assert.Throws<PcrePatternException>( () => Reference( pattern ) );
 		var declaration = pattern.LastIndexOf( "(?<", StringComparison.Ordinal );
 		var result = PcreByteCompiler.Compile( Encoding.UTF8.GetBytes( pattern ), Options() );
