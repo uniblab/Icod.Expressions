@@ -124,11 +124,6 @@ public sealed class PcreCaptureConditionReferenceTests {
 	[InlineData( "(?(DEFINE)a)" )]
 	[InlineData( "(?<DEFINE>a)(?(DEFINE)b)" )]
 	[InlineData( "(?(VERSION>=10.0)a|b)" )]
-	[InlineData( "(?(?=a)a|b)" )]
-	[InlineData( "(?(?<!a)b|c)" )]
-	[InlineData( "(?(*pla:a)a|b)" )]
-	[InlineData( "(?(*positive_lookahead:a)a|b)" )]
-	[InlineData( "é(?(*nla:a)b|a)" )]
 	public void OtherConditionFamiliesRemainPending( string pattern ) {
 		_ = Reference( pattern );
 		ConditionDiagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax );

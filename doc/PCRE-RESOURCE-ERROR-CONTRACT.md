@@ -107,6 +107,14 @@ contribute native behind widths; omitted runtime else is empty independently of
 width analysis. `PcreCaptureConditionReferenceTests` pins branch commitment, name
 priority, forward/relative numbering, width quirks and compile/match resource gates.
 
+Assertion conditions use one existing guard slot while evaluating, then release it
+and its arena node on completion. Matching bodies commit captures for either
+polarity; body exhaustion restores the shared journal and resumes its other
+branch. No conditional Split, capture snapshot or extra frame/scope fields are
+introduced. Conditional plus inner assertion each count toward source depth.
+`PcreAssertionConditionReferenceTests` pins guard accounting, sibling arena
+reclamation, work/cancellation and unchanged compile ceilings.
+
 ## Remaining release work
 
 The bounded internal taxonomy is testable now. Before migration, add
