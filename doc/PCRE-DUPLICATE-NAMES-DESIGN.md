@@ -16,11 +16,14 @@ retry later participating captures after a comparison fails.
   local to the source: leading/mid/scoped/mixed/set-unset settings, restoration
   at group exit, propagation into later alternatives, repeated flags and unset
   precedence use the common option reader. Reset ^ preserves J, U and ASCII masks.
-- Same name/same number branch-reset aliases remain valid without J. Different
-  names for one number remain invalid even with J. Validation compares the first
-  historical occurrence of a name with the new number before accepting repeated
-  aliases: when J is off, a different first number rejects even if a later entry
-  already has the new number. Preserve registration order; deduplicate slots.
+- Registration follows the native ordered scan of unique name/number pairs. A
+  different-name number collision before the first matching name rejects. The
+  first matching name stops that collision scan: same number is an alias; a
+  different number requires J, then only that name is searched for repeated slots.
+  Consequently an earlier matching name can preempt a later number conflict,
+  allowing multiple names on one slot despite the manual's broad prohibition.
+  Without J, a different first number rejects even if a later entry already has
+  the new number. Preserve declaration order and deduplicate name/slot pairs.
 - Resolve every named reference after the whole pattern is parsed. All five
   spellings, including forward references, select the first participating slot
   in declaration order. This can differ from numeric order in branch-reset groups.
@@ -38,7 +41,8 @@ retry later participating captures after a comparison fails.
 
 ## Representation and execution
 
-The parser stores each name's unique numbers in declaration order. Freeze one
+The parser retains an ordered name/slot registry for native collision precedence
+and stores each name's unique numbers in declaration order. Freeze one
 array per multiply defined name during resolution and share it across references;
 unique names still lower to the ordinary numbered fast path. Extend
 PcreByteBackreference with optional ReadOnlyMemory<int> DuplicateNumbers, and
@@ -46,14 +50,15 @@ PcreByteInstruction/Emit with optional CaptureNumbers. The Backreference opcode
 uses the ordinary First slot when the memory is empty; otherwise it polls Step
 for each participation lookup and then uses the unchanged single comparison path.
 No new saved frames, recursion, capture copies, runtime option stack or spans in
-saved state. Selection allocates nothing during matching. Each list is bounded
-by the existing256 capture limit, and total unique name/slot entries are similarly
-bounded. Cancellation also polls during compile-time collection and fixups.
+saved state. Selection allocates nothing during matching. Each list and the distinct name count are bounded by capture256: a new
+name cannot first appear on an already named slot. Aggregate name/slot pairs are
+therefore bounded by256 squared (65,536); shared candidate arrays use at most
+256KiB of integers. Cancellation also polls during compile-time collection and fixups.
 
 ## Verification and boundaries
 
 Test native explicit outcomes/group counts and every numbered capture byte span:
-all declarations/references; source-order and registration traps; local/reset/
+all declarations/references; source-order and registration traps, including preempted number collisions; local/reset/
 negative J; empty/unset/first mismatch; alternatives, repeat rollback, forward
 references, numeric controls, atomic/general assertions; byte/UTF and local i/r;
 consumed behind rejection versus allowed unique/numeric/ahead controls; selected

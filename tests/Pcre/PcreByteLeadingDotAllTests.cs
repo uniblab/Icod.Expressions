@@ -33,12 +33,10 @@ public sealed class PcreByteLeadingDotAllTests {
 		Assert.Equal( new PcreByteCapture( 2, 1 ), match?.Captures[2] );
 	}
 
-	[Theory]
-	[InlineData( "(?J).", 0 )]
-	public void UnsupportedFlagPlacementIsDiagnosed( string pattern, int offset ) {
-		var result = PcreByteCompiler.Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
-		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
-		Assert.Equal( offset, result.Diagnostic?.ByteOffset );
+	[Fact]
+	public void DuplicateNameOptionLeavesDotAllIndependent() {
+		Assert.Null( Compile( "(?J)."u8.ToArray() ).Match( "\n"u8.ToArray() ).Match );
+		Assert.Equal( 1, Compile( "(?Js)."u8.ToArray() ).Match( "\n"u8.ToArray() ).Match?.ByteLength );
 	}
 
 	[Theory]

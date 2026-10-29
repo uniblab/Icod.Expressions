@@ -86,6 +86,14 @@ public sealed class PcreDuplicateNameReferenceTests {
 		string text, int index, int length, int groups ) => Check( pattern, text, index, length, groups );
 
 	[Theory]
+	[InlineData( @"(?J)(?<x>a)(?|(?<y>b)|(?<x>c))\k<y>", "acc" )]
+	[InlineData( @"(?J)(?<x>a)(?|(?<y>b)|(?<x>c))\k<x>", "aca" )]
+	[InlineData( @"(?J)(?<x>a)(?|(?<y>b)|(?<x>c))\k<y>", "abb" )]
+	[InlineData( @"(?J)(?<x>a)(?|(?<y>b)|(?<x>c))\k<x>", "aba" )]
+	public void EarlierMatchingNameCanPreemptALaterNumberConflict( string pattern, string text ) =>
+		Check( pattern, text, 0, 3, 3 );
+
+	[Theory]
 	[InlineData( @"(?<x>a)(?<x>b)" )]
 	[InlineData( @"(?<x>a)(?<x>b)(?J)" )]
 	[InlineData( @"(?J:(?<x>a))(?<x>b)" )]
@@ -93,6 +101,7 @@ public sealed class PcreDuplicateNameReferenceTests {
 	[InlineData( @"(?J-J)(?<x>a)(?<x>b)" )]
 	[InlineData( @"(?JJ-J)(?<x>a)(?<x>b)" )]
 	[InlineData( @"(?J)(?|(?<x>a)|(?<y>b))" )]
+	[InlineData( @"(?J)(?|(?<y>a)(?<x>b)|(?<x>c))" )]
 	[InlineData( @"(?J)(?|(a)(?<x>b)|(?<x>c)(d)|(?-J)(?<x>e))" )]
 	[InlineData( @"é(?J:(?<x>a))(?<x>b)" )]
 	public void DuplicatePermissionIsCheckedLocallyAndEachSlotHasAtMostOneName( string pattern ) {

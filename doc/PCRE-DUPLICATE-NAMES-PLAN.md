@@ -24,7 +24,8 @@ Compile-time name registration and option snapshots preserve source-local policy
 ## Review focus
 
 1. Declaration order can differ from numeric order with branch-reset slots.
-2. First historical name controls validation when J is disabled, even for aliases.
+2. Ordered name/number collision precedence, including an earlier name preempting
+   a later number collision, and first-history validation when J is disabled.
 3. Empty captures participate; a selected mismatch cannot try another capture.
 4. Lookbehind rejects actual consumed duplicate names, not J or numeric controls.
 5. Every participation lookup shares work and cancellation without match allocation.
@@ -50,12 +51,13 @@ explicit selected outcomes/group counts, followed by all numbered byte captures.
 `PcreByteSyntax.cs`, `PcreByteProgram.cs`, `PcreByteMatcher.cs`.
 
 **Interfaces:** Private bool duplicateNames in parser/GroupOptions; name maps to
-List<int> during parse, frozen shared arrays during reference resolution.
+List<int> plus an ordered name/number registry during parse, frozen shared
+arrays during reference resolution.
 PcreByteBackreference(int Number, ReadOnlyMemory<int> DuplicateNumbers=default);
 optional CaptureNumbers on instruction/Emit. No new opcode or runtime stack.
 
 - [ ] Set/unset/snapshot J transactionally; reset preserves it. Register names in
-  declaration order, validate first historical number before deduplicating.
+  declaration order; follow the native ordered collision scan before deduplicating.
 - [ ] Resolve all named references globally, preserving i/r and sharing frozen
   multi-slot arrays; retain single-slot numbered form for unique names.
 - [ ] Reject duplicate consumed references in ReferenceTarget at behind opener.
