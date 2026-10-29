@@ -69,12 +69,12 @@ internal sealed partial class PcreByteParser {
 	}
 
 	private bool TryParseOptions( int openingOffset, bool scoped ) {
-		if ( openingOffset + 3 >= source.Length || source[openingOffset] != (byte)'('
+		if ( openingOffset + 2 >= source.Length || source[openingOffset] != (byte)'('
 			|| source[openingOffset + 1] != (byte)'?' ) { return false; }
 		var cursor = openingOffset + 2;
+		var reset = source[cursor] == (byte)'^';
+		if ( reset ) { cursor++; }
 		var unsetting = false;
-		var sawFlag = false;
-		var sawUnsetFlag = false;
 		var setI = false;
 		var setM = false;
 		var setS = false;
@@ -91,13 +91,11 @@ internal sealed partial class PcreByteParser {
 		while ( cursor < source.Length && source[cursor] is not (byte)')' and not (byte)':' ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			var value = source[cursor++];
-			if ( value == (byte)'-' && !unsetting ) {
+			if ( value == (byte)'-' && !unsetting && !reset ) {
 				unsetting = true;
 				continue;
 			}
 			if ( value is not (byte)'i' and not (byte)'m' and not (byte)'s' and not (byte)'n' and not (byte)'U' and not (byte)'x' ) { return false; }
-			sawFlag = true;
-			if ( unsetting ) { sawUnsetFlag = true; }
 			switch ( value ) {
 				case (byte)'i': if ( unsetting ) { unsetI = true; } else { setI = true; } break;
 				case (byte)'m': if ( unsetting ) { unsetM = true; } else { setM = true; } break;
@@ -113,9 +111,14 @@ internal sealed partial class PcreByteParser {
 					break;
 			}
 		}
-		if ( cursor >= source.Length || !sawFlag || unsetting && !sawUnsetFlag
+		if ( cursor >= source.Length
 			|| source[cursor] != ( scoped ? (byte)':' : (byte)')' ) ) { return false; }
 		index = cursor + 1;
+		if ( reset ) {
+			// PCRE resets Perl options; U and ASCII restrictions survive.
+			caseless = multiline = dotAll = noAutoCapture = false;
+			extended = ExtendedMode.None;
+		}
 		caseless = ( caseless || setI ) && !unsetI;
 		multiline = ( multiline || setM ) && !unsetM;
 		dotAll = ( dotAll || setS ) && !unsetS;
