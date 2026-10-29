@@ -149,7 +149,8 @@ public sealed class PcreVariableLookbehindReferenceTests {
 	public void VariableMaximumIs255AndAppliesToEveryTopLevelBranch() {
 		var subject = Encoding.ASCII.GetBytes( new string( 'a', 255 ) + "b" );
 		AssertOutcome( "(?<=([a]{1,255}))b", Convert.ToHexString( subject ), false, 0, 255, 1, "255:1,0:255" );
-		AssertOutcome( "(?<=[a]{255}|[x]{1,2})b", Convert.ToHexString( subject ), false, 0, 255, 1, "255:1" );
+		// Isolate the compile boundary from unanchored quadratic/cubic search work.
+		AssertOutcome( "(?<=[a]{255}|[x]{1,2})b", Convert.ToHexString( subject ), false, 255, 255, 1, "255:1" );
 		// Intermediate bounded width is erased before the assertion-wide variable cap.
 		AssertOutcome( "(?<=(?:[a]{1,256}){0})b", "62", false, 0, 0, 1, "0:1" );
 		foreach ( var pattern in new[] { "(?<=[a]{1,256})b", "(?<=[a]{256}|[x]{1,2})b", "(?<=[x]{1,2}|[a]{256})b",
@@ -185,6 +186,23 @@ public sealed class PcreVariableLookbehindReferenceTests {
 	[InlineData( "(?<=(?<=[a]{1,2})*)b", 0 )]
 	public void UnboundedUnknownAndConsumedBackreferencesRemainUnsupportedAtTheOpening( string pattern, int offset ) =>
 		AssertDiagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax, offset );
+
+	[Theory]
+	[InlineData( 1021, true )]
+	[InlineData( 1022, false )]
+	public void ReverseRetrySharesTheExistingSavedPathCeiling( int choices, bool succeeds ) {
+		// Outer lazy choices + assertion guard + reverse retry + body Split = choices + 3.
+		var pattern = @"\Aa" + string.Concat( Enumerable.Repeat( "a??", choices ) ) + "(?<=[a]?)";
+		var result = Compile( pattern ).Match( "a"u8.ToArray() );
+		Assert.Equal( succeeds, result.IsSuccess );
+		if ( succeeds ) {
+			Assert.Null( result.Diagnostic );
+			Assert.Equal( new PcreByteCapture( 0, 1 ), result.Match?.Captures[0] );
+		} else {
+			Assert.Null( result.Match );
+			Assert.Equal( PcreByteDiagnosticCode.MatchDepthLimitExceeded, result.Diagnostic?.Code );
+		}
+	}
 
 	[Theory]
 	[InlineData( "(?<=[a]{1,254}[x])b" )]
