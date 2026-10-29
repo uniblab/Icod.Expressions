@@ -158,6 +158,9 @@ internal static class PcreByteMatcher {
 			var changes = new List<StateChange>();
 			var atomicDepths = new List<int>();
 			List<AssertionScope>? assertionScopes = null;
+			List<CallScope>? callScopes = null;
+			int[]? restoredFields = null;
+			var returnGeneration = 0;
 			// Keep the observed and cancellable path byte-for-byte accountable to Step().
 			var nullableInvalidCandidates = program.MatchInvalidUtf && program.CanMatchEmptyAtAnyOffset;
 			var previousFragmentEnd = -1;
@@ -196,7 +199,9 @@ internal static class PcreByteMatcher {
 					changes.Clear();
 					atomicDepths.Clear();
 					assertionScopes?.Clear();
+					callScopes?.Clear();
 					var activeScope = -1;
+					var activeCall = -1;
 					while ( true ) {
 						Step(); // Instruction transition.
 						var instruction = program.Instructions[pc];
@@ -406,7 +411,7 @@ internal static class PcreByteMatcher {
 									}
 									backtrack.Push( new Frame( pc + 1, NextReverseStart( input.Span, position, program.Utf8 ),
 										changes.Count, atomicDepths.Count, activeScope, FrameKind.ReverseRetry,
-										(byte)( reversedCount - minimumReverse - 1 ) ) );
+										(byte)( reversedCount - minimumReverse - 1 ), activeCall ) );
 								}
 								pc++;
 							}
@@ -526,9 +531,55 @@ internal static class PcreByteMatcher {
 								throw new MatchLimitException( PcreByteDiagnosticCode.MatchDepthLimitExceeded, "backtrack stack limit exceeded" );
 							}
 							backtrack.Push( new Frame( instruction.Second, position, changes.Count, atomicDepths.Count,
-								activeScope ) );
+								activeScope, CallScope: activeCall ) );
 							pc = instruction.First;
 							break;
+						case PcreByteOpcode.Call:
+							if ( backtrack.Count >= MaximumBacktrackFrames ) {
+								throw new MatchLimitException( PcreByteDiagnosticCode.MatchDepthLimitExceeded, "backtrack stack limit exceeded" );
+							}
+							callScopes ??= new();
+							backtrack.Push( new Frame( pc + 1, position, changes.Count, atomicDepths.Count,
+								activeScope, FrameKind.Call, CallScope: activeCall ) );
+							var callId = callScopes.Count;
+							callScopes.Add( new( pc + 1, activeCall, changes.Count ) );
+							activeCall = callId;
+							pc = instruction.First;
+							break;
+						case PcreByteOpcode.Return:
+							var caller = callScopes![activeCall];
+							// Original entries remain available to interior retry checkpoints.
+							// Restore each field's oldest value once, appending inverse writes.
+							// Generation tags contain no capture values and bound nested history.
+							restoredFields ??= new int[captures.Length * 2 + marks.Length];
+							var generation = ++returnGeneration; // Each return spends a VM step.
+							var originalEnd = changes.Count;
+							for ( var entry = caller.ChangeCount; entry < originalEnd; entry++ ) {
+								Step();
+								var change = changes[entry];
+								if ( change.Kind != StateKind.Mark && change.Index == 0 ) { continue; } // Keep K/G0.
+								var field = change.Kind == StateKind.Mark ? captures.Length * 2 + change.Index
+									: change.Index * 2 + ( change.Kind == StateKind.CaptureStart ? 1 : 0 );
+								if ( restoredFields[field] == generation ) { continue; }
+								restoredFields[field] = generation;
+								switch ( change.Kind ) {
+									case StateKind.Capture:
+										changes.Add( new( StateKind.Capture, change.Index, 0, captures[change.Index] ) );
+										captures[change.Index] = change.PriorCapture;
+										break;
+									case StateKind.CaptureStart:
+										changes.Add( new( StateKind.CaptureStart, change.Index, captureStarts[change.Index], null ) );
+										captureStarts[change.Index] = change.PriorValue;
+										break;
+									case StateKind.Mark:
+										changes.Add( new( StateKind.Mark, change.Index, marks[change.Index], null ) );
+										marks[change.Index] = change.PriorValue;
+										break;
+								}
+							}
+							activeCall = caller.Parent;
+							pc = caller.ReturnPc;
+							break; // Retain the guard, body choices and their arena nodes.
 						case PcreByteOpcode.Jump:
 							pc = instruction.First;
 							break;
@@ -549,7 +600,7 @@ internal static class PcreByteMatcher {
 							break;
 						case PcreByteOpcode.AtomicExit:
 							var boundary = atomicDepths[^1];
-							while ( backtrack.Count > boundary ) { PopFrame( backtrack, assertionScopes ); }
+							while ( backtrack.Count > boundary ) { PopFrame( backtrack, assertionScopes, callScopes ); }
 							if ( backtrack.Count == 0 ) { changes.Clear(); }
 							atomicDepths.RemoveAt( atomicDepths.Count - 1 );
 							pc++;
@@ -562,7 +613,7 @@ internal static class PcreByteMatcher {
 							var guard = new Frame( instruction.First, position, changes.Count, atomicDepths.Count,
 								activeScope, ( instruction.Second & 8 ) != 0 ? FrameKind.ConditionalAssertion
 									: ( instruction.Second & 4 ) != 0 ? FrameKind.NonAtomicAssertion
-									: ( instruction.Second & 1 ) != 0 ? FrameKind.PositiveAssertion : FrameKind.NegativeAssertion );
+									: ( instruction.Second & 1 ) != 0 ? FrameKind.PositiveAssertion : FrameKind.NegativeAssertion, CallScope: activeCall );
 							var scopeId = assertionScopes.Count;
 							assertionScopes.Add( new( backtrack.Count, ( instruction.Second & 2 ) != 0 ? position : endLimit,
 								activeScope, instruction.First, position ) );
@@ -579,8 +630,8 @@ internal static class PcreByteMatcher {
 								pc = scope.ReturnPc;
 								break; // Keep body choices and their scopes available for later failure.
 							}
-							while ( backtrack.Count > scope.Boundary + 1 ) { PopFrame( backtrack, assertionScopes ); }
-							var completedGuard = PopFrame( backtrack, assertionScopes );
+							while ( backtrack.Count > scope.Boundary + 1 ) { PopFrame( backtrack, assertionScopes, callScopes ); }
+							var completedGuard = PopFrame( backtrack, assertionScopes, callScopes );
 							position = completedGuard.Position;
 							pc = ( instruction.Second & 8 ) != 0 ? instruction.First : completedGuard.Pc;
 							if ( completedGuard.Kind is FrameKind.PositiveAssertion or FrameKind.ConditionalAssertion ) {
@@ -601,10 +652,11 @@ internal static class PcreByteMatcher {
 					}
 					if ( !failed ) { continue; }
 					while ( failed && backtrack.Count > 0 ) {
-						var frame = PopFrame( backtrack, assertionScopes );
+						var frame = PopFrame( backtrack, assertionScopes, callScopes );
 						if ( frame.Kind != FrameKind.Branch ) { Step(); } // Resolve a guard or retry another reverse start.
 						RestoreFrameState( frame, changes, captures, captureStarts, marks, atomicDepths );
 						activeScope = frame.AssertionScope;
+						activeCall = frame.CallScope;
 						pc = frame.Pc;
 						position = frame.Position;
 						if ( frame.Kind == FrameKind.ReverseRetry && frame.ReverseRemaining > 0 ) {
@@ -616,7 +668,7 @@ internal static class PcreByteMatcher {
 						}
 						// A normal retry or exhausted negative body resumes. An exhausted
 						// positive body propagates failure to the next enclosing saved path.
-						failed = frame.Kind is FrameKind.PositiveAssertion or FrameKind.NonAtomicAssertion;
+						failed = frame.Kind is FrameKind.PositiveAssertion or FrameKind.NonAtomicAssertion or FrameKind.Call;
 						if ( backtrack.Count == 0 ) { changes.Clear(); }
 					}
 					if ( failed ) { break; }
@@ -652,7 +704,7 @@ internal static class PcreByteMatcher {
 		atomicDepths.RemoveRange( frame.AtomicDepth, atomicDepths.Count - frame.AtomicDepth );
 	}
 
-	private static Frame PopFrame( Stack<Frame> backtrack, List<AssertionScope>? assertionScopes ) {
+	private static Frame PopFrame( Stack<Frame> backtrack, List<AssertionScope>? assertionScopes, List<CallScope>? callScopes ) {
 		var frame = backtrack.Pop();
 		if ( frame.Kind is FrameKind.PositiveAssertion or FrameKind.NegativeAssertion
 			or FrameKind.NonAtomicAssertion or FrameKind.ConditionalAssertion ) {
@@ -660,6 +712,7 @@ internal static class PcreByteMatcher {
 			var scopes = assertionScopes!;
 			scopes.RemoveAt( scopes.Count - 1 );
 		}
+		if ( frame.Kind == FrameKind.Call ) { callScopes!.RemoveAt( callScopes.Count - 1 ); }
 		return frame;
 	}
 
@@ -834,13 +887,15 @@ internal static class PcreByteMatcher {
 		StateKind Kind, int Index, int PriorValue, PcreByteCapture? PriorCapture
 	);
 
-	private enum FrameKind : byte { Branch, PositiveAssertion, NegativeAssertion, ReverseRetry, NonAtomicAssertion, ConditionalAssertion }
+	private enum FrameKind : byte { Branch, PositiveAssertion, NegativeAssertion, ReverseRetry, NonAtomicAssertion, ConditionalAssertion, Call }
+
+	private readonly record struct CallScope( int ReturnPc, int Parent, int ChangeCount );
 
 	private readonly record struct AssertionScope( int Boundary, int LimitEnd, int Parent, int ReturnPc, int Position );
 
 	private readonly record struct Frame(
 		int Pc, int Position, int ChangeCount, int AtomicDepth, int AssertionScope,
-		FrameKind Kind = FrameKind.Branch, byte ReverseRemaining = 0
+		FrameKind Kind = FrameKind.Branch, byte ReverseRemaining = 0, int CallScope = -1
 	);
 
 	private sealed class MatchLimitException( PcreByteDiagnosticCode code, string message ) : Exception( message ) {

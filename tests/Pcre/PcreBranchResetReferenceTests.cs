@@ -153,16 +153,6 @@ public sealed class PcreBranchResetReferenceTests {
 		Assert.Throws<OperationCanceledException>( () => cancellable.Match( subject, cancellationToken: cancellation.Token ) );
 	}
 
-	[Theory]
-	[InlineData( @"(?|(a)|(b))\g<1>", 11 )]
-	[InlineData( "(?|(a)|(b))(?1)", 11 )]
-	public void SubroutinesAndAssertionAliasesRemainPending( string pattern, int offset ) {
-		Reference( pattern, false );
-		var result = PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( pattern ) );
-		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
-		Assert.Equal( offset, result.Diagnostic?.ByteOffset );
-	}
-
 	private static void Compare( PcreRegex8Bit reference, byte[] subject, int offset,
 		PcreByteMatchResult actual, string context = "" ) {
 		var native = reference.Match( subject, offset );

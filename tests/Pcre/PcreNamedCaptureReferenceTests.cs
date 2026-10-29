@@ -129,17 +129,6 @@ public sealed class PcreNamedCaptureReferenceTests {
 	}
 
 	[Theory]
-	[InlineData( @"(?<x>a)\g<x>", 7 )]
-	[InlineData( @"(?<x>a)\g'x'", 7 )]
-	[InlineData( "(?<x>a)(?&x)", 7 )]
-	public void SubroutinesRemainUnsupported( string pattern, int offset ) {
-		Reference( pattern, false, false ); // Valid PCRE2 syntax, distinct from implemented aliases.
-		var result = PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( pattern ) );
-		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
-		Assert.Equal( offset, result.Diagnostic?.ByteOffset );
-	}
-
-	[Theory]
 	[InlineData( @"[\k<x>]" )]
 	[InlineData( @"[\g{x}]" )]
 	public void BracketLiteralInterpretationOfGAndKRemainsPending( string pattern ) {

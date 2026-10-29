@@ -141,3 +141,14 @@ large pattern sets and long records without disproportionate memory use.
 Choose thresholds from those measurements. Synthetic process-wide memory caps
 are not a portable parity oracle, as Grep's T6.8 resource report explains.
 Grep and CommandFramework production code remain unchanged here.
+
+Nonrecursive subroutines share the1,024 saved-frame ceiling: every call guard
+counts, including successful inactive calls retained for backtracking. Integer
+call-scope IDs and a three-integer guard-owned arena record preserve retries;
+return compensation uses the shared journal and spends work per inspected
+mutation. Numbered captures/starts and private repeat marks restore; G0/K persists.
+Callable bodies compile once per referenced target after main Accept, sharing
+4,096 instruction/visit and256 repeat-mark ceilings. No capture snapshots,
+span/pointer frames or runtime native fallback. Recursion, returned capture lists,
+consumed-behind calls and unresolved suppressed-behind targets stay rejected.
+See `PcreSubroutineReferenceTests` and `PCRE-SUBROUTINES-DESIGN.md`.
