@@ -197,7 +197,6 @@ public sealed class PcreResetOptionReferenceTests {
 	[Theory]
 	[InlineData( "(?^J)a" )]
 	[InlineData( "(?^r)a" )]
-	[InlineData( @"(?^aD)\d" )]
 	public void NewOptionFamiliesStayExplicitlyPending( string pattern ) {
 		Reference( pattern, true );
 		var result = PcreByteCompiler.Compile( Encoding.UTF8.GetBytes( pattern ), new PcreByteOptions { Utf8 = true } );

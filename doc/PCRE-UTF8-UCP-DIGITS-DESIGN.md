@@ -1,5 +1,10 @@
 # Internal PCRE UTF-8 decimal digits and Grep's ASCII `\d` policy
 
+**Historical checkpoint:** This document records the original digit tranche.
+Current bracket/option support is recorded in `PCRE-DESIGN.md` and
+`PCRE-SYNTAX-ACCEPTANCE-MATRIX.md`; scoped/mixed aD is specified in
+`PCRE-ASCII-DIGIT-OPTIONS-DESIGN.md`.
+
 ## Intent
 
 Cover Grep's existing C.UTF-8 digit fixture in the internal matcher: UCP makes POSIX `[[:digit:]]` Unicode-aware, while Grep's compile option keeps `\d` ASCII until leading `(?-aD)` removes that restriction. This is a preparation step; Grep keeps PCRE2 until the remaining syntax, invalid-UTF, option and performance gates pass.
