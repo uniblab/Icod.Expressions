@@ -44,13 +44,7 @@ internal sealed partial class PcreByteParser {
 		while ( true ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			SkipIgnoredPatternText();
-			if ( utf8 && source.AsSpan( index ).StartsWith( "(?-aD)"u8 ) ) {
-				index += 6;
-				asciiBsD = false;
-			} else if ( utf8 && source.AsSpan( index ).StartsWith( "(?aD)"u8 ) ) {
-				index += 5;
-				asciiBsD = true;
-			} else if ( !TryParseOptions( index, scoped: false ) ) {
+			if ( !TryParseOptions( index, scoped: false ) ) {
 				break;
 			}
 		}
@@ -80,6 +74,7 @@ internal sealed partial class PcreByteParser {
 		var setS = false;
 		var setN = false;
 		var setU = false;
+		var setAsciiBsD = false;
 		var setX = false;
 		var setXx = false;
 		var unsetX = false;
@@ -88,6 +83,7 @@ internal sealed partial class PcreByteParser {
 		var unsetS = false;
 		var unsetN = false;
 		var unsetU = false;
+		var unsetAsciiBsD = false;
 		while ( cursor < source.Length && source[cursor] is not (byte)')' and not (byte)':' ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			var value = source[cursor++];
@@ -95,8 +91,13 @@ internal sealed partial class PcreByteParser {
 				unsetting = true;
 				continue;
 			}
-			if ( value is not (byte)'i' and not (byte)'m' and not (byte)'s' and not (byte)'n' and not (byte)'U' and not (byte)'x' ) { return false; }
+			if ( value is not (byte)'i' and not (byte)'m' and not (byte)'s' and not (byte)'n' and not (byte)'U' and not (byte)'x' and not (byte)'a' ) { return false; }
 			switch ( value ) {
+				case (byte)'a':
+					if ( cursor >= source.Length || source[cursor] != (byte)'D' ) { return false; }
+					cursor++;
+					if ( unsetting ) { unsetAsciiBsD = true; } else { setAsciiBsD = true; }
+					break;
 				case (byte)'i': if ( unsetting ) { unsetI = true; } else { setI = true; } break;
 				case (byte)'m': if ( unsetting ) { unsetM = true; } else { setM = true; } break;
 				case (byte)'s': if ( unsetting ) { unsetS = true; } else { setS = true; } break;
@@ -124,6 +125,7 @@ internal sealed partial class PcreByteParser {
 		dotAll = ( dotAll || setS ) && !unsetS;
 		noAutoCapture = ( noAutoCapture || setN ) && !unsetN;
 		ungreedy = ( ungreedy || setU ) && !unsetU;
+		asciiBsD = ( asciiBsD || setAsciiBsD ) && !unsetAsciiBsD;
 		extended = unsetX ? ExtendedMode.None : setX ? setXx ? ExtendedMode.More : ExtendedMode.Extended : extended;
 		if ( !scoped ) { SkipIgnoredPatternText(); }
 		if ( !scoped && index < source.Length && source[index] is (byte)'*' or (byte)'+' or (byte)'?' or (byte)'{' ) {

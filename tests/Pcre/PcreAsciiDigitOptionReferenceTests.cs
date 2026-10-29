@@ -30,6 +30,7 @@ public sealed class PcreAsciiDigitOptionReferenceTests {
 	[InlineData( @"(?-aD)(?aD:\d)+(\d)", "33٣", 0, 4, 2 )]
 	[InlineData( @"(?n)(?-aD)(?aD:(\d))(?<x>\d)\k<x>", "3٣٣", 0, 5, 2 )]
 	[InlineData( "(?xaD) (?-aD: \\d ) # trailing\n (\\d)", "٣3", 0, 3, 2 )]
+	[InlineData( @"(?sUaD:(.)(?-aD:\d+))", "\n٣٣", 0, 3, 2 )]
 	[InlineData( @"(?xxaD:[ \d ])(?-aD:[ \d ])", "3٣", 0, 3, 1 )]
 	public void LocalPoliciesKeepExplicitOutcomesAndCaptureSlots( string pattern,
 		string text, int expectedIndex, int expectedLength, int expectedGroups ) {

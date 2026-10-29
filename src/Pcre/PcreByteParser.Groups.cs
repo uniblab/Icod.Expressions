@@ -4,7 +4,8 @@ namespace Icod.Expressions.Pcre;
 
 internal sealed partial class PcreByteParser {
 	private readonly record struct GroupOptions(
-		bool Caseless, bool Multiline, bool DotAll, bool NoAutoCapture, bool Ungreedy, ExtendedMode Extended
+		bool Caseless, bool Multiline, bool DotAll, bool NoAutoCapture, bool Ungreedy,
+		ExtendedMode Extended, bool AsciiBsD
 	);
 
 	// Bounded heap frames keep source nesting off the native call stack.
@@ -26,7 +27,7 @@ internal sealed partial class PcreByteParser {
 		internal List<PcreByteNode> Nodes { get; set; } = new();
 	}
 
-	private GroupOptions CurrentGroupOptions => new( caseless, multiline, dotAll, noAutoCapture, ungreedy, extended );
+	private GroupOptions CurrentGroupOptions => new( caseless, multiline, dotAll, noAutoCapture, ungreedy, extended, asciiBsD );
 
 	private void RestoreGroupOptions( GroupOptions options ) {
 		caseless = options.Caseless;
@@ -35,6 +36,7 @@ internal sealed partial class PcreByteParser {
 		noAutoCapture = options.NoAutoCapture;
 		ungreedy = options.Ungreedy;
 		extended = options.Extended;
+		asciiBsD = options.AsciiBsD;
 	}
 
 	private PcreByteAlternatives ParseAlternatives() {
