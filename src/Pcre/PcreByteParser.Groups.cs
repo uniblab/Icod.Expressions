@@ -81,8 +81,15 @@ internal sealed partial class PcreByteParser {
 			}
 			var atomCaseless = caseless;
 			GroupFrame? child = null;
-			var atom = current.Quoting ? ParseQuotedLiteral()
-				: ParseAtom( current.Depth, current.AssertionOpeningContext, out child );
+			PcreByteNode? atom;
+			try {
+				atom = current.Quoting ? ParseQuotedLiteral()
+					: ParseAtom( current.Depth, current.AssertionOpeningContext, out child );
+			} catch ( PcreByteParseException error ) when ( Math.Abs( current.AssertionKind ) == 2
+				&& error.Diagnostic.Code == PcreByteDiagnosticCode.UnsupportedSyntax ) {
+				// Preserve the old literal-behind reader's direct-body diagnostic.
+				throw Unsupported( current.OpeningOffset );
+			}
 			if ( child is not null ) {
 				parents.Push( current );
 				current = child;
@@ -150,7 +157,8 @@ internal sealed partial class PcreByteParser {
 			var maximum = bounds.Item2;
 			// PCRE2 permits useful capture side effects in repeated assertions.
 			// Unlimited assertion bounds become finite; no progress marks are needed.
-			if ( assertion && maximum == int.MaxValue ) { maximum = minimum + 1; }
+			var unboundedAssertion = assertion && maximum == int.MaxValue;
+			if ( unboundedAssertion ) { maximum = minimum + 1; }
 			repeatMarks += assertion ? 0 : counted ? maximum == int.MaxValue ? 1 : 0
 				: quantifier == (byte)'+' ? 2 : quantifier == (byte)'*' ? 1 : 0;
 			if ( repeatMarks > MaximumRepeatMarks ) {
@@ -166,7 +174,7 @@ internal sealed partial class PcreByteParser {
 			// U reverses ordinary/question-suffix preference; possessive is always greedy.
 			var greedy = possessive || ungreedy == questionSuffix;
 			atom = new PcreByteRepeat( atom, minimum, maximum, greedy,
-				counted || assertion ? quantifierOffset : -1 );
+				counted || assertion ? quantifierOffset : -1, unboundedAssertion );
 			if ( possessive ) {
 				atom = new PcreByteAtomic( atom );
 			}

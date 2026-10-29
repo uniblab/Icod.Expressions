@@ -69,7 +69,7 @@ internal sealed record PcreByteLookbehind(
 ) : PcreByteNode;
 
 internal sealed record PcreByteRepeat(
-	PcreByteNode Child, int Minimum, int Maximum, bool Greedy, int Offset = -1
+	PcreByteNode Child, int Minimum, int Maximum, bool Greedy, int Offset = -1, bool UnboundedAssertion = false
 ) : PcreByteNode;
 
 internal sealed record PcreByteAlternatives( IReadOnlyList<IReadOnlyList<PcreByteNode>> Branches );

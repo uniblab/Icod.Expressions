@@ -18,6 +18,8 @@ Local Debug and six-platform Staging CI. Existing depth 256/captures 256,
 4,096 compiled instructions/node visits, 1,024 saved paths/guards, work and
 cancellation contracts remain; new general branch lengths at most 65,535.
 Variable consumed lengths/backreferences remain controlled unsupported syntax.
+Validate erased children and preserve source-unbounded assertion metadata for
+the pinned nested-behind restriction; nested-ahead quantifiers remain allowed.
 
 ## Review Focus
 

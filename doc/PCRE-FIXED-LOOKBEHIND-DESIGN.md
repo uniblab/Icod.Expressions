@@ -26,7 +26,12 @@ quantifier emits zero body copies. Scalar-consuming nodes count one character;
 anchors/assertions count zero; sequence adds; nested alternatives must agree;
 exact counts multiply. Bounded repeats of zero-width children retain length zero. Unbounded ordinary
 zero-width groups remain unsupported, matching the pinned length analyzer; direct
-assertion quantifiers have already been normalized to finite bounds.
+assertion quantifiers have already been normalized to finite bounds. Preserve
+their source-unbounded flag: the pinned native length analyzer rejects unbounded
+direct nested lookbehind, while ignoring quantifiers on nested lookahead.
+Analyze children even under `{0}`; erasing an unbounded group must not bypass
+validation. Direct unsupported body escapes retain the legacy behind opening
+diagnostic; errors in newly supported nested grammar retain normal source offsets.
 New general branch lengths are capped at 65,535 characters with bounded arithmetic.
 Unsupported or variable length produces an opening-byte diagnostic. Preserve the
 existing literal assertion opcode and its ordinary work/search behavior when

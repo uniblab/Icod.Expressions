@@ -35,7 +35,10 @@ internal sealed partial class PcreByteParser {
 			return width ?? 0;
 		}
 		int RepeatWidth( PcreByteRepeat repeat ) {
-			if ( repeat.Maximum == int.MaxValue ) { throw Unsupported( openingOffset ); }
+			if ( repeat.Maximum == int.MaxValue
+				|| repeat.UnboundedAssertion && repeat.Child is PcreByteLookbehind or PcreByteLiteralAssertion { IsBehind: true } ) {
+				throw Unsupported( openingOffset );
+			}
 			if ( repeat.Maximum == 0 ) { return 0; }
 			var child = widths[repeat.Child];
 			if ( child != 0 && repeat.Minimum != repeat.Maximum ) { throw Unsupported( openingOffset ); }
@@ -54,7 +57,9 @@ internal sealed partial class PcreByteParser {
 					case PcreByteGroup group: ScheduleBody( group.Body ); break;
 					case PcreByteNoncapturingGroup group: ScheduleBody( group.Body ); break;
 					case PcreByteAtomic atomic: pending.Push( (atomic.Child, false) ); break;
-					case PcreByteRepeat { Maximum: > 0 } repeat: pending.Push( (repeat.Child, false) ); break;
+					// Validate erased children too: an outer {0} must not hide
+					// an unbounded group from the native-compatible width policy.
+					case PcreByteRepeat repeat: pending.Push( (repeat.Child, false) ); break;
 				}
 				continue;
 			}
