@@ -128,9 +128,7 @@ internal sealed partial class PcreByteParser {
 		if ( atom.Caseless != atomCaseless ) { atom = atom with { Caseless = atomCaseless }; }
 		SkipPatternTrivia( ref frame.Quoting );
 		if ( !frame.Quoting && index < source.Length && source[index] is (byte)'*' or (byte)'+' or (byte)'?' or (byte)'{' ) {
-			if ( atom is PcreByteLiteralAssertion or PcreByteLookahead ) {
-				throw Unsupported( index );
-			}
+			var assertion = atom is PcreByteLiteralAssertion or PcreByteLookahead;
 			if ( atom is PcreByteMatchStartReset ) {
 				throw Invalid( index, "a match-start reset cannot be repeated" );
 			}
@@ -145,7 +143,10 @@ internal sealed partial class PcreByteParser {
 					quantifier == (byte)'?' ? 1 : int.MaxValue);
 			var minimum = bounds.Item1;
 			var maximum = bounds.Item2;
-			repeatMarks += counted ? maximum == int.MaxValue ? 1 : 0
+			// PCRE2 permits useful capture side effects in repeated assertions.
+			// Unlimited assertion bounds become finite; no progress marks are needed.
+			if ( assertion && maximum == int.MaxValue ) { maximum = minimum + 1; }
+			repeatMarks += assertion ? 0 : counted ? maximum == int.MaxValue ? 1 : 0
 				: quantifier == (byte)'+' ? 2 : quantifier == (byte)'*' ? 1 : 0;
 			if ( repeatMarks > MaximumRepeatMarks ) {
 				throw new PcreByteParseException( new(
@@ -160,7 +161,7 @@ internal sealed partial class PcreByteParser {
 			// U reverses ordinary/question-suffix preference; possessive is always greedy.
 			var greedy = possessive || ungreedy == questionSuffix;
 			atom = new PcreByteRepeat( atom, minimum, maximum, greedy,
-				counted ? quantifierOffset : -1 );
+				counted || assertion ? quantifierOffset : -1 );
 			if ( possessive ) {
 				atom = new PcreByteAtomic( atom );
 			}

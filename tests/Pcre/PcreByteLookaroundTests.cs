@@ -71,15 +71,6 @@ public sealed class PcreByteLookaroundTests {
 		Assert.Equal( 0, result.Diagnostic?.ByteOffset );
 	}
 
-	[Theory]
-	[InlineData( "(?=a)+" )]
-	[InlineData( "(?<!a)*" )]
-	public void DoesNotPretendAssertionQuantifiersAreSupported( string pattern ) {
-		var result = PcreByteCompiler.Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
-		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
-		Assert.Equal( pattern.Length - 1, result.Diagnostic?.ByteOffset );
-	}
-
 	[Fact]
 	public void LiteralComparisonUsesExistingWorkBudget() {
 		var result = Compile( "(?=abcdefghijklmnopqrst)"u8.ToArray(), new PcreByteOptions { MatchWorkLimit = 12 } )
