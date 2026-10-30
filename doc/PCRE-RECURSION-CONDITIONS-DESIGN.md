@@ -5,6 +5,9 @@
 **Historical scope:** Returned-capture lists are added by
 `PCRE-RETURNED-CAPTURES-DESIGN.md`; the exclusion below records #95.
 
+**Later scope:** Actual recursive and whole-pattern calls are added by
+`PCRE-RECURSIVE-CALLS-DESIGN.md`; their exclusions below are historical.
+
 ## Intent and scope
 
 Add `(?(R)yes|no)`, `(?(Rdigits)yes|no)` and `(?(R&name)yes|no)` to the existing

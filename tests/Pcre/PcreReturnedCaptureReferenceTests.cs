@@ -103,12 +103,8 @@ public sealed class PcreReturnedCaptureReferenceTests {
 	}
 
 	[Theory]
-	[InlineData( @"(a)(?R(1))", "(?R" )]
-	[InlineData( @"(a)(?0(1))", "(?0" )]
-	[InlineData( @"(?(DEFINE)(?<g>(?&g(1))))a", "(?&g" )]
-	[InlineData( @"(?(DEFINE)(?<a>(?&b(1)))(?<b>(?&a(2))))a", "(?&b" )]
 	[InlineData( @"(?<=(?(DEFINE)(?<g>(?<=a*))))(?&g(1))", "(?&g" )]
-	public void RecursionAndSuppressedBehindRemainUnsupportedAtTheCall( string pattern, string opener ) {
+	public void SuppressedBehindRemainsUnsupportedAtTheCall( string pattern, string opener ) {
 		_ = Reference( pattern );
 		Diagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax, pattern.IndexOf( opener, StringComparison.Ordinal ) );
 	}

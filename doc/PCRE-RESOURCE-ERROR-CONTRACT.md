@@ -158,7 +158,16 @@ in source entries; duplicate expansion normalizes to at most256 slots. See
 `PcreReturnedCaptureReferenceTests` and `PCRE-RETURNED-CAPTURES-DESIGN.md`.
 Consumed calls with return lists reject at the owning behind opener, including
 transitive/erased calls; ahead/DEFINE width bypasses remain.
-Recursion and unresolved suppressed-behind targets stay rejected. Bounded consumed subroutine
+Recursive/whole-pattern calls now share the same guards, journal and budgets;
+no CLR recursion, same-position loop heuristic, arena growth or new opcode.
+The pinned JIT accepts capture-changing same-position recursion, while an
+unproductive first recursive branch reports a resource error before later
+alternatives are tried. Existing MatchDepthLimitExceeded/MatchWorkLimitExceeded
+remain library limits, not PCRE2 JIT-stack/match threshold parity. Root target0
+reuses the resolved semantic root and shares instruction/visit limits. Consumed
+recursive dependencies/whole-root calls reject at the owning behind, preserving
+ahead/DEFINE bypasses; unresolved suppressed-behind targets stay rejected. See
+`PcreRecursiveCallReferenceTests` and `PCRE-RECURSIVE-CALLS-DESIGN.md`. Bounded consumed subroutine
 calls in lookbehind now use the existing min/max dependency heap and first
 definitions, with variable255/all-fixed65535/intermediate65535 width limits.
 Calls and backreferences share active dependency validation, including before

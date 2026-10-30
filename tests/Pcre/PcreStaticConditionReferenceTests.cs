@@ -104,7 +104,6 @@ public sealed class PcreStaticConditionReferenceTests {
 	}
 
 	[Theory]
-	[InlineData( "(?(DEFINE)(?R))", 10 )]
 	[InlineData( "(?(VERSION=10.48)a|(?C))", 19 )]
 	public void PendingFamiliesStayUnsupportedAtTheirActualSyntaxOpener( string pattern, int offset ) {
 		_ = Reference( pattern );

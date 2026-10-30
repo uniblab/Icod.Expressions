@@ -18,7 +18,6 @@ public sealed class PcreSyntaxAcceptanceTests {
 	[InlineData( "a(*SKIP)", 1, false )]
 	[InlineData( "(?i)(*FAIL)", 4, false )]
 	[InlineData( "(?[a|b])", 0, false )]
-	[InlineData( "(?R)", 0, false )]
 	[InlineData( "(?C1)a", 0, false )]
 	[InlineData( @"\C", 0, false )]
 	[InlineData( @"\p{Greek}", 0, true )]

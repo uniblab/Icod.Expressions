@@ -8,6 +8,9 @@ conditions and the fourth call-arena integer are added by
 `PCRE-RECURSION-CONDITIONS-DESIGN.md`. Parenthesized returned-capture lists are
 added by `PCRE-RETURNED-CAPTURES-DESIGN.md`; exclusions below are historical.
 
+**Later scope:** Actual recursive and whole-pattern calls are added by
+`PCRE-RECURSIVE-CALLS-DESIGN.md`; their exclusions below are historical.
+
 ## Intent and scope
 
 Add nonrecursive calls to existing numbered/named capture definitions, including

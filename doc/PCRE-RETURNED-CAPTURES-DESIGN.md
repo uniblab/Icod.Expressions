@@ -2,6 +2,9 @@
 
 **Status:** issue #7, following merged #95; internal only.
 
+**Later scope:** Actual recursive and whole-pattern calls are added by
+`PCRE-RECURSIVE-CALLS-DESIGN.md`; their exclusions below are historical.
+
 ## Intent and scope
 
 Support the PCRE2 10.47 returned-capture extension on the existing nonrecursive
