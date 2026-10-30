@@ -79,3 +79,7 @@ the remaining gaps include Unicode table parity, character-set algebra and other
 Full workload measurements and command-level Grep comparisons follow before
 public API/release review. No CommandFramework ownership change belongs to
 this checkpoint.
+
+## Byte class CRLF search follow-up
+
+Byte class CRLF continuation now preserves negated source operand count/shape and literal/range endpoints, including the native negated-singleton exception. Historical positive interior-range flags remain until broader start-optimization coverage prevents lost matches; known false positives stay in #99. The bounded byte two-atom negated-singleton/all-byte class plus literal prefix preserves JIT LF candidate entry; optional single-branch capture/noncapture wrappers qualify. Broader prefix optimizer shapes remain tracked in #99. UTF behavior and all VM work/cancellation/resource paths remain shared. See `PCRE-BYTE-CRLF-DESIGN.md` and `PcreByteCrLfSearchReferenceTests`.
