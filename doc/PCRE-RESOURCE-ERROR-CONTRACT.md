@@ -183,3 +183,12 @@ target tests spend work per candidate and poll cancellation; no capture mutation
 new saved-frame fields or journal copies. R/R0 mean any call; exact global names
 win bare R/digit ambiguity. See `PcreRecursionConditionReferenceTests` and
 `PCRE-RECURSION-CONDITIONS-DESIGN.md`.
+
+Special UTF properties reuse scalar atom/bracket predicate work and existing
+widths; AnyScalar/UniversalCharacterName add no VM state, frames or scalar-range
+expansion. Category namespaces cannot enable special names. UTF class CR/LF
+metadata now comes from original literal/range endpoints and operand shape before
+folding, with the native negated-singleton exception; class membership remains
+unchanged. Byte properties and byte start-optimization parity remain separate
+gates. See `PcreSpecialPropertyReferenceTests`, `PcreClassNewlineMetadataReferenceTests`
+and `PCRE-SPECIAL-PROPERTIES-DESIGN.md`.

@@ -153,7 +153,7 @@ internal sealed class PcreByteProgramCompiler {
 	private static bool HasExplicitNewline( PcreByteNode node ) => node switch {
 		PcreByteLiteral literal => literal.Value is '\r' or '\n',
 		PcreByteClass characterClass => characterClass.ExplicitNewline,
-		PcreByteScalarSet scalarSet => HasExplicitNewline( scalarSet ),
+		PcreByteScalarSet scalarSet => scalarSet.ExplicitNewline,
 		PcreByteLiteralAssertion assertion => assertion.Bytes.Span.IndexOf( (byte)'\r' ) >= 0
 			|| assertion.Bytes.Span.IndexOf( (byte)'\n' ) >= 0,
 		PcreByteLookahead assertion => HasExplicitNewline( assertion.Body ),
@@ -169,15 +169,6 @@ internal sealed class PcreByteProgramCompiler {
 		PcreByteRepeat repeat => HasExplicitNewline( repeat.Child ),
 		_ => false
 	};
-
-	private static bool HasExplicitNewline( PcreByteScalarSet set ) {
-		if ( set.Negated ) { return false; }
-		foreach ( var range in set.Ranges.Span ) {
-			if ( range.Start <= '\n' && range.End >= '\n'
-				|| range.Start <= '\r' && range.End >= '\r' ) { return true; }
-		}
-		return false;
-	}
 
 	private ReadOnlyMemory<byte> FindRequiredLiteralSuffix( PcreByteAlternatives root ) {
 		// A single scalar-class + followed only by literals must consume this suffix.

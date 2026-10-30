@@ -241,6 +241,9 @@ internal sealed partial class PcreByteParser {
 	private PcreByteScalarSet ParseUtf8Bracket( int openingOffset ) {
 		var negated = ParseClassNegation();
 		var quoting = false;
+		var sourceTermCount = 0;
+		var soleLiteral = false;
+		var explicitNewline = false;
 		var ranges = new List<PcreByteScalarRange>();
 		var predicates = new List<PcreByteScalarPredicate>();
 		while ( index < source.Length ) {
@@ -250,10 +253,13 @@ internal sealed partial class PcreByteParser {
 			if ( !quoting && source[index] == (byte)']' && ( ranges.Count > 0 || predicates.Count > 0 ) ) {
 				index++;
 				return new( caseless ? PcreUtf8CaseFold.CloseRanges( ranges, cancellationToken, caselessRestricted )
-					: ranges.ToArray(), predicates.ToArray(), negated );
+					: ranges.ToArray(), predicates.ToArray(), negated,
+					explicitNewline && !( negated && sourceTermCount == 1 && soleLiteral ) );
 			}
 			var first = quoting ? ParseQuotedLiteral() : ParseUtf8BracketItem( openingOffset );
 			SkipClassTrivia( ref quoting );
+			soleLiteral = first is PcreByteLiteral;
+			if ( first is PcreByteLiteral { Value: '\r' or '\n' } ) { explicitNewline = true; }
 			if ( TryStartBracketRange( ref quoting, out _ ) ) {
 				if ( first is not PcreByteLiteral start ) {
 					throw Invalid( openingOffset, "a character class cannot start a range" );
@@ -264,12 +270,17 @@ internal sealed partial class PcreByteParser {
 				if ( last is not PcreByteLiteral end || end.Value < start.Value ) {
 					throw Invalid( openingOffset, "range endpoints must be ordered literal scalars" );
 				}
+				soleLiteral = start.Value == end.Value;
+				if ( end.Value is '\r' or '\n' ) { explicitNewline = true; }
 				ranges.Add( new( start.Value, end.Value ) );
 			} else if ( first is PcreByteLiteral literal ) {
 				ranges.Add( new( literal.Value, literal.Value ) );
 			} else if ( first is PcreByteScalarClass scalarClass ) {
 				predicates.Add( new( scalarClass.Kind, scalarClass.Negated, scalarClass.Category ) );
 			} else { throw Unsupported( openingOffset ); }
+			// Native metadata uses original operand shape, before folding/deduplication.
+			// A duplicate literal or predicate prevents the negated-singleton shortcut.
+			sourceTermCount++;
 		}
 		throw Invalid( openingOffset, "unclosed bracket class" );
 	}
@@ -707,14 +718,6 @@ internal sealed partial class PcreByteParser {
 			return GeneralCategory( shortName, negated ) ?? throw Unsupported( offset );
 		}
 		index++;
-		while ( index < source.Length && source[index] is >= 0x09 and <= 0x0D or (byte)' ' ) {
-			cancellationToken.ThrowIfCancellationRequested();
-			index++;
-		}
-		if ( index < source.Length && source[index] == (byte)'^' ) {
-			negated = !negated;
-			index++;
-		}
 		var nameStart = index;
 		while ( index < source.Length && source[index] != (byte)'}' ) {
 			cancellationToken.ThrowIfCancellationRequested();
@@ -725,13 +728,29 @@ internal sealed partial class PcreByteParser {
 		}
 		var name = NormalizePropertyName( source.AsSpan( nameStart, index - nameStart ) );
 		index++;
+		if ( name.StartsWith( '^' ) ) { negated = !negated; name = name[1..]; }
 		if ( name.Length == 0 ) { throw Invalid( offset, "property escape requires a name" ); }
-		if ( name.StartsWith( "GC:" ) || name.StartsWith( "GC=" ) ) { name = name[3..]; }
+		var categoryOnly = false;
+		if ( name.StartsWith( "GC:" ) || name.StartsWith( "GC=" ) ) { name = name[3..]; categoryOnly = true; }
 		else if ( name.StartsWith( "GENERALCATEGORY:" ) || name.StartsWith( "GENERALCATEGORY=" ) ) {
 			name = name[16..];
+			categoryOnly = true;
 		}
 		if ( name.Length == 0 ) { throw Invalid( offset, "property escape requires a name" ); }
-		return GeneralCategory( name, negated ) ?? throw Unsupported( offset );
+		return GeneralCategory( name, negated ) ?? ( categoryOnly ? null : SpecialProperty( name, negated ) )
+			?? throw Unsupported( offset );
+	}
+
+	private static PcreByteScalarClass? SpecialProperty( string name, bool negated ) {
+		PcreByteScalarClassKind? kind = name switch {
+			"ANY" => PcreByteScalarClassKind.AnyScalar,
+			"XAN" => PcreByteScalarClassKind.UnicodeAlnum,
+			"XPS" or "XSP" => PcreByteScalarClassKind.UnicodeSpace,
+			"XWD" => PcreByteScalarClassKind.UnicodeWord,
+			"XUC" => PcreByteScalarClassKind.UniversalCharacterName,
+			_ => null
+		};
+		return kind.HasValue ? new( kind.Value, negated ) : null;
 	}
 
 	private static string NormalizePropertyName( ReadOnlySpan<byte> sourceName ) {
