@@ -260,6 +260,9 @@ internal sealed partial class PcreByteParser {
 				&& Rune.IsDigit( new Rune( callScalar ) ) ) { throw Invalid( offset, "subroutine numbers require ASCII digits" ); }
 			if ( TryParseOptions( offset, scoped: true ) ) {
 				capturing = false;
+			} else if ( index + 1 < source.Length && source[index + 1] == (byte)'R' ) {
+				index++;
+				return ParseSubroutineCall( (byte)')', offset );
 			} else if ( index + 1 < source.Length && ( source[index + 1] is >= (byte)'0' and <= (byte)'9' or (byte)'+'
 				|| source[index + 1] == (byte)'-' && index + 2 < source.Length
 					&& source[index + 2] is >= (byte)'0' and <= (byte)'9' ) ) {
