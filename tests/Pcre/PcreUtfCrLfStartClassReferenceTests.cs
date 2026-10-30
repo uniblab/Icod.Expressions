@@ -117,6 +117,23 @@ public sealed class PcreUtfCrLfStartClassReferenceTests {
 		}
 	}
 
+	[Theory]
+	[InlineData( 34, true )]
+	[InlineData( 220, false )]
+	public void WrappedAlternativesRespectNativeCumulativeStartAnalysis( int depth, bool matches ) {
+		var branch = String.Concat( String.Concat( Enumerable.Repeat( "(?:", depth ) ),
+			@"[\x09-\x0c]A", String.Concat( Enumerable.Repeat( ")", depth ) ) );
+		var pattern = String.Join( "|", Enumerable.Repeat( branch, 5 ) );
+		var subject = "\r\nA"u8.ToArray();
+		foreach ( var tolerant in new[] { false, true } ) {
+			var reference = Reference( pattern, true, tolerant );
+			Assert.Equal( matches, reference.Match( subject ).Success );
+			if ( matches ) { AssertLiteral( reference, subject, 0, "1:2" ); }
+			Compare( reference, subject, 0, Compile( pattern, new() { Utf8 = true,
+				MatchInvalidUtf = tolerant, AnyCrLfNewline = true } ).Match( subject ), pattern );
+		}
+	}
+
 	[Fact]
 	public void ExtraLfCandidateSharesWorkObserverAndCancellation() {
 		const string pattern = @"(?<x>[\x09-\x0c])A";
