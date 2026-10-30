@@ -25,6 +25,15 @@ of an escape spelling. UTF decoding continues to reject/partition surrogate and
 malformed encodings before predicate evaluation. Complements never consume an
 invalid code unit. Any is independent of DotAll and the newline convention.
 
+**Pinned native deviation:** With MATCH_INVALID_UTF, positive Xuc in PCRE2 10.48
+JIT can consume malformed encodings/continuation starts and report spans beyond
+the subject (for example FF alone reports0..4). Preserve this library's existing
+valid-fragment barriers and bounded result spans. Compare Xuc membership on
+valid scalar subjects to native; use explicit safe-fragment expectations for
+positive Xuc malformed-subject/start-offset cases, rather than treating the
+native defect as the oracle. Complemented Xuc and other properties retain their
+ordinary native offset matrices. No runtime change is needed for this deviation.
+
 Explicit properties ignore UCP, aD/aS/aW/aP/aT/bare-a restrictions and case-fold
 restrictions. Existing caseless/category handling remains; none of these six
 predicates changes membership under i/r. Category-derived predicates retain the

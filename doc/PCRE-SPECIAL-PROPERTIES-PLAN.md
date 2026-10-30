@@ -19,6 +19,8 @@ names and preserve scalar instructions, predicates, metadata and resource paths.
 - Depth256/captures256/instructions4096/marks256/savedframes1024/default work1,000,000.
 - Existing work/cancellation/scalar predicate/journal paths; no range expansion/saved spans.
 - Existing category-prefix profile extension and byte-mode gate remain; user owns merge.
+- Positive Xuc malformed-UTF/continuation native JIT spans are a documented defect;
+  preserve valid fragments and bounded spans with explicit managed expectations.
 - No local SDK; managed red/green uses six native Staging jobs and full/frozen suites.
 
 ## Review focus

@@ -124,8 +124,10 @@ public sealed class PcreSpecialPropertyReferenceTests {
 	[InlineData( false )]
 	[InlineData( true )]
 	public void InvalidUtfBarriersOffsetsGAndCrLfSearchUseTheExistingSubjectProtocol( bool anyCrLf ) {
+		// Positive Xuc has a pinned native JIT invalid-UTF defect; its safe
+		// fragment contract is tested with explicit expectations below.
 		foreach ( var atom in new[] { @"\p{Any}", @"\P{Any}", @"\p{Xps}", @"\P{Xps}",
-			@"\p{Xuc}", @"\P{Xuc}", @"[\p{Any}]", @"[^\P{Xps}]" } ) {
+			@"\P{Xuc}", @"[\p{Any}]", @"[^\P{Xps}]" } ) {
 		foreach ( var pattern in new[] { atom, atom + "+", @"\G(" + atom + @")", @"(?m)" + atom + "$",
 			atom + "A", @"(?:" + atom + @"|\n)A", @"(?<=" + atom + ")A" } ) {
 			var reference = Reference( pattern, invalidUtf: true, anyCrLf: anyCrLf );
@@ -142,6 +144,49 @@ public sealed class PcreSpecialPropertyReferenceTests {
 		Check( @"\p{Any}A", "\r\nA", -1, 0, "", anyCrLf: true );
 		Check( @"\p{Xps}A", "\r\nA", -1, 0, "", anyCrLf: true );
 		Check( @"(?:\p{Any}|\n)A", "\r\nA", 1, 2, "1:2", anyCrLf: true );
+	}
+
+	[Theory]
+	[InlineData( @"\p{Xuc}", "", "-" )]
+	[InlineData( @"\p{Xuc}", "00", "-|-" )]
+	[InlineData( @"\p{Xuc}", "61FF41", "-|-|-|-" )]
+	[InlineData( @"\p{Xuc}", "FFC3A941", "1:2|1:2|-|-|-" )]
+	[InlineData( @"\p{Xuc}", "F0908041", "-|-|-|-|-" )]
+	[InlineData( @"\p{Xuc}", "EDA08041", "-|-|-|-|-" )]
+	[InlineData( @"\p{Xuc}", "F48FBFBF41", "0:4|-|-|-|-|-" )]
+	[InlineData( @"[\p{Xuc}]", "61FF41", "-|-|-|-" )]
+	[InlineData( @"\p{Xuc}+", "FFC3A941", "1:2|1:2|-|-|-" )]
+	[InlineData( @"\G(\p{Xuc})", "FFC3A941", "-|1:2,1:2|-|-|-" )]
+	[InlineData( @"\p{Xuc}A", "FFC3A941", "1:3|1:3|-|-|-" )]
+	[InlineData( @"\p{Xuc}A", "F48FBFBF41", "0:5|-|-|-|-|-" )]
+	[InlineData( @"(?<=\p{Xuc})A", "FFC3A941", "3:1|3:1|3:1|3:1|-" )]
+	[InlineData( @"(?<=\p{Xuc})A", "F48FBFBF41", "4:1|4:1|4:1|4:1|4:1|-" )]
+	[InlineData( @"(?:\p{Xuc}|\n)A", "0D0A410D0A", "1:2|1:2|-|-|-|-" )]
+	[InlineData( @"\p{Xuc}", "24FF40", "0:1|2:1|2:1|-" )]
+	[InlineData( @"\p{Xuc}+", "24FF40", "0:1|2:1|2:1|-" )]
+	[InlineData( @"\p{Xuc}A", "2441FF4041", "0:2|3:2|3:2|3:2|-|-" )]
+	[InlineData( @"\G(\p{Xuc})", "24FF40", "0:1,0:1|-|2:1,2:1|-" )]
+	public void PositiveXucKeepsValidFragmentBoundsInsteadOfNativeJitInvalidUtfSpans(
+		string pattern, string hex, string results ) {
+		var subject = Convert.FromHexString( hex );
+		var expectedOffsets = results.Split( '|' );
+		Assert.Equal( subject.Length + 1, expectedOffsets.Length );
+		foreach ( var anyCrLf in new[] { false, true } ) {
+			var compiled = Compile( pattern, new PcreByteOptions { Utf8 = true, MatchInvalidUtf = true, AnyCrLfNewline = anyCrLf } );
+			for ( var offset = 0; offset <= subject.Length; offset++ ) {
+				var actual = compiled.Match( subject, offset );
+				Assert.True( actual.IsSuccess, actual.Diagnostic?.Message );
+				if ( expectedOffsets[offset] == "-" ) { Assert.Null( actual.Match ); continue; }
+				Assert.NotNull( actual.Match );
+				var spans = expectedOffsets[offset].Split( ',' );
+				Assert.Equal( spans.Length, actual.Match.Captures.Count );
+				for ( var group = 0; group < spans.Length; group++ ) {
+					var fields = spans[group].Split( ':' ).Select( int.Parse ).ToArray();
+					Assert.Equal( new PcreByteCapture( fields[0], fields[1] ), actual.Match.Captures[group] );
+				}
+				Assert.InRange( actual.Match.ByteIndex + actual.Match.ByteLength, 0, subject.Length );
+			}
+		}
 	}
 
 	[Theory]
