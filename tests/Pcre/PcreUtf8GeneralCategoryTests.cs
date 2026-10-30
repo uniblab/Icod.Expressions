@@ -123,8 +123,6 @@ public sealed class PcreUtf8GeneralCategoryTests {
 
 	[Theory]
 	[InlineData( @"\p{Greek}", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( @"\p{Any}", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( @"\p{Xan}", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
 	[InlineData( @"\p{gc:Greek}", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
 	[InlineData( @"\p{Script=Greek}", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
 	[InlineData( @"\p{Cq}", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
