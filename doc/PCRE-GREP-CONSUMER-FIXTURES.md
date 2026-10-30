@@ -79,3 +79,16 @@ directives do not enable invalid-subject tolerance. Existing matcher/fragment/
 capture/width/resource paths are shared. See `PCRE-UTF-START-DIRECTIVES-DESIGN.md`
 and `PcreUtfStartDirectiveReferenceTests`. Other directives and public/consumer
 conformance gates remain separate.
+
+## Unconditional failure verbs
+
+Exact no-argument `(*FAIL)` and `(*F)` fail without consuming subject and use the
+shared backtracking/journal path. Direct quantifiers are InvalidSyntax at their
+original quantifier byte; groups containing failure remain repeatable. Consumed
+lookbehind widths stop at a direct failure in each branch, skipping later widths
+and nested-behind checks in that width tail. Global syntax/reference validation
+and full-source newline metadata still apply; earlier widths/later alternatives
+and global-mode nested behinds remain checked. Named FAIL/F arguments and other
+verbs remain pending. See `PCRE-FAILURE-VERBS-DESIGN.md` and
+`PcreFailureVerbReferenceTests`. Public/release/consumer and broader optimizer
+conformance gates remain separate.

@@ -16,7 +16,7 @@ public sealed class PcreSyntaxAcceptanceTests {
 	[InlineData( "(*NO_JIT)a", 0, false )]
 	[InlineData( "(*NO_START_OPT)a", 0, true )]
 	[InlineData( "a(*SKIP)", 1, false )]
-	[InlineData( "(?i)(*FAIL)", 4, false )]
+	[InlineData( "(?i)(*COMMIT)", 4, false )]
 	[InlineData( "(?[a|b])", 0, false )]
 	[InlineData( "(?C1)a", 0, false )]
 	[InlineData( @"\C", 0, false )]
@@ -32,7 +32,7 @@ public sealed class PcreSyntaxAcceptanceTests {
 
 	[Fact]
 	public void PinnedReferenceAcceptsBacktrackingVerbWhichInternalCompilerRejects() {
-		const string pattern = "(*FAIL)|a";
+		const string pattern = "(*MARK:x)a";
 		var bytes = Encoding.ASCII.GetBytes( pattern );
 		var reference = new PcreRegex8Bit( bytes, Encoding.Latin1, new PcreRegexSettings {
 			Options = PcreOptions.Compiled
