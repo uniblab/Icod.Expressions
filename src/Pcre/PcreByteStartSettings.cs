@@ -1,0 +1,35 @@
+namespace Icod.Expressions.Pcre;
+
+/// <summary>Global prefix choices resolved once before whole-pattern validation.</summary>
+internal readonly record struct PcreByteStartSettings(
+	bool Utf8, bool Ucp, bool AnyCrLfNewline, bool BsrAnyCrLf, int BodyOffset
+) {
+	internal static PcreByteStartSettings Parse( ReadOnlySpan<byte> source, PcreByteOptions options,
+		CancellationToken cancellationToken ) {
+		var utf8 = options.Utf8 || options.MatchInvalidUtf;
+		var ucp = options.Ucp;
+		var anyCrLf = options.AnyCrLfNewline;
+		var bsrAnyCrLf = options.BsrAnyCrLf;
+		var offset = 0;
+		// PCRE processes an uninterrupted prefix before ordinary options/trivia.
+		// Keep the original source and body index for validation and diagnostics.
+		while ( true ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( TryConsume( source, ref offset, "(*UTF)"u8 )
+				|| TryConsume( source, ref offset, "(*UTF8)"u8 ) ) { utf8 = true; }
+			else if ( TryConsume( source, ref offset, "(*UCP)"u8 ) ) { ucp = true; }
+			else if ( TryConsume( source, ref offset, "(*LF)"u8 ) ) { anyCrLf = false; }
+			else if ( TryConsume( source, ref offset, "(*ANYCRLF)"u8 ) ) { anyCrLf = true; }
+			else if ( TryConsume( source, ref offset, "(*BSR_UNICODE)"u8 ) ) { bsrAnyCrLf = false; }
+			else if ( TryConsume( source, ref offset, "(*BSR_ANYCRLF)"u8 ) ) { bsrAnyCrLf = true; }
+			else { break; }
+		}
+		return new( utf8, ucp, anyCrLf, bsrAnyCrLf, offset );
+	}
+
+	private static bool TryConsume( ReadOnlySpan<byte> source, ref int offset, ReadOnlySpan<byte> directive ) {
+		if ( !source[offset..].StartsWith( directive ) ) { return false; }
+		offset += directive.Length;
+		return true;
+	}
+}
