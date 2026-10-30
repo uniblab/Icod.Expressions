@@ -105,6 +105,7 @@ internal sealed partial class PcreByteParser {
 					case PcreByteBackreference reference:
 						pending.Push( (ReferenceTarget( reference, item.Opening ), false, item.Opening) ); break;
 					case PcreByteSubroutineCall call:
+						if ( !call.ReturnedCaptures.IsEmpty ) { throw Unsupported( item.Opening ); }
 						pending.Push( (context.CallTargets[call.Number], false, item.Opening) ); break;
 					case PcreByteNoncapturingGroup group: ScheduleBody( group.Body, item.Opening ); break;
 					case PcreByteCaptureConditional conditional: ScheduleBody( conditional.Body, item.Opening ); break;
