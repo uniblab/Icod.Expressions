@@ -123,3 +123,16 @@ Byte class CRLF continuation now preserves negated source operand count/shape an
 ## UTF leading-class CRLF entry
 
 Mandatory positive predicate-free ASCII bracket starts which exclude CR now retain native JIT LF entry, including all-qualified alternatives, capture/noncapture/atomic wrappers and required variable/exact1 repeats. At least one qualifying start class must admit LF, and root/worklist analysis is conservatively capped at1,000 visits to respect native start-bitmap exhaustion. Source newline metadata remains independent; all candidates keep existing VM work/cancellation and original fragment/capture protocols. General fixed/optional/assertion/call/Unicode starts remain in #102; byte #99/#101 behavior is unchanged. See `PCRE-UTF-CRLF-START-CLASS-DESIGN.md` and `PcreUtfCrLfStartClassReferenceTests`.
+
+## Nonempty-match start directives
+
+The shared original-byte0 prefix also accepts `(*NOTEMPTY)` and
+`(*NOTEMPTY_ATSTART)`. Flags accumulate globally and survive inline resets.
+Whole-match acceptance rejects empty reported spans everywhere for NOTEMPTY, or
+only at the original caller offset for ATSTART; K resets affect the reported
+span. Rejection uses shared rollback, allowing alternative/lazy fallback while
+retaining atomic commitment and ordinary empty assertion/call success. Flagged
+tolerant empty programs take the existing candidate/fragment path; nullable
+metadata remains intact. See `PCRE-NOTEMPTY-DIRECTIVES-DESIGN.md` and
+`PcreNotEmptyDirectiveReferenceTests`. Other directives/verbs, optimizer, public/
+release and consumer gates remain separate.
