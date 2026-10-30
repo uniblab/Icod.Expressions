@@ -16,7 +16,7 @@ internal sealed partial class PcreByteParser {
 	}
 
 	private PcreByteAlternatives ResolveLookbehindLengths( PcreByteAlternatives root ) {
-		var suppressed = SuppressedDefinitionBehinds( root );
+		var suppressed = SuppressedWidthBehinds( root );
 		// Collect definitions and lexical spans from the same resolved node identities.
 		// Assertions and erased children still belong to their lexical capture scope.
 		var context = new LookbehindContext();
@@ -43,16 +43,23 @@ internal sealed partial class PcreByteParser {
 			: node );
 	}
 
-	private HashSet<int> SuppressedDefinitionBehinds( PcreByteAlternatives root ) {
-		// Native switches between a global scan and consumed-width analysis. A
-		// behind enters width mode; an ahead reenters global mode. DEFINE reached
-		// in width mode suppresses ALL descendants. Keep source offsets because
-		// RewriteTree rebuilds node identities before invoking its callback.
+	private HashSet<int> SuppressedWidthBehinds( PcreByteAlternatives root ) {
+		// Width mode skips DEFINE and the rest of a branch after failure,
+		// including lookahead descendants there. Global mode still scans them.
 		var suppressed = new HashSet<int>();
 		var pending = new Stack<(PcreByteNode Node, bool Width, bool Suppressed)>();
 		var children = new Stack<(PcreByteNode Node, bool Ready)>();
-		PushTreeBody( children, root );
-		while ( children.TryPop( out var rootChild ) ) { pending.Push( (rootChild.Node, false, false) ); }
+		void PushBody( PcreByteAlternatives body, bool width, bool skip ) {
+			foreach ( var branch in body.Branches ) {
+				var terminated = false;
+				foreach ( var node in branch ) {
+					cancellationToken.ThrowIfCancellationRequested();
+					pending.Push( (node, width, skip || terminated) );
+					if ( width && node is PcreByteFailure ) { terminated = true; }
+				}
+			}
+		}
+		PushBody( root, false, false );
 		while ( pending.TryPop( out var item ) ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			var width = item.Width;
@@ -65,8 +72,27 @@ internal sealed partial class PcreByteParser {
 			} else if ( width && item.Node is PcreByteStaticConditional { IsDefinition: true } ) {
 				skip = true;
 			}
-			PushTreeChildren( children, item.Node );
-			while ( children.TryPop( out var descendant ) ) { pending.Push( (descendant.Node, width, skip) ); }
+			var body = item.Node switch {
+				PcreByteGroup group => group.Body,
+				PcreByteNoncapturingGroup noncapturing => noncapturing.Body,
+				ParsedCaptureConditional parsedCondition => parsedCondition.Body,
+				PcreByteCaptureConditional captureCondition => captureCondition.Body,
+				PcreByteRecursionConditional recursionCondition => recursionCondition.Body,
+				PcreByteStaticConditional staticCondition => staticCondition.Body,
+				PcreByteAssertionConditional assertionBranches => assertionBranches.Body,
+				PcreByteLookahead ahead => ahead.Body,
+				PcreByteLookbehind behind => behind.Body,
+				_ => null
+			};
+			if ( body is not null ) {
+				PushBody( body, width, skip );
+				if ( item.Node is PcreByteAssertionConditional assertionConditional ) {
+					pending.Push( (assertionConditional.Assertion, width, skip) );
+				}
+			} else {
+				PushTreeChildren( children, item.Node );
+				while ( children.TryPop( out var descendant ) ) { pending.Push( (descendant.Node, width, skip) ); }
+			}
 		}
 		return suppressed;
 	}

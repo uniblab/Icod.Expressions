@@ -13,6 +13,8 @@ internal sealed record PcreByteAny( bool DotAll ) : PcreByteNode;
 
 internal sealed record PcreByteNewlineSequence : PcreByteNode;
 
+internal sealed record PcreByteFailure : PcreByteNode;
+
 internal enum PcreByteScalarClassKind {
 	Letter, DecimalDigit, AsciiDigit, AsciiWord, UnicodeWord, AsciiSpace, UnicodeSpace,
 	Ascii, AsciiAlnum, AsciiAlpha, AsciiBlank, AsciiControl, AsciiGraph,

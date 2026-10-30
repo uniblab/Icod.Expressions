@@ -210,6 +210,9 @@ internal static class PcreByteMatcher {
 						var absoluteEnd = endLimit >= 0 ? endLimit : input.Length;
 						var failed = false;
 						switch ( instruction.Opcode ) {
+						case PcreByteOpcode.Fail:
+							failed = true;
+							break;
 						case PcreByteOpcode.Literal:
 							Step(); // Attempted scalar/byte comparison.
 							var literalWidth = 1;
