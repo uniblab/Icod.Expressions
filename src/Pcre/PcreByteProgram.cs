@@ -35,7 +35,8 @@ internal enum PcreByteOpcode {
 	Progress,
 	AtomicEnter,
 	AtomicExit,
-	Accept
+	Accept,
+	Fail
 }
 
 internal sealed record PcreByteInstruction(
@@ -333,6 +334,9 @@ internal sealed class PcreByteProgramCompiler {
 		cancellationToken.ThrowIfCancellationRequested();
 		if ( ++compileVisits > MaximumInstructions ) { throw RepeatExpansionLimit(); }
 		switch ( node ) {
+			case PcreByteFailure:
+				Emit( PcreByteOpcode.Fail );
+				break;
 			case PcreByteLiteral literal:
 				Emit( PcreByteOpcode.Literal, literal.Value, caseless: literal.Caseless, caselessRestricted: literal.CaselessRestricted );
 				break;

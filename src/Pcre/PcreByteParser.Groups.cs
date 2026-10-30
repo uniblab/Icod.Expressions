@@ -194,6 +194,9 @@ internal sealed partial class PcreByteParser {
 			var bounds = counted ? ParseCountedBounds( quantifierOffset )
 				: (quantifier == (byte)'+' ? 1 : 0,
 					quantifier == (byte)'?' ? 1 : int.MaxValue);
+			if ( atom is PcreByteFailure ) {
+				throw Invalid( quantifierOffset, "a failure verb cannot be repeated" );
+			}
 			if ( atom is PcreByteMatchStartReset ) {
 				throw Invalid( quantifierOffset, "a match-start reset cannot be repeated" );
 			}
@@ -247,6 +250,10 @@ internal sealed partial class PcreByteParser {
 		StaticCondition? staticCondition = null;
 		var entryOptions = CurrentGroupOptions;
 		string? name = null;
+		if ( index < source.Length && source[index] == (byte)'*'
+			&& ( TryConsumeGroupAlias( "*FAIL)"u8 ) || TryConsumeGroupAlias( "*F)"u8 ) ) ) {
+			return new PcreByteFailure();
+		}
 		if ( TryParseGroupAlias( out atomic, out assertionKind, out nonAtomic ) ) {
 			capturing = false;
 			if ( assertionKind != 0 && assertionOpeningContext < 0 ) { assertionOpeningContext = offset; }
