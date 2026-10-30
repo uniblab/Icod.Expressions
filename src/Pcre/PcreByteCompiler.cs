@@ -9,7 +9,6 @@ internal static class PcreByteCompiler {
 	) {
 		cancellationToken.ThrowIfCancellationRequested();
 		options ??= new PcreByteOptions();
-		var utf8 = options.Utf8 || options.MatchInvalidUtf;
 		if ( options.MatchWorkLimit <= 0 ) {
 			return new( null, new(
 				PcreByteDiagnosticCode.InvalidWorkLimit,
@@ -17,12 +16,13 @@ internal static class PcreByteCompiler {
 				"match work limit must be positive"
 			) );
 		}
-		if ( options.Ucp && !utf8 ) {
+		var source = pattern.ToArray();
+		var settings = PcreByteStartSettings.Parse( source, options, cancellationToken );
+		if ( settings.Ucp && !settings.Utf8 ) {
 			return new( null, new( PcreByteDiagnosticCode.UnsupportedSyntax, 0,
 				"UCP without UTF-8 is not implemented by the internal matcher" ) );
 		}
-		var source = pattern.ToArray();
-		if ( utf8 ) {
+		if ( settings.Utf8 ) {
 			for ( var offset = 0; offset < source.Length; ) {
 				cancellationToken.ThrowIfCancellationRequested();
 				if ( !PcreUtf8.TryRead( source, offset, out _, out var width ) ) {
@@ -33,13 +33,12 @@ internal static class PcreByteCompiler {
 			}
 		}
 
-		var parser = new PcreByteParser( source, options.Caseless, utf8,
-			options.Ucp, options.AsciiBsD, options.AnyCrLfNewline, options.BsrAnyCrLf, cancellationToken );
+		var parser = new PcreByteParser( source, options.Caseless, options.AsciiBsD, settings, cancellationToken );
 		try {
 			var root = parser.Parse();
 			var program = new PcreByteProgramCompiler(
-				cancellationToken, utf8, options.MatchInvalidUtf, parser.AnyCrLfNewline,
-				parser.BsrAnyCrLf
+				cancellationToken, settings.Utf8, options.MatchInvalidUtf, settings.AnyCrLfNewline,
+				settings.BsrAnyCrLf
 			).Compile( root, parser.SubroutineTargets );
 			return new(
 				new PcreCompiledBytePattern( program, parser.GroupCount, options.MatchWorkLimit, options.WorkObserver ),
