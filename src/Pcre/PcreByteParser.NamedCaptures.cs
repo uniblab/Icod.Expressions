@@ -43,12 +43,13 @@ internal sealed partial class PcreByteParser {
 		return new( name, offset );
 	}
 
-	private string ParseCaptureName( byte terminator, int offset ) {
+	private string ParseCaptureName( byte terminator, int offset, bool allowSubroutineArguments = false ) {
 		var braced = terminator == (byte)'}';
 		if ( braced ) { SkipBraceHorizontalSpace(); }
 		var start = index;
 		while ( index < source.Length && source[index] != terminator ) {
 			cancellationToken.ThrowIfCancellationRequested();
+			if ( allowSubroutineArguments && source[index] == (byte)'(' ) { break; }
 			if ( braced && source[index] is (byte)' ' or (byte)'\t' ) { break; }
 			var scalar = (int)source[index];
 			var width = 1;
@@ -67,10 +68,13 @@ internal sealed partial class PcreByteParser {
 		var length = index - start;
 		if ( length == 0 ) { throw Invalid( offset, "capture name must not be empty" ); }
 		if ( braced ) { SkipBraceHorizontalSpace(); }
+		if ( allowSubroutineArguments && index < source.Length && source[index] == (byte)'(' ) {
+			return ( utf8 ? Encoding.UTF8 : Encoding.ASCII ).GetString( source, start, length );
+		}
 		if ( index >= source.Length || source[index] != terminator ) {
 			throw Invalid( offset, "unclosed capture name" );
 		}
-		index++;
+		if ( !allowSubroutineArguments ) { index++; }
 		return ( utf8 ? Encoding.UTF8 : Encoding.ASCII ).GetString( source, start, length );
 	}
 

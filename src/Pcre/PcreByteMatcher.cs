@@ -563,6 +563,7 @@ internal static class PcreByteMatcher {
 							break;
 						case PcreByteOpcode.Return:
 							var caller = callScopes![activeCall];
+							var returnedCaptures = program.Instructions[caller.ReturnPc - 1].CaptureNumbers;
 							// Original entries remain available to interior retry checkpoints.
 							// Restore each field's oldest value once, appending inverse writes.
 							// Generation tags contain no capture values and bound nested history.
@@ -573,6 +574,9 @@ internal static class PcreByteMatcher {
 								Step();
 								var change = changes[entry];
 								if ( change.Kind != StateKind.Mark && change.Index == 0 ) { continue; } // Keep K/G0.
+								// Keep only selected values, not their temporary starts. Original
+								// journal entries still restore values on callee/caller retry.
+								if ( change.Kind == StateKind.Capture && returnedCaptures.Span.BinarySearch( change.Index ) >= 0 ) { continue; }
 								var field = change.Kind == StateKind.Mark ? captures.Length * 2 + change.Index
 									: change.Index * 2 + ( change.Kind == StateKind.CaptureStart ? 1 : 0 );
 								if ( restoredFields[field] == generation ) { continue; }

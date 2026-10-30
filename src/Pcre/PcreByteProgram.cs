@@ -288,7 +288,7 @@ internal sealed class PcreByteProgramCompiler {
 					caselessRestricted: reference.CaselessRestricted, captureNumbers: reference.DuplicateNumbers );
 				break;
 			case PcreByteSubroutineCall call:
-				calls.Add( (Emit( PcreByteOpcode.Call ), call.Number) );
+				calls.Add( (Emit( PcreByteOpcode.Call, captureNumbers: call.ReturnedCaptures ), call.Number) );
 				break;
 			case PcreByteWordBoundary boundary:
 				Emit( PcreByteOpcode.WordBoundary, boundary.IsBoundary ? 1 : 0,

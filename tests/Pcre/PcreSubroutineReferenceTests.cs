@@ -106,8 +106,6 @@ public sealed class PcreSubroutineReferenceTests {
 	[InlineData( @"(a)\g'0'", @"\g'0'" )]
 	[InlineData( "(?(DEFINE)(?<x>(?&x)))a", "(?&x)" )]
 	[InlineData( "(?(DEFINE)(?<x>(?&y))(?<y>(?&x)))a", "(?&y)" )]
-	[InlineData( "(?(DEFINE)(?<x>a))(?&x(<x>))", "(?&x" )]
-	[InlineData( "(a)(?1(1))", "(?1" )]
 	public void NativeAcceptedPendingFamiliesStayUnsupportedAtTheirCallOpener( string pattern, string opener ) {
 		_ = Reference( pattern );
 		Diagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax, pattern.IndexOf( opener, StringComparison.Ordinal ) );

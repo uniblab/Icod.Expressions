@@ -149,8 +149,16 @@ return compensation uses the shared journal and spends work per inspected
 mutation. Numbered captures/starts and private repeat marks restore; G0/K persists.
 Callable bodies compile once per referenced target after main Accept, sharing
 4,096 instruction/visit and256 repeat-mark ceilings. No capture snapshots,
-span/pointer frames or runtime native fallback. Recursion, returned capture lists,
-unresolved suppressed-behind targets stay rejected. Bounded consumed subroutine
+span/pointer frames or runtime native fallback. Explicit returned selections now
+retain numbered values while starts/marks restore; the existing Call payload and
+ReturnPc-1 lookup leave saved frames and arena records unchanged. At most256 sorted
+unique targets support bounded binary searches (at most9 comparisons), after each
+journal entry spends work/polls cancellation. Compile reference storage is linear
+in source entries; duplicate expansion normalizes to at most256 slots. See
+`PcreReturnedCaptureReferenceTests` and `PCRE-RETURNED-CAPTURES-DESIGN.md`.
+Consumed calls with return lists reject at the owning behind opener, including
+transitive/erased calls; ahead/DEFINE width bypasses remain.
+Recursion and unresolved suppressed-behind targets stay rejected. Bounded consumed subroutine
 calls in lookbehind now use the existing min/max dependency heap and first
 definitions, with variable255/all-fixed65535/intermediate65535 width limits.
 Calls and backreferences share active dependency validation, including before

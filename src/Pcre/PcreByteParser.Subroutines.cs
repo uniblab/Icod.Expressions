@@ -5,47 +5,32 @@ internal sealed partial class PcreByteParser {
 	private readonly Dictionary<int, PcreByteGroup> subroutineTargets = new();
 	internal IReadOnlyDictionary<int, PcreByteGroup> SubroutineTargets => subroutineTargets;
 
-	private sealed record ParsedSubroutineCall( int Number, string? Name, int Offset ) : PcreByteNode;
+	private sealed record ParsedSubroutineCall( int Number, string? Name, int Offset,
+		ReadOnlyMemory<ReturnedCaptureReference> ReturnedCaptures ) : PcreByteNode;
 
 	private PcreByteNode ParseSubroutineCall( byte terminator, int offset, bool named = false ) {
 		hasSubroutines = true;
 		if ( index >= source.Length ) { throw Invalid( offset, "unclosed subroutine call" ); }
 		var first = source[index];
 		if ( !named && first is >= (byte)'0' and <= (byte)'9' or (byte)'+' or (byte)'-' ) {
-			var relative = first is (byte)'+' or (byte)'-';
-			if ( relative ) { index++; }
-			var start = index;
-			var number = 0;
-			while ( index < source.Length && source[index] is >= (byte)'0' and <= (byte)'9' ) {
-				cancellationToken.ThrowIfCancellationRequested();
-				var digit = source[index++] - (byte)'0';
-				if ( number > ( MaximumCaptureCount - digit ) / 10 ) {
-					throw Invalid( offset, "subroutine target exceeds capture limit" );
-				}
-				number = number * 10 + digit;
-			}
-			if ( index == start || relative && number == 0 ) { throw Invalid( offset, "invalid subroutine target" ); }
-			FinishSubroutineHeader( terminator, offset );
+			var number = ParseSubroutineNumber( offset );
+			var returned = FinishSubroutineHeader( terminator, offset );
 			if ( number == 0 ) { throw Unsupported( offset ); } // Whole-pattern recursion.
-			if ( relative ) { number = first == (byte)'+' ? groupCount + number : groupCount + 1 - number; }
-			return new ParsedSubroutineCall( number, null, offset );
+			return new ParsedSubroutineCall( number, null, offset, returned );
 		}
-		// Parenthesized returned-capture lists are a separate10.47 extension.
-		if ( terminator == (byte)')' ) {
-			for ( var cursor = index; cursor < source.Length && source[cursor] != terminator; cursor++ ) {
-				cancellationToken.ThrowIfCancellationRequested();
-				if ( source[cursor] == (byte)'(' ) { throw Unsupported( offset ); }
-			}
-		}
-		return new ParsedSubroutineCall( 0, ParseCaptureName( terminator, offset ), offset );
+		var name = ParseCaptureName( terminator, offset, allowSubroutineArguments: terminator == (byte)')' );
+		// Parenthesized names leave either ')' or '(' for the exact header parser;
+		// g angle/quoted names still consume their ordinary terminator.
+		var selection = terminator == (byte)')' ? FinishSubroutineHeader( terminator, offset ) : default;
+		return new ParsedSubroutineCall( 0, name, offset, selection );
 	}
 
-	private void FinishSubroutineHeader( byte terminator, int offset ) {
-		if ( terminator == (byte)')' && index < source.Length && source[index] == (byte)'(' ) {
-			throw Unsupported( offset );
-		}
+	private ReadOnlyMemory<ReturnedCaptureReference> FinishSubroutineHeader( byte terminator, int offset ) {
+		var returned = terminator == (byte)')' && index < source.Length && source[index] == (byte)'('
+			? ParseReturnedCaptures( offset ) : default;
 		if ( index >= source.Length || source[index] != terminator ) { throw Invalid( offset, "invalid subroutine header" ); }
 		index++;
+		return returned;
 	}
 
 	private Dictionary<int, PcreByteGroup> CollectSubroutineGroups( PcreByteAlternatives root ) {
@@ -70,7 +55,7 @@ internal sealed partial class PcreByteParser {
 				number = numbers[0];
 			}
 			if ( number <= 0 || number > groupCount ) { throw Invalid( call.Offset, "subroutine has no capture group" ); }
-			return new PcreByteSubroutineCall( number, call.Offset );
+			return new PcreByteSubroutineCall( number, call.Offset, ResolveReturnedCaptures( call.ReturnedCaptures, call.Offset ) );
 		} );
 		var groups = CollectSubroutineGroups( root );
 		var edges = new Dictionary<int, List<PcreByteSubroutineCall>>();

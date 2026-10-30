@@ -45,7 +45,7 @@ internal sealed record PcreByteBackreference(
 	int Number, ReadOnlyMemory<int> DuplicateNumbers = default
 ) : PcreByteNode;
 
-internal sealed record PcreByteSubroutineCall( int Number, int Offset ) : PcreByteNode;
+internal sealed record PcreByteSubroutineCall( int Number, int Offset, ReadOnlyMemory<int> ReturnedCaptures ) : PcreByteNode;
 
 internal sealed record PcreByteAnchor( bool IsStart ) : PcreByteNode;
 
