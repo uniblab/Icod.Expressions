@@ -44,6 +44,16 @@ A cancellation-aware heap traversal follows the FIRST node of EVERY root branch:
   assertions, anchors, calls, backreferences, conditions and every other initial
   node return false. Suffix nodes after the first mandatory class do not matter.
 
+Every first class must reject CR, and at least one must contain LF (OR across
+classes). If LF is impossible, keep the old skip: unnecessary candidates can
+exhaust the default budget on long CRLF-only input.
+
+Bound the proof at1,000 visits, including the root and every worklist node. Native
+set_start_bits increments a cumulative group-call count and fails above1,000;
+counting additional class/repeat/atomic nodes is deliberately conservative. Fail
+the proof beyond the cap and retain the baseline candidate policy. Some complex
+native-supported cases can remain outside this proof and stay tracked in #102.
+
 Variable repeats stop native prefix analysis at their mandatory class positions;
 exact repeats can let analysis reach later literals. Native
 `[\x09-\x0cA]{2}A` on `0D0A4141` misses, while the variable `{2,3}` form
@@ -73,6 +83,8 @@ CommandFramework removal requires publication and all known consumer migrations.
 Native-first literals and all-capture matrices cover class membership/source
 shape, wrapper/branch/repeat controls, strict/tolerant UTF, every caller offset,
 LF/ANYCRLF, malformed runs/multibyte boundaries, byte controls, G, work exhaustion,
-observer continuity and pre/mid cancellation. Tests-only draft must fail for the
+observer continuity and pre/mid cancellation, plus default-budget no-LF classes
+on120,000 CRLF pairs and five alternatives with34-deep/220-deep wrappers (native
+match/miss). Tests-only draft must fail for the
 expected managed mismatch before production edits. No local SDK: six native
 Staging jobs, full/frozen214/configured gates, then fresh whole-branch review.

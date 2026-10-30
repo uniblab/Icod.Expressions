@@ -55,6 +55,7 @@ internal sealed record PcreByteProgram(
 internal sealed class PcreByteProgramCompiler {
 	private const int MaximumInstructions = 4096;
 	private const int MaximumMarks = 256;
+	private const int MaximumStartClassVisits = 1000;
 	private readonly List<PcreByteInstruction> instructions = new();
 	// Compilation continuations live on the heap; AST depth must not consume
 	// platform-dependent native stack space. This is not VM backtracking state.
@@ -109,9 +110,14 @@ internal sealed class PcreByteProgramCompiler {
 		// every initial mandatory ASCII class excludes it. Keep this independent
 		// of source newline metadata and avoid recursive compile-time traversal.
 		var pending = new Stack<PcreByteNode>();
+		var visits = 1; // Root; conservatively include every proof node below.
+		var canStartAtLf = false;
 		if ( !AddBranches( root ) ) { return false; }
 		while ( pending.TryPop( out var node ) ) {
 			cancellationToken.ThrowIfCancellationRequested();
+			// Native start-bitmap analysis fails after 1,000 cumulative group
+			// calls. Extra proof-node charges keep this bounded subset within it.
+			if ( ++visits > MaximumStartClassVisits ) { return false; }
 			switch ( node ) {
 				case PcreByteGroup group:
 					if ( !AddBranches( group.Body ) ) { return false; }
@@ -132,12 +138,14 @@ internal sealed class PcreByteProgramCompiler {
 						cancellationToken.ThrowIfCancellationRequested();
 						if ( range.Start < 0 || range.End > 127
 							|| range.Start <= '\r' && range.End >= '\r' ) { return false; }
+						canStartAtLf |= range.Start <= '\n' && range.End >= '\n';
 					}
 					break;
 				default: return false;
 			}
 		}
-		return true;
+		// Do not spend additional VM work at LF if no initial class admits it.
+		return canStartAtLf;
 
 		bool AddBranches( PcreByteAlternatives alternatives ) {
 			if ( alternatives.Branches.Count == 0 ) { return false; }

@@ -26,7 +26,8 @@
 - Optional/fixed repeats, predicates, negations and non-ASCII folded ranges must not accidentally qualify.
 - Atomic/capture/group wrappers must preserve bytecode, captures and native prefix constraints.
 - Invalid runs and continuation caller offsets retain valid-fragment barriers and original G offsets.
-- Observers/cancellable/unobserved matches share results and bounded work without new scan exemptions.
+- Observers/cancellable/unobserved matches share results and bounded work without new scan exemptions; no-LF starts retain the default-budget clean miss on long CRLF input.
+- Proof traversal must not outrun native cumulative start-bitmap analysis on deeply wrapped alternatives.
 
 ## Task 1: Native contracts and executable red
 
@@ -58,10 +59,13 @@ cancellation. No AST, instruction, frame or journal payload additions.
 - [ ] Heap worklist checks FIRST node of EVERY nonempty branch. Follow capture/noncapture
   group bodies, atomic Child and required variable/exact1 repeat Child. Reject empty
   branches and all other initial nodes. Require positive predicate-free scalar sets,
-  nonempty normalized ranges entirely0..127, no range containing CR.
+  nonempty normalized ranges entirely0..127, no range containing CR, and at least
+  one admitted class containing LF. Cap root+worklist proof visits at1,000.
 - [ ] Compute bool only for UTF; stop native CRLF LF-skipping when true, while retaining
   all existing VM transitions/comparisons/work/observer/cancellation.
 - [ ] Commit/publish exact source tree and run all six Staging full/frozen/configured gates.
+- [ ] Add native-first default-budget120,000CRLF no-LF clean-miss/mixedLF alternative
+  and five-alternative34/220wrapper controls; observe reviewed regressions red.
 - [ ] Fresh independent whole-branch review; material findings fixed in one pass with
   native-first observed RED→GREEN and green full suites, minor findings ledgered.
 - [ ] Audit every platform log/overall completed-success, exact reviewed/fixed head/tree,
