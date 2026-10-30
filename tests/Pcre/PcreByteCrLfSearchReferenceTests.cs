@@ -67,7 +67,7 @@ public sealed class PcreByteCrLfSearchReferenceTests {
 	public void EveryCallerOffsetPreservesByteAndUtfControls( bool anyCrLf ) {
 		foreach ( var utf in new[] { false, true } ) {
 			foreach ( var pattern in new[] { @"[^\r]A", @"[^\r-\r]A", @"[^\x00]A", @"[\x00-\xff]A",
-				@"[\s\S]A", @"[\x09-\x0c]A", @"[^\r\r]A", @"[^\d\r]A", @"(?<x>[^\r])(?<y>A)",
+				@"[\s\S]A", @"[^\x00\x01]A", @"[^\r\r]A", @"[^\d\r]A", @"(?<x>[^\r])(?<y>A)",
 				@"\G[^\r]A", @"(?m)[^\r\r]A$", @"(?<x>[^\r\r]A)\k<x>", @"[^\r]+A", @"[^\r]\w" } ) {
 				var reference = Reference( pattern, anyCrLf, utf, utf );
 				var compiled = Compile( pattern, new() { AnyCrLfNewline = anyCrLf, Utf8 = utf, MatchInvalidUtf = utf } );

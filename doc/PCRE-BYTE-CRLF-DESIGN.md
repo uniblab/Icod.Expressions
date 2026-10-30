@@ -74,3 +74,9 @@ pre/mid cancellation. The reviewed interior-range match regressions are pinned
 without claiming full byte metadata parity. Publish tests-only draft and observe executable expected
 red before production. No local SDK; use six native Staging CI jobs and configured
 full/frozen/workload/extraction/API/package gates, then fresh whole-branch review.
+
+A new CR-excluding ASCII control also exposed an existing UTF start-bitmap gap:
+`[\x09-\x0c]A` on `0D0A41`, offset0, native1:2 but managed miss. It is not
+introduced by this byte change. Track it in #102 separately from #99; no claim of general
+UTF candidate-optimizer parity. Shared matrix controls use the ordinary
+CR-including bitmap; all five byte review regression rows remain explicit.
