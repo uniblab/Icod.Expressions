@@ -229,3 +229,16 @@ resource protocols. Outside reference/call grammar and original-byte diagnostic
 precedence stay unchanged. See `PCRE-BRACKET-REFERENCE-ESCAPES-DESIGN.md` and
 `PcreBracketReferenceEscapeTests`. Other escapes/algebra and public/consumer
 conformance gates remain separate.
+
+## UTF/UCP start directives
+
+The shared original-byte0 prefix also accepts `(*UTF)`, `(*UTF8)` and `(*UCP)`.
+UTF/UTF8 enable UTF, UCP independently enables UCP, and caller enables remain set.
+One immutable compile-settings scan resolves all seven supported tokens before
+the UCP-without-UTF gate and whole-source UTF validation; newline/BSR retain their
+independent last-wins rules. Original bytes/body offsets and early cancellation/
+work-limit precedence are preserved. UCP without UTF remains rejected at0; UTF
+directives do not enable invalid-subject tolerance. Existing matcher/fragment/
+capture/width/resource paths are shared. See `PCRE-UTF-START-DIRECTIVES-DESIGN.md`
+and `PcreUtfStartDirectiveReferenceTests`. Other directives and public/consumer
+conformance gates remain separate.

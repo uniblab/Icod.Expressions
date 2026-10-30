@@ -36,7 +36,7 @@ Primary authority is pinned PCRE.NET1.6.0 / PCRE2 10.48,
 
 ## Approaches and choice
 
-1. **Parser prefix scan plus effective-setting properties (chosen by Codex):**
+1. **Parser prefix scan plus effective-setting properties (original #105 design):**
    extend the current parser input with BSR; let Parse consume exact prefixes
    before ordinary grammar and expose the final settings to the compiler.
    This keeps original offsets and one parser/compile configuration source.
@@ -48,9 +48,10 @@ Primary authority is pinned PCRE.NET1.6.0 / PCRE2 10.48,
 
 ## Parts and constraints
 
-A focused parser partial owns the four-token scan. Existing parser newline
-state becomes writable only during the prefix scan. The compiler passes both
-caller defaults in and sends both effective choices to PcreByteProgramCompiler.
+The later UTF/UCP tranche moves the scan into PcreByteStartSettings so UTF is
+selected before validation. One immutable value supplies all effective modes and
+the original body offset to parser/program; seven tokens can interleave. See
+`PCRE-UTF-START-DIRECTIVES-DESIGN.md`. The newline/BSR contract above is unchanged.
 No AST/opcode/frame/journal/matcher or Unicode tables change; no retained spans,
 interior pointers, snapshots, cloned width engines or fallback.
 
@@ -71,7 +72,7 @@ with direct options protect parser boundaries and resource behavior. Tests-only
 CI must fail as UnsupportedSyntax before production changes. One fresh final
 review and all six full/frozen214/configured CI gates precede ready status.
 
-Other newline settings CR/CRLF/ANY/NUL, UTF/UCP directives, limits/optimization
+Other newline settings CR/CRLF/ANY/NUL, limits/optimization
 verbs and other directives remain pending/rejected. This tranche does not fix
 #99/#102 optimizer parity or imitate #100 unsafe native malformed-Xuc spans.
 Builder may choose private helper/property names and fixture organization;
