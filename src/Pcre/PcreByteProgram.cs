@@ -48,9 +48,12 @@ internal sealed record PcreByteInstruction(
 
 internal sealed record PcreByteProgram(
 	PcreByteInstruction[] Instructions, int MarkCount, bool HasCaselessComparisons, bool Utf8, bool MatchInvalidUtf,
-	ReadOnlyMemory<byte> RequiredLiteralSuffix, bool AnyCrLfNewline, bool ExplicitNewline,
+	ReadOnlyMemory<byte> RequiredLiteralSuffix, PcreByteNewline Newline, bool ExplicitNewline,
 	bool CanMatchEmptyAtAnyOffset, bool ByteCrLfPrefix, bool UtfCrLfStartClass, bool NotEmpty, bool NotEmptyAtStart
-);
+) {
+	internal bool AnyCrLfNewline => Newline == PcreByteNewline.AnyCrLf;
+	internal byte NewlineCharacter => Newline.Character();
+}
 
 /// <summary>Compiles the supported AST into ordered bytecode with explicit backtrack edges.</summary>
 internal sealed class PcreByteProgramCompiler {
@@ -65,7 +68,7 @@ internal sealed class PcreByteProgramCompiler {
 	private bool hasCaselessComparisons;
 	private readonly bool utf8;
 	private readonly bool matchInvalidUtf;
-	private readonly bool anyCrLfNewline;
+	private readonly PcreByteNewline newline;
 	private readonly bool bsrAnyCrLf;
 	private readonly bool notEmpty;
 	private readonly bool notEmptyAtStart;
@@ -76,11 +79,11 @@ internal sealed class PcreByteProgramCompiler {
 	private readonly List<(int Instruction, int Number)> calls = new();
 
 	internal PcreByteProgramCompiler( CancellationToken cancellationToken, bool utf8, bool matchInvalidUtf,
-		bool anyCrLfNewline, bool bsrAnyCrLf, bool notEmpty, bool notEmptyAtStart ) {
+		PcreByteNewline newline, bool bsrAnyCrLf, bool notEmpty, bool notEmptyAtStart ) {
 		this.cancellationToken = cancellationToken;
 		this.utf8 = utf8;
 		this.matchInvalidUtf = matchInvalidUtf;
-		this.anyCrLfNewline = anyCrLfNewline;
+		this.newline = newline;
 		this.bsrAnyCrLf = bsrAnyCrLf;
 		this.notEmpty = notEmpty;
 		this.notEmptyAtStart = notEmptyAtStart;
@@ -106,7 +109,7 @@ internal sealed class PcreByteProgramCompiler {
 		}
 		foreach ( var call in calls ) { Patch( call.Instruction, entries[call.Number], call.Number ); }
 		return new( instructions.ToArray(), markCount, hasCaselessComparisons, utf8, matchInvalidUtf,
-			FindRequiredLiteralSuffix( root ), anyCrLfNewline, HasExplicitNewline( root ), CanMatchEmptyAtAnyOffset( root ),
+			FindRequiredLiteralSuffix( root ), newline, HasExplicitNewline( root ), CanMatchEmptyAtAnyOffset( root ),
 			!utf8 && HasByteCrLfPrefix( root ), utf8 && HasUtfCrLfStartClass( root ), notEmpty, notEmptyAtStart );
 	}
 

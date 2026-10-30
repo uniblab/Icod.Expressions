@@ -37,7 +37,7 @@ internal static class PcreByteCompiler {
 		try {
 			var root = parser.Parse();
 			var program = new PcreByteProgramCompiler(
-				cancellationToken, settings.Utf8, options.MatchInvalidUtf, settings.AnyCrLfNewline,
+				cancellationToken, settings.Utf8, options.MatchInvalidUtf, settings.Newline,
 				settings.BsrAnyCrLf, settings.NotEmpty, settings.NotEmptyAtStart
 			).Compile( root, parser.SubroutineTargets );
 			return new(
