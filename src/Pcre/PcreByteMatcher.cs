@@ -693,12 +693,15 @@ internal static class PcreByteMatcher {
 					if ( failed ) { break; }
 				}
 				if ( program.AnyCrLfNewline && !program.ExplicitNewline && !program.ByteCrLfPrefix
+					&& !program.UtfCrLfStartClass
 					&& start + 1 < fragment.End && input.Span[start] == (byte)'\r'
 					&& input.Span[start + 1] == (byte)'\n' ) {
 					// After a failed unanchored attempt at CR, PCRE2 advances past
 					// the entire pair unless the pattern explicitly mentions CR or LF.
 					// The bounded byte prefix scanner instead rejects CR by its next
 					// literal and can enter at LF. Keep VM work for both candidates.
+					// A mandatory UTF ASCII start class excluding CR likewise lets
+					// native prefix/bitmap scanning enter at LF without CR bumpalong.
 					start++;
 				}
 			}
