@@ -131,12 +131,9 @@ public sealed class PcreNamedCaptureReferenceTests {
 	[Theory]
 	[InlineData( @"[\k<x>]" )]
 	[InlineData( @"[\g{x}]" )]
-	public void BracketLiteralInterpretationOfGAndKRemainsPending( string pattern ) {
+	public void BracketReferenceSpellingsAreLiteralMembers( string pattern ) {
 		foreach ( var utf8 in new[] { false, true } ) {
-			Assert.True( Reference( pattern, utf8, false ).Match( "x"u8.ToArray() ).Success );
-			var result = PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( pattern ), new PcreByteOptions { Utf8 = utf8 } );
-			Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
-			Assert.Equal( utf8 ? 0 : 1, result.Diagnostic?.ByteOffset );
+			AssertEquivalent( pattern, "78", utf8, 0, 0, 1 );
 		}
 	}
 

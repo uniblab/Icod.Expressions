@@ -212,8 +212,20 @@ from original byte0 independently override the existing newline and BSR compile
 settings, with last setting winning in each family. The parser retains original
 bytes and offsets; groups/reset/calls cannot unset these global choices.
 Quoted/bracketed text is ordinary text, and misplaced/unrecognized directives
-retain explicit rejection at their opening byte. Existing matching, fragments,
+retain explicit rejection with existing enclosing-assertion precedence: direct
+lookbehind bodies can report the lookbehind opening instead of the directive
+opening. Existing matching, fragments,
 work/cancellation and limits are shared without new runtime state. See
 `PCRE-START-DIRECTIVES-DESIGN.md` and `PcreStartDirectiveReferenceTests`. Other
 newline settings/directives, #99/#102 optimizer parity and public/consumer gates
 remain separate.
+
+## Ordinary bracket reference escapes
+
+Inside ordinary brackets, `\g` and `\k` are literal letters and consume no
+following reference-looking delimiters, names or digits. They share existing
+byte/UTF class ranges, negation, i/r folding, quoting/trivia, width/capture and
+resource protocols. Outside reference/call grammar and original-byte diagnostic
+precedence stay unchanged. See `PCRE-BRACKET-REFERENCE-ESCAPES-DESIGN.md` and
+`PcreBracketReferenceEscapeTests`. Other escapes/algebra and public/consumer
+conformance gates remain separate.
