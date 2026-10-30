@@ -2,7 +2,7 @@ namespace Icod.Expressions.Pcre;
 
 /// <summary>Global prefix choices resolved once before whole-pattern validation.</summary>
 internal readonly record struct PcreByteStartSettings(
-	bool Utf8, bool Ucp, bool AnyCrLfNewline, bool BsrAnyCrLf, int BodyOffset
+	bool Utf8, bool Ucp, bool AnyCrLfNewline, bool BsrAnyCrLf, bool NotEmpty, bool NotEmptyAtStart, int BodyOffset
 ) {
 	internal static PcreByteStartSettings Parse( ReadOnlySpan<byte> source, PcreByteOptions options,
 		CancellationToken cancellationToken ) {
@@ -10,6 +10,8 @@ internal readonly record struct PcreByteStartSettings(
 		var ucp = options.Ucp;
 		var anyCrLf = options.AnyCrLfNewline;
 		var bsrAnyCrLf = options.BsrAnyCrLf;
+		var notEmpty = false;
+		var notEmptyAtStart = false;
 		var offset = 0;
 		// PCRE processes an uninterrupted prefix before ordinary options/trivia.
 		// Keep the original source and body index for validation and diagnostics.
@@ -22,9 +24,11 @@ internal readonly record struct PcreByteStartSettings(
 			else if ( TryConsume( source, ref offset, "(*ANYCRLF)"u8 ) ) { anyCrLf = true; }
 			else if ( TryConsume( source, ref offset, "(*BSR_UNICODE)"u8 ) ) { bsrAnyCrLf = false; }
 			else if ( TryConsume( source, ref offset, "(*BSR_ANYCRLF)"u8 ) ) { bsrAnyCrLf = true; }
+			else if ( TryConsume( source, ref offset, "(*NOTEMPTY)"u8 ) ) { notEmpty = true; }
+			else if ( TryConsume( source, ref offset, "(*NOTEMPTY_ATSTART)"u8 ) ) { notEmptyAtStart = true; }
 			else { break; }
 		}
-		return new( utf8, ucp, anyCrLf, bsrAnyCrLf, offset );
+		return new( utf8, ucp, anyCrLf, bsrAnyCrLf, notEmpty, notEmptyAtStart, offset );
 	}
 
 	private static bool TryConsume( ReadOnlySpan<byte> source, ref int offset, ReadOnlySpan<byte> directive ) {

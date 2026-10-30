@@ -49,7 +49,7 @@ internal sealed record PcreByteInstruction(
 internal sealed record PcreByteProgram(
 	PcreByteInstruction[] Instructions, int MarkCount, bool HasCaselessComparisons, bool Utf8, bool MatchInvalidUtf,
 	ReadOnlyMemory<byte> RequiredLiteralSuffix, bool AnyCrLfNewline, bool ExplicitNewline,
-	bool CanMatchEmptyAtAnyOffset, bool ByteCrLfPrefix, bool UtfCrLfStartClass
+	bool CanMatchEmptyAtAnyOffset, bool ByteCrLfPrefix, bool UtfCrLfStartClass, bool NotEmpty, bool NotEmptyAtStart
 );
 
 /// <summary>Compiles the supported AST into ordered bytecode with explicit backtrack edges.</summary>
@@ -67,6 +67,8 @@ internal sealed class PcreByteProgramCompiler {
 	private readonly bool matchInvalidUtf;
 	private readonly bool anyCrLfNewline;
 	private readonly bool bsrAnyCrLf;
+	private readonly bool notEmpty;
+	private readonly bool notEmptyAtStart;
 	private int markCount;
 	private int countedOffset = -1;
 	private int lastCountedOffset = -1;
@@ -74,12 +76,14 @@ internal sealed class PcreByteProgramCompiler {
 	private readonly List<(int Instruction, int Number)> calls = new();
 
 	internal PcreByteProgramCompiler( CancellationToken cancellationToken, bool utf8, bool matchInvalidUtf,
-		bool anyCrLfNewline, bool bsrAnyCrLf ) {
+		bool anyCrLfNewline, bool bsrAnyCrLf, bool notEmpty, bool notEmptyAtStart ) {
 		this.cancellationToken = cancellationToken;
 		this.utf8 = utf8;
 		this.matchInvalidUtf = matchInvalidUtf;
 		this.anyCrLfNewline = anyCrLfNewline;
 		this.bsrAnyCrLf = bsrAnyCrLf;
+		this.notEmpty = notEmpty;
+		this.notEmptyAtStart = notEmptyAtStart;
 	}
 
 	internal PcreByteProgram Compile( PcreByteAlternatives root, IReadOnlyDictionary<int, PcreByteGroup> targets ) {
@@ -103,7 +107,7 @@ internal sealed class PcreByteProgramCompiler {
 		foreach ( var call in calls ) { Patch( call.Instruction, entries[call.Number], call.Number ); }
 		return new( instructions.ToArray(), markCount, hasCaselessComparisons, utf8, matchInvalidUtf,
 			FindRequiredLiteralSuffix( root ), anyCrLfNewline, HasExplicitNewline( root ), CanMatchEmptyAtAnyOffset( root ),
-			!utf8 && HasByteCrLfPrefix( root ), utf8 && HasUtfCrLfStartClass( root ) );
+			!utf8 && HasByteCrLfPrefix( root ), utf8 && HasUtfCrLfStartClass( root ), notEmpty, notEmptyAtStart );
 	}
 
 	private bool HasUtfCrLfStartClass( PcreByteAlternatives root ) {

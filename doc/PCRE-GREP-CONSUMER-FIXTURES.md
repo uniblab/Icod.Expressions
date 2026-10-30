@@ -92,3 +92,16 @@ and global-mode nested behinds remain checked. Named FAIL/F arguments and other
 verbs remain pending. See `PCRE-FAILURE-VERBS-DESIGN.md` and
 `PcreFailureVerbReferenceTests`. Public/release/consumer and broader optimizer
 conformance gates remain separate.
+
+## Nonempty-match start directives
+
+The shared original-byte0 prefix also accepts `(*NOTEMPTY)` and
+`(*NOTEMPTY_ATSTART)`. Flags accumulate globally and survive inline resets.
+Whole-match acceptance rejects empty reported spans everywhere for NOTEMPTY, or
+only at the original caller offset for ATSTART; K resets affect the reported
+span. Rejection uses shared rollback, allowing alternative/lazy fallback while
+retaining atomic commitment and ordinary empty assertion/call success. Flagged
+tolerant empty programs take the existing candidate/fragment path; nullable
+metadata remains intact. See `PCRE-NOTEMPTY-DIRECTIVES-DESIGN.md` and
+`PcreNotEmptyDirectiveReferenceTests`. Other directives/verbs, optimizer, public/
+release and consumer gates remain separate.
