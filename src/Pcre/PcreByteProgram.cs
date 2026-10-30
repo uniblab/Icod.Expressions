@@ -48,7 +48,7 @@ internal sealed record PcreByteInstruction(
 internal sealed record PcreByteProgram(
 	PcreByteInstruction[] Instructions, int MarkCount, bool HasCaselessComparisons, bool Utf8, bool MatchInvalidUtf,
 	ReadOnlyMemory<byte> RequiredLiteralSuffix, bool AnyCrLfNewline, bool ExplicitNewline,
-	bool CanMatchEmptyAtAnyOffset
+	bool CanMatchEmptyAtAnyOffset, bool ByteCrLfPrefix
 );
 
 /// <summary>Compiles the supported AST into ordered bytecode with explicit backtrack edges.</summary>
@@ -100,7 +100,34 @@ internal sealed class PcreByteProgramCompiler {
 		}
 		foreach ( var call in calls ) { Patch( call.Instruction, entries[call.Number], call.Number ); }
 		return new( instructions.ToArray(), markCount, hasCaselessComparisons, utf8, matchInvalidUtf,
-			FindRequiredLiteralSuffix( root ), anyCrLfNewline, HasExplicitNewline( root ), CanMatchEmptyAtAnyOffset( root ) );
+			FindRequiredLiteralSuffix( root ), anyCrLfNewline, HasExplicitNewline( root ), CanMatchEmptyAtAnyOffset( root ),
+			!utf8 && HasByteCrLfPrefix( root ) );
+	}
+
+	private static bool HasByteCrLfPrefix( PcreByteAlternatives root ) {
+		// Native byte NOT/NOTI and ALLANY let prefix scanning reach a following
+		// literal. Ordinary mandatory bitmap classes stop it. Retain only this
+		// two-atom consequence; alternatives/repeats/assertions/calls stay outside.
+		while ( root.Branches.Count == 1 && root.Branches[0].Count == 1 ) {
+			var body = WrapperBody( root.Branches[0][0] );
+			if ( body is null ) { return false; }
+			root = body;
+		}
+		return root.Branches.Count == 1 && root.Branches[0].Count == 2
+			&& Unwrap( root.Branches[0][0] ) is PcreByteClass { PrefixAny: true }
+			&& Unwrap( root.Branches[0][1] ) is PcreByteLiteral;
+
+		static PcreByteNode Unwrap( PcreByteNode node ) {
+			while ( WrapperBody( node ) is { Branches.Count: 1 } body && body.Branches[0].Count == 1 ) {
+				node = body.Branches[0][0];
+			}
+			return node;
+		}
+		static PcreByteAlternatives? WrapperBody( PcreByteNode node ) => node switch {
+			PcreByteGroup group => group.Body,
+			PcreByteNoncapturingGroup group => group.Body,
+			_ => null
+		};
 	}
 
 	private static bool CanMatchEmptyAtAnyOffset( PcreByteAlternatives alternatives ) {

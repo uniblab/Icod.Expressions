@@ -370,6 +370,8 @@ internal sealed partial class PcreByteParser {
 		var negated = ParseClassNegation();
 		var quoting = false;
 		var hasItem = false;
+		var sourceTermCount = 0;
+		var soleLiteral = false;
 		var explicitNewline = false;
 		var set = default(PcreByteSet);
 		var specialScanCursor = index;
@@ -380,10 +382,14 @@ internal sealed partial class PcreByteParser {
 			if ( index >= source.Length ) { break; }
 			if ( !quoting && source[index] == (byte)']' && hasItem ) {
 				index++;
-				return new PcreByteClass( negated ? set.Complement() : set, !negated && explicitNewline );
+				var singletonNegation = negated && sourceTermCount == 1 && soleLiteral;
+				var members = negated ? set.Complement() : set;
+				return new PcreByteClass( members, explicitNewline && !singletonNegation,
+					singletonNegation || members == PcreByteSet.AllBytes );
 			}
 			var item = quoting ? QuotedBracketLiteral() : ParseBracketItem( ref specialScanCursor, ref nextClosingBracket );
 			SkipClassTrivia( ref quoting );
+			soleLiteral = item.Value.HasValue;
 			if ( item.Value is (byte)'\r' or (byte)'\n' ) { explicitNewline = true; }
 			if ( ( !item.Value.HasValue || item.MayStartRange ) && TryStartBracketRange( ref quoting, out var hyphenOffset ) ) {
 				if ( !item.Value.HasValue ) {
@@ -395,16 +401,15 @@ internal sealed partial class PcreByteParser {
 				if ( !end.Value.HasValue || end.Value.Value < item.Value.Value ) {
 					throw Invalid( hyphenOffset, "range endpoints must be ordered literal bytes" );
 				}
-				if ( item.Value.Value <= (byte)'\n' && end.Value.Value >= (byte)'\n'
-					|| item.Value.Value <= (byte)'\r' && end.Value.Value >= (byte)'\r' ) {
-					explicitNewline = true;
-				}
+				soleLiteral = item.Value.Value == end.Value.Value;
+				if ( end.Value is (byte)'\r' or (byte)'\n' ) { explicitNewline = true; }
 				var range = PcreByteSet.Range( item.Value.Value, end.Value.Value );
 				set = set.Union( caseless ? range.AsciiCaseClosure() : range );
 			} else {
 				set = set.Union( item.Set );
 			}
 			hasItem = true;
+			sourceTermCount++;
 		}
 		throw Invalid( openingOffset, "unclosed bracket class" );
 	}
