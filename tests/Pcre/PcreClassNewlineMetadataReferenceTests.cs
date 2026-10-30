@@ -44,8 +44,12 @@ public sealed class PcreClassNewlineMetadataReferenceTests {
 		Assert.Equal( index, expected.Success ? expected.Index : -1 );
 		if ( expected.Success ) {
 			Assert.Equal( length, expected.Length );
-			Assert.Equal( captures, string.Join( ",", expected.Groups.Select(
-				group => group.Success ? $"{group.Index}:{group.Length}" : "-" ) ) );
+			var spans = captures.Split( ',' );
+			Assert.Equal( spans.Length, expected.Groups.Count );
+			for ( var group = 0; group < spans.Length; group++ ) {
+				var capture = expected.Groups[group];
+				Assert.Equal( spans[group], capture.Success ? $"{capture.Index}:{capture.Length}" : "-" );
+			}
 		}
 		Compare( reference, subject, offset, Compile( pattern, true ).Match( subject, offset ), pattern );
 	}
