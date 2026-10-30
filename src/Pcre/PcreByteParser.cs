@@ -403,6 +403,12 @@ internal sealed partial class PcreByteParser {
 				}
 				soleLiteral = item.Value.Value == end.Value.Value;
 				if ( end.Value is (byte)'\r' or (byte)'\n' ) { explicitNewline = true; }
+				// Preserve existing positive interior-range continuation until the
+				// broader native start-bitmap/prefix behavior is implemented (#99).
+				if ( !negated && ( item.Value.Value <= (byte)'\n' && end.Value.Value >= (byte)'\n'
+					|| item.Value.Value <= (byte)'\r' && end.Value.Value >= (byte)'\r' ) ) {
+					explicitNewline = true;
+				}
 				var range = PcreByteSet.Range( item.Value.Value, end.Value.Value );
 				set = set.Union( caseless ? range.AsciiCaseClosure() : range );
 			} else {

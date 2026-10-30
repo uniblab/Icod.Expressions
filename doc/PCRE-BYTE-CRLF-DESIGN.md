@@ -3,7 +3,7 @@
 ## Intent and boundary
 
 Continue issue #7 and the bounded cases in #99 after #98. Pin PCRE.NET1.6.0 /
-PCRE2 10.48 Compiled/JIT byte-class source metadata and the two-atom byte prefix
+PCRE2 10.48 Compiled/JIT byte-class negation metadata and the two-atom byte prefix
 that explains the recorded discrepancies. Keep #99 open for broader prefix forms.
 
 ## Evidence and approaches
@@ -29,10 +29,17 @@ remit. No general performance optimizer is added.
 
 ## Contract and implementation
 
-1. Byte bracket classes mirror #98 UTF metadata: preserve parsed operand count,
-   sole-literal/equal-range shape, and actual literal/range-endpoint CR/LF before
-   folding/deduplication. Suppress metadata only for a negated single parsed
-   literal/equal range. Interior CR/LF alone contributes no source metadata.
+1. Byte bracket classes preserve parsed operand count, sole-literal/equal-range
+   shape, and actual literal/range-endpoint CR/LF before folding/deduplication.
+   Correct negated metadata to suppress only a single parsed literal/equal range.
+   **Retain historical positive interior-range newline flags for now.** Clearing
+   them globally introduced lost matches: native `[\x09-\x0c]A`, exact repeated
+   ranges, longer all-byte prefixes and atomic wrappers can enter at LF through
+   other optimizers. Their source metadata flag is actually0; the old library
+   flag preserves these matches accidentally. Some positive interior-range false
+   positives, including `[\x09-\x0e]A` on `0D0A41`, therefore remain in #99.
+   Complete endpoint-only byte metadata requires native start-bitmap/general
+   prefix coverage first. UTF endpoint-only provenance from #98 is unchanged.
 2. PcreByteClass gains a default-false `PrefixAny` AST flag: true for a negated
    single parsed literal/equal range (native NOT/NOTI), or a completed all-byte
    class (native ALLANY). Dot/shorthand classes are outside this tranche.
@@ -59,10 +66,11 @@ workflow, consumer, release changes or native/Regex production fallback. Frozen
 marks256/savedframes1024/default work1,000,000. User owns merge; CommandFramework
 removal remains gated on publication and all consumer migrations; Grep stays last.
 
-Tests pin native-first literal full captures and metadata controls, duplicate and
+Tests pin native-first literal full captures and negation controls, duplicate and
 mixed classes, equal/interior/endpoint ranges, quotes/xx/caseless, wrappers and
 excluded optimizer shapes, every caller offset, byte LF versus ANYCRLF, UTF and
 malformed fragments, observed/unobserved/cancellable matches, work exhaustion and
-pre/mid cancellation. Publish tests-only draft and observe executable expected
+pre/mid cancellation. The reviewed interior-range match regressions are pinned
+without claiming full byte metadata parity. Publish tests-only draft and observe executable expected
 red before production. No local SDK; use six native Staging CI jobs and configured
 full/frozen/workload/extraction/API/package gates, then fresh whole-branch review.

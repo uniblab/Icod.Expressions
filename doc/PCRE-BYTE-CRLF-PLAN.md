@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox syntax for tracking.
 
-**Goal:** Correct byte class source metadata and the bounded two-atom byte prefix cases in #99.
+**Goal:** Correct byte class negation metadata and the bounded two-atom byte prefix cases in #99.
 
 **Architecture:** Keep source operand shape on the byte class AST, reduce the admitted two-atom shape to one program bool, and use it at the existing failed-CR candidate boundary. Keep all VM work and storage paths.
 
@@ -39,7 +39,7 @@ PcreRegex8Bit reference; no new test-only production interfaces.
 - [ ] Complete builder check and independently native-pin literals/metadata/shape controls.
 - [ ] Add native-first literal spans: CRLF+A `[0D0A41]` at0 gives1:2 for negated
   singleton/equal-range/all-byte two-atom forms and mixed/duplicate CR classes;
-  ordinary interior class gives miss, explicit offset1 gives1:2.
+  ordinary CR-including bitmap controls give miss, explicit offset1 gives1:2.
 - [ ] Compare all captures/offsets, LF/ANYCRLF, quoted/xx/i wrappers, excluded optimizer
   shapes, UTF strict/tolerant and invalid barriers. Assert native literals before managed comparisons.
 - [ ] Pin observed/unobserved/cancellable equality, work exhaustion and deterministic cancellation.
@@ -57,6 +57,8 @@ Existing ExplicitNewline bool and VM instructions unchanged.
 
 - [ ] In ParseBracket track original term count/sole literal, endpoint CR/LF and equal
   ranges before folding; apply same negated-singleton metadata exception as UTF.
+  Preserve historical positive interior-range flags until broader start-optimization
+  coverage can replace them without lost matches (review-fix scope correction).
 - [ ] Set PrefixAny for negated singleton/equal range or completed AllBytes set only.
 - [ ] Detect exactly one root branch with two admitted unwrapped nodes, PrefixAny class
   then literal, optionally single-branch capture/noncapture wrappers around sequence/atoms.
@@ -65,5 +67,7 @@ Existing ExplicitNewline bool and VM instructions unchanged.
   transitions and work/cancellation on existing VM path.
 - [ ] Commit/publish exact tree; run six native Staging jobs and configured gates.
 - [ ] Fresh independent whole-branch review; fix material findings using red/green.
+  Add native-first9-c class/class+A, exact-repeat2, all-byte+AA and atomic-wrapper
+  regressions; observe failure before preserving positive interior flags.
 - [ ] Inspect all six logs, full-range whitespace/frozen35/clean checkout/exact head/tree;
   update PR proof and mark ready; keep #99 follow-up open and worktree for feedback.

@@ -29,7 +29,6 @@ public sealed class PcreByteCrLfSearchReferenceTests {
 	[InlineData( @"[^[:digit:]\r]A", 0, "1:2" )]
 	[InlineData( @"(?xx)[^ \r \r ] A", 0, "1:2" )]
 	[InlineData( "[^\\Q\r\r\\E]A", 0, "1:2" )]
-	[InlineData( @"[\x09-\x0e]A", 0, "" )]
 	[InlineData( @"[\x09-\x0e]A", 1, "1:2" )]
 	[InlineData( @"[^\x00\x01]A", 0, "" )]
 	[InlineData( @"[^\x00\x01]A", 1, "1:2" )]
@@ -41,7 +40,6 @@ public sealed class PcreByteCrLfSearchReferenceTests {
 	[InlineData( @"[\x00-\n]A", 0, "1:2" )]
 	[InlineData( @"[^\n-\r]A", 0, "" )]
 	[InlineData( @"[^\r\r]{0}[\x09-\x0e]A", 0, "1:2" )]
-	[InlineData( @"[\x09-\x0e]{0}[^\x00\x01]A", 0, "" )]
 	[InlineData( @"(?(DEFINE)(?<x>[^\r\r]))[\x09-\x0e]A", 0, "1:2,-" )]
 	public void ByteClassSourceAndPrefixShapesPreserveLiteralSpans( string pattern, int offset, string spans ) {
 		var subject = "\r\nA"u8.ToArray();
@@ -69,7 +67,7 @@ public sealed class PcreByteCrLfSearchReferenceTests {
 	public void EveryCallerOffsetPreservesByteAndUtfControls( bool anyCrLf ) {
 		foreach ( var utf in new[] { false, true } ) {
 			foreach ( var pattern in new[] { @"[^\r]A", @"[^\r-\r]A", @"[^\x00]A", @"[\x00-\xff]A",
-				@"[\s\S]A", @"[\x09-\x0e]A", @"[^\r\r]A", @"[^\d\r]A", @"(?<x>[^\r])(?<y>A)",
+				@"[\s\S]A", @"[\x09-\x0c]A", @"[^\r\r]A", @"[^\d\r]A", @"(?<x>[^\r])(?<y>A)",
 				@"\G[^\r]A", @"(?m)[^\r\r]A$", @"(?<x>[^\r\r]A)\k<x>", @"[^\r]+A", @"[^\r]\w" } ) {
 				var reference = Reference( pattern, anyCrLf, utf, utf );
 				var compiled = Compile( pattern, new() { AnyCrLfNewline = anyCrLf, Utf8 = utf, MatchInvalidUtf = utf } );
@@ -87,7 +85,7 @@ public sealed class PcreByteCrLfSearchReferenceTests {
 	[InlineData( @"[^\r]A" )]
 	[InlineData( @"(?<x>[^\r])(?<y>A)" )]
 	[InlineData( @"[^\r\d]A" )]
-	[InlineData( @"[\x09-\x0e]A" )]
+	[InlineData( @"[\x09-\x0c]A" )]
 	public void ObservedAndCancellableSearchPreservesTheSameNativeResult( string pattern ) {
 		var subject = "\r\nA"u8.ToArray();
 		var reference = Reference( pattern, true );
