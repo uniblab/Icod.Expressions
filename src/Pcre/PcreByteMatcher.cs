@@ -126,7 +126,7 @@ internal static class PcreByteMatcher {
 				// Strict mode must validate UTF-8 and the start boundary first.
 				return new( null, null );
 			}
-			if ( program.MatchInvalidUtf && program.Instructions.Length == 1
+			if ( program.MatchInvalidUtf && !program.NotEmpty && !program.NotEmptyAtStart && program.Instructions.Length == 1
 				&& program.Instructions[0].Opcode == PcreByteOpcode.Accept ) {
 				// PCRE2 permits an empty pattern at the requested byte offset,
 				// including inside a valid scalar or a malformed byte run.
@@ -667,6 +667,13 @@ internal static class PcreByteMatcher {
 							break;
 						case PcreByteOpcode.Accept:
 							var reportedStart = captureStarts[0];
+							// Reject at final acceptance so ordinary saved paths can retry.
+							// K may have moved the reported start beyond the candidate start.
+							if ( position == reportedStart && ( program.NotEmpty
+								|| program.NotEmptyAtStart && position == startOffset ) ) {
+								failed = true;
+								break;
+							}
 							captures[0] = new( reportedStart, position - reportedStart );
 							return new( new PcreByteMatch( reportedStart, position - reportedStart, Array.AsReadOnly( captures ) ), null );
 						default:
