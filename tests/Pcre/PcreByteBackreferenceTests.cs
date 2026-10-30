@@ -84,8 +84,7 @@ public sealed class PcreByteBackreferenceTests {
 	[InlineData( @"(a)\g{-99999999}", (int)PcreByteDiagnosticCode.InvalidSyntax )]
 	[InlineData( @"(a)\g{+1", (int)PcreByteDiagnosticCode.InvalidSyntax )]
 	[InlineData( @"(a)\g{name}", (int)PcreByteDiagnosticCode.InvalidSyntax )]
-	[InlineData( @"(a)[\g{1}]", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
-	public void DiagnosesNonmatchingOrPendingGReferencesAtTheirEscape( string pattern,
+	public void DiagnosesInvalidGReferencesAtTheirEscape( string pattern,
 		int code ) {
 		var result = PcreByteCompiler.Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
 		Assert.False( result.IsSuccess );

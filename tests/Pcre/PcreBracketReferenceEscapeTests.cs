@@ -45,6 +45,7 @@ public sealed class PcreBracketReferenceEscapeTests {
 	}
 
 	[Theory]
+	[InlineData( @"(a)[\g{1}]", "6131", "0:2,0:1" )]
 	[InlineData( @"([\g])([\k])", "676B", "0:2,0:1,1:1" )]
 	[InlineData( @"[\g]]", "675D", "0:2" )]
 	[InlineData( @"[\k]name", "6B6E616D65", "0:5" )]
