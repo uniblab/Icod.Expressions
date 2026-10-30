@@ -29,3 +29,7 @@ Grep constructs one PCRE.NET 1.6.0 expression per pattern. In a UTF-8 locale it 
 ## Resource and performance gates still open
 
 Existing internal tests cover cancellation, work limits, backtracking depth and malformed-byte barriers. Grep's `Icod.Grep-1.6.0-T6.7-PCRE-Closure-Report.md`, `benchmarks/README.md`, and T6.8 stress plan cover dense `-o`, 32 independent expressions, long records, large pattern sets and record scaling. Their measured PCRE2 JIT baseline is the comparison target; the capture-journal allocation test in PR #43 is only a synthetic internal guard. Freeze the full workload inputs, outputs and measured thresholds before claiming parity or changing Grep.
+
+## Byte class CRLF search follow-up
+
+Byte class CRLF continuation now preserves source operand count/shape and literal/range endpoints, including the native negated-singleton exception. The bounded byte two-atom negated-singleton/all-byte class plus literal prefix preserves JIT LF candidate entry; optional single-branch capture/noncapture wrappers qualify. Broader prefix optimizer shapes remain tracked in #99. UTF behavior and all VM work/cancellation/resource paths remain shared. See `PCRE-BYTE-CRLF-DESIGN.md` and `PcreByteCrLfSearchReferenceTests`.
