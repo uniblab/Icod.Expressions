@@ -48,13 +48,14 @@ internal sealed record PcreByteInstruction(
 internal sealed record PcreByteProgram(
 	PcreByteInstruction[] Instructions, int MarkCount, bool HasCaselessComparisons, bool Utf8, bool MatchInvalidUtf,
 	ReadOnlyMemory<byte> RequiredLiteralSuffix, bool AnyCrLfNewline, bool ExplicitNewline,
-	bool CanMatchEmptyAtAnyOffset, bool ByteCrLfPrefix
+	bool CanMatchEmptyAtAnyOffset, bool ByteCrLfPrefix, bool UtfCrLfStartClass
 );
 
 /// <summary>Compiles the supported AST into ordered bytecode with explicit backtrack edges.</summary>
 internal sealed class PcreByteProgramCompiler {
 	private const int MaximumInstructions = 4096;
 	private const int MaximumMarks = 256;
+	private const int MaximumStartClassVisits = 1000;
 	private readonly List<PcreByteInstruction> instructions = new();
 	// Compilation continuations live on the heap; AST depth must not consume
 	// platform-dependent native stack space. This is not VM backtracking state.
@@ -101,7 +102,60 @@ internal sealed class PcreByteProgramCompiler {
 		foreach ( var call in calls ) { Patch( call.Instruction, entries[call.Number], call.Number ); }
 		return new( instructions.ToArray(), markCount, hasCaselessComparisons, utf8, matchInvalidUtf,
 			FindRequiredLiteralSuffix( root ), anyCrLfNewline, HasExplicitNewline( root ), CanMatchEmptyAtAnyOffset( root ),
-			!utf8 && HasByteCrLfPrefix( root ) );
+			!utf8 && HasByteCrLfPrefix( root ), utf8 && HasUtfCrLfStartClass( root ) );
+	}
+
+	private bool HasUtfCrLfStartClass( PcreByteAlternatives root ) {
+		// Native prefix/start-bitmap scanning rejects CR before VM entry when
+		// every initial mandatory ASCII class excludes it. Keep this independent
+		// of source newline metadata and avoid recursive compile-time traversal.
+		var pending = new Stack<PcreByteNode>();
+		var visits = 1; // Root; conservatively include every proof node below.
+		var canStartAtLf = false;
+		if ( !AddBranches( root ) ) { return false; }
+		while ( pending.TryPop( out var node ) ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			// Native start-bitmap analysis fails after 1,000 cumulative group
+			// calls. Extra proof-node charges keep this bounded subset within it.
+			if ( ++visits > MaximumStartClassVisits ) { return false; }
+			switch ( node ) {
+				case PcreByteGroup group:
+					if ( !AddBranches( group.Body ) ) { return false; }
+					break;
+				case PcreByteNoncapturingGroup group:
+					if ( !AddBranches( group.Body ) ) { return false; }
+					break;
+				case PcreByteAtomic atomic:
+					pending.Push( atomic.Child );
+					break;
+				case PcreByteRepeat repeat when repeat.Minimum >= 1
+					&& ( repeat.Minimum != repeat.Maximum || repeat.Minimum == 1 ):
+					// Exact larger repeats can expose later native prefix tests.
+					pending.Push( repeat.Child );
+					break;
+				case PcreByteScalarSet { Negated: false } set when set.Predicates.IsEmpty && !set.Ranges.IsEmpty:
+					foreach ( var range in set.Ranges.Span ) {
+						cancellationToken.ThrowIfCancellationRequested();
+						if ( range.Start < 0 || range.End > 127
+							|| range.Start <= '\r' && range.End >= '\r' ) { return false; }
+						canStartAtLf |= range.Start <= '\n' && range.End >= '\n';
+					}
+					break;
+				default: return false;
+			}
+		}
+		// Do not spend additional VM work at LF if no initial class admits it.
+		return canStartAtLf;
+
+		bool AddBranches( PcreByteAlternatives alternatives ) {
+			if ( alternatives.Branches.Count == 0 ) { return false; }
+			foreach ( var branch in alternatives.Branches ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				if ( branch.Count == 0 ) { return false; }
+				pending.Push( branch[0] );
+			}
+			return true;
+		}
 	}
 
 	private static bool HasByteCrLfPrefix( PcreByteAlternatives root ) {
