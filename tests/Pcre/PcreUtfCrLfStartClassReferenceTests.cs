@@ -21,6 +21,7 @@ public sealed class PcreUtfCrLfStartClassReferenceTests {
 	[InlineData( @"(?:[\x09-\x0c])(?:A)", "0D0A41", 0, "1:2" )]
 	[InlineData( @"(?>[\x09-\x0c]A)", "0D0A41", 0, "1:2" )]
 	[InlineData( @"(?:[\x09-\x0c]A|[\x09-\x0b]B)", "0D0A41", 0, "1:2" )]
+	[InlineData( @"(?:[A-C]X|[\x09-\x0c]A)", "0D0A41", 0, "1:2" )]
 	[InlineData( @"(?|([\x09-\x0c])A|([\x09-\x0b])B)", "0D0A41", 0, "1:2,1:1" )]
 	[InlineData( @"[\x09-\x0c]+A", "0D0A41", 0, "1:2" )]
 	[InlineData( @"[\x09-\x0c]+?A", "0D0A41", 0, "1:2" )]
@@ -97,6 +98,23 @@ public sealed class PcreUtfCrLfStartClassReferenceTests {
 		var invalid = Compile( @"[\x09-\x0c]A", new() { Utf8 = true, AnyCrLfNewline = true } );
 		Assert.Equal( PcreByteDiagnosticCode.InvalidStartOffset, invalid.Match( "é\r\nA"u8.ToArray(), 1 ).Diagnostic?.Code );
 		Assert.Equal( PcreByteDiagnosticCode.InvalidUtf8Subject, invalid.Match( Convert.FromHexString( "FF0D0A41" ) ).Diagnostic?.Code );
+	}
+
+	[Fact]
+	public void ClassesWithoutLfKeepTheDefaultBudgetForCrlfOnlyInput() {
+		const string pattern = @"[A-C]A";
+		var subject = Encoding.ASCII.GetBytes( String.Concat( Enumerable.Repeat( "\r\n", 120_000 ) ) );
+		Assert.False( Reference( pattern, true, false ).Match( subject ).Success );
+		foreach ( var observe in new[] { false, true } ) {
+			using var cancellation = new CancellationTokenSource();
+			var work = 0;
+			var compiled = Compile( pattern, new() { Utf8 = true, AnyCrLfNewline = true,
+				WorkObserver = observe ? count => { work = count; } : null } );
+			var result = compiled.Match( subject, cancellationToken: observe ? cancellation.Token : default );
+			Assert.True( result.IsSuccess, result.Diagnostic?.Message );
+			Assert.Null( result.Match );
+			if ( observe ) { Assert.InRange( work, 1, PcreByteOptions.DefaultMatchWorkLimit ); }
+		}
 	}
 
 	[Fact]
