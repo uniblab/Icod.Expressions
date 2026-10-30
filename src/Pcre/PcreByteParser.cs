@@ -507,6 +507,14 @@ internal sealed partial class PcreByteParser {
 			throw Invalid( offset, "trailing backslash" );
 		}
 		var value = source[index++];
+		if ( value == (byte)'c' ) {
+			if ( index >= source.Length || source[index] is < 0x20 or > 0x7e ) {
+				throw Invalid( offset, "control escape requires a printable ASCII operand" );
+			}
+			var control = source[index++];
+			if ( control is >= (byte)'a' and <= (byte)'z' ) { control -= 0x20; }
+			return new PcreByteLiteral( control ^ 0x40 );
+		}
 		if ( value == (byte)'R' ) {
 			if ( inBracket ) { throw Invalid( offset, "a newline sequence is not a character class member" ); }
 			return new PcreByteNewlineSequence();
