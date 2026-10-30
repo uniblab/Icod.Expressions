@@ -540,7 +540,7 @@ internal sealed partial class PcreByteParser {
 		if ( value is >= (byte)'0' and <= (byte)'9' ) { return ParseDecimalOrOctalEscape( value, offset, inBracket ); }
 		if ( value == (byte)'o' ) { return ParseBracedOctal( offset ); }
 		if ( value == (byte)'k' ) {
-			if ( inBracket ) { throw Unsupported( offset ); } // Literal bracket interpretation is pending.
+			if ( inBracket ) { return new PcreByteLiteral( value ); }
 			if ( index >= source.Length || source[index] is not (byte)'<' and not (byte)'\'' and not (byte)'{' ) {
 				throw Invalid( offset, "named backreference requires a delimiter" );
 			}
@@ -549,7 +549,7 @@ internal sealed partial class PcreByteParser {
 				: delimiter == (byte)'{' ? (byte)'}' : (byte)'\'', offset );
 		}
 		if ( value == (byte)'g' ) {
-			if ( inBracket ) { throw Unsupported( offset ); } // g is a literal in a PCRE2 bracket.
+			if ( inBracket ) { return new PcreByteLiteral( value ); }
 			if ( index < source.Length && source[index] is (byte)'<' or (byte)'\'' ) {
 				var delimiter = source[index++];
 				return ParseSubroutineCall( delimiter == (byte)'<' ? (byte)'>' : (byte)'\'', offset );

@@ -38,9 +38,9 @@ do not ignore whitespace.
 General assertions, duplicate-name options, recursion and named
 subroutine calls remain pending. In particular `\g<name>` and `\g'name'` are
 subroutine syntax, not aliases for `\g{name}`. Literal `\g`/`\k` interpretation
-in ordinary brackets remains pending; general lookaround bodies retain
-UnsupportedSyntax. This bracket distinction was confirmed by the first reference
-run and the pinned 10.48 `pcre2_compile.c` escape handling.
+in ordinary brackets is implemented by the later bracket-reference-escapes
+tranche; see `PCRE-BRACKET-REFERENCE-ESCAPES-DESIGN.md`. This bracket distinction
+was confirmed by the pinned 10.48 `pcre2_compile.c` escape handling.
 
 ## Approaches
 
