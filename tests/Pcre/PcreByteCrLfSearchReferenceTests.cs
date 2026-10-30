@@ -51,6 +51,19 @@ public sealed class PcreByteCrLfSearchReferenceTests {
 	}
 
 	[Theory]
+	[InlineData( @"[\x09-\x0c]", "0D0A", "1:1" )]
+	[InlineData( @"[\x09-\x0c]A", "0D0A41", "1:2" )]
+	[InlineData( @"[\x09-\x0e]{2}A", "0D0A0B41", "1:3" )]
+	[InlineData( @"[\x00-\xff]AA", "0D0A4141", "1:3" )]
+	[InlineData( @"(?>[\x00-\xff]A)", "0D0A41", "1:2" )]
+	public void InteriorRangesRetainPreviouslyCorrectNativeMatches( string pattern, string hex, string spans ) {
+		var subject = Convert.FromHexString( hex );
+		var reference = Reference( pattern, true );
+		AssertLiteral( reference, subject, 0, spans );
+		Compare( reference, subject, 0, Compile( pattern, new() { AnyCrLfNewline = true } ).Match( subject ), pattern );
+	}
+
+	[Theory]
 	[InlineData( false )]
 	[InlineData( true )]
 	public void EveryCallerOffsetPreservesByteAndUtfControls( bool anyCrLf ) {
