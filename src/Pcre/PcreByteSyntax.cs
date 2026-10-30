@@ -20,7 +20,8 @@ internal enum PcreByteScalarClassKind {
 	UnicodeAlnum, UnicodeBlank, UnicodeControl, UnicodeGraph, UnicodeLower,
 	UnicodePrintable, UnicodePunctuation, UnicodeUpper, UnicodeHexDigit,
 	CategoryOther, CasedLetter, CategoryMark, CategoryNumber, CategoryPunctuation,
-	CategorySymbol, CategorySeparator, SpecificCategory, HorizontalSpace, VerticalSpace
+	CategorySymbol, CategorySeparator, SpecificCategory, HorizontalSpace, VerticalSpace,
+	AnyScalar, UniversalCharacterName
 }
 
 internal sealed record PcreByteScalarClass(
@@ -36,7 +37,8 @@ internal readonly record struct PcreByteScalarPredicate(
 internal sealed record PcreByteScalarSet(
 	ReadOnlyMemory<PcreByteScalarRange> Ranges,
 	ReadOnlyMemory<PcreByteScalarPredicate> Predicates,
-	bool Negated
+	bool Negated,
+	bool ExplicitNewline
 ) : PcreByteNode;
 
 internal sealed record PcreByteClass( PcreByteSet Set, bool ExplicitNewline = false ) : PcreByteNode;

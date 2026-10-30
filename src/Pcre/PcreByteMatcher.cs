@@ -765,6 +765,8 @@ internal static class PcreByteMatcher {
 
 	private static bool ScalarClassContains( PcreByteScalarClassKind kind, int scalar,
 		UnicodeCategory? specificCategory = null, bool caseless = false ) {
+		if ( kind == PcreByteScalarClassKind.AnyScalar ) { return true; } // Decoder admits valid scalars only.
+		if ( kind == PcreByteScalarClassKind.UniversalCharacterName ) { return scalar is '$' or '@' or '`' or >= 0xA0; }
 		if ( kind == PcreByteScalarClassKind.Letter && scalar <= 0x7F ) {
 			return scalar is >= 'A' and <= 'Z' or >= 'a' and <= 'z';
 		}
