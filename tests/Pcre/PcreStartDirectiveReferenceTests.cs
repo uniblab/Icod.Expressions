@@ -128,9 +128,7 @@ public sealed class PcreStartDirectiveReferenceTests {
 	[InlineData( @"(*LF)|(*ANYCRLF)", 6 )]
 	[InlineData( @"(*LF)(*CR)", 5 )]
 	[InlineData( @"(*lf)", 0 )]
-	[InlineData( @"(*LF", 0 )]
 	[InlineData( @"(*LFx)", 0 )]
-	[InlineData( @"(*BSR_UNICODE", 0 )]
 	[InlineData( @"(*BSR_ANYCRLF )", 0 )]
 	public void UnrecognizedOrMisplacedDirectiveRetainsOpeningByteDiagnostic( string pattern, int offset ) {
 		if ( pattern != "(*LF)(*CR)" ) { Assert.Throws<PcrePatternException>( () => Reference( pattern, new() ) ); }
@@ -140,11 +138,13 @@ public sealed class PcreStartDirectiveReferenceTests {
 	}
 
 	[Theory]
+	[InlineData( @"(*LF", 1 )]
+	[InlineData( @"(*BSR_UNICODE", 1 )]
 	[InlineData( @"(*LF)*", 5 )]
 	[InlineData( @"(*ANYCRLF){2}", 10 )]
 	[InlineData( @"(*BSR_UNICODE)(", 14 )]
 	[InlineData( @"(*LF)é\", 7 )]
-	public void BodyErrorsKeepOriginalUtfByteOffsets( string pattern, int offset ) {
+	public void MalformedPatternsKeepOriginalUtfByteOffsets( string pattern, int offset ) {
 		Assert.Throws<PcrePatternException>( () => Reference( pattern, new() { Utf8 = true } ) );
 		var result = PcreByteCompiler.Compile( Encoding.UTF8.GetBytes( pattern ), new PcreByteOptions { Utf8 = true } );
 		Assert.Equal( PcreByteDiagnosticCode.InvalidSyntax, result.Diagnostic?.Code );

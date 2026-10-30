@@ -25,8 +25,9 @@ Primary authority is pinned PCRE.NET1.6.0 / PCRE2 10.48,
 - Retain the original byte array and advance the parser index; never strip or
   rewrite the prefix. Quantifiers cannot repeat a directive. Diagnostics from
   the body retain original byte offsets, including UTF byte offsets.
-- A misplaced, truncated, misspelled or other `(*...)` directive retains the
+- A misplaced, misspelled or other complete `(*...)` directive retains the
   existing explicit UnsupportedSyntax policy at its opening parenthesis.
+  Unterminated forms retain InvalidSyntax at the first nonrepeatable `*` byte.
   Existing group aliases remain supported. Quoted/bracketed text is ordinary
   text and never changes settings. Invalid UTF pattern validation keeps its
   existing compile-entry precedence. Work/cancellation/limits stay unchanged.
