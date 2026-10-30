@@ -41,3 +41,16 @@ Mandatory positive predicate-free ASCII bracket starts which exclude CR now reta
 ## Control escapes
 
 Printable ASCII `\cX` operands share the existing literal path across byte/UTF classes, captures and lookbehind widths, with original byte indexes and existing work/cancellation. Missing/nonprintable/non-ASCII operands are InvalidSyntax at the escape; outer structural and invalid UTF diagnostics retain their precedence. Quoting and x/xx token boundaries are preserved. See `PCRE-CONTROL-ESCAPES-DESIGN.md` and `PcreControlEscapeReferenceTests`. Other escapes and #99/#102 optimizer gates remain pending.
+
+## Start directives
+
+Exact consecutive `(*LF)`, `(*ANYCRLF)`, `(*BSR_UNICODE)` and `(*BSR_ANYCRLF)`
+from original byte0 independently override the existing newline and BSR compile
+settings, with last setting winning in each family. The parser retains original
+bytes and offsets; groups/reset/calls cannot unset these global choices.
+Quoted/bracketed text is ordinary text, and misplaced/unrecognized directives
+retain explicit rejection at their opening byte. Existing matching, fragments,
+work/cancellation and limits are shared without new runtime state. See
+`PCRE-START-DIRECTIVES-DESIGN.md` and `PcreStartDirectiveReferenceTests`. Other
+newline settings/directives, #99/#102 optimizer parity and public/consumer gates
+remain separate.

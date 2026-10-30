@@ -18,7 +18,7 @@ internal sealed partial class PcreByteParser {
 	private readonly CancellationToken cancellationToken;
 	private readonly bool utf8;
 	private readonly bool ucp;
-	private readonly bool anyCrLfNewline;
+	private bool anyCrLfNewline;
 	private readonly List<(int Number, int Offset)> backreferences = new();
 	private int index;
 	private int groupCount;
@@ -36,22 +36,26 @@ internal sealed partial class PcreByteParser {
 	private ExtendedMode extended;
 
 	internal PcreByteParser( byte[] source, bool caseless, bool utf8, bool ucp,
-		bool asciiBsD, bool anyCrLfNewline, CancellationToken cancellationToken ) {
+		bool asciiBsD, bool anyCrLfNewline, bool bsrAnyCrLf, CancellationToken cancellationToken ) {
 		this.source = source;
 		this.caseless = caseless;
 		this.utf8 = utf8;
 		this.ucp = ucp;
 		asciiRestrictions = asciiBsD ? AsciiRestriction.BackslashD : AsciiRestriction.None;
 		this.anyCrLfNewline = anyCrLfNewline;
+		BsrAnyCrLf = bsrAnyCrLf;
 		this.cancellationToken = cancellationToken;
 	}
 
 	internal int GroupCount => groupCount;
+	internal bool AnyCrLfNewline => anyCrLfNewline;
+	internal bool BsrAnyCrLf { get; private set; }
 
 	private bool HasAsciiRestriction( AsciiRestriction restriction ) =>
 		( asciiRestrictions & restriction ) != AsciiRestriction.None;
 
 	internal PcreByteAlternatives Parse() {
+		ParseStartDirectives();
 		while ( true ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			SkipIgnoredPatternText();
