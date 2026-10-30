@@ -5,7 +5,8 @@
 **Historical scope:** The lookbehind exclusion below records #93. Bounded
 consumed calls are added by `PCRE-SUBROUTINE-LOOKBEHIND-DESIGN.md`. Recursion
 conditions and the fourth call-arena integer are added by
-`PCRE-RECURSION-CONDITIONS-DESIGN.md`.
+`PCRE-RECURSION-CONDITIONS-DESIGN.md`. Parenthesized returned-capture lists are
+added by `PCRE-RETURNED-CAPTURES-DESIGN.md`; exclusions below are historical.
 
 ## Intent and scope
 
