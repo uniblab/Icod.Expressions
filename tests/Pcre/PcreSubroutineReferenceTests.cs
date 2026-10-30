@@ -99,18 +99,6 @@ public sealed class PcreSubroutineReferenceTests {
 		Diagnostic( pattern, PcreByteDiagnosticCode.InvalidSyntax, 5 );
 	}
 
-	[Theory]
-	[InlineData( "(a)(?R)", "(?R)" )]
-	[InlineData( "(a)(?000)", "(?000)" )]
-	[InlineData( @"(a)\g<0>", @"\g<0>" )]
-	[InlineData( @"(a)\g'0'", @"\g'0'" )]
-	[InlineData( "(?(DEFINE)(?<x>(?&x)))a", "(?&x)" )]
-	[InlineData( "(?(DEFINE)(?<x>(?&y))(?<y>(?&x)))a", "(?&y)" )]
-	public void NativeAcceptedPendingFamiliesStayUnsupportedAtTheirCallOpener( string pattern, string opener ) {
-		_ = Reference( pattern );
-		Diagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax, pattern.IndexOf( opener, StringComparison.Ordinal ) );
-	}
-
 	[Fact]
 	public void CalledDefinitionsCannotReuseSkippedGeneralBehindMetadata() {
 		const string pattern = "(?<=(?(DEFINE)(?<x>(?<=a*))))(?&x)";

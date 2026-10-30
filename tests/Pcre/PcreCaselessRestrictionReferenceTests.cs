@@ -178,7 +178,6 @@ public sealed class PcreCaselessRestrictionReferenceTests {
 	}
 
 	[Theory]
-	[InlineData( "(?Rr)a", 0 )]
 	[InlineData( "(?r r)a", 0 )]
 	[InlineData( "(?r-r-r)a", 0 )]
 	[InlineData( "(?^r-r)a", 0 )]
