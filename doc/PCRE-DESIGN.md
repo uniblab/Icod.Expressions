@@ -147,3 +147,15 @@ Existing LF/ANYCRLF candidate/fragment rules remain. See
 `PCRE-CR-NUL-NEWLINES-DESIGN.md` and `PcreCrNulNewlineReferenceTests`.
 CRLF-only/Unicode ANY and existing optimizer/public/release/consumer gates remain
 separate; pending acceptance representatives now cover CRLF and ANY.
+
+## CRLF-only newline convention
+
+`(*CRLF)` is a last-wins newline prefix option. Only the complete pair is a
+newline; lone CR/LF remain ordinary. Dot/N, anchors and extended comments use
+the existing active end/fragment boundaries, including fixed versus variable
+behind end-cap differences. R remains BSR-owned. Byte CRLF dot/N share the Any
+instruction with UTF; existing byte two-atom prefix scanning recognizes this
+leaf, while UTF retains native pair skipping from zero. Caller LF entry is
+preserved in both. See `PCRE-CRLF-NEWLINE-DESIGN.md` and
+`PcreCrLfNewlineReferenceTests`. Unicode ANY, broader #99/#102 optimizers and
+public/release/consumer gates remain separate.

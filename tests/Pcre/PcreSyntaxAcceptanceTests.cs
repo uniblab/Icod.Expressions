@@ -10,7 +10,7 @@ public sealed class PcreSyntaxAcceptanceTests {
 	[Theory]
 	[InlineData( "(*ACCEPT)", 0, false )]
 	[InlineData( "(*SKIP)(*FAIL)", 0, false )]
-	[InlineData( "(*CRLF)a", 0, false )]
+	[InlineData( "(*LIMIT_DEPTH=10)a", 0, false )]
 	[InlineData( "(*LIMIT_MATCH=10)a", 0, false )]
 	[InlineData( "(*ANY)a", 0, false )]
 	[InlineData( "(*NO_JIT)a", 0, false )]

@@ -126,12 +126,12 @@ public sealed class PcreStartDirectiveReferenceTests {
 	[InlineData( @"(?:(*LF))", 3 )]
 	[InlineData( @"(?=(*LF))", 3 )]
 	[InlineData( @"(*LF)|(*ANYCRLF)", 6 )]
-	[InlineData( @"(*LF)(*CRLF)", 5 )]
+	[InlineData( @"(*LF)(*ANY)", 5 )]
 	[InlineData( @"(*lf)", 0 )]
 	[InlineData( @"(*LFx)", 0 )]
 	[InlineData( @"(*BSR_ANYCRLF )", 0 )]
 	public void UnrecognizedOrMisplacedDirectiveRetainsOpeningByteDiagnostic( string pattern, int offset ) {
-		if ( pattern != "(*LF)(*CRLF)" ) { Assert.Throws<PcrePatternException>( () => Reference( pattern, new() ) ); }
+		if ( pattern != "(*LF)(*ANY)" ) { Assert.Throws<PcrePatternException>( () => Reference( pattern, new() ) ); }
 		var result = PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( pattern ) );
 		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
 		Assert.Equal( offset, result.Diagnostic?.ByteOffset );

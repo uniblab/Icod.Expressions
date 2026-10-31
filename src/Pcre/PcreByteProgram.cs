@@ -170,13 +170,14 @@ internal sealed class PcreByteProgramCompiler {
 		// Native byte NOT/NOTI and ALLANY let prefix scanning reach a following
 		// literal. Ordinary mandatory bitmap classes stop it. Retain only this
 		// two-atom consequence; alternatives/repeats/assertions/calls stay outside.
+		// Byte CRLF dot/N now share Any with UTF; the caller keeps this proof byte-only.
 		while ( root.Branches.Count == 1 && root.Branches[0].Count == 1 ) {
 			var body = WrapperBody( root.Branches[0][0] );
 			if ( body is null ) { return false; }
 			root = body;
 		}
 		return root.Branches.Count == 1 && root.Branches[0].Count == 2
-			&& Unwrap( root.Branches[0][0] ) is PcreByteClass { PrefixAny: true }
+			&& Unwrap( root.Branches[0][0] ) is PcreByteClass { PrefixAny: true } or PcreByteAny
 			&& Unwrap( root.Branches[0][1] ) is PcreByteLiteral;
 
 		static PcreByteNode Unwrap( PcreByteNode node ) {
