@@ -246,6 +246,14 @@ internal sealed class PcreByteProgramCompiler {
 					when repeat.Minimum > 0 && repeat.Minimum == repeat.Maximum:
 					if ( !AddWidth( repeat.Minimum, repeatedAny.DotAll ) ) { return default; }
 					break;
+				case PcreByteRepeat { Child: PcreByteClass repeatedClass } repeat
+					when repeat.Minimum > 0 && repeat.Minimum == repeat.Maximum
+						&& ( repeatedClass.PrefixKind == PcreByteClassPrefix.Exact
+							|| repeat.Minimum == 1 && repeatedClass.PrefixAny ):
+					// Native removes an XCLASS count1; larger exact XCLASS repeats
+					// stop at CRRANGE, unlike NOT/type/ALLANY repeats.
+					if ( !AddWidth( repeat.Minimum, false ) ) { return default; }
+					break;
 				case PcreByteLiteral value:
 					if ( prefixLength == 0 || literal is not null ) { return default; }
 					literal = value;
