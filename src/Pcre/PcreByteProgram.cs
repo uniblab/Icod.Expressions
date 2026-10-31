@@ -248,7 +248,7 @@ internal sealed class PcreByteProgramCompiler {
 					break;
 				case PcreByteRepeat { Child: PcreByteClass repeatedClass } repeat
 					when repeat.Minimum > 0 && repeat.Minimum == repeat.Maximum
-						&& ( repeatedClass.PrefixKind == PcreByteClassPrefix.Exact
+						&& ( repeatedClass.PrefixKind is PcreByteClassPrefix.Exact or PcreByteClassPrefix.AnyProperty
 							|| repeat.Minimum == 1 && repeatedClass.PrefixAny ):
 					// Native removes an XCLASS count1; larger exact XCLASS repeats
 					// stop at CRRANGE, unlike NOT/type/ALLANY repeats.

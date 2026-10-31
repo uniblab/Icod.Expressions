@@ -348,6 +348,22 @@ prefixes and broader optimizer/provenance coverage remain #99; UTF search remain
 #102. See `PCRE-BYTE-FIXED-PREFIX-DESIGN.md` and `PCRE-BYTE-FIXED-PREFIX-PLAN.md`.
 No public/release/consumer change; frozen35 intact.
 
+## Byte Any-property bracket prefixes
+
+`PcreByteAnyPropertyPrefixReferenceTests` pins full-byte bitmap repeats built
+with Any properties, including caret/class complements, mixed bitmap operands,
+capture/group copies, local options, window boundaries and every caller offset.
+AnyProperty source provenance separates old atom admission from actual XCLASS
+requirements: only full byte bitmaps without real property data gain exact-repeat
+admission. Empty classes retain prior atom/work behavior; direct properties keep
+their existing repeat policy. Existing proof1000/window12, conditional selector,
+byte membership, source flags, matcher, journals and limits remain shared.
+Broader optimizer/metadata and mixed positive-Any/real-property native membership
+discrepancies stay #99; UTF #102 and unsafe native #100 remain separate. See
+`PCRE-BYTE-ANY-PROPERTY-PREFIX-DESIGN.md` and `PCRE-BYTE-ANY-PROPERTY-PREFIX-PLAN.md`.
+No public/release/consumer change; frozen35 intact.
+
+
 ## Conditional byte prefix selection
 
 `PcreBytePrefixSelectorReferenceTests` pins longer restrictive fixed byte prefixes:

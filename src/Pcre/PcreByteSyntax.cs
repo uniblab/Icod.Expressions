@@ -43,7 +43,7 @@ internal sealed record PcreByteScalarSet(
 	bool ExplicitNewline
 ) : PcreByteNode;
 
-internal enum PcreByteClassPrefix { None, Atom, Exact }
+internal enum PcreByteClassPrefix { None, Atom, Exact, AnyProperty }
 
 internal sealed record PcreByteClass(
 	PcreByteSet Set, bool ExplicitNewline = false, PcreByteClassPrefix PrefixKind = PcreByteClassPrefix.None
