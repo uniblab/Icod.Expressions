@@ -541,6 +541,11 @@ internal sealed partial class PcreByteParser {
 			if ( control is >= (byte)'a' and <= (byte)'z' ) { control -= 0x20; }
 			return new PcreByteLiteral( control ^ 0x40 );
 		}
+		if ( value == (byte)'C' ) {
+			if ( inBracket ) { throw Invalid( offset, "a code-unit escape is not a character class member" ); }
+			if ( utf8 ) { throw Unsupported( offset ); }
+			return new PcreByteAny( true );
+		}
 		if ( value == (byte)'R' ) {
 			if ( inBracket ) { throw Invalid( offset, "a newline sequence is not a character class member" ); }
 			return new PcreByteNewlineSequence();
