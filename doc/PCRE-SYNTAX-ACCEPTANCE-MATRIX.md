@@ -166,3 +166,16 @@ and VM state unchanged. Broader class/group/optimizer/source metadata stays #99;
 UTF #102 and unsafe native #100 remain separate. See
 `PCRE-BYTE-CLASS-PREFIX-REPEATS-DESIGN.md` and `PCRE-BYTE-CLASS-PREFIX-REPEATS-PLAN.md`.
 No public/release/consumer or resource-limit changes; frozen35 intact.
+
+## Repeated byte group prefix copies
+
+`PcreByteGroupPrefixRepeatReferenceTests` pins fixed capture/noncapture/atomic
+group copies in byte prefix scanning, including nested/multi-atom byte offsets
+and last captures. The existing proof schedules at most eleven child copies,
+charges cumulative proof visits and retains the twelve-position/sole-literal
+boundary. Grouped property atoms stay distinct from directly repeated XCLASS.
+Existing source kinds, bool/conditional selector, VM captures and charged work
+remain shared; no parser/AST/matcher/state/limit change. Broader optimizer/source
+metadata stays #99; UTF #102 and unsafe native #100 remain separate. See
+`PCRE-BYTE-GROUP-PREFIX-REPEATS-DESIGN.md` and `PCRE-BYTE-GROUP-PREFIX-REPEATS-PLAN.md`.
+No public/release/consumer change; frozen35 intact.
