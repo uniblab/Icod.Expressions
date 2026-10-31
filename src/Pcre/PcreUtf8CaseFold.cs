@@ -2,7 +2,7 @@ using System.Text;
 
 namespace Icod.Expressions.Pcre;
 
-/// <summary>Provisional Unicode scalar equivalence for the internal UTF-8 matcher.</summary>
+/// <summary>Provisional Unicode equivalence shared by UTF-8 and byte-UCP matching.</summary>
 internal static class PcreUtf8CaseFold {
 	internal static bool Equals( int left, int right, bool restricted = false ) =>
 		left == right || Fold( left, restricted ) == Fold( right, restricted );

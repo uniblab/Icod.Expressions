@@ -72,7 +72,7 @@ conformance gates remain separate.
 The shared original-byte0 prefix also accepts `(*UTF)`, `(*UTF8)` and `(*UCP)`.
 UTF/UTF8 enable UTF, UCP independently enables UCP, and caller enables remain set.
 One immutable compile-settings scan resolves all seven supported tokens before
-the UCP-without-UTF gate and whole-source UTF validation; newline/BSR retain their
+mode selection and whole-source UTF validation; newline/BSR retain their
 independent last-wins rules. Original bytes/body offsets and early cancellation/
 work-limit precedence are preserved. Byte UCP is supported without enabling UTF; UTF
 directives do not enable invalid-subject tolerance. Existing matcher/fragment/

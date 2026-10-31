@@ -18,10 +18,6 @@ internal static class PcreByteCompiler {
 		}
 		var source = pattern.ToArray();
 		var settings = PcreByteStartSettings.Parse( source, options, cancellationToken );
-		if ( settings.Ucp && !settings.Utf8 ) {
-			return new( null, new( PcreByteDiagnosticCode.UnsupportedSyntax, 0,
-				"UCP without UTF-8 is not implemented by the internal matcher" ) );
-		}
 		if ( settings.Utf8 ) {
 			for ( var offset = 0; offset < source.Length; ) {
 				cancellationToken.ThrowIfCancellationRequested();
@@ -38,7 +34,7 @@ internal static class PcreByteCompiler {
 			var root = parser.Parse();
 			var program = new PcreByteProgramCompiler(
 				cancellationToken, settings.Utf8, options.MatchInvalidUtf, settings.Newline,
-				settings.BsrAnyCrLf, settings.NotEmpty, settings.NotEmptyAtStart
+				settings.BsrAnyCrLf, settings.NotEmpty, settings.NotEmptyAtStart, settings.Ucp
 			).Compile( root, parser.SubroutineTargets );
 			return new(
 				new PcreCompiledBytePattern( program, parser.GroupCount, options.MatchWorkLimit, options.WorkObserver ),

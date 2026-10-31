@@ -228,7 +228,7 @@ internal static class PcreByteMatcher {
 									&& literalWidth <= subjectEnd - position
 									&& ( instruction.Caseless ? PcreUtf8CaseFold.Equals( scalar, instruction.First, instruction.CaselessRestricted )
 										: scalar == instruction.First )
-								: ScalarEquals( input.Span[position], instruction.First, instruction.Caseless ) ) ) {
+								: ScalarEquals( input.Span[position], instruction.First, instruction.Caseless, program.Ucp, instruction.CaselessRestricted ) ) ) {
 								position += literalWidth;
 								pc++;
 							} else { failed = true; }
@@ -367,7 +367,7 @@ internal static class PcreByteMatcher {
 							for ( var byteIndex = 0; byteIndex < captured.ByteLength; byteIndex++ ) {
 								Step(); // Attempted captured-byte comparison.
 								if ( byteIndex >= absoluteEnd - position
-									|| !ScalarEquals( input.Span[captured.ByteIndex + byteIndex], input.Span[position + byteIndex], instruction.Caseless ) ) {
+									|| !ScalarEquals( input.Span[captured.ByteIndex + byteIndex], input.Span[position + byteIndex], instruction.Caseless, program.Ucp, instruction.CaselessRestricted ) ) {
 									failed = true;
 									break;
 								}
@@ -390,9 +390,12 @@ internal static class PcreByteMatcher {
 							if ( position > fragment.Start ) {
 								Step(); // Classify the preceding source byte or UTF-8 scalar.
 								if ( instruction.Second == 1 ) {
-									var previous = position - 1;
-									while ( ( input.Span[previous] & 0xC0 ) == 0x80 ) { previous--; }
-									PcreUtf8.TryRead( input.Span, previous, out var beforeScalar, out _ );
+									var beforeScalar = (int)input.Span[position - 1];
+									if ( program.Utf8 ) {
+										var previous = position - 1;
+										while ( ( input.Span[previous] & 0xC0 ) == 0x80 ) { previous--; }
+										PcreUtf8.TryRead( input.Span, previous, out beforeScalar, out _ );
+									}
 									beforeWord = PcreScalarClassMembership.Contains( PcreByteScalarClassKind.UnicodeWord, beforeScalar );
 								} else { beforeWord = PcreByteSet.Word.Contains( input.Span[position - 1] ); }
 							}
@@ -400,7 +403,8 @@ internal static class PcreByteMatcher {
 							if ( position < subjectEnd ) {
 								Step(); // Classify the following source byte or UTF-8 scalar.
 								if ( instruction.Second == 1 ) {
-									PcreUtf8.TryRead( input.Span, position, out var afterScalar, out _ );
+									var afterScalar = (int)input.Span[position];
+									if ( program.Utf8 ) { PcreUtf8.TryRead( input.Span, position, out afterScalar, out _ ); }
 									afterWord = PcreScalarClassMembership.Contains( PcreByteScalarClassKind.UnicodeWord, afterScalar );
 								} else { afterWord = PcreByteSet.Word.Contains( input.Span[position] ); }
 							}
@@ -492,7 +496,7 @@ internal static class PcreByteMatcher {
 							if ( equals ) {
 								for ( var byteIndex = 0; byteIndex < literal.Length; byteIndex++ ) {
 									Step(); // Attempted assertion byte comparison.
-									if ( !ScalarEquals( input.Span[adjacent + byteIndex], literal[byteIndex], instruction.Caseless ) ) {
+									if ( !ScalarEquals( input.Span[adjacent + byteIndex], literal[byteIndex], instruction.Caseless, program.Ucp, instruction.CaselessRestricted ) ) {
 										equals = false;
 										break;
 									}
@@ -794,9 +798,10 @@ internal static class PcreByteMatcher {
 		return position + width;
 	}
 
-	private static bool ScalarEquals( int left, int right, bool caseless ) {
+	private static bool ScalarEquals( int left, int right, bool caseless, bool unicode, bool restricted ) {
 		if ( left == right ) { return true; }
 		if ( !caseless ) { return false; }
+		if ( unicode ) { return PcreUtf8CaseFold.Equals( left, right, restricted ); }
 		if ( left is >= (byte)'A' and <= (byte)'Z' ) { left = (byte)( left + 32 ); }
 		if ( right is >= (byte)'A' and <= (byte)'Z' ) { right = (byte)( right + 32 ); }
 		return left == right;
