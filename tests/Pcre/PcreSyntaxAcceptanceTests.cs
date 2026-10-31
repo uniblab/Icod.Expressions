@@ -19,7 +19,7 @@ public sealed class PcreSyntaxAcceptanceTests {
 	[InlineData( "(?i)(*COMMIT)", 4, false )]
 	[InlineData( "(?[a|b])", 0, false )]
 	[InlineData( "(?C1)a", 0, false )]
-	[InlineData( @"\C", 0, false )]
+	[InlineData( @"\C", 0, true )]
 	[InlineData( @"\p{Greek}", 0, true )]
 	public void PendingConstructHasExplicitOpeningByteDiagnostic( string pattern, int expectedOffset, bool utf8 ) {
 		var result = PcreByteCompiler.Compile( Encoding.UTF8.GetBytes( pattern ), new PcreByteOptions {

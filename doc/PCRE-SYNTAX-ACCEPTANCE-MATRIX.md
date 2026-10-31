@@ -58,7 +58,8 @@ the matcher returns spans, leaving framing, status and output to Grep.
 | No-argument `(*FAIL)` / `(*F)` | Unconditional zero-consumption failure through shared rollback; nonrepeatable directly, grouped repeats ordinary; direct failure ends consumed-width branch and suppresses nested behinds in its width tail, while global validation/full lexical metadata remain | `PcreFailureVerbReferenceTests`; see `PCRE-FAILURE-VERBS-DESIGN.md`; captures/scopes/widths, malformed offsets, fragments and resource bounds; arguments/other verbs pending |
 | Ordinary bracket `\g`/`\k` | Literal g/k only; following names, delimiters and digits remain class source; outside reference/call grammar unchanged | `PcreBracketReferenceEscapeTests`; see `PCRE-BRACKET-REFERENCE-ESCAPES-DESIGN.md`; ranges/folding/quotes/widths/captures and original-byte/resource protocols |
 | `\cX` control escapes | Printable ASCII operand20..7E, a..z uppercase then XOR40; byte/UTF literals, classes/ranges, assertions and widths share existing paths; source delimiters and x/xx trivia are consumed as operands | `PcreControlEscapeReferenceTests`; see `PCRE-CONTROL-ESCAPES-DESIGN.md`; original byte diagnostics, CR/LF metadata, quotes, folding, offsets and work/cancellation |
-| `\X\C`, other escapes | Pending, rejected; no literal reinterpretation | Representative compile-diagnostic assertions; prioritize by actual Grep patterns |
+| Byte `\C` | Any one byte including NUL/newlines/high bytes; existing ALLANY lowering, width1 and byte prefix proof. Invalid in brackets; UTF C remains explicitly pending | `PcreByteCodeUnitReferenceTests`; see `PCRE-BYTE-CODE-UNIT-DESIGN.md`; offsets, captures, behind, modes and resource gates |
+| `\X`, other escapes | Pending, rejected; no literal reinterpretation | Representative compile-diagnostic assertions; prioritize by actual Grep patterns |
 | `(?#...)` and x/xx line comments | Supported at token boundaries, including quantifier/suffix joins and fixed assertion bodies. Quotes/escapes and ordinary classes retain literal text; LF/ANYCRLF/CR/NUL/CRLF/ANY govern line termination | `PcreExtendedOptionReferenceTests`; original byte diagnostics and pinned whitespace/range rules |
 | `(?[...])` extended classes | Pending, rejected | Representative compile-diagnostic assertions; separate class algebra design |
 | Recursive and nonrecursive subroutine calls | Numbered/named, forward/relative and g angle/quoted forms; first syntactic target, definition options, non-atomic retries and numbered capture restoration through bounded integer call guards/shared journal. Bounded consumed calls in lookbehind share the heap dependency width evaluator, including first duplicate-name/branch-reset definitions. Parenthesized calls accept nonempty absolute/relative/angle/quoted return lists, globally resolved and duplicate-expanded; selected numbered values survive return while starts/marks restore. Consumed calls with lists reject in behind width scans; ahead/DEFINE bypasses retain native behavior. Direct/mutual cycles and R/absolute-zero whole-root calls now share Call/Return and existing budgets; consumed recursive/whole-root widths and targets with suppressed unresolved behinds remain rejected | `PcreRecursiveCallReferenceTests`, `PcreReturnedCaptureReferenceTests`, `PcreSubroutineReferenceTests`, `PcreSubroutineLookbehindReferenceTests`; see `PCRE-RECURSIVE-CALLS-DESIGN.md`, `PCRE-RETURNED-CAPTURES-DESIGN.md`, `PCRE-SUBROUTINES-DESIGN.md` and `PCRE-SUBROUTINE-LOOKBEHIND-DESIGN.md` |
@@ -119,3 +120,12 @@ property/type prefix versus ASCII bitmap behavior. One immutable program setting
 no new saved state/opcode or limits. See `PCRE-BYTE-UCP-DESIGN.md` and
 `PCRE-BYTE-UCP-PLAN.md`. Unicode-version/general optimization/public/release/
 consumer gates remain.
+
+## Byte code-unit escape
+
+`PcreByteCodeUnitReferenceTests` pins byte `\C` as any one byte, independent of
+DotAll/newline/BSR/UCP/ASCII/case modes. Existing Any lowering shares widths,
+prefix selection, captures and work/resource paths. Bracket use is invalid;
+UTF C remains an explicit separate gate with scalar/fragment invariants intact.
+No new VM state/opcode or limit. See `PCRE-BYTE-CODE-UNIT-DESIGN.md` and
+`PCRE-BYTE-CODE-UNIT-PLAN.md`. Public/release/consumer gates remain separate.

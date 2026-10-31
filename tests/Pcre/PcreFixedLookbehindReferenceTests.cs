@@ -186,7 +186,7 @@ public sealed class PcreFixedLookbehindReferenceTests {
 
 	[Theory]
 	[InlineData( @"x(?<=\X)a" )]
-	[InlineData( @"x(?<!\C)a" )]
+	[InlineData( @"x(?<!\X)a" )]
 	public void UnsupportedBodyEscapesKeepTheLegacyBehindOpeningDiagnostic( string pattern ) =>
 		AssertDiagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax, 1 );
 

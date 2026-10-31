@@ -117,7 +117,7 @@ public sealed class PcreByteAtomTests {
 	}
 
 	[Theory]
-	[InlineData( "\\C" )]
+	[InlineData( "(*UTF)\\C" )]
 	[InlineData( "\\X" )]
 	public void RetainsPendingCharacterEscapesAsUnsupported( string pattern ) {
 		var result = PcreByteCompiler.Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
