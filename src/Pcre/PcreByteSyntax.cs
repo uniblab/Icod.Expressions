@@ -43,7 +43,13 @@ internal sealed record PcreByteScalarSet(
 	bool ExplicitNewline
 ) : PcreByteNode;
 
-internal sealed record PcreByteClass( PcreByteSet Set, bool ExplicitNewline = false, bool PrefixAny = false ) : PcreByteNode;
+internal enum PcreByteClassPrefix { None, Atom, Exact }
+
+internal sealed record PcreByteClass(
+	PcreByteSet Set, bool ExplicitNewline = false, PcreByteClassPrefix PrefixKind = PcreByteClassPrefix.None
+) : PcreByteNode {
+	internal bool PrefixAny => PrefixKind != PcreByteClassPrefix.None;
+}
 
 internal sealed record PcreByteBackreference(
 	int Number, ReadOnlyMemory<int> DuplicateNumbers = default

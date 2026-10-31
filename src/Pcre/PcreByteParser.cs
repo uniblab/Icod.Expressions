@@ -243,7 +243,7 @@ internal sealed partial class PcreByteParser {
 					PcreByteNewline.Nul => PcreByteSet.DotNul,
 					PcreByteNewline.Any => PcreByteSet.DotAny,
 					_ => PcreByteSet.Dot
-				} );
+				}, PrefixKind: PcreByteClassPrefix.Exact );
 
 	private PcreByteScalarSet ParseUtf8Bracket( int openingOffset ) {
 		var negated = ParseClassNegation();
@@ -400,8 +400,13 @@ internal sealed partial class PcreByteParser {
 				index++;
 				var singletonNegation = negated && sourceTermCount == 1 && soleLiteral;
 				var members = negated ? set.Complement() : set;
+				// Native NOT/type/ALLANY exact repeats can expose a later literal;
+				// property-bearing XCLASS followed by CRRANGE stops prefix scanning.
+				var prefixKind = singletonNegation || members == PcreByteSet.AllBytes && !propertyPrefix
+					? PcreByteClassPrefix.Exact
+					: propertyPrefix || members == PcreByteSet.AllBytes ? PcreByteClassPrefix.Atom : PcreByteClassPrefix.None;
 				return new PcreByteClass( members, explicitNewline && !singletonNegation,
-					singletonNegation || members == PcreByteSet.AllBytes || propertyPrefix );
+					prefixKind );
 			}
 			var item = quoting ? QuotedBracketLiteral() : ParseBracketItem( ref specialScanCursor, ref nextClosingBracket );
 			SkipClassTrivia( ref quoting );
@@ -643,7 +648,8 @@ internal sealed partial class PcreByteParser {
 		};
 		if ( characterClass.HasValue ) {
 			if ( utf8 ) { throw Unsupported( offset ); }
-			return new PcreByteClass( characterClass.Value );
+			return new PcreByteClass( characterClass.Value,
+				PrefixKind: inBracket ? PcreByteClassPrefix.None : PcreByteClassPrefix.Exact );
 		}
 		var escaped = value switch {
 			(byte)'a' => 0x07,
@@ -798,7 +804,8 @@ internal sealed partial class PcreByteParser {
 			cancellationToken.ThrowIfCancellationRequested();
 			return PcreScalarClassMembership.Contains( property.Kind, value, property.Category, caseless ) != property.Negated;
 		} );
-		return new PcreByteClass( members, PrefixAny: prefixAny );
+		return new PcreByteClass( members,
+			PrefixKind: prefixAny ? PcreByteClassPrefix.Exact : PcreByteClassPrefix.None );
 	}
 
 	private static PcreByteScalarClass? SpecialProperty( string name, bool negated ) {

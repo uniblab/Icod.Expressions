@@ -153,3 +153,16 @@ UTF remains separate. Direct exact Any repeats qualify; repeated class provenanc
 ordinary bitmaps, variable/zero repeats and broader optimizer/source metadata stay
 #99. See `PCRE-BYTE-PREFIX-SELECTOR-DESIGN.md` and `PCRE-BYTE-PREFIX-SELECTOR-PLAN.md`.
 No new saved state/limits/public/release/consumer change; frozen35 intact.
+
+## Repeated byte class prefix provenance
+
+`PcreByteClassPrefixRepeatReferenceTests` distinguishes None/Atom/Exact source
+encoding on existing byte classes. Single-source negation, property-free all-byte
+bitmaps and direct property/type lowerings admit positive exact class repeats;
+property brackets remain atom-only except native count1 elision. Equal byte sets
+do not imply equal prefix scans. The existing bounded compiler proof and #117
+conditional literal selector supply matching, captures and charged work; matcher
+and VM state unchanged. Broader class/group/optimizer/source metadata stays #99;
+UTF #102 and unsafe native #100 remain separate. See
+`PCRE-BYTE-CLASS-PREFIX-REPEATS-DESIGN.md` and `PCRE-BYTE-CLASS-PREFIX-REPEATS-PLAN.md`.
+No public/release/consumer or resource-limit changes; frozen35 intact.
