@@ -61,6 +61,7 @@ internal sealed class PcreByteProgramCompiler {
 	private const int MaximumInstructions = 4096;
 	private const int MaximumMarks = 256;
 	private const int MaximumStartClassVisits = 1000;
+	private const int MaximumBytePrefixLength = 12;
 	private readonly List<PcreByteInstruction> instructions = new();
 	// Compilation continuations live on the heap; AST depth must not consume
 	// platform-dependent native stack space. This is not VM backtracking state.
@@ -209,32 +210,62 @@ internal sealed class PcreByteProgramCompiler {
 		}
 	}
 
-	private static bool HasByteCrLfPrefix( PcreByteAlternatives root ) {
-		// Native byte NOT/NOTI, ALLANY, PROP/NOTPROP and property-bearing XCLASS
-		// let prefix scanning reach a following literal. Mandatory bitmap classes
-		// stop it. Retain only this
-		// two-atom consequence; alternatives/repeats/assertions/calls stay outside.
-		// Byte CRLF dot/N now share Any with UTF; the caller keeps this proof byte-only.
-		while ( root.Branches.Count == 1 && root.Branches[0].Count == 1 ) {
-			var body = WrapperBody( root.Branches[0][0] );
-			if ( body is null ) { return false; }
-			root = body;
-		}
-		return root.Branches.Count == 1 && root.Branches[0].Count == 2
-			&& Unwrap( root.Branches[0][0] ) is PcreByteClass { PrefixAny: true } or PcreByteAny
-			&& Unwrap( root.Branches[0][1] ) is PcreByteLiteral;
-
-		static PcreByteNode Unwrap( PcreByteNode node ) {
-			while ( WrapperBody( node ) is { Branches.Count: 1 } body && body.Branches[0].Count == 1 ) {
-				node = body.Branches[0][0];
+	private bool HasByteCrLfPrefix( PcreByteAlternatives root ) {
+		// Native byte prefix scanning passes through ordinary/atomic groups and
+		// exact ALLANY repeats, but only examines twelve positions. A sole final
+		// literal after unrestricted byte positions explains every failed attempt.
+		// Restrictive NOT/PROP/XCLASS prefixes retain only the old one-position case:
+		// a later literal can otherwise pass at CR before a class fails in the VM.
+		var pending = new Stack<PcreByteNode>();
+		var visits = 1;
+		var prefixLength = 0;
+		var restricted = false;
+		var hasLiteral = false;
+		if ( !AddSequence( root ) ) { return false; }
+		while ( pending.TryPop( out var node ) ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( ++visits > MaximumStartClassVisits ) { return false; }
+			switch ( node ) {
+				case PcreByteGroup group:
+					if ( !AddSequence( group.Body ) ) { return false; }
+					break;
+				case PcreByteNoncapturingGroup group:
+					if ( !AddSequence( group.Body ) ) { return false; }
+					break;
+				case PcreByteAtomic atomic: pending.Push( atomic.Child ); break;
+				case PcreByteAny any:
+					if ( !AddWidth( 1, any.DotAll ) ) { return false; }
+					break;
+				case PcreByteClass { PrefixAny: true }:
+					if ( !AddWidth( 1, false ) ) { return false; }
+					break;
+				case PcreByteRepeat { Child: PcreByteAny { DotAll: true } } repeat
+					when repeat.Minimum > 0 && repeat.Minimum == repeat.Maximum:
+					if ( !AddWidth( repeat.Minimum, true ) ) { return false; }
+					break;
+				case PcreByteLiteral:
+					if ( prefixLength == 0 || hasLiteral ) { return false; }
+					hasLiteral = true;
+					break;
+				default: return false;
 			}
-			return node;
 		}
-		static PcreByteAlternatives? WrapperBody( PcreByteNode node ) => node switch {
-			PcreByteGroup group => group.Body,
-			PcreByteNoncapturingGroup group => group.Body,
-			_ => null
-		};
+		return hasLiteral;
+
+		bool AddSequence( PcreByteAlternatives body ) {
+			if ( body.Branches.Count != 1 || body.Branches[0].Count == 0 ) { return false; }
+			var branch = body.Branches[0];
+			if ( branch.Count > MaximumStartClassVisits - visits - pending.Count ) { return false; }
+			for ( var index = branch.Count - 1; index >= 0; index-- ) { pending.Push( branch[index] ); }
+			return true;
+		}
+		bool AddWidth( int width, bool unrestricted ) {
+			if ( hasLiteral || restricted || width >= MaximumBytePrefixLength - prefixLength
+				|| !unrestricted && prefixLength != 0 ) { return false; }
+			prefixLength += width;
+			restricted = !unrestricted;
+			return true;
+		}
 	}
 
 	private static bool CanMatchEmptyAtAnyOffset( PcreByteAlternatives alternatives ) {
