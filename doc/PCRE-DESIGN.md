@@ -203,3 +203,15 @@ prefix selection, captures and work/resource paths. Bracket use is invalid;
 UTF C remains an explicit separate gate with scalar/fragment invariants intact.
 No new VM state/opcode or limit. See `PCRE-BYTE-CODE-UNIT-DESIGN.md` and
 `PCRE-BYTE-CODE-UNIT-PLAN.md`. Public/release/consumer gates remain separate.
+
+## Fixed byte prefix continuation
+
+`PcreByteFixedPrefixReferenceTests` extends byte CRLF continuation through single-branch
+ordinary/atomic wrappers and direct exact unrestricted Any repeats or separate Any
+atoms: one through eleven byte positions, then exactly one literal inside native
+JIT's twelve-position window. Existing restrictive PrefixAny classes remain a
+one-position proof. Iterative cancellation-aware compiler analysis; no matcher,
+capture state, limits or UTF changes. Repeated classes, variable/longer restrictive
+prefixes and broader optimizer/provenance coverage remain #99; UTF search remains
+#102. See `PCRE-BYTE-FIXED-PREFIX-DESIGN.md` and `PCRE-BYTE-FIXED-PREFIX-PLAN.md`.
+No public/release/consumer change; frozen35 intact.

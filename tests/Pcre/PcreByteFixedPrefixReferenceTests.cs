@@ -29,7 +29,7 @@ public sealed class PcreByteFixedPrefixReferenceTests {
 	[InlineData( @"(?>\C{2}A)", "0D0A4241", "1:3" )]
 	[InlineData( @"\C\CA", "0D0A4241", "1:3" )]
 	[InlineData( @"(?<x>\C)(?<y>\C)(A)", "0D0A4241", "1:3,1:1,2:1,3:1" )]
-	[InlineData( @"(?>(?s:.{2})A)", "0D0A4241", "1:3" )]
+	[InlineData( @"(*CRLF)(?>(?s:.{2})A)", "0D0A4241", "1:3" )]
 	[InlineData( @"\C{1,2}A", "0D0A4241", "2:2" )]
 	[InlineData( @"\C{2,3}A", "0D0A4241", "0:4" )]
 	[InlineData( @"\G\C{2}A", "0D0A4241", "" )]
