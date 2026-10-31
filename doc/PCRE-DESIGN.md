@@ -21,7 +21,7 @@ The internal byte VM journals prior capture, capture-start, and repetition-mark 
 | Raw bytes, `|`, capturing groups, anchors, `*`, `+`, `?` and their lazy forms | Implemented for the internal API. |
 | Dot excluding LF; `\a`, `\e`, `\f`, `\n`, `\r`, `\t`, `\x` (one or two hex digits), escaped punctuation; ASCII `\d`, `\s`, `\w` and complements | Implemented in the stacked byte-atoms PR for 8-bit non-UTF, non-UCP mode. |
 | Start directives `(*LF)`, `(*ANYCRLF)`, `(*BSR_UNICODE)`, `(*BSR_ANYCRLF)` | Exact consecutive byte0 prefix with independent last-wins global newline/BSR override; original bytes and existing compile/matcher paths retained. `PcreStartDirectiveReferenceTests`; see `PCRE-START-DIRECTIVES-DESIGN.md`. |
-| Start directives `(*UTF)`, `(*UTF8)`, `(*UCP)` | Enable existing UTF/UCP modes before validation through immutable compile settings shared with newline/BSR. Original source retained; UCP without UTF remains rejected. `PcreUtfStartDirectiveReferenceTests`; see `PCRE-UTF-START-DIRECTIVES-DESIGN.md`. |
+| Start directives `(*UTF)`, `(*UTF8)`, `(*UCP)` | Enable existing UTF/UCP modes before validation through immutable compile settings shared with newline/BSR. Original source retained; Byte UCP is supported independently of UTF. `PcreUtfStartDirectiveReferenceTests`; see `PCRE-UTF-START-DIRECTIVES-DESIGN.md`. |
 | No-argument `(*FAIL)` / `(*F)` | Failure leaf/opcode use shared backtracking; direct repeats invalid. Native branch width stops at failure, with width-tail nested-behind suppression and full global validation retained. `PcreFailureVerbReferenceTests`; see `PCRE-FAILURE-VERBS-DESIGN.md`. Named/other verbs remain pending. |
 | Ordinary bracket `\g`/`\k` | Literal g/k only without consuming suffixes; existing byte/UTF class/range/fold/width/capture/resource paths. Outside reference grammar unchanged. `PcreBracketReferenceEscapeTests`; see `PCRE-BRACKET-REFERENCE-ESCAPES-DESIGN.md`. |
 | `\cX` control escapes |Printable ASCII operand20..7E, a..z uppercase then XOR40; byte/UTF literals, classes/ranges, assertions and widths share existing paths; source delimiters and x/xx trivia are consumed as operands; `PcreControlEscapeReferenceTests`; see `PCRE-CONTROL-ESCAPES-DESIGN.md`; original byte diagnostics, CR/LF metadata, quotes, folding, offsets and work/cancellation |
@@ -179,6 +179,18 @@ Any/Xan/Xps/Xsp/Xwd/Xuc to U+0000..U+00FF byte values, including NUL and
 non-UTF byte sequences. Compile-time projection of shared scalar membership
 produces ordinary immutable byte classes; one-byte widths, existing work,
 limits and rollback remain. Caseless Lu/Ll/Lt widen before complements.
-No new VM state/opcode or UTF behavior. Byte UCP remains rejected pending its
+No new VM state/opcode or UTF behavior. Byte UCP now also supports
 literal/range/reference folding and shorthand/boundary/POSIX semantics.
 See `PCRE-BYTE-PROPERTIES-DESIGN.md` and `PCRE-BYTE-PROPERTIES-PLAN.md`.
+
+## Byte UCP
+
+`PcreByteUcpReferenceTests` enables caller/prefix UCP without UTF: Unicode
+shorthands/POSIX/boundaries over all256 bytes, local ASCII restrictions and shared
+Unicode case folding for literals, ranges, references and fixed assertions.
+Classification projects existing shared predicates; byte widths/source validation
+and existing non-UCP/UTF paths remain distinct. Native source provenance retains
+property/type prefix versus ASCII bitmap behavior. One immutable program setting;
+no new saved state/opcode or limits. See `PCRE-BYTE-UCP-DESIGN.md` and
+`PCRE-BYTE-UCP-PLAN.md`. Unicode-version/general optimization/public/release/
+consumer gates remain.

@@ -159,13 +159,13 @@ public sealed class PcreUtfStartDirectiveReferenceTests {
 	}
 
 	[Fact]
-	public void UcpWithoutUtfAndExistingEarlyDiagnosticPrecedenceStayExplicit() {
+	public void ByteUcpAndExistingEarlyDiagnosticPrecedenceStayExplicit() {
 		foreach ( var pattern in new[] { @"(*UCP)\w", @"(*LF)a" } ) {
 			var options = new PcreByteOptions { Ucp = true };
 			Assert.True( Reference( pattern, options ).Match( "a"u8.ToArray() ).Success );
 			var result = PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( pattern ), options );
-			Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
-			Assert.Equal( 0, result.Diagnostic?.ByteOffset );
+			Assert.True( result.IsSuccess, result.Diagnostic?.Message );
+			Assert.Equal( 1, result.Pattern!.Match( "a"u8.ToArray() ).Match?.ByteLength );
 		}
 		var invalid = Convert.FromHexString( "282A55544629FF" );
 		var work = PcreByteCompiler.Compile( invalid, new PcreByteOptions { MatchWorkLimit = 0 } );

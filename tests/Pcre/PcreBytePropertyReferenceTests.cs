@@ -207,14 +207,12 @@ public sealed class PcreBytePropertyReferenceTests {
 	}
 
 	[Fact]
-	public void PropertyAcceptanceDoesNotEnableUcpUtfOrHighByteLiteralFolding() {
+	public void PropertyAcceptanceDoesNotEnableUtfOrNonUcpHighByteLiteralFolding() {
 		var bytes = new byte[] { 0xFF }.Concat( Encoding.ASCII.GetBytes( @"(\p{L})" ) ).ToArray();
 		var bytePattern = PcreByteCompiler.Compile( bytes );
 		Assert.True( bytePattern.IsSuccess, bytePattern.Diagnostic?.Message );
 		Assert.Equal( 2, bytePattern.Pattern!.Match( new byte[] { 0xFF, 0xE9 } ).Match?.ByteLength );
 		Diagnostic( bytes, PcreByteDiagnosticCode.InvalidUtf8Pattern, 0, new() { Utf8 = true } );
-		Diagnostic( Encoding.ASCII.GetBytes( @"(*UCP)\p{L}" ), PcreByteDiagnosticCode.UnsupportedSyntax, 0 );
-		Diagnostic( Encoding.ASCII.GetBytes( @"\p{L}" ), PcreByteDiagnosticCode.UnsupportedSyntax, 0, new() { Ucp = true } );
 		Assert.Null( Compile( @"(?i)\A\xC9\z" ).Match( new byte[] { 0xE9 } ).Match );
 		Assert.Null( Compile( @"(?i)\A(\p{Lu})\1\z" ).Match( new byte[] { 0xC9, 0xE9 } ).Match );
 		Assert.Equal( 2, Compile( @"(*UTF)\A\p{L}\z" ).Match( "é"u8.ToArray() ).Match?.ByteLength );

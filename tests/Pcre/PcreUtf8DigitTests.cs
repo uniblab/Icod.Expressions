@@ -103,9 +103,11 @@ public sealed class PcreUtf8DigitTests {
 	}
 
 	[Fact]
-	public void UcpWithoutUtf8IsNotSilentlyInterpretedAsByteMode() {
+	public void UcpWithoutUtf8UsesTheByteDigitDomain() {
 		var result = PcreByteCompiler.Compile( "\\d"u8.ToArray(), new PcreByteOptions { Ucp = true } );
-		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
+		Assert.True( result.IsSuccess, result.Diagnostic?.Message );
+		Assert.Equal( 1, result.Pattern!.Match( "1"u8.ToArray() ).Match?.ByteLength );
+		Assert.Null( result.Pattern.Match( new byte[] { 0xB2 } ).Match );
 	}
 
 	[Fact]
