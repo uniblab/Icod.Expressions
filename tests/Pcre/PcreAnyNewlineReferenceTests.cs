@@ -216,6 +216,31 @@ public sealed class PcreAnyNewlineReferenceTests {
 		var reference = Reference( pattern, new() );
 		Compare( reference, subject, 0, Compile( pattern, new() ).Match( subject ), "long prefix" );
 	}
+	[Theory]
+	[InlineData( @"(?m)^" )]
+	[InlineData( @"(?m)(^)" )]
+	[InlineData( @"(?m)(?:^)" )]
+	[InlineData( @"(?m)(?>^)" )]
+	[InlineData( @"(?m)^^" )]
+	[InlineData( @"(?m)^()" )]
+	[InlineData( @"(?m)(^)|(^)" )]
+	[InlineData( @"(?m)^$" )]
+	[InlineData( @"(?m)^X" )]
+	[InlineData( @"(?m)^|X" )]
+	public void LineSearchFromInsideNewlineRetainsLaterLinesAndLiteralAlternatives( string body ) {
+		var pattern = "(*ANY)" + body;
+		var options = new PcreByteOptions { MatchInvalidUtf = true, Ucp = true };
+		var reference = Reference( pattern, options );
+		var compiled = Compile( pattern, options );
+		foreach ( var hex in new[] { "C28558", "C285580B59", "E280A8580A59", "C2850A58" } ) {
+			var subject = Convert.FromHexString( hex );
+			var firstWidth = hex.StartsWith( "E2", StringComparison.Ordinal ) ? 3 : 2;
+			for ( var offset = 1; offset < firstWidth; offset++ ) {
+				Compare( reference, subject, offset, compiled.Match( subject, offset ), $"{pattern}, {hex}, {offset}" );
+			}
+		}
+	}
+
 	private static void AssertLiteral( PcreRegex8Bit reference, byte[] subject, string spans ) {
 		var match = reference.Match( subject );
 		Assert.Equal( spans.Length > 0, match.Success );

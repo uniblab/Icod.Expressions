@@ -39,3 +39,15 @@
 - [ ] Six full/frozen214 suites per framework/platform, zero failed/skipped/build warnings/errors, configured gates/seven Linux equalities; separate author whole-branch self-review/material fixes RED→GREEN, exact tree/head/frozen35/whitespace/clean proof. Update PR/mark ready; never merge.
 
 Pre-flight: fixed membership already shared, Any width1 and byte execution supported by #111; Task1 uses stable APIs, Task2 helper bounds and old-anchor corrections explicit. No interface conflict. Preserve evidence.
+
+### Discovered line-search correction
+
+Add program compiler metadata for zero-width control flow whose every accept
+requires StartLine; whitelist captures/split/jump/atomic/line/end/accept only.
+Use bounded heap worklist and2states per instruction, with cancellation. In
+tolerant ANY matching derive the end of a valid newline containing the original
+continuation offset and suppress that one line-start candidate under the proof.
+Never apply to ^X/^|X, other modes or strict validation. Extend newline helper,
+Program and Matcher; no new saved frames/journal or raised limits. Additional
+LineSearchFromInsideNewline controls observe RED before correction; final full
+suite/all six gate remains required. This fulfills existing offset ReviewFocus.

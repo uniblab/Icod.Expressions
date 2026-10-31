@@ -68,3 +68,20 @@ public/release/consumer gates remain separate. Grep last; CommandFramework remov
 after publication and all known consumers migrated. Self-check enumerated all
 newline consumers and isolated the two old anchor checks; no unresolved interface
 or design question. No full PCRE/public release claim from this bounded tranche.
+
+## Tolerant UTF line-search discovery
+
+The first implementation run exposed native STARTLINE fast-forward when the
+caller begins inside NEL/LS/PS. A pure zero-width line-anchored program searches
+for the next complete newline from the requested offset, so it skips the end of
+that partially preceding scalar. A consuming literal prefix or an unanchored
+alternative can instead use generic/literal search and retain the prior newline
+context. Add a bounded compiler proof over zero-width bytecode control flow: only
+capture/jump/split/atomic/line/end/accept instructions, every reachable accept
+requires a StartLine. Other instructions conservatively disable the proof. This
+pins ^, captures/noncapture/atomic wrappers, repeated line assertions/empty
+captures and all-line alternatives without changing ^X or ^|X. One immutable
+program flag and one derived per-call excluded line position; no saved frame or
+journal state, no limits raised. Reverse UTF inspection remains bounded by3.
+The offset matrix already observed RED; added wrapper/alternative controls get
+their own tests-only RED before this correction. Broader optimizers stay #102.
