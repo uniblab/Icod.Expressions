@@ -56,8 +56,9 @@ the pinned native parser does not accept them. Do not broaden or remove that
 existing profile in this tranche. Unknown/script/binary/property-namespace forms
 keep existing UnsupportedSyntax policy at the original escape/bracket opener;
 malformed braces/empty names and nonliteral range endpoints retain InvalidSyntax.
-The current byte-mode property gate remains UnsupportedSyntax even where native
-8-bit PCRE2 can evaluate such a property.
+The original tranche retained a byte-mode property gate. It is superseded by
+`PCRE-BYTE-PROPERTIES-DESIGN.md`, which projects these shared predicates into
+immutable byte sets; byte UCP remains a separate gate.
 
 ## Architecture and approaches
 
