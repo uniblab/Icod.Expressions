@@ -254,6 +254,14 @@ internal sealed class PcreByteProgramCompiler {
 					// stop at CRRANGE, unlike NOT/type/ALLANY repeats.
 					if ( !AddWidth( repeat.Minimum, false ) ) { return default; }
 					break;
+				case PcreByteRepeat repeat
+					when repeat.Minimum > 0 && repeat.Minimum == repeat.Maximum
+						&& repeat.Minimum < MaximumBytePrefixLength
+						&& ( repeat.Child is PcreByteGroup or PcreByteNoncapturingGroup or PcreByteAtomic ):
+					// Native copies fixed groups. Walk every copy; do not turn its
+					// contained XCLASS into a directly repeated XCLASS+CRRANGE.
+					if ( !AddCopies( repeat.Child, repeat.Minimum ) ) { return default; }
+					break;
 				case PcreByteLiteral value:
 					if ( prefixLength == 0 || literal is not null ) { return default; }
 					literal = value;
@@ -272,6 +280,11 @@ internal sealed class PcreByteProgramCompiler {
 			var branch = body.Branches[0];
 			if ( branch.Count > MaximumStartClassVisits - visits - pending.Count ) { return false; }
 			for ( var index = branch.Count - 1; index >= 0; index-- ) { pending.Push( branch[index] ); }
+			return true;
+		}
+		bool AddCopies( PcreByteNode node, int count ) {
+			if ( count > MaximumStartClassVisits - visits - pending.Count ) { return false; }
+			for ( var copy = 0; copy < count; copy++ ) { pending.Push( node ); }
 			return true;
 		}
 		bool AddWidth( int width, bool unrestricted ) {
