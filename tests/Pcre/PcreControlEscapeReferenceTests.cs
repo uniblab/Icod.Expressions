@@ -148,7 +148,7 @@ public sealed class PcreControlEscapeReferenceTests {
 		var result = PcreByteCompiler.Compile( invalid, new PcreByteOptions { Utf8 = true } );
 		Assert.Equal( PcreByteDiagnosticCode.InvalidUtf8Pattern, result.Diagnostic?.Code );
 		Assert.Equal( 2, result.Diagnostic?.ByteOffset );
-		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, PcreByteCompiler.Compile( "\\C"u8.ToArray() ).Diagnostic?.Code );
+		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, PcreByteCompiler.Compile( "\\X"u8.ToArray() ).Diagnostic?.Code );
 	}
 
 	[Fact]

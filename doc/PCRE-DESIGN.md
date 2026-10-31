@@ -194,3 +194,12 @@ property/type prefix versus ASCII bitmap behavior. One immutable program setting
 no new saved state/opcode or limits. See `PCRE-BYTE-UCP-DESIGN.md` and
 `PCRE-BYTE-UCP-PLAN.md`. Unicode-version/general optimization/public/release/
 consumer gates remain.
+
+## Byte code-unit escape
+
+`PcreByteCodeUnitReferenceTests` pins byte `\C` as any one byte, independent of
+DotAll/newline/BSR/UCP/ASCII/case modes. Existing Any lowering shares widths,
+prefix selection, captures and work/resource paths. Bracket use is invalid;
+UTF C remains an explicit separate gate with scalar/fragment invariants intact.
+No new VM state/opcode or limit. See `PCRE-BYTE-CODE-UNIT-DESIGN.md` and
+`PCRE-BYTE-CODE-UNIT-PLAN.md`. Public/release/consumer gates remain separate.
