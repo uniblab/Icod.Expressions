@@ -390,6 +390,8 @@ internal sealed partial class PcreByteParser {
 		var explicitNewline = false;
 		var propertyPrefix = false;
 		var xclassProperty = false;
+		var bitmapSource = false;
+		var propertySet = default(PcreByteSet);
 		var set = default(PcreByteSet);
 		var specialScanCursor = index;
 		var nextClosingBracket = -1;
@@ -400,7 +402,10 @@ internal sealed partial class PcreByteParser {
 			if ( !quoting && source[index] == (byte)']' && hasItem ) {
 				index++;
 				var singletonNegation = negated && sourceTermCount == 1 && soleLiteral;
-				var members = negated ? set.Complement() : set;
+				// Native XCLASS omits the Any-filled bitmap without an ordinary
+				// byte source; retain only actual property membership in that case.
+				var members = xclassProperty && !bitmapSource ? propertySet : set;
+				if ( negated ) { members = members.Complement(); }
 				// Native NOT/type/ALLANY exact repeats can expose a later literal;
 				// Any properties alone use bitmap bits; actual XCLASS properties
 				// followed by CRRANGE stop prefix scanning.
@@ -415,6 +420,8 @@ internal sealed partial class PcreByteParser {
 			soleLiteral = item.Value.HasValue;
 			propertyPrefix |= item.PrefixAny;
 			xclassProperty |= item.XclassProperty;
+			bitmapSource |= !item.PrefixAny;
+			if ( item.XclassProperty ) { propertySet = propertySet.Union( item.Set ); }
 			if ( item.Value is (byte)'\r' or (byte)'\n' ) { explicitNewline = true; }
 			if ( ( !item.Value.HasValue || item.MayStartRange ) && TryStartBracketRange( ref quoting, out var hyphenOffset ) ) {
 				if ( !item.Value.HasValue ) {
