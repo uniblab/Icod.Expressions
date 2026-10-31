@@ -128,3 +128,15 @@ leaf, while UTF retains native pair skipping from zero. Caller LF entry is
 preserved in both. See `PCRE-CRLF-NEWLINE-DESIGN.md` and
 `PcreCrLfNewlineReferenceTests`. Unicode ANY, broader #99/#102 optimizers and
 public/release/consumer gates remain separate.
+
+## ANY newline convention and consumed-CR anchors
+
+`(*ANY)` completes the six newline directives, last-wins in the shared prefix.
+The existing fixed vertical-space list supplies LF/VT/FF/CR/NEL and UTF LS/PS;
+NUL remains ordinary, R remains BSR-owned. Scalar-length/previous-scalar helpers
+keep UTF continuation bytes out of comment and anchor decisions. Native JIT
+consumed-CR midpoint caret/dollar/Z behavior is pinned under ANY and corrected
+under ANYCRLF; CRLF-only remains pair-only. Candidate bumpalong and bounded
+byte/UTF prefix differences stay shared. See `PCRE-ANY-NEWLINE-DESIGN.md` and
+`PcreAnyNewlineReferenceTests`. Broader optimization/Unicode-version/public/
+release/consumer gates remain separate.

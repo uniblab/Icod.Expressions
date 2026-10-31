@@ -25,6 +25,7 @@ internal readonly record struct PcreByteStartSettings(
 			else if ( TryConsume( source, ref offset, "(*CR)"u8 ) ) { newline = PcreByteNewline.Cr; }
 			else if ( TryConsume( source, ref offset, "(*NUL)"u8 ) ) { newline = PcreByteNewline.Nul; }
 			else if ( TryConsume( source, ref offset, "(*CRLF)"u8 ) ) { newline = PcreByteNewline.CrLf; }
+			else if ( TryConsume( source, ref offset, "(*ANY)"u8 ) ) { newline = PcreByteNewline.Any; }
 			else if ( TryConsume( source, ref offset, "(*BSR_UNICODE)"u8 ) ) { bsrAnyCrLf = false; }
 			else if ( TryConsume( source, ref offset, "(*BSR_ANYCRLF)"u8 ) ) { bsrAnyCrLf = true; }
 			else if ( TryConsume( source, ref offset, "(*NOTEMPTY)"u8 ) ) { notEmpty = true; }

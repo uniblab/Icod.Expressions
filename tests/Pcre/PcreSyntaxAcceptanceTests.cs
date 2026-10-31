@@ -12,7 +12,7 @@ public sealed class PcreSyntaxAcceptanceTests {
 	[InlineData( "(*SKIP)(*FAIL)", 0, false )]
 	[InlineData( "(*LIMIT_DEPTH=10)a", 0, false )]
 	[InlineData( "(*LIMIT_MATCH=10)a", 0, false )]
-	[InlineData( "(*ANY)a", 0, false )]
+	[InlineData( "(*LIMIT_HEAP=10)a", 0, false )]
 	[InlineData( "(*NO_JIT)a", 0, false )]
 	[InlineData( "(*NO_START_OPT)a", 0, true )]
 	[InlineData( "a(*SKIP)", 1, false )]
