@@ -235,12 +235,13 @@ internal sealed partial class PcreByteParser {
 	}
 
 	private PcreByteNode CreateAnyCharacter( bool includeNewline ) =>
-		utf8 || newline == PcreByteNewline.CrLf ? new PcreByteAny( includeNewline )
+		utf8 || newline == PcreByteNewline.CrLf || newline == PcreByteNewline.Any && includeNewline ? new PcreByteAny( includeNewline )
 			: new PcreByteClass( includeNewline ? PcreByteSet.AllBytes
 				: newline switch {
 					PcreByteNewline.AnyCrLf => PcreByteSet.DotAnyCrLf,
 					PcreByteNewline.Cr => PcreByteSet.DotCr,
 					PcreByteNewline.Nul => PcreByteSet.DotNul,
+					PcreByteNewline.Any => PcreByteSet.DotAny,
 					_ => PcreByteSet.Dot
 				} );
 
