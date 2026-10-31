@@ -18,7 +18,7 @@ internal sealed partial class PcreByteParser {
 	private readonly CancellationToken cancellationToken;
 	private readonly bool utf8;
 	private readonly bool ucp;
-	private readonly bool anyCrLfNewline;
+	private readonly PcreByteNewline newline;
 	private readonly List<(int Number, int Offset)> backreferences = new();
 	private int index;
 	private int groupCount;
@@ -42,7 +42,7 @@ internal sealed partial class PcreByteParser {
 		utf8 = settings.Utf8;
 		ucp = settings.Ucp;
 		asciiRestrictions = asciiBsD ? AsciiRestriction.BackslashD : AsciiRestriction.None;
-		anyCrLfNewline = settings.AnyCrLfNewline;
+		newline = settings.Newline;
 		index = settings.BodyOffset;
 		this.cancellationToken = cancellationToken;
 	}
@@ -237,7 +237,12 @@ internal sealed partial class PcreByteParser {
 	private PcreByteNode CreateAnyCharacter( bool includeNewline ) =>
 		utf8 ? new PcreByteAny( includeNewline )
 			: new PcreByteClass( includeNewline ? PcreByteSet.AllBytes
-				: anyCrLfNewline ? PcreByteSet.DotAnyCrLf : PcreByteSet.Dot );
+				: newline switch {
+					PcreByteNewline.AnyCrLf => PcreByteSet.DotAnyCrLf,
+					PcreByteNewline.Cr => PcreByteSet.DotCr,
+					PcreByteNewline.Nul => PcreByteSet.DotNul,
+					_ => PcreByteSet.Dot
+				} );
 
 	private PcreByteScalarSet ParseUtf8Bracket( int openingOffset ) {
 		var negated = ParseClassNegation();

@@ -231,7 +231,7 @@ internal static class PcreByteMatcher {
 							if ( position < subjectEnd
 								&& PcreUtf8.TryRead( input.Span, position, out var value, out var scalarWidth )
 								&& scalarWidth <= subjectEnd - position
-								&& ( instruction.First == 1 || value != (int)'\n'
+								&& ( instruction.First == 1 || value != program.NewlineCharacter
 									&& ( !program.AnyCrLfNewline || value != (int)'\r' ) ) ) {
 								position += scalarWidth;
 								pc++;
@@ -502,7 +502,7 @@ internal static class PcreByteMatcher {
 						case PcreByteOpcode.StartLine:
 							if ( position == 0 || ( position > fragment.Start
 							&& ( position < subjectEnd || position == subjectEnd && position < absoluteEnd )
-								&& ( input.Span[position - 1] == (byte)'\n'
+								&& ( input.Span[position - 1] == program.NewlineCharacter
 									|| program.AnyCrLfNewline && input.Span[position - 1] == (byte)'\r'
 										&& ( input.Span[position] != (byte)'\n' || position == startOffset ) ) ) ) {
 								pc++;
@@ -512,14 +512,14 @@ internal static class PcreByteMatcher {
 							// JIT tests the current newline character, including LF after
 							// a consumed CR. Candidate advancement handles CRLF separately.
 							if ( position == absoluteEnd || ( position < subjectEnd
-							&& ( input.Span[position] == (byte)'\n'
+							&& ( input.Span[position] == program.NewlineCharacter
 								|| program.AnyCrLfNewline && input.Span[position] == (byte)'\r' ) ) ) {
 								pc++;
 							} else { failed = true; }
 							break;
 						case PcreByteOpcode.EndBeforeFinalLf:
 							var end = instruction.First == 1 ? subjectEnd : absoluteEnd;
-							if ( position == end || ( position == end - 1 && input.Span[position] == (byte)'\n'
+							if ( position == end || ( position == end - 1 && input.Span[position] == program.NewlineCharacter
 								&& ( !program.AnyCrLfNewline || position == startOffset || position == 0
 									|| input.Span[position - 1] != (byte)'\r' ) )
 							|| program.AnyCrLfNewline && ( position == end - 1 && input.Span[position] == (byte)'\r'

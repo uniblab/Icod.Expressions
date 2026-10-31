@@ -5,6 +5,8 @@ internal readonly record struct PcreByteSet( ulong A, ulong B, ulong C, ulong D 
 	internal static PcreByteSet AllBytes { get; } = new( ulong.MaxValue, ulong.MaxValue, ulong.MaxValue, ulong.MaxValue );
 	internal static PcreByteSet Dot { get; } = FromPredicate( value => value != (byte)'\n' );
 	internal static PcreByteSet DotAnyCrLf { get; } = FromPredicate( value => value != (byte)'\n' && value != (byte)'\r' );
+	internal static PcreByteSet DotCr { get; } = FromPredicate( value => value != (byte)'\r' );
+	internal static PcreByteSet DotNul { get; } = FromPredicate( value => value != 0 );
 	internal static PcreByteSet Digit { get; } = FromPredicate(
 		value => value is >= (byte)'0' and <= (byte)'9'
 	);

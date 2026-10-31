@@ -105,3 +105,14 @@ tolerant empty programs take the existing candidate/fragment path; nullable
 metadata remains intact. See `PCRE-NOTEMPTY-DIRECTIVES-DESIGN.md` and
 `PcreNotEmptyDirectiveReferenceTests`. Other directives/verbs, optimizer, public/
 release and consumer gates remain separate.
+
+## CR and NUL newline conventions
+
+The byte0 prefix also selects `(*CR)` or `(*NUL)`, last-wins with LF/ANYCRLF.
+Dot and bare N, line/final-newline anchors and x/xx comments share one global
+single-character convention; raw NUL is length-delimited data, CRLF under CR
+is two characters. DotAll changes dot only; R remains exclusively BSR-owned.
+Existing LF/ANYCRLF candidate/fragment rules remain. See
+`PCRE-CR-NUL-NEWLINES-DESIGN.md` and `PcreCrNulNewlineReferenceTests`.
+CRLF-only/Unicode ANY and existing optimizer/public/release/consumer gates remain
+separate; pending acceptance representatives now cover CRLF and ANY.
