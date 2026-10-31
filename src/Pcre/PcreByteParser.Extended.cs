@@ -25,6 +25,10 @@ internal sealed partial class PcreByteParser {
 					while ( index < source.Length ) {
 						cancellationToken.ThrowIfCancellationRequested();
 						var value = source[index++];
+						if ( newline == PcreByteNewline.CrLf ) {
+							if ( PcreByteNewlineExtensions.IsCrLf( source, index - 1, source.Length ) ) { index++; break; }
+							continue;
+						}
 						if ( value == newline.Character() ) { break; }
 						if ( newline == PcreByteNewline.AnyCrLf && value == (byte)'\r' ) {
 							if ( index < source.Length && source[index] == (byte)'\n' ) { index++; }

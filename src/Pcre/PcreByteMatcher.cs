@@ -227,12 +227,15 @@ internal static class PcreByteMatcher {
 							} else { failed = true; }
 							break;
 						case PcreByteOpcode.Any:
-							Step(); // Attempted scalar consumption.
+							Step(); // Attempted byte/scalar consumption.
+							var value = position < subjectEnd ? (int)input.Span[position] : 0;
+							var scalarWidth = 1;
 							if ( position < subjectEnd
-								&& PcreUtf8.TryRead( input.Span, position, out var value, out var scalarWidth )
+								&& ( !program.Utf8 || PcreUtf8.TryRead( input.Span, position, out value, out scalarWidth ) )
 								&& scalarWidth <= subjectEnd - position
-								&& ( instruction.First == 1 || value != program.NewlineCharacter
-									&& ( !program.AnyCrLfNewline || value != (int)'\r' ) ) ) {
+								&& ( instruction.First == 1 || ( program.Newline == PcreByteNewline.CrLf
+									? !PcreByteNewlineExtensions.IsCrLf( input.Span, position, subjectEnd )
+									: value != program.NewlineCharacter && ( !program.AnyCrLfNewline || value != (int)'\r' ) ) ) ) {
 								position += scalarWidth;
 								pc++;
 							} else { failed = true; }
@@ -502,7 +505,9 @@ internal static class PcreByteMatcher {
 						case PcreByteOpcode.StartLine:
 							if ( position == 0 || ( position > fragment.Start
 							&& ( position < subjectEnd || position == subjectEnd && position < absoluteEnd )
-								&& ( input.Span[position - 1] == program.NewlineCharacter
+								&& ( program.Newline == PcreByteNewline.CrLf
+									? position - fragment.Start >= 2 && PcreByteNewlineExtensions.IsCrLf( input.Span, position - 2, position )
+									: input.Span[position - 1] == program.NewlineCharacter
 									|| program.AnyCrLfNewline && input.Span[position - 1] == (byte)'\r'
 										&& ( input.Span[position] != (byte)'\n' || position == startOffset ) ) ) ) {
 								pc++;
@@ -512,19 +517,23 @@ internal static class PcreByteMatcher {
 							// JIT tests the current newline character, including LF after
 							// a consumed CR. Candidate advancement handles CRLF separately.
 							if ( position == absoluteEnd || ( position < subjectEnd
-							&& ( input.Span[position] == program.NewlineCharacter
+							&& ( program.Newline == PcreByteNewline.CrLf
+								? PcreByteNewlineExtensions.IsCrLf( input.Span, position, subjectEnd )
+								: input.Span[position] == program.NewlineCharacter
 								|| program.AnyCrLfNewline && input.Span[position] == (byte)'\r' ) ) ) {
 								pc++;
 							} else { failed = true; }
 							break;
 						case PcreByteOpcode.EndBeforeFinalLf:
 							var end = instruction.First == 1 ? subjectEnd : absoluteEnd;
-							if ( position == end || ( position == end - 1 && input.Span[position] == program.NewlineCharacter
+							if ( position == end || ( program.Newline == PcreByteNewline.CrLf
+								? position == end - 2 && PcreByteNewlineExtensions.IsCrLf( input.Span, position, end )
+								: ( position == end - 1 && input.Span[position] == program.NewlineCharacter
 								&& ( !program.AnyCrLfNewline || position == startOffset || position == 0
 									|| input.Span[position - 1] != (byte)'\r' ) )
 							|| program.AnyCrLfNewline && ( position == end - 1 && input.Span[position] == (byte)'\r'
 								|| position == end - 2 && input.Span[position] == (byte)'\r'
-									&& input.Span[position + 1] == (byte)'\n' ) ) {
+									&& input.Span[position + 1] == (byte)'\n' ) ) ) {
 								pc++;
 							} else { failed = true; }
 							break;
@@ -702,7 +711,8 @@ internal static class PcreByteMatcher {
 					}
 					if ( failed ) { break; }
 				}
-				if ( program.AnyCrLfNewline && !program.ExplicitNewline && !program.ByteCrLfPrefix
+				if ( ( program.AnyCrLfNewline || program.Newline == PcreByteNewline.CrLf )
+					&& !program.ExplicitNewline && !program.ByteCrLfPrefix
 					&& !program.UtfCrLfStartClass
 					&& start + 1 < fragment.End && input.Span[start] == (byte)'\r'
 					&& input.Span[start + 1] == (byte)'\n' ) {
