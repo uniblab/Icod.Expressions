@@ -112,7 +112,7 @@ public sealed class PcreByteAnyPropertyPrefixReferenceTests {
 	[InlineData( "(*ANY)" )]
 	public void UtfRepeatControlsRetainScalarAndInvalidFragmentRules( string newline ) {
 		foreach ( var body in new[] { @"[\p{Any}]{2}A", @"[^\P{Any}]{2}A", @"([\p{Any}]){2}A", @"[\P{Any}]A" } ) {
-			var pattern = newline + body;
+			var pattern = String.Concat( newline, body );
 			var reference = Reference( pattern, true, true );
 			var compiled = Compile( pattern, new() { Utf8 = true, Ucp = true, MatchInvalidUtf = true } );
 			foreach ( var hex in new[] { "0D0A4241", "0D0A4141", "C3A90D0A4241", "FF0D0A4241", "0D0AFF41", "EDA0800D0A41" } ) {
@@ -179,7 +179,6 @@ public sealed class PcreByteAnyPropertyPrefixReferenceTests {
 		Assert.Equal( PcreByteDiagnosticCode.PatternRepeatLimitExceeded,
 			PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( @"[\p{Any}]{4096}A" ) ).Diagnostic?.Code );
 	}
-
 
 	[Theory]
 	[InlineData( @"[\P{Any}]A", 15 )]
