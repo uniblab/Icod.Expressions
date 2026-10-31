@@ -401,3 +401,18 @@ remain shared; no parser/AST/matcher/state/limit change. Broader optimizer/sourc
 metadata stays #99; UTF #102 and unsafe native #100 remain separate. See
 `PCRE-BYTE-GROUP-PREFIX-REPEATS-DESIGN.md` and `PCRE-BYTE-GROUP-PREFIX-REPEATS-PLAN.md`.
 No public/release/consumer change; frozen35 intact.
+
+## Byte mixed-Any property membership
+
+`PcreByteAnyPropertyMembershipReferenceTests` pins PCRE2 10.48's byte-only
+bitmap inclusion when Any and real properties share a bracket. Actual property
+data without an ordinary byte source selects the property-only union before
+outer negation; a literal/range/nonempty quote/bitmap operand retains the full
+ordinary union. Source order, UCP/ASCII/case/xx policies, all256 byte memberships,
+full captures and caller offsets are covered. UTF scalar union, source flags,
+class provenance, compiler proof, matcher/journals and limits remain unchanged.
+This deliberately follows the pinned native behavior; revisit on reference
+version changes. The named mixed-property discrepancy from #120 is addressed;
+broader optimizer/positive-interior metadata remains #99, UTF #102 and unsafe
+native #100 remain separate. See `PCRE-BYTE-ANY-PROPERTY-MEMBERSHIP-DESIGN.md`
+and `PCRE-BYTE-ANY-PROPERTY-MEMBERSHIP-PLAN.md`. No public/release/consumer change.
