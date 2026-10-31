@@ -60,7 +60,7 @@ public sealed class PcreByteFoundationTests {
 
 	[Theory]
 	[InlineData( "(?<=x+)" )]
-	[InlineData( "\\p{L}" )]
+	[InlineData( "\\p{Greek}" )]
 	public void RejectsUnsupportedSyntaxAtCompileTime( string pattern ) {
 		var result = PcreByteCompiler.Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
 

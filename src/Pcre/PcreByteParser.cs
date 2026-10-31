@@ -737,11 +737,10 @@ internal sealed partial class PcreByteParser {
 	}
 
 	private PcreByteNode ParseUnicodeProperty( int offset, bool negated ) {
-		if ( !utf8 ) { throw Unsupported( offset ); }
 		if ( index >= source.Length ) { throw Invalid( offset, "property escape requires a name" ); }
 		if ( source[index] != (byte)'{' ) {
 			var shortName = NormalizePropertyName( source.AsSpan( index++, 1 ) );
-			return GeneralCategory( shortName, negated ) ?? throw Unsupported( offset );
+			return CreatePropertyClass( GeneralCategory( shortName, negated ) ?? throw Unsupported( offset ) );
 		}
 		index++;
 		var nameStart = index;
@@ -763,8 +762,17 @@ internal sealed partial class PcreByteParser {
 			categoryOnly = true;
 		}
 		if ( name.Length == 0 ) { throw Invalid( offset, "property escape requires a name" ); }
-		return GeneralCategory( name, negated ) ?? ( categoryOnly ? null : SpecialProperty( name, negated ) )
-			?? throw Unsupported( offset );
+		return CreatePropertyClass( GeneralCategory( name, negated ) ?? ( categoryOnly ? null : SpecialProperty( name, negated ) )
+			?? throw Unsupported( offset ) );
+	}
+
+	private PcreByteNode CreatePropertyClass( PcreByteScalarClass property ) {
+		if ( utf8 ) { return property; }
+		var members = PcreByteSet.FromPredicate( value => {
+			cancellationToken.ThrowIfCancellationRequested();
+			return PcreScalarClassMembership.Contains( property.Kind, value, property.Category, caseless ) != property.Negated;
+		} );
+		return new PcreByteClass( members );
 	}
 
 	private static PcreByteScalarClass? SpecialProperty( string name, bool negated ) {
