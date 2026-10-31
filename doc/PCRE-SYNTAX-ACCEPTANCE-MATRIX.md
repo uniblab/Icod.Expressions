@@ -141,3 +141,15 @@ capture state, limits or UTF changes. Repeated classes, variable/longer restrict
 prefixes and broader optimizer/provenance coverage remain #99; UTF search remains
 #102. See `PCRE-BYTE-FIXED-PREFIX-DESIGN.md` and `PCRE-BYTE-FIXED-PREFIX-PLAN.md`.
 No public/release/consumer change; frozen35 intact.
+
+## Conditional byte prefix selection
+
+`PcreBytePrefixSelectorReferenceTests` pins longer restrictive fixed byte prefixes:
+native literal rejection at CR retains LF, while a passing prefix literal followed
+by VM failure skips LF. Reuse the twelve-position/single-final-literal proof, with
+optional immutable offset/value/local-case metadata and one shared Step/ScalarEquals
+comparison only on eligible failed CR pairs. Old unconditional proofs retain work;
+UTF remains separate. Direct exact Any repeats qualify; repeated class provenance,
+ordinary bitmaps, variable/zero repeats and broader optimizer/source metadata stay
+#99. See `PCRE-BYTE-PREFIX-SELECTOR-DESIGN.md` and `PCRE-BYTE-PREFIX-SELECTOR-PLAN.md`.
+No new saved state/limits/public/release/consumer change; frozen35 intact.

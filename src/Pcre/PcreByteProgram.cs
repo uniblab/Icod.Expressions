@@ -46,11 +46,13 @@ internal sealed record PcreByteInstruction(
 	bool Caseless = false, bool CaselessRestricted = false, ReadOnlyMemory<int> CaptureNumbers = default
 );
 
+internal readonly record struct PcreBytePrefixLiteral( int ByteOffset, int Value, bool Caseless, bool CaselessRestricted );
+
 internal sealed record PcreByteProgram(
 	PcreByteInstruction[] Instructions, int MarkCount, bool HasCaselessComparisons, bool Utf8, bool MatchInvalidUtf,
 	ReadOnlyMemory<byte> RequiredLiteralSuffix, PcreByteNewline Newline, bool ExplicitNewline,
 	bool CanMatchEmptyAtAnyOffset, bool ByteCrLfPrefix, bool UtfCrLfStartClass, bool NotEmpty, bool NotEmptyAtStart,
-	bool LineStartSearch, bool Ucp
+	bool LineStartSearch, bool Ucp, PcreBytePrefixLiteral? ByteCrLfPrefixLiteral
 ) {
 	internal bool AnyCrLfNewline => Newline == PcreByteNewline.AnyCrLf;
 	internal byte NewlineCharacter => Newline.Character();
@@ -112,10 +114,11 @@ internal sealed class PcreByteProgramCompiler {
 			Emit( PcreByteOpcode.Return );
 		}
 		foreach ( var call in calls ) { Patch( call.Instruction, entries[call.Number], call.Number ); }
+		var bytePrefix = utf8 ? default : FindByteCrLfPrefix( root );
 		return new( instructions.ToArray(), markCount, hasCaselessComparisons, utf8, matchInvalidUtf,
 			FindRequiredLiteralSuffix( root ), newline, HasExplicitNewline( root ), CanMatchEmptyAtAnyOffset( root ),
-			!utf8 && HasByteCrLfPrefix( root ), utf8 && HasUtfCrLfStartClass( root ), notEmpty, notEmptyAtStart,
-			matchInvalidUtf && newline == PcreByteNewline.Any && HasLineStartSearch( root ), ucp );
+			bytePrefix.Unconditional, utf8 && HasUtfCrLfStartClass( root ), notEmpty, notEmptyAtStart,
+			matchInvalidUtf && newline == PcreByteNewline.Any && HasLineStartSearch( root ), ucp, bytePrefix.Literal );
 	}
 
 	private bool HasLineStartSearch( PcreByteAlternatives root ) {
@@ -210,47 +213,51 @@ internal sealed class PcreByteProgramCompiler {
 		}
 	}
 
-	private bool HasByteCrLfPrefix( PcreByteAlternatives root ) {
+	private (bool Unconditional, PcreBytePrefixLiteral? Literal) FindByteCrLfPrefix( PcreByteAlternatives root ) {
 		// Native byte prefix scanning passes through ordinary/atomic groups and
-		// exact ALLANY repeats, but only examines twelve positions. A sole final
-		// literal after unrestricted byte positions explains every failed attempt.
-		// Restrictive NOT/PROP/XCLASS prefixes retain only the old one-position case:
-		// a later literal can otherwise pass at CR before a class fails in the VM.
+		// exact Any repeats, but only examines twelve positions. After unrestricted
+		// positions a sole final literal explains every failed attempt. Longer
+		// restrictive NOT/PROP/XCLASS/Any prefixes require that literal's actual
+		// rejection at CR: a passing literal followed by VM failure must skip LF.
 		var pending = new Stack<PcreByteNode>();
 		var visits = 1;
 		var prefixLength = 0;
 		var restricted = false;
-		var hasLiteral = false;
-		if ( !AddSequence( root ) ) { return false; }
+		PcreByteLiteral? literal = null;
+		if ( !AddSequence( root ) ) { return default; }
 		while ( pending.TryPop( out var node ) ) {
 			cancellationToken.ThrowIfCancellationRequested();
-			if ( ++visits > MaximumStartClassVisits ) { return false; }
+			if ( ++visits > MaximumStartClassVisits ) { return default; }
 			switch ( node ) {
 				case PcreByteGroup group:
-					if ( !AddSequence( group.Body ) ) { return false; }
+					if ( !AddSequence( group.Body ) ) { return default; }
 					break;
 				case PcreByteNoncapturingGroup group:
-					if ( !AddSequence( group.Body ) ) { return false; }
+					if ( !AddSequence( group.Body ) ) { return default; }
 					break;
 				case PcreByteAtomic atomic: pending.Push( atomic.Child ); break;
 				case PcreByteAny any:
-					if ( !AddWidth( 1, any.DotAll ) ) { return false; }
+					if ( !AddWidth( 1, any.DotAll ) ) { return default; }
 					break;
 				case PcreByteClass { PrefixAny: true }:
-					if ( !AddWidth( 1, false ) ) { return false; }
+					if ( !AddWidth( 1, false ) ) { return default; }
 					break;
-				case PcreByteRepeat { Child: PcreByteAny { DotAll: true } } repeat
+				case PcreByteRepeat { Child: PcreByteAny repeatedAny } repeat
 					when repeat.Minimum > 0 && repeat.Minimum == repeat.Maximum:
-					if ( !AddWidth( repeat.Minimum, true ) ) { return false; }
+					if ( !AddWidth( repeat.Minimum, repeatedAny.DotAll ) ) { return default; }
 					break;
-				case PcreByteLiteral:
-					if ( prefixLength == 0 || hasLiteral ) { return false; }
-					hasLiteral = true;
+				case PcreByteLiteral value:
+					if ( prefixLength == 0 || literal is not null ) { return default; }
+					literal = value;
 					break;
-				default: return false;
+				default: return default;
 			}
 		}
-		return hasLiteral;
+		if ( literal is null ) { return default; }
+		if ( restricted && prefixLength > 1 ) {
+			return (false, new PcreBytePrefixLiteral( prefixLength, literal.Value, literal.Caseless, literal.CaselessRestricted ));
+		}
+		return (true, null);
 
 		bool AddSequence( PcreByteAlternatives body ) {
 			if ( body.Branches.Count != 1 || body.Branches[0].Count == 0 ) { return false; }
@@ -260,10 +267,9 @@ internal sealed class PcreByteProgramCompiler {
 			return true;
 		}
 		bool AddWidth( int width, bool unrestricted ) {
-			if ( hasLiteral || restricted || width >= MaximumBytePrefixLength - prefixLength
-				|| !unrestricted && prefixLength != 0 ) { return false; }
+			if ( literal is not null || width >= MaximumBytePrefixLength - prefixLength ) { return false; }
 			prefixLength += width;
-			restricted = !unrestricted;
+			restricted |= !unrestricted;
 			return true;
 		}
 	}

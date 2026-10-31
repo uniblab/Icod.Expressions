@@ -736,11 +736,19 @@ internal static class PcreByteMatcher {
 					&& input.Span[start + 1] == (byte)'\n' ) {
 					// After a failed unanchored attempt at CR, PCRE2 advances past
 					// the entire pair unless the pattern explicitly mentions CR or LF.
-					// The bounded byte prefix scanner instead rejects CR by its next
-					// literal and can enter at LF. Keep VM work for both candidates.
+					// Unconditional byte prefix proofs bypass this guard. Longer
+					// restrictive prefixes permit LF only when their sole literal
+					// rejects CR before native VM entry. Charge that comparison too.
 					// A mandatory UTF ASCII start class excluding CR likewise lets
 					// native prefix/bitmap scanning enter at LF without CR bumpalong.
-					start++;
+					var skipLf = true;
+					if ( program.ByteCrLfPrefixLiteral is { } prefix ) {
+						Step(); // Attempted fixed byte-prefix literal comparison.
+						skipLf = prefix.ByteOffset < fragment.End - start
+							&& ScalarEquals( input.Span[start + prefix.ByteOffset], prefix.Value,
+								prefix.Caseless, program.Ucp, prefix.CaselessRestricted );
+					}
+					if ( skipLf ) { start++; }
 				}
 			}
 			}
