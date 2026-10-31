@@ -22,7 +22,8 @@ existing owning-behind diagnostic behavior. Byte UCP remains fully supported.
 
 Quoted/escaped backslashes and literal C remain ordinary; lowercase c remains the
 printable-ASCII control escape. Bracket C is invalid even in UTF, as native syntax
-requires; UTF whole-source validation still precedes parsing. No source rewriting.
+requires; UTF whole-source validation still precedes parsing. No source rewriting. Variable behind maxima above255 keep the existing
+UnsupportedSyntax diagnostic at the owning behind opener; all-fixed65535 remains.
 
 ## Constraints and delivery
 

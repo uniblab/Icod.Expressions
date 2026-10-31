@@ -175,7 +175,7 @@ public sealed class PcreByteCodeUnitReferenceTests {
 	[Fact]
 	public void CompileWidthAndSavedPathLimitsRemainShared() {
 		Assert.Equal( 1, Compile( @"(?<=\C{65535}){0}X" ).Match( "X"u8.ToArray() ).Match?.ByteLength );
-		Diagnostic( Encoding.ASCII.GetBytes( @"(?<=\C{1,256})X" ), PcreByteDiagnosticCode.InvalidSyntax, 0 );
+		Diagnostic( Encoding.ASCII.GetBytes( @"(?<=\C{1,256})X" ), PcreByteDiagnosticCode.UnsupportedSyntax, 0 );
 		var depth = String.Concat( new string( '(', 257 ), @"\C", new string( ')', 257 ) );
 		Assert.Equal( PcreByteDiagnosticCode.PatternDepthLimitExceeded, PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( depth ) ).Diagnostic?.Code );
 		var captures = String.Concat( Enumerable.Repeat( @"(\C)", 257 ) );
