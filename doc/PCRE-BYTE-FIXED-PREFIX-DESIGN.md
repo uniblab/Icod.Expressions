@@ -12,7 +12,13 @@ and `\CA` match1:2 on CRLF+A. Explicit offset1 still works beyond the window.
 
 A global LF retry would be wrong: `[^\r]\CA` on CRLF+AA misses in JIT.
 Its later literal can pass the native prefix test at CR, then the VM fails its
-first class and skips LF. The existing PrefixAny source marker also combines
+first class and skips LF. The same pattern on CRLF+BA matches1:3 because the
+sole literal rejects CR before VM entry. The first implementation CI exposed
+three overbroad new matrix rows for these already excluded longer restrictive
+forms. Keep their native protocols as research, and the pinned literal miss
+controls as managed tests; restrict the every-offset matrix to its admitted
+forms and independent controls. A dynamic optimizer-entry design remains #99.
+The existing PrefixAny source marker also combines
 NOT/ALLANY/PROP/XCLASS, whose exact-repeat encodings differ. Do not generalize
 it into an arbitrary repeated class or a multi-position restrictive prefix.
 

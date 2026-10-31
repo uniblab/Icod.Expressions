@@ -75,9 +75,11 @@ public sealed class PcreByteFixedPrefixReferenceTests {
 	[InlineData( "(*CRLF)" )]
 	[InlineData( "(*ANY)" )]
 	public void EveryCallerOffsetPreservesNativeByteModesAndCutoffs( string newline ) {
+		// Longer restrictive prefixes have subject-dependent native optimizer entry (#99).
+		// Their literal miss controls above do not imply every-offset parity.
 		string[] bodies = { @"(?>\CA)", @"(?>(\C))(A)", @"(?<x>(?>[^\r]A))", @"(?>\p{Any}A)",
 			@"\C{1}A", @"(\C{2})(A)", @"\C{2}?A", @"\C{2}+A", @"\C\CA", @"\C{6}\C{5}A",
-			@"(?>\C{11}A)", @"\C{12}A", @"\C{13}A", @"[^\r]\CA", @"(?>[^\r]\CA)",
+			@"(?>\C{11}A)", @"\C{12}A", @"\C{13}A",
 			@"\C{1,2}A", @"\C{2,3}A", @"\G\C{2}A", @"(?i)(\C{2})(a)" };
 		foreach ( var ucp in new[] { false, true } ) {
 			foreach ( var body in bodies ) {
