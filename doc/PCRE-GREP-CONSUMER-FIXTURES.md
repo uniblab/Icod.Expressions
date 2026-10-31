@@ -72,9 +72,9 @@ conformance gates remain separate.
 The shared original-byte0 prefix also accepts `(*UTF)`, `(*UTF8)` and `(*UCP)`.
 UTF/UTF8 enable UTF, UCP independently enables UCP, and caller enables remain set.
 One immutable compile-settings scan resolves all seven supported tokens before
-the UCP-without-UTF gate and whole-source UTF validation; newline/BSR retain their
+mode selection and whole-source UTF validation; newline/BSR retain their
 independent last-wins rules. Original bytes/body offsets and early cancellation/
-work-limit precedence are preserved. UCP without UTF remains rejected at0; UTF
+work-limit precedence are preserved. Byte UCP is supported without enabling UTF; UTF
 directives do not enable invalid-subject tolerance. Existing matcher/fragment/
 capture/width/resource paths are shared. See `PCRE-UTF-START-DIRECTIVES-DESIGN.md`
 and `PcreUtfStartDirectiveReferenceTests`. Other directives and public/consumer
@@ -148,6 +148,18 @@ Any/Xan/Xps/Xsp/Xwd/Xuc to U+0000..U+00FF byte values, including NUL and
 non-UTF byte sequences. Compile-time projection of shared scalar membership
 produces ordinary immutable byte classes; one-byte widths, existing work,
 limits and rollback remain. Caseless Lu/Ll/Lt widen before complements.
-No new VM state/opcode or UTF behavior. Byte UCP remains rejected pending its
+No new VM state/opcode or UTF behavior. Byte UCP now also supports
 literal/range/reference folding and shorthand/boundary/POSIX semantics.
 See `PCRE-BYTE-PROPERTIES-DESIGN.md` and `PCRE-BYTE-PROPERTIES-PLAN.md`.
+
+## Byte UCP
+
+`PcreByteUcpReferenceTests` enables caller/prefix UCP without UTF: Unicode
+shorthands/POSIX/boundaries over all256 bytes, local ASCII restrictions and shared
+Unicode case folding for literals, ranges, references and fixed assertions.
+Classification projects existing shared predicates; byte widths/source validation
+and existing non-UCP/UTF paths remain distinct. Native source provenance retains
+property/type prefix versus ASCII bitmap behavior. One immutable program setting;
+no new saved state/opcode or limits. See `PCRE-BYTE-UCP-DESIGN.md` and
+`PCRE-BYTE-UCP-PLAN.md`. Unicode-version/general optimization/public/release/
+consumer gates remain.

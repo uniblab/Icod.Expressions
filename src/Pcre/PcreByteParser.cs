@@ -336,6 +336,11 @@ internal sealed partial class PcreByteParser {
 			throw Unsupported( openingOffset );
 		}
 		var name = Encoding.ASCII.GetString( source, nameStart, index - nameStart );
+		index += 2; // POSIX item terminator; the outer class has its own closing bracket.
+		return CreatePosixClass( name, negated, openingOffset );
+	}
+
+	private PcreByteScalarClass CreatePosixClass( string name, bool negated, int offset ) {
 		var unicodePosix = ucp && !HasAsciiRestriction( AsciiRestriction.Posix );
 		var unicodeDigits = unicodePosix && !HasAsciiRestriction( AsciiRestriction.PosixDigit );
 		var kind = name switch {
@@ -353,11 +358,14 @@ internal sealed partial class PcreByteParser {
 			"space" => unicodePosix ? PcreByteScalarClassKind.UnicodeSpace : PcreByteScalarClassKind.AsciiSpace,
 			"upper" => unicodePosix ? PcreByteScalarClassKind.UnicodeUpper : PcreByteScalarClassKind.AsciiUpper,
 			"xdigit" => unicodeDigits ? PcreByteScalarClassKind.UnicodeHexDigit : PcreByteScalarClassKind.AsciiHexDigit,
-			_ => throw Unsupported( openingOffset )
+			_ => throw Unsupported( offset )
 		};
-		index += 2; // POSIX ':]' belongs to this member; the outer class has its own ']'.
 		return new( kind, negated );
 	}
+
+	private bool PosixUsesUnicodeProperty( string name ) =>
+		ucp && !HasAsciiRestriction( AsciiRestriction.Posix ) && name is not "ascii" and not "blank"
+			&& ( name is not "digit" and not "xdigit" || !HasAsciiRestriction( AsciiRestriction.PosixDigit ) );
 
 	private bool HasCompleteUtf8SpecialClassToken( int markerOffset ) {
 		var marker = source[markerOffset];
@@ -419,7 +427,7 @@ internal sealed partial class PcreByteParser {
 					explicitNewline = true;
 				}
 				var range = PcreByteSet.Range( item.Value.Value, end.Value.Value );
-				set = set.Union( caseless ? range.AsciiCaseClosure() : range );
+				set = set.Union( caseless ? CloseByteCase( range ) : range );
 			} else {
 				set = set.Union( item.Set );
 			}
@@ -461,8 +469,11 @@ internal sealed partial class PcreByteParser {
 
 	private PcreByteSet BracketLiteral( byte value ) {
 		var set = PcreByteSet.Singleton( value );
-		return caseless ? set.AsciiCaseClosure() : set;
+		return caseless ? CloseByteCase( set ) : set;
 	}
+
+	private PcreByteSet CloseByteCase( PcreByteSet set ) =>
+		ucp ? set.UnicodeCaseClosure( cancellationToken, caselessRestricted ) : set.AsciiCaseClosure();
 
 	private bool HasCompleteSpecialClassToken( ref int scanCursor, ref int nextClosingBracket ) {
 		var marker = source[index];
@@ -489,6 +500,12 @@ internal sealed partial class PcreByteParser {
 			throw Invalid( offset, "malformed POSIX character class" );
 		}
 		var name = System.Text.Encoding.ASCII.GetString( source, nameStart, index - nameStart );
+		if ( ucp ) {
+			var property = CreatePosixClass( name, negated, offset );
+			var projected = (PcreByteClass)CreatePropertyClass( property, PosixUsesUnicodeProperty( name ) );
+			index += 2;
+			return (projected.Set, null, false, projected.PrefixAny);
+		}
 		var set = name switch {
 			"alnum" => PcreByteSet.Alnum,
 			"alpha" => PcreByteSet.Alpha,
@@ -595,18 +612,20 @@ internal sealed partial class PcreByteParser {
 			var set = horizontal ? PcreByteSet.HorizontalSpace : PcreByteSet.VerticalSpace;
 			return new PcreByteClass( negated ? set.Complement() : set );
 		}
-		if ( utf8 && ( value is (byte)'d' or (byte)'D' ) ) {
-			return new PcreByteScalarClass( ucp && !HasAsciiRestriction( AsciiRestriction.BackslashD )
-				? PcreByteScalarClassKind.DecimalDigit : PcreByteScalarClassKind.AsciiDigit,
-				value == (byte)'D' );
+		if ( ( utf8 || ucp ) && ( value is (byte)'d' or (byte)'D' ) ) {
+			var unicode = ucp && !HasAsciiRestriction( AsciiRestriction.BackslashD );
+			return CreatePropertyClass( new( unicode ? PcreByteScalarClassKind.DecimalDigit
+				: PcreByteScalarClassKind.AsciiDigit, value == (byte)'D' ), !inBracket || unicode );
 		}
-		if ( utf8 && ( value is (byte)'w' or (byte)'W' ) ) {
-			return new PcreByteScalarClass( ucp && !HasAsciiRestriction( AsciiRestriction.BackslashW ) ? PcreByteScalarClassKind.UnicodeWord
-				: PcreByteScalarClassKind.AsciiWord, value == (byte)'W' );
+		if ( ( utf8 || ucp ) && ( value is (byte)'w' or (byte)'W' ) ) {
+			var unicode = ucp && !HasAsciiRestriction( AsciiRestriction.BackslashW );
+			return CreatePropertyClass( new( unicode ? PcreByteScalarClassKind.UnicodeWord
+				: PcreByteScalarClassKind.AsciiWord, value == (byte)'W' ), !inBracket || unicode );
 		}
-		if ( utf8 && ( value is (byte)'s' or (byte)'S' ) ) {
-			return new PcreByteScalarClass( ucp && !HasAsciiRestriction( AsciiRestriction.BackslashS ) ? PcreByteScalarClassKind.UnicodeSpace
-				: PcreByteScalarClassKind.AsciiSpace, value == (byte)'S' );
+		if ( ( utf8 || ucp ) && ( value is (byte)'s' or (byte)'S' ) ) {
+			var unicode = ucp && !HasAsciiRestriction( AsciiRestriction.BackslashS );
+			return CreatePropertyClass( new( unicode ? PcreByteScalarClassKind.UnicodeSpace
+				: PcreByteScalarClassKind.AsciiSpace, value == (byte)'S' ), !inBracket || unicode );
 		}
 		PcreByteSet? characterClass = value switch {
 			(byte)'d' => PcreByteSet.Digit,
@@ -768,13 +787,13 @@ internal sealed partial class PcreByteParser {
 			?? throw Unsupported( offset ) );
 	}
 
-	private PcreByteNode CreatePropertyClass( PcreByteScalarClass property ) {
+	private PcreByteNode CreatePropertyClass( PcreByteScalarClass property, bool prefixAny = true ) {
 		if ( utf8 ) { return property; }
 		var members = PcreByteSet.FromPredicate( value => {
 			cancellationToken.ThrowIfCancellationRequested();
 			return PcreScalarClassMembership.Contains( property.Kind, value, property.Category, caseless ) != property.Negated;
 		} );
-		return new PcreByteClass( members, PrefixAny: true );
+		return new PcreByteClass( members, PrefixAny: prefixAny );
 	}
 
 	private static PcreByteScalarClass? SpecialProperty( string name, bool negated ) {

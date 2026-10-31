@@ -50,7 +50,7 @@ internal sealed record PcreByteProgram(
 	PcreByteInstruction[] Instructions, int MarkCount, bool HasCaselessComparisons, bool Utf8, bool MatchInvalidUtf,
 	ReadOnlyMemory<byte> RequiredLiteralSuffix, PcreByteNewline Newline, bool ExplicitNewline,
 	bool CanMatchEmptyAtAnyOffset, bool ByteCrLfPrefix, bool UtfCrLfStartClass, bool NotEmpty, bool NotEmptyAtStart,
-	bool LineStartSearch
+	bool LineStartSearch, bool Ucp
 ) {
 	internal bool AnyCrLfNewline => Newline == PcreByteNewline.AnyCrLf;
 	internal byte NewlineCharacter => Newline.Character();
@@ -68,6 +68,7 @@ internal sealed class PcreByteProgramCompiler {
 	private readonly CancellationToken cancellationToken;
 	private bool hasCaselessComparisons;
 	private readonly bool utf8;
+	private readonly bool ucp;
 	private readonly bool matchInvalidUtf;
 	private readonly PcreByteNewline newline;
 	private readonly bool bsrAnyCrLf;
@@ -80,9 +81,10 @@ internal sealed class PcreByteProgramCompiler {
 	private readonly List<(int Instruction, int Number)> calls = new();
 
 	internal PcreByteProgramCompiler( CancellationToken cancellationToken, bool utf8, bool matchInvalidUtf,
-		PcreByteNewline newline, bool bsrAnyCrLf, bool notEmpty, bool notEmptyAtStart ) {
+		PcreByteNewline newline, bool bsrAnyCrLf, bool notEmpty, bool notEmptyAtStart, bool ucp ) {
 		this.cancellationToken = cancellationToken;
 		this.utf8 = utf8;
+		this.ucp = ucp;
 		this.matchInvalidUtf = matchInvalidUtf;
 		this.newline = newline;
 		this.bsrAnyCrLf = bsrAnyCrLf;
@@ -112,7 +114,7 @@ internal sealed class PcreByteProgramCompiler {
 		return new( instructions.ToArray(), markCount, hasCaselessComparisons, utf8, matchInvalidUtf,
 			FindRequiredLiteralSuffix( root ), newline, HasExplicitNewline( root ), CanMatchEmptyAtAnyOffset( root ),
 			!utf8 && HasByteCrLfPrefix( root ), utf8 && HasUtfCrLfStartClass( root ), notEmpty, notEmptyAtStart,
-			matchInvalidUtf && newline == PcreByteNewline.Any && HasLineStartSearch( root ) );
+			matchInvalidUtf && newline == PcreByteNewline.Any && HasLineStartSearch( root ), ucp );
 	}
 
 	private bool HasLineStartSearch( PcreByteAlternatives root ) {
