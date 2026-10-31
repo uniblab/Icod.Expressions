@@ -211,14 +211,12 @@ public sealed class PcreSpecialPropertyReferenceTests {
 	}
 
 	[Fact]
-	public void BytePropertiesAndExistingScriptAndBinaryFamiliesKeepTheirLibraryGate() {
-		foreach ( var name in Names ) {
-			_ = Reference( $@"\p{{{name}}}", utf8: false );
-			Diagnostic( $@"\p{{{name}}}", PcreByteDiagnosticCode.UnsupportedSyntax, 0, utf8: false );
-		}
+	public void ExistingScriptAndBinaryFamiliesKeepTheirLibraryGate() {
 		foreach ( var pattern in new[] { @"\p{Greek}", @"\p{Alphabetic}" } ) {
-			_ = Reference( pattern );
-			Diagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax, 0 );
+			foreach ( var utf8 in new[] { false, true } ) {
+				_ = Reference( pattern, utf8: utf8 );
+				Diagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax, 0, utf8: utf8 );
+			}
 		}
 	}
 

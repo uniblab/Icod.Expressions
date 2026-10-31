@@ -208,8 +208,9 @@ internal sealed class PcreByteProgramCompiler {
 	}
 
 	private static bool HasByteCrLfPrefix( PcreByteAlternatives root ) {
-		// Native byte NOT/NOTI and ALLANY let prefix scanning reach a following
-		// literal. Ordinary mandatory bitmap classes stop it. Retain only this
+		// Native byte NOT/NOTI, ALLANY, PROP/NOTPROP and property-bearing XCLASS
+		// let prefix scanning reach a following literal. Mandatory bitmap classes
+		// stop it. Retain only this
 		// two-atom consequence; alternatives/repeats/assertions/calls stay outside.
 		// Byte CRLF dot/N now share Any with UTF; the caller keeps this proof byte-only.
 		while ( root.Branches.Count == 1 && root.Branches[0].Count == 1 ) {

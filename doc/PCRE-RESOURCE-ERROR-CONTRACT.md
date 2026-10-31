@@ -189,8 +189,8 @@ widths; AnyScalar/UniversalCharacterName add no VM state, frames or scalar-range
 expansion. Category namespaces cannot enable special names. UTF class CR/LF
 metadata now comes from original literal/range endpoints and operand shape before
 folding, with the native negated-singleton exception; class membership remains
-unchanged. Byte properties and byte start-optimization parity remain separate
-gates. See `PcreSpecialPropertyReferenceTests`, `PcreClassNewlineMetadataReferenceTests`
+unchanged. Byte start-optimization parity remains a separate
+gate. See `PcreSpecialPropertyReferenceTests`, `PcreClassNewlineMetadataReferenceTests`
 and `PCRE-SPECIAL-PROPERTIES-DESIGN.md`.
 
 ## Byte class CRLF search follow-up
@@ -303,3 +303,14 @@ under ANYCRLF; CRLF-only remains pair-only. Candidate bumpalong and bounded
 byte/UTF prefix differences stay shared. See `PCRE-ANY-NEWLINE-DESIGN.md` and
 `PcreAnyNewlineReferenceTests`. Broader optimization/Unicode-version/public/
 release/consumer gates remain separate.
+
+## Explicit properties in byte mode
+
+`PcreBytePropertyReferenceTests` extends existing general categories and
+Any/Xan/Xps/Xsp/Xwd/Xuc to U+0000..U+00FF byte values, including NUL and
+non-UTF byte sequences. Compile-time projection of shared scalar membership
+produces ordinary immutable byte classes; one-byte widths, existing work,
+limits and rollback remain. Caseless Lu/Ll/Lt widen before complements.
+No new VM state/opcode or UTF behavior. Byte UCP remains rejected pending its
+literal/range/reference folding and shorthand/boundary/POSIX semantics.
+See `PCRE-BYTE-PROPERTIES-DESIGN.md` and `PCRE-BYTE-PROPERTIES-PLAN.md`.

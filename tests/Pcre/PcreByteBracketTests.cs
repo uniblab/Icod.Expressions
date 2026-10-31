@@ -95,7 +95,7 @@ public sealed class PcreByteBracketTests {
 	}
 
 	[Theory]
-	[InlineData( "[\\p{L}]" )]
+	[InlineData( "[\\p{Greek}]" )]
 	public void RetainsPendingEscapesAsUnsupportedInClass( string pattern ) {
 		var result = PcreByteCompiler.Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
 		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
