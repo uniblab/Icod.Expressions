@@ -380,6 +380,7 @@ internal sealed partial class PcreByteParser {
 		var sourceTermCount = 0;
 		var soleLiteral = false;
 		var explicitNewline = false;
+		var propertyPrefix = false;
 		var set = default(PcreByteSet);
 		var specialScanCursor = index;
 		var nextClosingBracket = -1;
@@ -392,11 +393,12 @@ internal sealed partial class PcreByteParser {
 				var singletonNegation = negated && sourceTermCount == 1 && soleLiteral;
 				var members = negated ? set.Complement() : set;
 				return new PcreByteClass( members, explicitNewline && !singletonNegation,
-					singletonNegation || members == PcreByteSet.AllBytes );
+					singletonNegation || members == PcreByteSet.AllBytes || propertyPrefix );
 			}
 			var item = quoting ? QuotedBracketLiteral() : ParseBracketItem( ref specialScanCursor, ref nextClosingBracket );
 			SkipClassTrivia( ref quoting );
 			soleLiteral = item.Value.HasValue;
+			propertyPrefix |= item.PrefixAny;
 			if ( item.Value is (byte)'\r' or (byte)'\n' ) { explicitNewline = true; }
 			if ( ( !item.Value.HasValue || item.MayStartRange ) && TryStartBracketRange( ref quoting, out var hyphenOffset ) ) {
 				if ( !item.Value.HasValue ) {
@@ -427,12 +429,12 @@ internal sealed partial class PcreByteParser {
 		throw Invalid( openingOffset, "unclosed bracket class" );
 	}
 
-	private (PcreByteSet Set, byte? Value, bool MayStartRange) QuotedBracketLiteral() {
+	private (PcreByteSet Set, byte? Value, bool MayStartRange, bool PrefixAny) QuotedBracketLiteral() {
 		var value = source[index++];
-		return (BracketLiteral( value ), value, true);
+		return (BracketLiteral( value ), value, true, false);
 	}
 
-	private (PcreByteSet Set, byte? Value, bool MayStartRange) ParseBracketItem(
+	private (PcreByteSet Set, byte? Value, bool MayStartRange, bool PrefixAny) ParseBracketItem(
 		ref int specialScanCursor, ref int nextClosingBracket
 	) {
 		var offset = index;
@@ -445,16 +447,16 @@ internal sealed partial class PcreByteParser {
 		if ( value == (byte)'\\' ) {
 			if ( index < source.Length && source[index] == (byte)'b' ) {
 				index++;
-				return (PcreByteSet.Singleton( 0x08 ), 0x08, true);
+				return (PcreByteSet.Singleton( 0x08 ), 0x08, true, false);
 			}
 			var escape = ParseEscape( offset, inBracket: true );
 			return escape switch {
-				PcreByteLiteral literal => (BracketLiteral( (byte)literal.Value ), (byte)literal.Value, true),
-				PcreByteClass characterClass => (characterClass.Set, null, false),
+				PcreByteLiteral literal => (BracketLiteral( (byte)literal.Value ), (byte)literal.Value, true, false),
+				PcreByteClass characterClass => (characterClass.Set, null, false, characterClass.PrefixAny),
 				_ => throw Unsupported( offset )
 			};
 		}
-		return (BracketLiteral( value ), value, true);
+		return (BracketLiteral( value ), value, true, false);
 	}
 
 	private PcreByteSet BracketLiteral( byte value ) {
@@ -472,7 +474,7 @@ internal sealed partial class PcreByteParser {
 		return nextClosingBracket > index + 1 && source[nextClosingBracket - 1] == marker;
 	}
 
-	private (PcreByteSet Set, byte? Value, bool MayStartRange) ParsePosixItem( int offset ) {
+	private (PcreByteSet Set, byte? Value, bool MayStartRange, bool PrefixAny) ParsePosixItem( int offset ) {
 		if ( source[index] != (byte)':' ) { throw Unsupported( offset ); } // Collating/equivalence elements.
 		index++;
 		var negated = index < source.Length && source[index] == (byte)'^';
@@ -506,7 +508,7 @@ internal sealed partial class PcreByteParser {
 		};
 		index += 2; // The POSIX ':]' belongs to this item; the outer ']' is separate.
 		if ( caseless ) { set = set.AsciiCaseClosure(); }
-		return (negated ? set.Complement() : set, null, false);
+		return (negated ? set.Complement() : set, null, false, false);
 	}
 
 	private PcreByteNode ParseEscape( int offset, bool inBracket = false ) {
@@ -772,7 +774,7 @@ internal sealed partial class PcreByteParser {
 			cancellationToken.ThrowIfCancellationRequested();
 			return PcreScalarClassMembership.Contains( property.Kind, value, property.Category, caseless ) != property.Negated;
 		} );
-		return new PcreByteClass( members );
+		return new PcreByteClass( members, PrefixAny: true );
 	}
 
 	private static PcreByteScalarClass? SpecialProperty( string name, bool negated ) {
