@@ -40,19 +40,19 @@
 
 Pre-flight: fixed membership already shared, Any width1 and byte execution supported by #111; Task1 uses stable APIs, Task2 helper bounds and old-anchor corrections explicit. No interface conflict. Preserve evidence.
 
-### Discovered line-search correction
+### Discovered search/offset corrections
 
-Add program compiler metadata for zero-width control flow whose every accept
-requires StartLine; whitelist captures/split/jump/atomic/line/end/accept only.
-Use bounded heap worklist and2states per instruction, with cancellation. In
-tolerant ANY matching derive the end of a valid newline containing the original
-continuation offset and suppress that one line-start candidate under the proof.
-Never apply to ^X/^|X, other modes or strict validation. Extend newline helper,
-Program and Matcher; no new saved frames/journal or raised limits. Additional
-LineSearchFromInsideNewline controls observe RED before correction; final full
-suite/all six gate remains required. This fulfills existing offset ReviewFocus.
+Extend Program metadata with a zero-width instruction whitelist plus native
+first-significant-AST-node proof (leading StartLine/capture/noncapture/atomic,
+every branch nonempty/qualified); cancellation-aware heap walk. Derive and
+exclude the end of a partially preceding ANY newline only under this proof.
+K/empty groups before ^, literals and unanchored alternatives disable it.
+Nineteen controls observed RED before the leading-proof correction.
 
-Review correction: replace CFG all-path criterion with native first-significant
-AST branch proof plus the existing zero-width instruction whitelist; retain heap
-worklist/cancellation and derive the same excluded index. New K/empty-prefix and
-branch controls RED before source correction. No new matcher state or limits.
+Extend the requested malformed/continuation nullable virtual-fragment path with
+all remaining continuation-byte empty candidates inside a validated scalar,
+at most3 candidates total. The offset matrix already observed RED under
+NOTEMPTY_ATSTART; no consumption is allowed in these points. Preserve real
+fragment context, valid scalar search and existing gap logic. Shared bounded
+scalar-start/end helper, no saved/backtracked state or raised limits. Final
+whole-suite/six-platform verification is still required.

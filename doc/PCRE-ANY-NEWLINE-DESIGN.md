@@ -69,29 +69,29 @@ after publication and all known consumers migrated. Self-check enumerated all
 newline consumers and isolated the two old anchor checks; no unresolved interface
 or design question. No full PCRE/public release claim from this bounded tranche.
 
-## Tolerant UTF line-search discovery
+## Tolerant UTF search and nullable offset corrections
 
-The first implementation run exposed native STARTLINE fast-forward when the
-caller begins inside NEL/LS/PS. A pure zero-width line-anchored program searches
-for the next complete newline from the requested offset, so it skips the end of
-that partially preceding scalar. A consuming literal prefix or an unanchored
-alternative can instead use generic/literal search and retain the prior newline
-context. Add a bounded compiler proof over zero-width bytecode control flow: only
-capture/jump/split/atomic/line/end/accept instructions, every reachable accept
-requires a StartLine. Other instructions conservatively disable the proof. This
-pins ^, captures/noncapture/atomic wrappers, repeated line assertions/empty
-captures and all-line alternatives without changing ^X or ^|X. One immutable
-program flag and one derived per-call excluded line position; no saved frame or
-journal state, no limits raised. Reverse UTF inspection remains bounded by3.
-The offset matrix already observed RED; added wrapper/alternative controls get
-their own tests-only RED before this correction. Broader optimizers stay #102.
+Native STARTLINE fast-forward starts scanning at the requested byte. A valid
+newline scalar whose encoding began before that offset does not supply the
+first line candidate. Preserve that rule only for a proven zero-width program:
+all emitted instructions are captures/jumps/splits/atomic/line/end/accept, and
+the first AST node of every branch is StartLine or leading capture/noncapture/
+atomic groups which recursively meet that same nonempty-branch rule. Native
+is_startline (compile.c9016..9120) stops at K or an empty group before ^; it does
+not merely ask whether ^ appears somewhere on every accepting path. Literal
+prefixes and unanchored alternatives also stay outside this proof. Heap traversal
+and cancellation remain bounded by existing source/instruction/depth constraints.
+One immutable program flag and a per-call derived excluded position suffice;
+no saved/backtracked state or raised limits. Nineteen shape controls pin both
+positive and negative decisions and later complete newlines.
 
-The review found that every accepted path requiring ^ is insufficient: native
-is_startline examines only the first significant node in each branch and descends
-into leading groups. K/empty groups before ^ disable that optimization even if ^
-appears later. Preserve the zero-width bytecode whitelist (so no first-code-unit
-optimization competes), but replace CFG all-path proof with a bounded heap walk
-of first nodes: StartLine or recursively leading capture/noncapture/atomic groups,
-every branch nonempty and qualified. Tails are ignored by the leading proof, as
-in pinned is_startline at compile.c9016..9120. Additional K/empty/group/alternative
-controls observe RED before correction; ^K and captured-leading-^ remain positive.
+Separately, if a nullable tolerant match starts inside a valid UTF scalar and
+its first empty path is rejected (for example NOTEMPTY_ATSTART), native can try
+remaining continuation bytes as empty candidates before the next scalar. Extend
+the existing requested-offset virtual-fragment path by at most two further
+zero-width candidates. Consumption remains impossible there; ordinary valid
+scalar boundaries and malformed-run gaps keep their paths. A bounded shared
+scalar-start/end check validates the containing scalar. This corrects the
+pre-existing nullable policy in every newline mode, with no subject-byte rewrite,
+new frame/journal or unbounded search. The existing all-offset matrix observed
+this RED on LS from offset1; byte/UTF/native follow-up confirms the generic rule.

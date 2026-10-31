@@ -38,6 +38,13 @@ internal static class PcreByteNewlineExtensions {
 		return start < position && length > position - start ? start + length : -1;
 	}
 
+	internal static int PartialScalarEnd( ReadOnlySpan<byte> input, int position ) {
+		if ( position <= 0 || position >= input.Length || ( input[position] & 0xC0 ) != 0x80 ) { return -1; }
+		var start = ScalarStart( input, position, 0 );
+		return start < position && PcreUtf8.TryRead( input, start, out _, out var width ) && width > position - start
+			? start + width : -1;
+	}
+
 	private static int ScalarStart( ReadOnlySpan<byte> input, int position, int start ) {
 		// A UTF scalar has at most three continuation bytes; never cross the bound.
 		for ( var count = 0; count < 3 && position > start && ( input[position] & 0xC0 ) == 0x80; count++ ) { position--; }

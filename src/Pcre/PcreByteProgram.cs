@@ -112,12 +112,12 @@ internal sealed class PcreByteProgramCompiler {
 		return new( instructions.ToArray(), markCount, hasCaselessComparisons, utf8, matchInvalidUtf,
 			FindRequiredLiteralSuffix( root ), newline, HasExplicitNewline( root ), CanMatchEmptyAtAnyOffset( root ),
 			!utf8 && HasByteCrLfPrefix( root ), utf8 && HasUtfCrLfStartClass( root ), notEmpty, notEmptyAtStart,
-			matchInvalidUtf && newline == PcreByteNewline.Any && HasLineStartSearch() );
+			matchInvalidUtf && newline == PcreByteNewline.Any && HasLineStartSearch( root ) );
 	}
 
-	private bool HasLineStartSearch() {
-		// No character/first-code-unit optimization is possible for this subset.
-		// Prove every accepting control-flow path requires a multiline line start.
+	private bool HasLineStartSearch( PcreByteAlternatives root ) {
+		// Exclude character/first-code-unit search, then follow native is_startline:
+		// the first significant node in every branch must itself require ^.
 		foreach ( var instruction in instructions ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			if ( instruction.Opcode is not ( PcreByteOpcode.CaptureStart or PcreByteOpcode.CaptureEnd
@@ -125,29 +125,33 @@ internal sealed class PcreByteProgramCompiler {
 				or PcreByteOpcode.Split or PcreByteOpcode.Jump or PcreByteOpcode.AtomicEnter or PcreByteOpcode.AtomicExit
 				or PcreByteOpcode.Accept ) ) { return false; }
 		}
-		var visited = new bool[instructions.Count * 2];
-		var pending = new Stack<(int Pc, bool Line)>();
-		pending.Push( (0, false) );
-		var accepting = false;
-		while ( pending.TryPop( out var item ) ) {
+		var pending = new Stack<PcreByteNode>();
+		if ( !AddBranches( root ) ) { return false; }
+		while ( pending.TryPop( out var node ) ) {
 			cancellationToken.ThrowIfCancellationRequested();
-			var key = item.Pc * 2 + ( item.Line ? 1 : 0 );
-			if ( visited[key] ) { continue; }
-			visited[key] = true;
-			var instruction = instructions[item.Pc];
-			if ( instruction.Opcode == PcreByteOpcode.Accept ) {
-				if ( !item.Line ) { return false; }
-				accepting = true;
-			} else if ( instruction.Opcode == PcreByteOpcode.Jump ) {
-				pending.Push( (instruction.First, item.Line) );
-			} else if ( instruction.Opcode == PcreByteOpcode.Split ) {
-				pending.Push( (instruction.First, item.Line) );
-				pending.Push( (instruction.Second, item.Line) );
-			} else {
-				pending.Push( (item.Pc + 1, item.Line || instruction.Opcode == PcreByteOpcode.StartLine) );
+			switch ( node ) {
+				case PcreByteLineAnchor { IsStart: true }: break;
+				case PcreByteGroup group:
+					if ( !AddBranches( group.Body ) ) { return false; }
+					break;
+				case PcreByteNoncapturingGroup group:
+					if ( !AddBranches( group.Body ) ) { return false; }
+					break;
+				case PcreByteAtomic atomic: pending.Push( atomic.Child ); break;
+				default: return false;
 			}
 		}
-		return accepting;
+		return true;
+
+		bool AddBranches( PcreByteAlternatives body ) {
+			if ( body.Branches.Count == 0 ) { return false; }
+			foreach ( var branch in body.Branches ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				if ( branch.Count == 0 ) { return false; }
+				pending.Push( branch[0] );
+			}
+			return true;
+		}
 	}
 
 	private bool HasUtfCrLfStartClass( PcreByteAlternatives root ) {

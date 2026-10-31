@@ -151,7 +151,14 @@ internal static class PcreByteMatcher {
 					cancellationToken.ThrowIfCancellationRequested();
 					if ( existing.End == startOffset ) { hasContextCandidate = true; break; }
 				}
-				if ( !hasContextCandidate ) { fragments.Insert( 0, new( startOffset, startOffset ) ); }
+				if ( !hasContextCandidate ) {
+					// Starting inside a valid scalar makes its remaining continuation
+					// bytes zero-width candidates, just like a malformed byte run.
+					var end = Math.Max( startOffset + 1, PcreByteNewlineExtensions.PartialScalarEnd( input.Span, startOffset ) );
+					for ( var candidate = startOffset; candidate < end; candidate++ ) {
+						fragments.Insert( candidate - startOffset, new( candidate, candidate ) );
+					}
+				}
 			}
 			// Candidate positions share storage; a successful match returns before the storage is reused.
 			var captures = new PcreByteCapture?[groupCount + 1];
