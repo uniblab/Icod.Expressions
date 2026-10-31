@@ -227,6 +227,15 @@ public sealed class PcreAnyNewlineReferenceTests {
 	[InlineData( @"(?m)^$" )]
 	[InlineData( @"(?m)^X" )]
 	[InlineData( @"(?m)^|X" )]
+	[InlineData( @"(?m)\K^" )]
+	[InlineData( @"(?m)^\K" )]
+	[InlineData( @"(?m)()^" )]
+	[InlineData( @"(?m)(?:)^" )]
+	[InlineData( @"(?m)(?>)^" )]
+	[InlineData( @"(?m)(^|)^" )]
+	[InlineData( @"(?m)(?:^|)^" )]
+	[InlineData( @"(?m)(^)^" )]
+	[InlineData( @"(?m)$(?m:^)" )]
 	public void LineSearchFromInsideNewlineRetainsLaterLinesAndLiteralAlternatives( string body ) {
 		var pattern = "(*ANY)" + body;
 		var options = new PcreByteOptions { MatchInvalidUtf = true, Ucp = true };

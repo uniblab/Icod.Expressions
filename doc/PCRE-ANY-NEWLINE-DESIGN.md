@@ -85,3 +85,13 @@ program flag and one derived per-call excluded line position; no saved frame or
 journal state, no limits raised. Reverse UTF inspection remains bounded by3.
 The offset matrix already observed RED; added wrapper/alternative controls get
 their own tests-only RED before this correction. Broader optimizers stay #102.
+
+The review found that every accepted path requiring ^ is insufficient: native
+is_startline examines only the first significant node in each branch and descends
+into leading groups. K/empty groups before ^ disable that optimization even if ^
+appears later. Preserve the zero-width bytecode whitelist (so no first-code-unit
+optimization competes), but replace CFG all-path proof with a bounded heap walk
+of first nodes: StartLine or recursively leading capture/noncapture/atomic groups,
+every branch nonempty and qualified. Tails are ignored by the leading proof, as
+in pinned is_startline at compile.c9016..9120. Additional K/empty/group/alternative
+controls observe RED before correction; ^K and captured-leading-^ remain positive.

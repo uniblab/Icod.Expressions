@@ -51,3 +51,8 @@ Never apply to ^X/^|X, other modes or strict validation. Extend newline helper,
 Program and Matcher; no new saved frames/journal or raised limits. Additional
 LineSearchFromInsideNewline controls observe RED before correction; final full
 suite/all six gate remains required. This fulfills existing offset ReviewFocus.
+
+Review correction: replace CFG all-path criterion with native first-significant
+AST branch proof plus the existing zero-width instruction whitelist; retain heap
+worklist/cancellation and derive the same excluded index. New K/empty-prefix and
+branch controls RED before source correction. No new matcher state or limits.
