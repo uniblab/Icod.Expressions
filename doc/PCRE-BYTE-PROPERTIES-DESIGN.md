@@ -39,9 +39,12 @@ returns PcreByteClass. Poll cancellation on every projected byte.
 
 Byte brackets already union escaped PcreByteClass sets and apply outer negation.
 Property terms are not literal range endpoints and must not set explicit-CR/LF
-source metadata. Standalone property classes retain PrefixAny=false even for Any;
-ordinary brackets keep existing member/source provenance and all-byte prefix
-handling. Pin observable native CRLF candidates, mixed explicit literals, erased
+source metadata. Standalone properties carry the existing PrefixAny flag, because native byte
+OP_PROP/NOTPROP and OP_XCLASS scan through to a following literal. Byte bracket
+items retain this flag and OR it across property-bearing unions, before outer
+negation. Ordinary bitmap-only classes keep existing provenance. The existing
+bounded two-atom byte prefix proof consumes the flag; it does not become a
+global newline flag or change UTF prefix selection. Pin observable native CRLF candidates, mixed explicit literals, erased
 and DEFINE bodies; broader optimization remains #99/#102.
 
 Category namespace aliases gc:/gc=/General_Category are the existing library
@@ -87,3 +90,14 @@ Staging jobs must pass full/frozen214 on net8/9/10, no failed/skipped tests or b
 warnings/errors, configured extraction/workload/API/package gates. Verify exact
 reviewed head/tree, frozen35, whitespace/clean status before ready; user owns merge.
 Preserve worktree and ignored evidence.
+
+## Observed prefix correction
+
+The first implementation run exposed three new offset-matrix failures under
+ANYCRLF/CRLF/ANY: property Xps followed by A on CRLFA must enter at LF. Pinned
+JIT scan_prefix at6082..6100 and6149..6164 treats byte XCLASS and PROP/NOTPROP
+as unknown one-byte positions, unlike mandatory bitmap classes. Preserve that
+source distinction through projection, including mixed/duplicate property unions.
+Eighteen literal controls pin wrappers, unions, negations, casing and ordinary
+bitmap contrasts. Existing broader atomic/repeated/alternative/assertion/call
+prefix coverage remains #99; this correction extends the existing bounded proof.

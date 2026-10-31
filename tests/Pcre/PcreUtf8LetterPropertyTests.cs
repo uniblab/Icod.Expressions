@@ -70,8 +70,8 @@ public sealed class PcreUtf8LetterPropertyTests {
 
 	[Theory]
 	[InlineData( "\\p{Greek}", 0, true )]
-	[InlineData( "\\p{L}", 0, false )]
-	public void OtherPropertiesOrByteModeRemainExplicitlyUnsupported( string pattern, int offset, bool utf8 ) {
+	[InlineData( "\\p{Greek}", 0, false )]
+	public void UnimplementedScriptPropertiesRemainExplicitlyUnsupported( string pattern, int offset, bool utf8 ) {
 		var result = PcreByteCompiler.Compile( Encoding.UTF8.GetBytes( pattern ),
 			new PcreByteOptions { Utf8 = utf8 } );
 		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );

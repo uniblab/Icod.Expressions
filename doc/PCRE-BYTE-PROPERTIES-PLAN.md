@@ -25,7 +25,7 @@ Byte UCP remains rejected; Grep last; user owns merge; preserve evidence.
 ## Task1: Native fixtures/design and observed RED
 
 **Files:** New tests/Pcre/PcreBytePropertyReferenceTests.cs, design/plan;
-existing SpecialProperty byte-gate representative; design/matrix/resource/consumer inventories.
+existing SpecialProperty/Atom/Foundation/Bracket/Utf8Letter pending representatives; design/matrix/resource/consumer inventories.
 **Interfaces:** Existing Compile/Match and pinned reference only.
 
 - [ ] Pin literal256-bit native masks for all45 category/special names, normal/i; test atoms/P/caret/class complements over every byte. These catch missing projection, wrong category, complement order and ASCII-only folding.
@@ -36,15 +36,20 @@ existing SpecialProperty byte-gate representative; design/matrix/resource/consum
 
 ## Task2: Shared membership and projection
 
-**Files:** New src/Pcre/PcreScalarClassMembership.cs; Matcher and Parser; canonical inventories.
+**Files:** New src/Pcre/PcreScalarClassMembership.cs; Matcher, Parser and Program prefix comment; canonical inventories.
 **Interfaces:** PcreScalarClassMembership.Contains(PcreByteScalarClassKind,int,UnicodeCategory?=null,bool=false);
-Parser.CreatePropertyClass(PcreByteScalarClass) -> PcreByteNode. Existing VM/AST/public interfaces unchanged.
+Parser.CreatePropertyClass(PcreByteScalarClass) -> PcreByteNode; byte bracket item tuple adds bool PrefixAny. Existing VM/AST/public interfaces unchanged.
 
 - [ ] Move ScalarClassContains and its category helpers unchanged; update all four UTF matcher call sites, preserving work accounting/caseless arguments.
-- [ ] Remove byte-only ParseUnicodeProperty rejection, route both property success exits through CreatePropertyClass. UTF returns scalar node; byte projects Contains != Negated into PcreByteSet with cancellation per value, returns class with default provenance.
+- [ ] Remove byte-only ParseUnicodeProperty rejection, route both property success exits through CreatePropertyClass. UTF returns scalar node; byte projects Contains != Negated into PcreByteSet with cancellation per value, returns class with default newline provenance and PrefixAny=true. Retain/OR property PrefixAny across byte bracket item unions before outer negation; existing two-atom proof now documents PROP/NOTPROP/XCLASS.
 - [ ] Run full/frozen suites and configured gates across six native Staging platforms/frameworks. Fix material findings with observed RED before changes.
 - [ ] Separate whole-branch author self-review, exact head/tree/log audit, frozen35/whitespace/clean check; record proof, mark PR ready and stop for user merge.
 
 Pre-flight: Task1 uses existing compiler/matcher API; Task2 extraction keeps membership
 signature and semantics, and byte bracket Class path already unions projected sets.
 No shared-interface conflicts. Maintainer choice within standing authorization.
+
+First implementation run41158477483 macOSARM64/net8:5failed/4731passed/4736total,
+zero build warnings/errors. Two stale rejection representatives corrected; three
+new CRLF offset-profile failures motivate the source-provenance correction.
+Add18 focused native literal controls/tests-only, observe RED before metadata fix.
