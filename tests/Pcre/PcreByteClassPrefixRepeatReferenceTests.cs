@@ -112,7 +112,6 @@ public sealed class PcreByteClassPrefixRepeatReferenceTests {
 						Compare( reference, subject, offset, compiled.Match( subject, offset ), $"{pattern}/{hex}/{offset}/{ucp}" );
 					}
 				}
-				}
 			}
 		}
 	}
