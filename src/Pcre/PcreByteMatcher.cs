@@ -126,6 +126,9 @@ internal static class PcreByteMatcher {
 				// Strict mode must validate UTF-8 and the start boundary first.
 				return new( null, null );
 			}
+			// Native STARTLINE search begins at the requested byte, so a newline
+			// whose encoding began before it cannot supply the first line candidate.
+			var excludedLineStart = program.LineStartSearch ? PcreByteNewlineExtensions.PartialAnyNewlineEnd( input.Span, startOffset ) : -1;
 			if ( program.MatchInvalidUtf && !program.NotEmpty && !program.NotEmptyAtStart && program.Instructions.Length == 1
 				&& program.Instructions[0].Opcode == PcreByteOpcode.Accept ) {
 				// PCRE2 permits an empty pattern at the requested byte offset,
@@ -504,6 +507,7 @@ internal static class PcreByteMatcher {
 							if ( position == absoluteEnd ) { pc++; } else { failed = true; }
 							break;
 						case PcreByteOpcode.StartLine:
+							if ( position == excludedLineStart ) { failed = true; break; }
 							if ( position == 0 || ( position > fragment.Start
 							&& ( position < subjectEnd || position == subjectEnd && position < absoluteEnd )
 								&& ( program.Newline == PcreByteNewline.Any

@@ -26,13 +26,21 @@ internal static class PcreByteNewlineExtensions {
 	internal static bool IsAnyBefore( ReadOnlySpan<byte> input, int position, int start, bool utf8 ) {
 		var previous = position - 1;
 		if ( previous < start ) { return false; }
-		if ( utf8 ) {
-			// A UTF scalar has at most three continuation bytes; never cross a fragment.
-			for ( var count = 0; count < 3 && previous > start && ( input[previous] & 0xC0 ) == 0x80; count++ ) {
-				previous--;
-			}
-		}
+		if ( utf8 ) { previous = ScalarStart( input, previous, start ); }
 		var length = AnyLengthAt( input, previous, position, utf8 );
 		return length > 0 && length == position - previous;
+	}
+
+	internal static int PartialAnyNewlineEnd( ReadOnlySpan<byte> input, int position ) {
+		if ( position <= 0 || position >= input.Length || ( input[position] & 0xC0 ) != 0x80 ) { return -1; }
+		var start = ScalarStart( input, position, 0 );
+		var length = AnyLengthAt( input, start, input.Length, true );
+		return start < position && length > position - start ? start + length : -1;
+	}
+
+	private static int ScalarStart( ReadOnlySpan<byte> input, int position, int start ) {
+		// A UTF scalar has at most three continuation bytes; never cross the bound.
+		for ( var count = 0; count < 3 && position > start && ( input[position] & 0xC0 ) == 0x80; count++ ) { position--; }
+		return position;
 	}
 }

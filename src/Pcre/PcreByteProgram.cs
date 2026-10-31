@@ -49,7 +49,8 @@ internal sealed record PcreByteInstruction(
 internal sealed record PcreByteProgram(
 	PcreByteInstruction[] Instructions, int MarkCount, bool HasCaselessComparisons, bool Utf8, bool MatchInvalidUtf,
 	ReadOnlyMemory<byte> RequiredLiteralSuffix, PcreByteNewline Newline, bool ExplicitNewline,
-	bool CanMatchEmptyAtAnyOffset, bool ByteCrLfPrefix, bool UtfCrLfStartClass, bool NotEmpty, bool NotEmptyAtStart
+	bool CanMatchEmptyAtAnyOffset, bool ByteCrLfPrefix, bool UtfCrLfStartClass, bool NotEmpty, bool NotEmptyAtStart,
+	bool LineStartSearch
 ) {
 	internal bool AnyCrLfNewline => Newline == PcreByteNewline.AnyCrLf;
 	internal byte NewlineCharacter => Newline.Character();
@@ -110,7 +111,43 @@ internal sealed class PcreByteProgramCompiler {
 		foreach ( var call in calls ) { Patch( call.Instruction, entries[call.Number], call.Number ); }
 		return new( instructions.ToArray(), markCount, hasCaselessComparisons, utf8, matchInvalidUtf,
 			FindRequiredLiteralSuffix( root ), newline, HasExplicitNewline( root ), CanMatchEmptyAtAnyOffset( root ),
-			!utf8 && HasByteCrLfPrefix( root ), utf8 && HasUtfCrLfStartClass( root ), notEmpty, notEmptyAtStart );
+			!utf8 && HasByteCrLfPrefix( root ), utf8 && HasUtfCrLfStartClass( root ), notEmpty, notEmptyAtStart,
+			matchInvalidUtf && newline == PcreByteNewline.Any && HasLineStartSearch() );
+	}
+
+	private bool HasLineStartSearch() {
+		// No character/first-code-unit optimization is possible for this subset.
+		// Prove every accepting control-flow path requires a multiline line start.
+		foreach ( var instruction in instructions ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( instruction.Opcode is not ( PcreByteOpcode.CaptureStart or PcreByteOpcode.CaptureEnd
+				or PcreByteOpcode.StartLine or PcreByteOpcode.EndLine or PcreByteOpcode.EndBeforeFinalLf or PcreByteOpcode.End
+				or PcreByteOpcode.Split or PcreByteOpcode.Jump or PcreByteOpcode.AtomicEnter or PcreByteOpcode.AtomicExit
+				or PcreByteOpcode.Accept ) ) { return false; }
+		}
+		var visited = new bool[instructions.Count * 2];
+		var pending = new Stack<(int Pc, bool Line)>();
+		pending.Push( (0, false) );
+		var accepting = false;
+		while ( pending.TryPop( out var item ) ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			var key = item.Pc * 2 + ( item.Line ? 1 : 0 );
+			if ( visited[key] ) { continue; }
+			visited[key] = true;
+			var instruction = instructions[item.Pc];
+			if ( instruction.Opcode == PcreByteOpcode.Accept ) {
+				if ( !item.Line ) { return false; }
+				accepting = true;
+			} else if ( instruction.Opcode == PcreByteOpcode.Jump ) {
+				pending.Push( (instruction.First, item.Line) );
+			} else if ( instruction.Opcode == PcreByteOpcode.Split ) {
+				pending.Push( (instruction.First, item.Line) );
+				pending.Push( (instruction.Second, item.Line) );
+			} else {
+				pending.Push( (item.Pc + 1, item.Line || instruction.Opcode == PcreByteOpcode.StartLine) );
+			}
+		}
+		return accepting;
 	}
 
 	private bool HasUtfCrLfStartClass( PcreByteAlternatives root ) {
