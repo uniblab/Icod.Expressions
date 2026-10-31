@@ -86,8 +86,13 @@ backreference/behind; literal spans pin scopes, resets, captures, calls/retries,
 UTF contrast and CRLF prefix controls. Adjacent-byte word tests cover all values
 against representatives in both orders, including raw continuation-looking bytes.
 Every-offset/newline, grammar, projection-work, budget and cancellation controls
-remain. Replace three historical UCP gates with positive byte semantics, preserving
+remain. Replace historical UCP rejection assertions with positive byte semantics, preserving
 counts and non-UCP/UTF controls. Tests-only draft and observed expected RED precede
 source. Final author self-review (no subagents), all six native Staging full/frozen214
 net8/9/10 suites and configured gates, exact head/tree/frozen35/whitespace/clean
 proof precede ready. User owns merge; preserve evidence.
+
+First implementation run41162203194 Linuxx64/net8 passed all399 new cases;
+4fail/5149pass/5153total came from two old UCP-rejection assertions repeated
+by two parameter rows. Replace them with positive ASCII-restricted byte-UCP
+checks; production remains unchanged. No count changes.

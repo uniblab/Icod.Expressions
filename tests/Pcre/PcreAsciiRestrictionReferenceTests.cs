@@ -171,8 +171,10 @@ public sealed class PcreAsciiRestrictionReferenceTests {
 		Assert.False( negativeReference.Match( nonword ).Success );
 		Compare( negativeReference, nonword, 0, Compile( negative,
 			Options( utf8: utf8, ucp: false ) ).Match( nonword ), negative );
-		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax,
-			PcreByteCompiler.Compile( "(?a)\\w"u8.ToArray(), new PcreByteOptions { Ucp = true } ).Diagnostic?.Code );
+		var byteUcp = PcreByteCompiler.Compile( "(?a)\\w"u8.ToArray(), new PcreByteOptions { Ucp = true } );
+		Assert.True( byteUcp.IsSuccess, byteUcp.Diagnostic?.Message );
+		Assert.Equal( 1, byteUcp.Pattern!.Match( "a"u8.ToArray() ).Match?.ByteLength );
+		Assert.Null( byteUcp.Pattern.Match( new byte[] { 0xE9 } ).Match );
 	}
 
 	[Theory]

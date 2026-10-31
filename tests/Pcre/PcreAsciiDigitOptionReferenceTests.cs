@@ -106,8 +106,10 @@ public sealed class PcreAsciiDigitOptionReferenceTests {
 			Assert.False( reference.Match( subject ).Success );
 			Compare( reference, subject, 0, Compile( pattern, Options( ucp: false ) ).Match( subject ), pattern );
 		}
-		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax,
-			PcreByteCompiler.Compile( "(?aD)\\d"u8.ToArray(), new PcreByteOptions { Ucp = true } ).Diagnostic?.Code );
+		var byteUcp = PcreByteCompiler.Compile( "(?aD)\\d"u8.ToArray(), new PcreByteOptions { Ucp = true } );
+		Assert.True( byteUcp.IsSuccess, byteUcp.Diagnostic?.Message );
+		Assert.Equal( 1, byteUcp.Pattern!.Match( "3"u8.ToArray() ).Match?.ByteLength );
+		Assert.Null( byteUcp.Pattern.Match( new byte[] { 0xB2 } ).Match );
 	}
 
 	[Theory]

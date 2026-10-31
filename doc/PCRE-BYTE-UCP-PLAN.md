@@ -24,7 +24,7 @@ Grep last; CommandFramework untouched. User owns merge; preserve worktree/eviden
 
 ## Task1: Native contract/tests and observed RED
 
-**Files:** New tests/Pcre/PcreByteUcpReferenceTests.cs, design/plan; UtfStartDirective, Utf8Digit and ByteProperty historical gates; canonical inventories.
+**Files:** New tests/Pcre/PcreByteUcpReferenceTests.cs, design/plan; UtfStartDirective, Utf8Digit, ByteProperty, AsciiRestriction and AsciiDigit historical gates; canonical inventories.
 **Interfaces:** Existing Compile/Match/native reference only.
 
 - [ ] Literal native masks: predicates and all256 case pairs. Test byte literals/classes/equal ranges/backrefs/optimized assertions; boundary adjacency uses independent word masks. Focus1..3.
@@ -46,3 +46,8 @@ Pre-flight: one ProgramCompiler caller, four projected predicate families share 
 membership/factory and byte bracket tuple; fixed assertion/readers stay byte-aware.
 POSIX resolver extraction must preserve scanner-specific diagnostic ownership. No
 saved-frame or public interface conflicts. Maintainer choices within standing authority.
+
+First implementation run41162203194 Linuxx64/net8 passed all399 new cases;
+4fail/5149pass/5153total came from two old UCP-rejection assertions repeated
+by two parameter rows. Replace them with positive ASCII-restricted byte-UCP
+checks; production remains unchanged. No count changes.
