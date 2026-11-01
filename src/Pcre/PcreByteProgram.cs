@@ -165,11 +165,18 @@ internal sealed class PcreByteProgramCompiler {
 	}
 
 	private PcreByteScalarSet? FindUtfCrLfSkipRepeatSet( PcreByteAlternatives root ) {
-		// Native type_skip accelerates a direct root-leading class PLUS. Explicit
-		// atomic groups wrap a noncapturing group; a possessive quantifier wraps
-		// the repeat itself. ASCII and wide classes share this recovery.
+		// Native type_skip follows up to four leading noncapture groups to PLUS.
+		// Explicit atomic groups wrap a noncapturing group; a possessive quantifier
+		// wraps the repeat itself. ASCII and wide classes share this recovery.
 		if ( root.Branches.Count != 1 || root.Branches[0].Count == 0 ) { return null; }
 		var node = root.Branches[0][0];
+		var groupDepth = 0;
+		while ( node is PcreByteNoncapturingGroup group ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( groupDepth >= 4 || group.Body.Branches.Count != 1 || group.Body.Branches[0].Count == 0 ) { return null; }
+			groupDepth++;
+			node = group.Body.Branches[0][0];
+		}
 		if ( node is PcreByteAtomic atomic ) { node = atomic.Child; }
 		if ( node is not PcreByteRepeat { Minimum: 1, Maximum: int.MaxValue,
 			Child: PcreByteScalarSet { Negated: false } set } || !set.Predicates.IsEmpty ) { return null; }
