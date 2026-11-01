@@ -178,8 +178,8 @@ public sealed class PcreByteBitmapPrefixRepeatReferenceTests {
 	[Theory]
 	[InlineData( @"[\D]A", "0D0A41", 13 )]
 	[InlineData( @"[\D]{1}A", "0D0A41", 13 )]
-	[InlineData( @"[\v]{2}A", "0D0A4241", 16 )]
-	public void OrdinaryAtomsAndSparseBitmapsPreservePriorWork( string body, string hex, int budget ) {
+	[InlineData( @"[\v]{2}A", "0D0A4241", 22 )]
+	public void BitmapEligibilityPreservesChargedWork( string body, string hex, int budget ) {
 		var pattern = String.Concat( "(*ANYCRLF)", body );
 		var subject = Convert.FromHexString( hex );
 		foreach ( var observed in new[] { false, true } ) {

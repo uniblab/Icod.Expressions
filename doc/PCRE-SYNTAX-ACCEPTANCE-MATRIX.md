@@ -236,3 +236,18 @@ Parser/AST/membership/source flags, matcher, journals and limits are unchanged.
 Sparse withoutFF/metadata/general optimizer work remains #99; UTF #102 and unsafe
 native #100 separate. See `PCRE-BYTE-FF-BITMAP-PREFIX-DESIGN.md` and
 `PCRE-BYTE-FF-BITMAP-PREFIX-PLAN.md`. No public/release/consumer change.
+
+## Homogeneous sparse byte head prefixes
+
+`PcreByteSparseHeadPrefixReferenceTests` pins one direct exact sparse Bitmap repeat
+as the complete consuming head before a sole final literal. Both CR/LF are required;
+the CR prefix overlaps any successful LF prefix, so the shared selector preserves
+results across native literal/pair/table choices. A compile-local bool rejects any
+additional consuming prefix width after the admitted sparse repeat. Broad/FF mixed
+paths retain existing behavior; count1/ordinary/copied bitmap atoms stay excluded.
+No parser/AST/membership/source-flag/matcher/VM/limit changes. Two earlier eligible
+sparse no-match budgets change16->22 for a paid comparison and failed LF attempt;
+other expectations/frozen GNU tests remain unchanged. Mixed sparse and broader
+optimizer/metadata remains #99; UTF #102 and unsafe native #100 separate. See
+`PCRE-BYTE-SPARSE-HEAD-PREFIX-DESIGN.md` and `PCRE-BYTE-SPARSE-HEAD-PREFIX-PLAN.md`.
+No public/release/consumer change.
