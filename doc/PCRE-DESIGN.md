@@ -393,3 +393,23 @@ pinned to native10.48 JIT. No-LF default-budget controls retain their behavior.
 All6108 baseline expectations/frozen35 unchanged. Broader102, byte99 and unsafe100
 remain separate; no full PCRE/release/consumer claim. See
 PCRE-UTF-DEEP-REPEAT-ENTRY-DESIGN.md and PCRE-UTF-DEEP-REPEAT-ENTRY-PLAN.md.
+
+
+## UTF capture-wrapper repeat recovery
+
+PcreUtfCaptureRepeatRecoveryReferenceTests extends leading-class Set/Skip
+classification through ordinary capturing and noncapturing groups with one shared
+depth count. Positive predicate-free CR-excluding/LF-admitting class PLUS retains
+existing endpoint recovery through depth4; deeper recognized chains retain LF
+entry without a repeat-skip marker. Greedy/lazy/possessive/count and named/local
+case forms reuse existing byte captures and comparisons.
+A bounded whole-root compiler check admits capture chains only without reference/
+call/conditional/unknown dependencies, conservatively including zero-count/DEFINE
+contexts. It charges1000 combined branch/node visits and bounds its heap queue,
+checking cancellation; noncapture-only classification is unchanged. Broader native
+capture dependency/source pruning and optimizer102 remain pending.
+No parser/AST/membership/source flags/UTF validation/matcher/program/instruction
+layout/Step/capture/frame/journal/runtime state or resource-ceiling change. All6187
+baseline expectations/frozen35 unchanged. Byte99/unsafe100 separate; no full PCRE,
+public/package/release/consumer claim. See
+PCRE-UTF-CAPTURE-REPEAT-RECOVERY-DESIGN.md and PCRE-UTF-CAPTURE-REPEAT-RECOVERY-PLAN.md.
