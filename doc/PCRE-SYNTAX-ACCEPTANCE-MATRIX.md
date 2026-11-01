@@ -251,3 +251,18 @@ other expectations/frozen GNU tests remain unchanged. Mixed sparse and broader
 optimizer/metadata remains #99; UTF #102 and unsafe native #100 separate. See
 `PCRE-BYTE-SPARSE-HEAD-PREFIX-DESIGN.md` and `PCRE-BYTE-SPARSE-HEAD-PREFIX-PLAN.md`.
 No public/release/consumer change.
+
+
+## Wide UTF leading-class candidate entry
+
+`PcreUtfWideStartClassReferenceTests` extends the existing positive predicate-free
+UTF start-class proof to scalar ranges in0..0x10FFFF. Native property-free XCLASS
+leading-byte maps preserve ASCII CR/LF membership even with wide scalar ranges.
+Every leading class must still exclude CR and at least one must admit LF; current
+wrapper/branch/required-variable/exact1 repeat restrictions and cumulative1000
+proof visits remain. No-LF classes retain the prior default-budget skip.
+Only compiler admission changes; normalized membership, source flags, UTF caller/
+fragment validation, captures and charged work/cancellation remain shared. All
+existing expectations/frozen35 remain unchanged. Broader optimizer #102, byte #99
+and unsafe native #100 remain separate. See `PCRE-UTF-WIDE-START-CLASS-DESIGN.md`
+and `PCRE-UTF-WIDE-START-CLASS-PLAN.md`. No public/release/consumer change.

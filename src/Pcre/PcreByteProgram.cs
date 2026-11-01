@@ -163,7 +163,8 @@ internal sealed class PcreByteProgramCompiler {
 
 	private bool HasUtfCrLfStartClass( PcreByteAlternatives root ) {
 		// Native prefix/start-bitmap scanning rejects CR before VM entry when
-		// every initial mandatory ASCII class excludes it. Keep this independent
+		// every initial mandatory positive class excludes it. Wider UTF-8 leaders
+		// do not change ASCII CR/LF membership. Keep this independent
 		// of source newline metadata and avoid recursive compile-time traversal.
 		var pending = new Stack<PcreByteNode>();
 		var visits = 1; // Root; conservatively include every proof node below.
@@ -192,7 +193,7 @@ internal sealed class PcreByteProgramCompiler {
 				case PcreByteScalarSet { Negated: false } set when set.Predicates.IsEmpty && !set.Ranges.IsEmpty:
 					foreach ( var range in set.Ranges.Span ) {
 						cancellationToken.ThrowIfCancellationRequested();
-						if ( range.Start < 0 || range.End > 127
+						if ( range.Start < 0 || range.End > 0x10FFFF
 							|| range.Start <= '\r' && range.End >= '\r' ) { return false; }
 						canStartAtLf |= range.Start <= '\n' && range.End >= '\n';
 					}
