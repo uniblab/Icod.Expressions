@@ -343,3 +343,22 @@ unchanged. Wide beyond-depth4, capture/alternative/other iterator provenance and
 broader102 remain pending; byte99/unsafe100 separate. See
 PCRE-UTF-GROUP-REPEAT-RECOVERY-DESIGN.md and PCRE-UTF-GROUP-REPEAT-RECOVERY-PLAN.md.
 No public/release/consumer change.
+
+
+## UTF deep noncapture repeat entry
+
+PcreUtfDeepRepeatEntryReferenceTests separates leading-class recognition from
+native type_skip acceleration. A positive predicate-free class PLUS reached through
+a single-branch nonempty chain of unquantified noncapturing groups can retain UTF
+bitmap LF entry beyond four groups; only depths0..4 emit the existing repeat-skip
+marker. Greedy/lazy/possessive and counted{1,} forms share terminal guards. Explicit
+atomic, capture/alternative/quantified prefix contexts remain conservative.
+Compile-only (Set, Skip) classification reuses leaf identity; no matcher, bytecode
+record layout, saved state, Step, capture/frame/journal or resource-limit change.
+The existing cumulative1000-node start-class proof and parser256 ceiling remain.
+Depth4/5/6/34/200 literal spans, all caller offsets, six newlines, UCP, strict/
+tolerant UTF fragments, full captures, exact/exhausted work and cancellation are
+pinned to native10.48 JIT. No-LF default-budget controls retain their behavior.
+All6108 baseline expectations/frozen35 unchanged. Broader102, byte99 and unsafe100
+remain separate; no full PCRE/release/consumer claim. See
+PCRE-UTF-DEEP-REPEAT-ENTRY-DESIGN.md and PCRE-UTF-DEEP-REPEAT-ENTRY-PLAN.md.
