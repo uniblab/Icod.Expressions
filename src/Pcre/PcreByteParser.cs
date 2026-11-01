@@ -411,7 +411,7 @@ internal sealed partial class PcreByteParser {
 				// followed by CRRANGE stop prefix scanning.
 				var prefixKind = singletonNegation || members == PcreByteSet.AllBytes && !xclassProperty
 					? PcreByteClassPrefix.Exact
-					: propertyPrefix || members == PcreByteSet.AllBytes ? PcreByteClassPrefix.Atom : PcreByteClassPrefix.None;
+					: propertyPrefix || members == PcreByteSet.AllBytes ? PcreByteClassPrefix.Atom : PcreByteClassPrefix.Bitmap;
 				return new PcreByteClass( members, explicitNewline && !singletonNegation,
 					prefixKind );
 			}

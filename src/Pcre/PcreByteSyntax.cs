@@ -43,12 +43,13 @@ internal sealed record PcreByteScalarSet(
 	bool ExplicitNewline
 ) : PcreByteNode;
 
-internal enum PcreByteClassPrefix { None, Atom, Exact, AnyProperty }
+internal enum PcreByteClassPrefix { None, Atom, Exact, AnyProperty, Bitmap }
 
 internal sealed record PcreByteClass(
 	PcreByteSet Set, bool ExplicitNewline = false, PcreByteClassPrefix PrefixKind = PcreByteClassPrefix.None
 ) : PcreByteNode {
-	internal bool PrefixAny => PrefixKind != PcreByteClassPrefix.None;
+	internal bool PrefixAny => PrefixKind is PcreByteClassPrefix.Atom
+		or PcreByteClassPrefix.Exact or PcreByteClassPrefix.AnyProperty;
 }
 
 internal sealed record PcreByteBackreference(

@@ -210,3 +210,17 @@ version changes. The named mixed-property discrepancy from #120 is addressed;
 broader optimizer/positive-interior metadata remains #99, UTF #102 and unsafe
 native #100 remain separate. See `PCRE-BYTE-ANY-PROPERTY-MEMBERSHIP-DESIGN.md`
 and `PCRE-BYTE-ANY-PROPERTY-MEMBERSHIP-PLAN.md`. No public/release/consumer change.
+
+## Broad byte bitmap repeat prefixes
+
+`PcreByteBitmapPrefixRepeatReferenceTests` pins ordinary byte bitmap exact repeats
+that expose a sole final literal. Bitmap source provenance stays excluded from
+ordinary atom admission; direct exact min>=2 repeats qualify only with CR and LF
+membership and at least six distinct bytes, matching native's broad scan count.
+Count1/unquantified/group-copy bitmaps, sparse/CR-excluding sets and direct H/V
+lowerings retain prior boundaries. Existing proof1000/window12, conditional
+selector, captures, work/cancellation and limits remain shared. Byte membership,
+source flags, matcher and journals are unchanged. Broader bitmap/source-metadata
+and optimizer work stays #99; UTF #102 and unsafe native #100 remain separate.
+See `PCRE-BYTE-BITMAP-PREFIX-REPEATS-DESIGN.md` and
+`PCRE-BYTE-BITMAP-PREFIX-REPEATS-PLAN.md`. No public/release/consumer change.
