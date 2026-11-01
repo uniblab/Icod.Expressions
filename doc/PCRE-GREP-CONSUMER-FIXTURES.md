@@ -267,3 +267,15 @@ source flags, matcher and journals are unchanged. Broader bitmap/source-metadata
 and optimizer work stays #99; UTF #102 and unsafe native #100 remain separate.
 See `PCRE-BYTE-BITMAP-PREFIX-REPEATS-DESIGN.md` and
 `PCRE-BYTE-BITMAP-PREFIX-REPEATS-PLAN.md`. No public/release/consumer change.
+
+## Byte-FF bitmap repeat prefixes
+
+`PcreByteFfBitmapPrefixReferenceTests` pins native bitmap scan broad255 when the
+effective byteFF bit is set, even for three/four/five-member sets. Existing Bitmap
+provenance, direct exact min>=2, CR/LF, width1..11/window12, proof1000 and sole-final-
+literal selector remain. The helper now accepts effective FF OR old popcount>=6;
+ordinary/count1/group-copy and excluded-FF sparse controls retain prior boundaries.
+Parser/AST/membership/source flags, matcher, journals and limits are unchanged.
+Sparse withoutFF/metadata/general optimizer work remains #99; UTF #102 and unsafe
+native #100 separate. See `PCRE-BYTE-FF-BITMAP-PREFIX-DESIGN.md` and
+`PCRE-BYTE-FF-BITMAP-PREFIX-PLAN.md`. No public/release/consumer change.

@@ -297,10 +297,11 @@ internal sealed class PcreByteProgramCompiler {
 			restricted |= !unrestricted;
 			return true;
 		}
+		// Native treats effective byteFF membership as broad even for small sets.
 		static bool IsBroadBitmap( PcreByteSet set ) =>
 			set.Contains( (byte)'\r' ) && set.Contains( (byte)'\n' )
-				&& BitOperations.PopCount( set.A ) + BitOperations.PopCount( set.B )
-					+ BitOperations.PopCount( set.C ) + BitOperations.PopCount( set.D ) >= 6;
+				&& ( set.Contains( 0xFF ) || BitOperations.PopCount( set.A ) + BitOperations.PopCount( set.B )
+					+ BitOperations.PopCount( set.C ) + BitOperations.PopCount( set.D ) >= 6 );
 	}
 
 	private static bool CanMatchEmptyAtAnyOffset( PcreByteAlternatives alternatives ) {
