@@ -173,8 +173,8 @@ public sealed class PcreByteFfBitmapPrefixReferenceTests {
 	[Theory]
 	[InlineData( @"[^\x00-\x09\x0b-\x0c\x0e-\xfe]A", "0D0A41", 11 )]
 	[InlineData( @"[^\x00-\x09\x0b-\x0c\x0e-\xfe]{1}A", "0D0A41", 11 )]
-	[InlineData( @"[^\x00-\x09\x0b-\x0c\x0e-\xfd\xff]{2}A", "0D0AFF41", 16 )]
-	public void OrdinaryAtomsAndSparseBitmapsPreservePriorWork( string body, string hex, int budget ) {
+	[InlineData( @"[^\x00-\x09\x0b-\x0c\x0e-\xfd\xff]{2}A", "0D0AFF41", 22 )]
+	public void BitmapEligibilityPreservesChargedWork( string body, string hex, int budget ) {
 		var pattern = String.Concat( "(*ANYCRLF)", body );
 		var subject = Convert.FromHexString( hex );
 		foreach ( var observed in new[] { false, true } ) {
