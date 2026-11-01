@@ -457,3 +457,20 @@ other expectations/frozen GNU tests remain unchanged. Mixed sparse and broader
 optimizer/metadata remains #99; UTF #102 and unsafe native #100 separate. See
 `PCRE-BYTE-SPARSE-HEAD-PREFIX-DESIGN.md` and `PCRE-BYTE-SPARSE-HEAD-PREFIX-PLAN.md`.
 No public/release/consumer change.
+
+
+## Wide UTF leading-class candidate entry
+
+PcreUtfWideStartClassReferenceTests extends the existing positive predicate-free
+UTF start-class proof to scalar ranges in0..0x10FFFF. Every leading class excludes
+CR and at least one admits LF; bounded wrappers/branches/repeats and proof1000 stay.
+No-LF classes retain prior skip/work. A direct root-leading wide class PLUS (also
+lazy/possessive) needs native type_skip recovery: marked scalar instructions retain
+one per-attempt integer high-water endpoint from already charged comparisons.
+After a failed attempt, a CRLF at that endpoint is skipped as native bumpalong
+requires. Recursive/assertion execution cannot update it; frames/journal unchanged.
+Nested/alternative wide unbounded class PLUS contexts remain outside admission.
+Membership/source flags/UTF validation/captures/Step and all resource ceilings stay
+shared. All existing expectations/frozen35 unchanged. Broader optimizer #102, byte
+#99 and unsafe native #100 remain separate. See PCRE-UTF-WIDE-START-CLASS-DESIGN.md
+and PCRE-UTF-WIDE-START-CLASS-PLAN.md. No public/release/consumer change.

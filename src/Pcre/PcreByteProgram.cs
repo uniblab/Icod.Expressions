@@ -44,7 +44,8 @@ internal sealed record PcreByteInstruction(
 	PcreByteOpcode Opcode, int First = 0, int Second = 0, PcreByteSet Set = default,
 	ReadOnlyMemory<byte> Bytes = default, ReadOnlyMemory<PcreByteScalarRange> Ranges = default,
 	ReadOnlyMemory<PcreByteScalarPredicate> Predicates = default, UnicodeCategory? Category = null,
-	bool Caseless = false, bool CaselessRestricted = false, ReadOnlyMemory<int> CaptureNumbers = default
+	bool Caseless = false, bool CaselessRestricted = false, ReadOnlyMemory<int> CaptureNumbers = default,
+	bool SkipCrLfAfterRepeat = false
 );
 
 internal readonly record struct PcreBytePrefixLiteral( int ByteOffset, int Value, bool Caseless, bool CaselessRestricted );
@@ -82,6 +83,7 @@ internal sealed class PcreByteProgramCompiler {
 	private int countedOffset = -1;
 	private int lastCountedOffset = -1;
 	private int compileVisits;
+	private PcreByteScalarSet? utfCrLfSkipRepeatSet;
 	private readonly List<(int Instruction, int Number)> calls = new();
 
 	internal PcreByteProgramCompiler( CancellationToken cancellationToken, bool utf8, bool matchInvalidUtf,
@@ -97,6 +99,7 @@ internal sealed class PcreByteProgramCompiler {
 	}
 
 	internal PcreByteProgram Compile( PcreByteAlternatives root, IReadOnlyDictionary<int, PcreByteGroup> targets ) {
+		utfCrLfSkipRepeatSet = utf8 ? FindUtfCrLfSkipRepeatSet( root ) : null;
 		CompileAlternatives( root );
 		while ( compileWork.TryPop( out var next ) ) {
 			cancellationToken.ThrowIfCancellationRequested();
@@ -161,9 +164,30 @@ internal sealed class PcreByteProgramCompiler {
 		}
 	}
 
+	private PcreByteScalarSet? FindUtfCrLfSkipRepeatSet( PcreByteAlternatives root ) {
+		// Native type_skip accelerates a direct root-leading class PLUS. Explicit
+		// atomic groups wrap a noncapturing group; a possessive quantifier wraps
+		// the repeat itself. Keep other iterator contexts outside the wider proof.
+		if ( root.Branches.Count != 1 || root.Branches[0].Count == 0 ) { return null; }
+		var node = root.Branches[0][0];
+		if ( node is PcreByteAtomic atomic ) { node = atomic.Child; }
+		if ( node is not PcreByteRepeat { Minimum: 1, Maximum: int.MaxValue,
+			Child: PcreByteScalarSet { Negated: false } set } || !set.Predicates.IsEmpty ) { return null; }
+		var wide = false;
+		var lf = false;
+		foreach ( var range in set.Ranges.Span ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( range.Start <= '\r' && range.End >= '\r' ) { return null; }
+			wide |= range.End > 127;
+			lf |= range.Start <= '\n' && range.End >= '\n';
+		}
+		return wide && lf ? set : null;
+	}
+
 	private bool HasUtfCrLfStartClass( PcreByteAlternatives root ) {
 		// Native prefix/start-bitmap scanning rejects CR before VM entry when
-		// every initial mandatory ASCII class excludes it. Keep this independent
+		// every initial mandatory positive class excludes it. Wider UTF-8 leaders
+		// do not change ASCII CR/LF membership. Keep this independent
 		// of source newline metadata and avoid recursive compile-time traversal.
 		var pending = new Stack<PcreByteNode>();
 		var visits = 1; // Root; conservatively include every proof node below.
@@ -184,6 +208,15 @@ internal sealed class PcreByteProgramCompiler {
 				case PcreByteAtomic atomic:
 					pending.Push( atomic.Child );
 					break;
+				case PcreByteRepeat { Minimum: 1, Maximum: int.MaxValue, Child: PcreByteScalarSet repeatedSet }:
+					if ( !ReferenceEquals( repeatedSet, utfCrLfSkipRepeatSet ) ) {
+						foreach ( var range in repeatedSet.Ranges.Span ) {
+							cancellationToken.ThrowIfCancellationRequested();
+							if ( range.End > 127 ) { return false; }
+						}
+					}
+					pending.Push( repeatedSet );
+					break;
 				case PcreByteRepeat repeat when repeat.Minimum >= 1
 					&& ( repeat.Minimum != repeat.Maximum || repeat.Minimum == 1 ):
 					// Exact larger repeats can expose later native prefix tests.
@@ -192,7 +225,7 @@ internal sealed class PcreByteProgramCompiler {
 				case PcreByteScalarSet { Negated: false } set when set.Predicates.IsEmpty && !set.Ranges.IsEmpty:
 					foreach ( var range in set.Ranges.Span ) {
 						cancellationToken.ThrowIfCancellationRequested();
-						if ( range.Start < 0 || range.End > 127
+						if ( range.Start < 0 || range.End > 0x10FFFF
 							|| range.Start <= '\r' && range.End >= '\r' ) { return false; }
 						canStartAtLf |= range.Start <= '\n' && range.End >= '\n';
 					}
@@ -404,11 +437,13 @@ internal sealed class PcreByteProgramCompiler {
 	private int Emit( PcreByteOpcode opcode, int first = 0, int second = 0, PcreByteSet set = default,
 		ReadOnlyMemory<byte> bytes = default, ReadOnlyMemory<PcreByteScalarRange> ranges = default,
 		ReadOnlyMemory<PcreByteScalarPredicate> predicates = default, UnicodeCategory? category = null,
-		bool caseless = false, bool caselessRestricted = false, ReadOnlyMemory<int> captureNumbers = default ) {
+		bool caseless = false, bool caselessRestricted = false, ReadOnlyMemory<int> captureNumbers = default,
+		bool skipCrLfAfterRepeat = false ) {
 		cancellationToken.ThrowIfCancellationRequested();
 		if ( instructions.Count >= MaximumInstructions ) { throw RepeatExpansionLimit(); }
 		var index = instructions.Count;
-		instructions.Add( new( opcode, first, second, set, bytes, ranges, predicates, category, caseless, caselessRestricted, captureNumbers ) );
+		instructions.Add( new( opcode, first, second, set, bytes, ranges, predicates, category, caseless, caselessRestricted,
+			captureNumbers, skipCrLfAfterRepeat ) );
 		hasCaselessComparisons |= caseless;
 		return index;
 	}
@@ -480,7 +515,9 @@ internal sealed class PcreByteProgramCompiler {
 				break;
 			case PcreByteScalarSet scalarSet:
 				Emit( PcreByteOpcode.ScalarSet, second: scalarSet.Negated ? 1 : 0,
-					ranges: scalarSet.Ranges, predicates: scalarSet.Predicates, caseless: scalarSet.Caseless, caselessRestricted: scalarSet.CaselessRestricted );
+					ranges: scalarSet.Ranges, predicates: scalarSet.Predicates, caseless: scalarSet.Caseless,
+					caselessRestricted: scalarSet.CaselessRestricted,
+					skipCrLfAfterRepeat: ReferenceEquals( scalarSet, utfCrLfSkipRepeatSet ) );
 				break;
 			case PcreByteClass characterClass:
 				Emit( PcreByteOpcode.Class, set: characterClass.Set, caseless: characterClass.Caseless, caselessRestricted: characterClass.CaselessRestricted );
