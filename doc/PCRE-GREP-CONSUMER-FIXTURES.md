@@ -311,3 +311,19 @@ Membership/source flags/UTF validation/captures/Step and all resource ceilings s
 shared. All existing expectations/frozen35 unchanged. Broader optimizer #102, byte
 #99 and unsafe native #100 remain separate. See PCRE-UTF-WIDE-START-CLASS-DESIGN.md
 and PCRE-UTF-WIDE-START-CLASS-PLAN.md. No public/release/consumer change.
+
+
+## ASCII UTF root-repeat recovery
+
+PcreUtfAsciiRepeatRecoveryReferenceTests pins native CLASS as well as XCLASS
+type_skip recovery for one direct first root positive predicate-free class PLUS,
+including lazy/possessive and counted{1,}. Remove only the width filter from the
+existing selector; retain root/first-node/min1/unbounded/CR-excluding/LF-admitting
+and source-shape guards. Existing immutable markers and per-attempt integer
+endpoints handle failed-run CRLF bumpalong without a matcher/Step/frame change.
+Correct native misses or later winners replace earlier false-positive LF matches;
+finite/min2/atomic/alternative/grouped-sequence and explicit-newline controls keep
+their behavior. All5941 prior expectations and frozen35 remain unchanged; no
+raised limits/new state. Broader102/byte99/unsafe100 remain separate. See
+PCRE-UTF-ASCII-REPEAT-RECOVERY-DESIGN.md and PCRE-UTF-ASCII-REPEAT-RECOVERY-PLAN.md.
+No public/release/consumer change.
