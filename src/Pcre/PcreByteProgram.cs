@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Numerics;
 using System.Text;
 
 namespace Icod.Expressions.Pcre;
@@ -249,9 +250,12 @@ internal sealed class PcreByteProgramCompiler {
 				case PcreByteRepeat { Child: PcreByteClass repeatedClass } repeat
 					when repeat.Minimum > 0 && repeat.Minimum == repeat.Maximum
 						&& ( repeatedClass.PrefixKind is PcreByteClassPrefix.Exact or PcreByteClassPrefix.AnyProperty
+							|| repeat.Minimum > 1 && repeatedClass.PrefixKind == PcreByteClassPrefix.Bitmap
+								&& IsBroadBitmap( repeatedClass.Set )
 							|| repeat.Minimum == 1 && repeatedClass.PrefixAny ):
 					// Native removes an XCLASS count1; larger exact XCLASS repeats
 					// stop at CRRANGE, unlike NOT/type/ALLANY repeats.
+					// Broad bitmap CRRANGE also continues; its count1/atoms do not.
 					if ( !AddWidth( repeat.Minimum, false ) ) { return default; }
 					break;
 				case PcreByteRepeat repeat
@@ -293,6 +297,10 @@ internal sealed class PcreByteProgramCompiler {
 			restricted |= !unrestricted;
 			return true;
 		}
+		static bool IsBroadBitmap( PcreByteSet set ) =>
+			set.Contains( (byte)'\r' ) && set.Contains( (byte)'\n' )
+				&& BitOperations.PopCount( set.A ) + BitOperations.PopCount( set.B )
+					+ BitOperations.PopCount( set.C ) + BitOperations.PopCount( set.D ) >= 6;
 	}
 
 	private static bool CanMatchEmptyAtAnyOffset( PcreByteAlternatives alternatives ) {
