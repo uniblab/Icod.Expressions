@@ -166,20 +166,28 @@ internal sealed class PcreByteProgramCompiler {
 	}
 
 	private (PcreByteScalarSet? Set, bool Skip) FindUtfCrLfLeadingRepeat( PcreByteAlternatives root ) {
-		// Native bitmap study recognizes deeper leading noncapture groups than
-		// type_skip, which follows only four groups to PLUS. Keep recognition
+		// Native bitmap study recognizes deeper leading groups than type_skip,
+		// which follows only four optimized groups to PLUS. Keep recognition
 		// separate from iterator acceleration so deeper repeats retain LF entry.
 		// Explicit atomic groups wrap a noncapturing group; a possessive quantifier
 		// wraps the repeat itself. ASCII and wide classes share this recovery.
 		if ( root.Branches.Count != 1 || root.Branches[0].Count == 0 ) { return default; }
 		var node = root.Branches[0][0];
 		var groupDepth = 0;
-		while ( node is PcreByteNoncapturingGroup group ) {
+		var hasCaptures = false;
+		while ( true ) {
 			cancellationToken.ThrowIfCancellationRequested();
-			if ( groupDepth >= MaximumStartClassVisits || group.Body.Branches.Count != 1
-				|| group.Body.Branches[0].Count == 0 ) { return default; }
+			var body = node switch {
+				PcreByteGroup group => group.Body,
+				PcreByteNoncapturingGroup group => group.Body,
+				_ => null
+			};
+			if ( body is null ) { break; }
+			if ( groupDepth >= MaximumStartClassVisits || body.Branches.Count != 1
+				|| body.Branches[0].Count == 0 ) { return default; }
+			hasCaptures |= node is PcreByteGroup;
 			groupDepth++;
-			node = group.Body.Branches[0][0];
+			node = body.Branches[0][0];
 		}
 		if ( node is PcreByteAtomic atomic ) { node = atomic.Child; }
 		if ( node is not PcreByteRepeat { Minimum: 1, Maximum: int.MaxValue,
@@ -190,7 +198,57 @@ internal sealed class PcreByteProgramCompiler {
 			if ( range.Start <= '\r' && range.End >= '\r' ) { return default; }
 			lf |= range.Start <= '\n' && range.End >= '\n';
 		}
-		return lf ? (set, groupDepth <= 4) : default;
+		if ( !lf || hasCaptures && !CanUseUtfCaptureRepeat( root ) ) { return default; }
+		return (set, groupDepth <= 4);
+	}
+
+	private bool CanUseUtfCaptureRepeat( PcreByteAlternatives root ) {
+		// Native capture optimization depends on global references and returned
+		// captures. Admit only dependency-free trees until those source/bytecode
+		// pruning rules are modeled. Charge branches, visited and queued nodes.
+		var pending = new Stack<PcreByteNode>();
+		var visits = 0;
+		if ( !AddBody( root ) ) { return false; }
+		while ( pending.TryPop( out var node ) ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( ++visits > MaximumStartClassVisits ) { return false; }
+			switch ( node ) {
+				case PcreByteGroup group:
+					if ( !AddBody( group.Body ) ) { return false; }
+					break;
+				case PcreByteNoncapturingGroup group:
+					if ( !AddBody( group.Body ) ) { return false; }
+					break;
+				case PcreByteLookahead assertion:
+					if ( !AddBody( assertion.Body ) ) { return false; }
+					break;
+				case PcreByteLookbehind assertion:
+					if ( !AddBody( assertion.Body ) ) { return false; }
+					break;
+				case PcreByteAtomic atomic: pending.Push( atomic.Child ); break;
+				case PcreByteRepeat repeat: pending.Push( repeat.Child ); break;
+				case PcreByteLiteral or PcreByteAny or PcreByteNewlineSequence or PcreByteFailure
+					or PcreByteScalarClass or PcreByteScalarSet or PcreByteClass or PcreByteAnchor
+					or PcreByteSearchStart or PcreByteMatchStartReset or PcreByteLineAnchor
+					or PcreByteEndBeforeFinalLf or PcreByteWordBoundary or PcreByteLiteralAssertion:
+					break;
+				default: return false;
+			}
+		}
+		return true;
+
+		bool AddBody( PcreByteAlternatives body ) {
+			foreach ( var branch in body.Branches ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				if ( ++visits > MaximumStartClassVisits
+					|| branch.Count > MaximumStartClassVisits - visits - pending.Count ) { return false; }
+				foreach ( var node in branch ) {
+					cancellationToken.ThrowIfCancellationRequested();
+					pending.Push( node );
+				}
+			}
+			return true;
+		}
 	}
 
 	private bool HasUtfCrLfStartClass( PcreByteAlternatives root ) {
