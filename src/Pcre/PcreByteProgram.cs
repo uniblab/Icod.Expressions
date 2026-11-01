@@ -174,7 +174,7 @@ internal sealed class PcreByteProgramCompiler {
 		if ( root.Branches.Count != 1 || root.Branches[0].Count == 0 ) { return default; }
 		var node = root.Branches[0][0];
 		var groupDepth = 0;
-		var hasCaptures = false;
+		HashSet<int>? captures = null;
 		while ( true ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			var body = node switch {
@@ -185,7 +185,7 @@ internal sealed class PcreByteProgramCompiler {
 			if ( body is null ) { break; }
 			if ( groupDepth >= MaximumStartClassVisits || body.Branches.Count != 1
 				|| body.Branches[0].Count == 0 ) { return default; }
-			hasCaptures |= node is PcreByteGroup;
+			if ( node is PcreByteGroup capture ) { (captures ??= new()).Add( capture.Number ); }
 			groupDepth++;
 			node = body.Branches[0][0];
 		}
@@ -198,44 +198,69 @@ internal sealed class PcreByteProgramCompiler {
 			if ( range.Start <= '\r' && range.End >= '\r' ) { return default; }
 			lf |= range.Start <= '\n' && range.End >= '\n';
 		}
-		if ( !lf || hasCaptures && !CanUseUtfCaptureRepeat( root ) ) { return default; }
-		return (set, groupDepth <= 4);
+		if ( !lf ) { return default; }
+		var skip = groupDepth <= 4;
+		if ( captures is not null ) {
+			var classification = ClassifyUtfCaptureRepeat( root, captures );
+			if ( !classification.Eligible ) { return default; }
+			skip &= classification.Skip;
+		}
+		return (set, skip);
 	}
 
-	private bool CanUseUtfCaptureRepeat( PcreByteAlternatives root ) {
-		// Native capture optimization depends on global references and returned
-		// captures. Admit only dependency-free trees until those source/bytecode
-		// pruning rules are modeled. Charge branches, visited and queued nodes.
+	private (bool Eligible, bool Skip) ClassifyUtfCaptureRepeat( PcreByteAlternatives root, IReadOnlySet<int> captures ) {
+		// Native reference/test slots clear optimization only for those captures.
+		// Keep their bitmap proof while disabling repeat skipping through a related
+		// leading capture. Calls and unsupported pruning remain conservative.
 		var pending = new Stack<PcreByteNode>();
 		var visits = 0;
-		if ( !AddBody( root ) ) { return false; }
+		var skip = true;
+		if ( !AddBody( root ) ) { return default; }
 		while ( pending.TryPop( out var node ) ) {
 			cancellationToken.ThrowIfCancellationRequested();
-			if ( ++visits > MaximumStartClassVisits ) { return false; }
+			if ( ++visits > MaximumStartClassVisits ) { return default; }
 			switch ( node ) {
 				case PcreByteGroup group:
-					if ( !AddBody( group.Body ) ) { return false; }
+					if ( !AddBody( group.Body ) ) { return default; }
 					break;
 				case PcreByteNoncapturingGroup group:
-					if ( !AddBody( group.Body ) ) { return false; }
+					if ( !AddBody( group.Body ) ) { return default; }
 					break;
 				case PcreByteLookahead assertion:
-					if ( !AddBody( assertion.Body ) ) { return false; }
+					if ( !AddBody( assertion.Body ) ) { return default; }
 					break;
 				case PcreByteLookbehind assertion:
-					if ( !AddBody( assertion.Body ) ) { return false; }
+					if ( !AddBody( assertion.Body ) ) { return default; }
+					break;
+				case PcreByteBackreference reference:
+					if ( captures.Contains( reference.Number ) ) { skip = false; }
+					ObserveCaptures( reference.DuplicateNumbers );
+					break;
+				case PcreByteCaptureConditional conditional:
+					ObserveCaptures( conditional.CaptureNumbers );
+					if ( !AddBody( conditional.Body ) ) { return default; }
 					break;
 				case PcreByteAtomic atomic: pending.Push( atomic.Child ); break;
+				// Native omits a direct zero-count reference, but retains zero-count
+				// group bodies for subroutine use. Do not conflate those source shapes.
+				case PcreByteRepeat { Maximum: 0, Child: PcreByteBackreference }: return default;
 				case PcreByteRepeat repeat: pending.Push( repeat.Child ); break;
 				case PcreByteLiteral or PcreByteAny or PcreByteNewlineSequence or PcreByteFailure
 					or PcreByteScalarClass or PcreByteScalarSet or PcreByteClass or PcreByteAnchor
 					or PcreByteSearchStart or PcreByteMatchStartReset or PcreByteLineAnchor
 					or PcreByteEndBeforeFinalLf or PcreByteWordBoundary or PcreByteLiteralAssertion:
 					break;
-				default: return false;
+				default: return default;
 			}
 		}
-		return true;
+		return (true, skip);
+
+		void ObserveCaptures( ReadOnlyMemory<int> numbers ) {
+			foreach ( var number in numbers.Span ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				if ( captures.Contains( number ) ) { skip = false; }
+			}
+		}
 
 		bool AddBody( PcreByteAlternatives body ) {
 			foreach ( var branch in body.Branches ) {

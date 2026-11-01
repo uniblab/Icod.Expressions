@@ -413,3 +413,22 @@ layout/Step/capture/frame/journal/runtime state or resource-ceiling change. All6
 baseline expectations/frozen35 unchanged. Byte99/unsafe100 separate; no full PCRE,
 public/package/release/consumer claim. See
 PCRE-UTF-CAPTURE-REPEAT-RECOVERY-DESIGN.md and PCRE-UTF-CAPTURE-REPEAT-RECOVERY-PLAN.md.
+
+
+## UTF leading-capture dependencies
+
+PcreUtfCaptureDependencyReferenceTests distinguishes prefix capture slots from
+references/tests of later slots. The compiler collects traversed prefix numbers
+and returns separate Eligible/Skip results from its bounded whole-root scan. A
+related resolved backreference or capture-condition target clears Skip while
+retaining class recognition; unrelated targets keep depth<=4 repeat acceleration.
+All duplicate-name slots and syntactic condition/assertion bodies are observed.
+Zero-count group bodies remain visible as native OP_SKIPZERO requires; direct
+zero-count backreference repeats, calls, DEFINE/other conditions, unknowns and
+over-bound analysis retain conservative baseline admission.
+The existing1000 branch/node/queue proof and parser256/capture256 ceilings remain;
+slot observations check cancellation. No parser/AST/membership/source metadata/
+UTF validation/matcher/program/instruction layout/Step/capture/frame/journal/
+runtime-state or raised-limit change. All6309 baseline expectations/frozen35
+unchanged. Broader102/byte99/unsafe100 remain; no public/release/consumer claim. See
+PCRE-UTF-CAPTURE-DEPENDENCIES-DESIGN.md and PCRE-UTF-CAPTURE-DEPENDENCIES-PLAN.md.
