@@ -83,7 +83,8 @@ internal sealed class PcreByteProgramCompiler {
 	private int countedOffset = -1;
 	private int lastCountedOffset = -1;
 	private int compileVisits;
-	private PcreByteScalarSet? utfCrLfSkipRepeatSet;
+	private PcreByteScalarSet? utfCrLfLeadingRepeatSet;
+	private bool skipUtfCrLfLeadingRepeat;
 	private readonly List<(int Instruction, int Number)> calls = new();
 
 	internal PcreByteProgramCompiler( CancellationToken cancellationToken, bool utf8, bool matchInvalidUtf,
@@ -99,7 +100,7 @@ internal sealed class PcreByteProgramCompiler {
 	}
 
 	internal PcreByteProgram Compile( PcreByteAlternatives root, IReadOnlyDictionary<int, PcreByteGroup> targets ) {
-		utfCrLfSkipRepeatSet = utf8 ? FindUtfCrLfSkipRepeatSet( root ) : null;
+		(utfCrLfLeadingRepeatSet, skipUtfCrLfLeadingRepeat) = utf8 ? FindUtfCrLfLeadingRepeat( root ) : default;
 		CompileAlternatives( root );
 		while ( compileWork.TryPop( out var next ) ) {
 			cancellationToken.ThrowIfCancellationRequested();
@@ -164,29 +165,32 @@ internal sealed class PcreByteProgramCompiler {
 		}
 	}
 
-	private PcreByteScalarSet? FindUtfCrLfSkipRepeatSet( PcreByteAlternatives root ) {
-		// Native type_skip follows up to four leading noncapture groups to PLUS.
+	private (PcreByteScalarSet? Set, bool Skip) FindUtfCrLfLeadingRepeat( PcreByteAlternatives root ) {
+		// Native bitmap study recognizes deeper leading noncapture groups than
+		// type_skip, which follows only four groups to PLUS. Keep recognition
+		// separate from iterator acceleration so deeper repeats retain LF entry.
 		// Explicit atomic groups wrap a noncapturing group; a possessive quantifier
 		// wraps the repeat itself. ASCII and wide classes share this recovery.
-		if ( root.Branches.Count != 1 || root.Branches[0].Count == 0 ) { return null; }
+		if ( root.Branches.Count != 1 || root.Branches[0].Count == 0 ) { return default; }
 		var node = root.Branches[0][0];
 		var groupDepth = 0;
 		while ( node is PcreByteNoncapturingGroup group ) {
 			cancellationToken.ThrowIfCancellationRequested();
-			if ( groupDepth >= 4 || group.Body.Branches.Count != 1 || group.Body.Branches[0].Count == 0 ) { return null; }
+			if ( groupDepth >= MaximumStartClassVisits || group.Body.Branches.Count != 1
+				|| group.Body.Branches[0].Count == 0 ) { return default; }
 			groupDepth++;
 			node = group.Body.Branches[0][0];
 		}
 		if ( node is PcreByteAtomic atomic ) { node = atomic.Child; }
 		if ( node is not PcreByteRepeat { Minimum: 1, Maximum: int.MaxValue,
-			Child: PcreByteScalarSet { Negated: false } set } || !set.Predicates.IsEmpty ) { return null; }
+			Child: PcreByteScalarSet { Negated: false } set } || !set.Predicates.IsEmpty ) { return default; }
 		var lf = false;
 		foreach ( var range in set.Ranges.Span ) {
 			cancellationToken.ThrowIfCancellationRequested();
-			if ( range.Start <= '\r' && range.End >= '\r' ) { return null; }
+			if ( range.Start <= '\r' && range.End >= '\r' ) { return default; }
 			lf |= range.Start <= '\n' && range.End >= '\n';
 		}
-		return lf ? set : null;
+		return lf ? (set, groupDepth <= 4) : default;
 	}
 
 	private bool HasUtfCrLfStartClass( PcreByteAlternatives root ) {
@@ -214,7 +218,7 @@ internal sealed class PcreByteProgramCompiler {
 					pending.Push( atomic.Child );
 					break;
 				case PcreByteRepeat { Minimum: 1, Maximum: int.MaxValue, Child: PcreByteScalarSet repeatedSet }:
-					if ( !ReferenceEquals( repeatedSet, utfCrLfSkipRepeatSet ) ) {
+					if ( !ReferenceEquals( repeatedSet, utfCrLfLeadingRepeatSet ) ) {
 						foreach ( var range in repeatedSet.Ranges.Span ) {
 							cancellationToken.ThrowIfCancellationRequested();
 							if ( range.End > 127 ) { return false; }
@@ -522,7 +526,7 @@ internal sealed class PcreByteProgramCompiler {
 				Emit( PcreByteOpcode.ScalarSet, second: scalarSet.Negated ? 1 : 0,
 					ranges: scalarSet.Ranges, predicates: scalarSet.Predicates, caseless: scalarSet.Caseless,
 					caselessRestricted: scalarSet.CaselessRestricted,
-					skipCrLfAfterRepeat: ReferenceEquals( scalarSet, utfCrLfSkipRepeatSet ) );
+					skipCrLfAfterRepeat: skipUtfCrLfLeadingRepeat && ReferenceEquals( scalarSet, utfCrLfLeadingRepeatSet ) );
 				break;
 			case PcreByteClass characterClass:
 				Emit( PcreByteOpcode.Class, set: characterClass.Set, caseless: characterClass.Caseless, caselessRestricted: characterClass.CaselessRestricted );
