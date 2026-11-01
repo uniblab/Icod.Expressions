@@ -284,3 +284,19 @@ their behavior. All5941 prior expectations and frozen35 remain unchanged; no
 raised limits/new state. Broader102/byte99/unsafe100 remain separate. See
 PCRE-UTF-ASCII-REPEAT-RECOVERY-DESIGN.md and PCRE-UTF-ASCII-REPEAT-RECOVERY-PLAN.md.
 No public/release/consumer change.
+
+
+## UTF noncapture group repeat recovery
+
+PcreUtfGroupRepeatRecoveryReferenceTests extends the existing class PLUS selector
+through up to four unquantified single-branch noncapturing groups. Native
+detect_early_fail stops at the fifth group; ASCII depth5/6/200 controls retain LF
+entry. Positive predicate-free ASCII/wide sets keep existing min1/unbounded/
+CR-excluding/LF-admitting and possessive-versus-explicit-atomic guards.
+Iterative descent checks cancellation and reuses leaf AST identity, immutable
+instruction markers and the existing integer endpoint recovery; no matcher/Step/
+capture/frame/journal/state/limit change. All6022 prior expectations/frozen35
+unchanged. Wide beyond-depth4, capture/alternative/other iterator provenance and
+broader102 remain pending; byte99/unsafe100 separate. See
+PCRE-UTF-GROUP-REPEAT-RECOVERY-DESIGN.md and PCRE-UTF-GROUP-REPEAT-RECOVERY-PLAN.md.
+No public/release/consumer change.
