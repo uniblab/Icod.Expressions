@@ -29,14 +29,35 @@ repeats and broader optimizer selection stay separate, even where native matches
 In src/Pcre/PcreByteProgram.cs, HasUtfCrLfStartClass accepts normalized ranges
 whose start>=0/end<=0x10FFFF instead of requiring end<=127. Retain every other
 guard: positive nonempty ScalarSet, empty predicate list, every first class excludes
-CR, at least one first class admits LF, same group/branch/atomic/required-variable/
-exact1 repeat restrictions, same cancellation and cumulative1000 proof visits.
+CR, at least one first class admits LF, same group/branch/atomic/bounded-variable/
+exact1 restrictions, same cancellation and cumulative1000 proof visits. A direct
+unbounded class PLUS needs the additional recovery below; nested/alternative wide
+class PLUS contexts remain outside admission.
 A range spanning surrogate values is still a normalized class range; runtime UTF
 validation and scalar decoding remain the existing authority. No new decoder.
 
-Existing UtfCrLfStartClass result, failed-CR handling, VM/Step/capture/cancellation
-interfaces remain unchanged. No parser/AST/membership/source-flag/runtime/state/
-limit changes. No-LF classes retain prior skip/work. More eligible LF attempts
+Existing UtfCrLfStartClass still controls ordinary entry. The first bound-only
+implementation exposed five protocol mismatches: S+ A on U0100+CRLF+A natively
+misses but the widened Boolean proof matches LF. All5881 baseline tests passed.
+Native detect_early_fail (pcre2_jit_compile.c1397ff) marks a direct root-leading
+class PLUS as fast_forward_bc_ptr/type_skip; iterator matching records its end,
+and reset13976ff restores that end before ordinary CRLF bumpalong.
+
+Mark the compiled scalar instructions for one direct first root min1/unbounded
+wide predicate-free CR-excluding/LF-admitting class repeat. A possessive wrapper
+contains the repeat directly; explicit atomic groups contain a noncapture group
+and are not conflated. Other wide unbounded class-repeat contexts conservatively
+fail proof; ASCII admission/work stays unchanged. Existing bounded variable
+repeats and repeated groups retain their paths.
+
+One per-attempt integer utfRepeatEnd retains the farthest successful marked scalar
+end; it is deliberately not restored on backtracking, like native iterator private
+state. Update only outside calls/assertions. Upon whole-attempt failure, when that
+end lies at CRLF inside the same fragment, proof is valid and source metadata does
+not explicitly mention CR/LF, continue after the pair for CRLF/ANYCRLF/ANY. Every
+scalar comparison was already charged; no rescan/free comparison or snapshot.
+No parser/AST/membership/source-flag/Step/capture/frame/journal/limit change. The
+instruction marker is immutable; the endpoint is an integer, never a saved span. No-LF classes retain prior skip/work. More eligible LF attempts
 may charge work; test exact/exhausted observed budgets without raising limits.
 All5881 existing test expectations and frozen35 production blobs stay unchanged.
 
@@ -55,7 +76,7 @@ No agents/Python/SDK install, public/package/version/dependency/workflow/release
 consumer changes, production native/Regex fallback, duplicated engine or saved
 spans/interior pointers/snapshots. Depth256/captures256/instructions4096/marks256/
 frames1024/default work1,000,000; proof1000 unchanged. Byte #99 remains unchanged.
-Tests-only draft successful-build RED, then narrow source fix, six native Staging
+Tests-only draft successful-build RED, then the narrow proof/recovery fix, six native Staging
 full/frozen214/configured gates green, whole-branch author review and exact
 head/tree/log/frozen/whitespace/clean audit, ready PR. User owns merge. Grep last;
 CommandFramework removal requires publication and all known consumer migrations.

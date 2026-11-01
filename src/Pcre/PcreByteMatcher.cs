@@ -197,6 +197,7 @@ internal static class PcreByteMatcher {
 					}
 					Step(); // Candidate start.
 					var position = start;
+					var utfRepeatEnd = start;
 					var pc = 0;
 					Array.Clear( captures );
 					Array.Clear( captureStarts );
@@ -285,6 +286,9 @@ internal static class PcreByteMatcher {
 							}
 							if ( contained != ( instruction.Second == 1 ) ) {
 								position += setWidth;
+								if ( instruction.SkipCrLfAfterRepeat && activeCall < 0 && activeScope < 0 ) {
+									utfRepeatEnd = Math.Max( utfRepeatEnd, position );
+								}
 								pc++;
 							} else { failed = true; }
 							break;
@@ -729,6 +733,14 @@ internal static class PcreByteMatcher {
 					}
 					if ( failed ) { break; }
 				}
+				if ( program.UtfCrLfStartClass && !program.ExplicitNewline
+					&& ( program.Newline is PcreByteNewline.AnyCrLf or PcreByteNewline.CrLf or PcreByteNewline.Any )
+					&& utfRepeatEnd > start && utfRepeatEnd < fragment.End - 1
+					&& input.Span[utfRepeatEnd] == (byte)'\r' && input.Span[utfRepeatEnd + 1] == (byte)'\n' ) {
+					// Native root-leading PLUS resumes bumpalong at its repeat end.
+					// Its scalar comparisons were already charged; no rescan is needed.
+					start = utfRepeatEnd + 1;
+				}
 				if ( ( program.Newline is PcreByteNewline.AnyCrLf or PcreByteNewline.CrLf or PcreByteNewline.Any )
 					&& !program.ExplicitNewline && !program.ByteCrLfPrefix
 					&& !program.UtfCrLfStartClass
@@ -739,7 +751,7 @@ internal static class PcreByteMatcher {
 					// Unconditional byte prefix proofs bypass this guard. Longer
 					// restrictive prefixes permit LF only when their sole literal
 					// rejects CR before native VM entry. Charge that comparison too.
-					// A mandatory UTF ASCII start class excluding CR likewise lets
+					// A mandatory UTF positive start class excluding CR likewise lets
 					// native prefix/bitmap scanning enter at LF without CR bumpalong.
 					var skipLf = true;
 					if ( program.ByteCrLfPrefixLiteral is { } prefix ) {
