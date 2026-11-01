@@ -224,6 +224,7 @@ internal sealed class PcreByteProgramCompiler {
 		var visits = 1;
 		var prefixLength = 0;
 		var restricted = false;
+		var sparseBitmapPrefix = false;
 		PcreByteLiteral? literal = null;
 		if ( !AddSequence( root ) ) { return default; }
 		while ( pending.TryPop( out var node ) ) {
@@ -251,12 +252,18 @@ internal sealed class PcreByteProgramCompiler {
 					when repeat.Minimum > 0 && repeat.Minimum == repeat.Maximum
 						&& ( repeatedClass.PrefixKind is PcreByteClassPrefix.Exact or PcreByteClassPrefix.AnyProperty
 							|| repeat.Minimum > 1 && repeatedClass.PrefixKind == PcreByteClassPrefix.Bitmap
-								&& IsBroadBitmap( repeatedClass.Set )
+								&& ( IsBroadBitmap( repeatedClass.Set )
+									|| prefixLength == 0 && repeatedClass.Set.Contains( (byte)'\r' )
+										&& repeatedClass.Set.Contains( (byte)'\n' ) )
 							|| repeat.Minimum == 1 && repeatedClass.PrefixAny ):
 					// Native removes an XCLASS count1; larger exact XCLASS repeats
 					// stop at CRRANGE, unlike NOT/type/ALLANY repeats.
 					// Broad bitmap CRRANGE also continues; its count1/atoms do not.
+					var sparseBitmap = repeatedClass.PrefixKind == PcreByteClassPrefix.Bitmap
+						&& !IsBroadBitmap( repeatedClass.Set );
 					if ( !AddWidth( repeat.Minimum, false ) ) { return default; }
+					// Sparse selection is proven only for one complete repeated head.
+					sparseBitmapPrefix |= sparseBitmap;
 					break;
 				case PcreByteRepeat repeat
 					when repeat.Minimum > 0 && repeat.Minimum == repeat.Maximum
@@ -292,7 +299,7 @@ internal sealed class PcreByteProgramCompiler {
 			return true;
 		}
 		bool AddWidth( int width, bool unrestricted ) {
-			if ( literal is not null || width >= MaximumBytePrefixLength - prefixLength ) { return false; }
+			if ( sparseBitmapPrefix || literal is not null || width >= MaximumBytePrefixLength - prefixLength ) { return false; }
 			prefixLength += width;
 			restricted |= !unrestricted;
 			return true;
