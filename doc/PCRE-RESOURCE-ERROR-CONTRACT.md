@@ -680,3 +680,24 @@ retain multi-key caseless admission. Original196 tests are unchanged. Ordinary
 caseless singletons and different source spellings of one folded key retain
 their preexisting conservative path pending source provenance; no case-fold
 membership or source metadata is changed.
+
+
+## Original UTF set source shape before folding
+
+PcreUtfSetSourceShapeReferenceTests pins the distinction between original class
+operands and canonical case-fold keys. PcreByteScalarSet now carries internal
+init-only Source provenance (Unknown/Literal/Class), default Unknown. The UTF
+bracket parser records Literal for one original literal/equal-end range and
+Class otherwise, using existing sourceTermCount/soleLiteral before case folding.
+Constructor parameters, membership, case closure and ExplicitNewline are intact;
+record with-copies and reference-based tree rewrites preserve the provenance.
+The existing optional-set proof admits proven Class sources after its positive/
+nonempty/predicate-free/scalar-bound/order/CR/cancellation/1000-visit checks, even
+when caseless folding leaves one key. Genuine Literal/Unknown one-key sources
+stay conservative. Optional input consumption/captures and the Skip barrier
+remain shared. Metadata is compile-time only, not emitted into runtime state.
+No matcher/program/instruction layout/Step/frame/journal/limit/public/release/
+consumer changes. All7359 baseline expectations/frozen35 unchanged. Genuine
+singleton classification and broader102 source/nullable/call/DEFINE/condition
+forms remain; byte99/unsafe100 separate. See
+PCRE-UTF-SET-SOURCE-SHAPE-DESIGN.md and PCRE-UTF-SET-SOURCE-SHAPE-PLAN.md.
