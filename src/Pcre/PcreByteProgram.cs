@@ -214,7 +214,7 @@ internal sealed class PcreByteProgramCompiler {
 	}
 
 	private (PcreByteNode? Node, bool BlocksSkip) FindUtfCrLfLeadingNode( IReadOnlyList<PcreByteNode> branch, ref int visits ) {
-		// Bitmap study crosses retained zero brackets and optional literals, but
+		// Bitmap study crosses retained zero brackets and supported optional atoms, but
 		// their opcodes prevent repeat skipping. Direct primitive/reference0 vanishes.
 		var blocksSkip = false;
 		for ( var index = 0; index < branch.Count; index++ ) {
@@ -229,6 +229,8 @@ internal sealed class PcreByteProgramCompiler {
 				// QUERY adds its literal start bit and raises native early-fail count
 				// to three. Its possible first character must also reject CR.
 				PcreByteRepeat { Minimum: 0, Maximum: 1, Child: PcreByteLiteral { Value: not '\r' } } => (2, true),
+				PcreByteRepeat { Minimum: 0, Maximum: 1, Child: PcreByteScalarSet set }
+					when IsUtfCrLfOptionalSet( set, ref visits ) => (2, true),
 				PcreByteRepeat { Maximum: 0, Child: PcreByteGroup or PcreByteNoncapturingGroup
 					or PcreByteLookahead or PcreByteLookbehind or PcreByteLiteralAssertion
 					or PcreByteCaptureConditional } => (2, true),
@@ -242,6 +244,19 @@ internal sealed class PcreByteProgramCompiler {
 			blocksSkip |= retained;
 		}
 		return default;
+	}
+
+	private bool IsUtfCrLfOptionalSet( PcreByteScalarSet set, ref int visits ) {
+		if ( set.Negated || !set.Predicates.IsEmpty || set.Ranges.IsEmpty ) { return false; }
+		foreach ( var range in set.Ranges.Span ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( ++visits > MaximumStartClassVisits || range.Start < 0 || range.End > 0x10FFFF
+				|| range.Start > range.End || range.Start <= '\r' && range.End >= '\r' ) { return false; }
+		}
+		// One folded key may originate from a native PT_CLIST property query.
+		// Closed ranges alone cannot establish that source opcode's bitmap.
+		return !set.Caseless || set.Ranges.Length != 1
+			|| set.Ranges.Span[0].Start != set.Ranges.Span[0].End;
 	}
 
 	private (bool Eligible, bool Skip) ClassifyUtfCaptureRepeat( PcreByteAlternatives root, IReadOnlySet<int> captures ) {
