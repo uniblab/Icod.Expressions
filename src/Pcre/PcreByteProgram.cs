@@ -228,7 +228,8 @@ internal sealed class PcreByteProgramCompiler {
 					or PcreByteAny or PcreByteScalarClass or PcreByteScalarSet or PcreByteNewlineSequence } => (2, false),
 				// QUERY adds its literal start bit and raises native early-fail count
 				// to three. Its possible first character must also reject CR.
-				PcreByteRepeat { Minimum: 0, Maximum: 1, Child: PcreByteLiteral { Value: not '\r' } } => (2, true),
+				PcreByteRepeat { Minimum: 0, Maximum: 1, Child: PcreByteLiteral literal }
+					when HasUtfCrLfLiteralBitmap( literal.Value, literal.Caseless, literal.CaselessRestricted ) => (2, true),
 				PcreByteRepeat { Minimum: 0, Maximum: 1, Child: PcreByteScalarSet set }
 					when IsUtfCrLfOptionalSet( set, ref visits ) => (2, true),
 				PcreByteRepeat { Maximum: 0, Child: PcreByteGroup or PcreByteNoncapturingGroup
@@ -253,10 +254,48 @@ internal sealed class PcreByteProgramCompiler {
 			if ( ++visits > MaximumStartClassVisits || range.Start < 0 || range.End > 0x10FFFF
 				|| range.Start > range.End || range.Start <= '\r' && range.End >= '\r' ) { return false; }
 		}
-		// One folded key may originate from a native PT_CLIST property query.
-		// Proven class source shapes retain their bitmap after folding.
+		// Class sources retain their bitmap after folding. Literal sources need
+		// their original scalar to distinguish CHAR/CHARI from PT_CLIST queries.
 		return !set.Caseless || set.Source == PcreByteScalarSetSource.Class || set.Ranges.Length != 1
+			|| set.Source == PcreByteScalarSetSource.Literal
+				&& HasUtfCrLfLiteralBitmap( set.SourceLiteral, set.Caseless, set.CaselessRestricted )
 			|| set.Ranges.Span[0].Start != set.Ranges.Span[0].End;
+	}
+
+	private static bool HasUtfCrLfLiteralBitmap( int scalar, bool caseless, bool restricted ) {
+		if ( scalar < 0 || scalar > 0x10FFFF || scalar == '\r' ) { return false; }
+		if ( !caseless ) { return true; }
+		// PCRE2 10.48 default UCD_CASESET opcode classification, not membership.
+		// Restricted casing suppresses the two ASCII-crossing property casesets.
+		if ( restricted && scalar is 0x004B or 0x006B or 0x212A or 0x0053 or 0x0073 or 0x017F ) { return true; }
+		return scalar is not (
+			0x0053 or 0x0073 or 0x017F
+			or 0x01C4 or 0x01C5 or 0x01C6
+			or 0x01C7 or 0x01C8 or 0x01C9
+			or 0x01CA or 0x01CB or 0x01CC
+			or 0x01F1 or 0x01F2 or 0x01F3
+			or 0x0345 or 0x0399 or 0x03B9 or 0x1FBE
+			or 0x00B5 or 0x039C or 0x03BC
+			or 0x03A3 or 0x03C2 or 0x03C3
+			or 0x0392 or 0x03B2 or 0x03D0
+			or 0x0398 or 0x03B8 or 0x03D1 or 0x03F4
+			or 0x03A6 or 0x03C6 or 0x03D5
+			or 0x03A0 or 0x03C0 or 0x03D6
+			or 0x039A or 0x03BA or 0x03F0
+			or 0x03A1 or 0x03C1 or 0x03F1
+			or 0x0395 or 0x03B5 or 0x03F5
+			or 0x0412 or 0x0432 or 0x1C80
+			or 0x0414 or 0x0434 or 0x1C81
+			or 0x041E or 0x043E or 0x1C82
+			or 0x0421 or 0x0441 or 0x1C83
+			or 0x0422 or 0x0442 or 0x1C84 or 0x1C85
+			or 0x042A or 0x044A or 0x1C86
+			or 0x0462 or 0x0463 or 0x1C87
+			or 0x1E60 or 0x1E61 or 0x1E9B
+			or 0x03A9 or 0x03C9 or 0x2126
+			or 0x004B or 0x006B or 0x212A
+			or 0x00C5 or 0x00E5 or 0x212B
+			or 0x1C88 or 0xA64A or 0xA64B );
 	}
 
 	private (bool Eligible, bool Skip) ClassifyUtfCaptureRepeat( PcreByteAlternatives root, IReadOnlySet<int> captures ) {

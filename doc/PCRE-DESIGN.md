@@ -579,3 +579,28 @@ search; predicates and negation remain after the range loop. This small matcher
 early stop consumes work only for inspected intervals; no Step-function, limit,
 program/frame/journal/layout/storage changes. Original198 tests remain unchanged;
 observed/unobserved exact/exhausted work and the default budget are verified.
+
+## UTF singleton literal query availability
+
+PcreUtfLiteralCaseQueryReferenceTests distinguishes ordinary optional literal
+queries from native caseless PT_CLIST property queries. ScalarSet retains internal
+init-only SourceLiteral (default -1) before folding; constructor parameters,
+Source provenance, case closure, membership and ExplicitNewline remain intact.
+The compiler shares a private bounded PCRE2 10.48 default UCD_CASESET classifier
+between plain optional literals and proven Literal bracket sources. All84 default
+members remain property queries unless restricted casing suppresses an ASCII-
+crossing K/S caseset; Turkish-extra pairs are excluded from this default table.
+This is source opcode classification, not a replacement Unicode membership table.
+Proven Class sources retain #136 behavior; Unknown one-key sources stay conservative.
+Existing positive/nonempty/predicate-free/scalar/order/CR/cancellation/1000-visit
+checks, cost2 plus wrapper1, depth/capture eligibility and BlocksSkip stay intact.
+No matcher, runtime metadata/layout, Step, frame/journal, limit, public API,
+workflow, package, dependency or consumer change. All7565 baseline expectations
+and frozen35 remain unchanged. Native15292 checks pin382 new cases/full7947,
+covering every84 default member as plain/bracket, ordinary/restricted/mixed/
+consumed/deep/capture/modifier controls, six newline modes, UCP, every caller
+offset, strict/tolerant fragments, work/exhaustion/cancellation/default budget
+and parser257. See PCRE-UTF-LITERAL-CASE-QUERY-DESIGN.md and its PLAN.md.
+Broader102 nullable/type/group/negated/predicate/call/DEFINE/condition forms and
+native-complete availability remain; byte99/unsafe100 stay separate. This does
+not qualify a PCRE release or Grep migration; CommandFramework remains untouched.

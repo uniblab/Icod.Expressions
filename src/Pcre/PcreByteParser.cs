@@ -261,9 +261,12 @@ internal sealed partial class PcreByteParser {
 				index++;
 				var sourceKind = sourceTermCount == 1 && soleLiteral
 					? PcreByteScalarSetSource.Literal : PcreByteScalarSetSource.Class;
+				var sourceLiteral = sourceKind == PcreByteScalarSetSource.Literal ? ranges[0].Start : -1;
 				return new( caseless ? PcreUtf8CaseFold.CloseRanges( ranges, cancellationToken, caselessRestricted )
 					: ranges.ToArray(), predicates.ToArray(), negated,
-					explicitNewline && !( negated && sourceTermCount == 1 && soleLiteral ) ) { Source = sourceKind };
+					explicitNewline && !( negated && sourceTermCount == 1 && soleLiteral ) ) {
+					Source = sourceKind, SourceLiteral = sourceLiteral
+				};
 			}
 			var first = quoting ? ParseQuotedLiteral() : ParseUtf8BracketItem( openingOffset );
 			SkipClassTrivia( ref quoting );
