@@ -569,3 +569,13 @@ consumer changes. All7359 baseline expectations/frozen35 unchanged. Genuine
 singleton classification and broader102 source/nullable/call/DEFINE/condition
 forms remain; byte99/unsafe100 separate. See
 PCRE-UTF-SET-SOURCE-SHAPE-DESIGN.md and PCRE-UTF-SET-SOURCE-SHAPE-PLAN.md.
+
+The original caseless wide-set no-LF budget fact also exposed unnecessary
+interval scanning (already RED before provenance implementation).
+PcreUtfCaseFoldRangeWorkTests pins the correction: after the existing Step
+charges an interval probe, ScalarSet matching stops if Caseless and the folded
+scalar is below that sorted interval. Raw noncaseless ranges retain source-order
+search; predicates and negation remain after the range loop. This small matcher
+early stop consumes work only for inspected intervals; no Step-function, limit,
+program/frame/journal/layout/storage changes. Original198 tests remain unchanged;
+observed/unobserved exact/exhausted work and the default budget are verified.
