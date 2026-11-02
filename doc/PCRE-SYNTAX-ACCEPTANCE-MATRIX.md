@@ -530,3 +530,27 @@ and parser257. See PCRE-UTF-LITERAL-CASE-QUERY-DESIGN.md and its PLAN.md.
 Broader102 nullable/type/group/negated/predicate/call/DEFINE/condition forms and
 native-complete availability remain; byte99/unsafe100 stay separate. This does
 not qualify a PCRE release or Grep migration; CommandFramework remains untouched.
+
+## UTF optional type-query prefixes
+
+PcreUtfOptionalTypePrefixReferenceTests pins direct min0/max1 ASCII digit/word/
+nonspace and horizontal-space queries. The shared leading-node compiler switch
+admits positive AsciiDigit/AsciiWord/HorizontalSpace and negated AsciiSpace as
+cost2/retained true. Existing parsed Kind/Negated carries UCP and scoped aD/aW/aS
+restrictions; Unicode digit/word/nonspace properties remain excluded, while
+horizontal space qualifies under either UCP setting. Every admitted type excludes
+CR and has native bitmap study; NOT_VSPACE/ANY/property/CR-consuming/other types
+remain conservative. Existing wrapper1/shared1000-visit/cancellation/depth/capture
+checks and BlocksSkip apply. No parser/membership/folding/matcher/Step/runtime/
+layout/storage/limit/public/package/workflow/dependency/consumer changes.
+429 new cases/full8376 preserve all7947 baseline expectations/frozen35. Native
+16188 bounded JIT checks (828 full-capture+15360 offset protocols) cover UCP/local
+ASCII/caseless restrictions, optional modifiers/consumption, deep/capture/
+dependency/mixed and conservative controls, six newlines/every caller offset/
+strict-tolerant UTF, exact/exhausted/observed work/cancellation/default budget/
+parser257. Larger optional bounds have consumption-only controls; their bitmap
+availability remains outside this change. See PCRE-UTF-OPTIONAL-TYPE-PREFIX-DESIGN.md
+and PCRE-UTF-OPTIONAL-TYPE-PREFIX-PLAN.md. Keep102 open for bracket predicates,
+larger optional bounds, groups/alternatives/negated/property/call/DEFINE/condition
+availability; byte99/unsafe100 separate. No complete PCRE/release/Grep-readiness
+claim. CommandFramework remains untouched until publication/all known migrations.
