@@ -45,6 +45,7 @@ internal sealed record PcreByteScalarSet(
 	bool ExplicitNewline
 ) : PcreByteNode {
 	internal PcreByteScalarSetSource Source { get; init; }
+	internal int SourceLiteral { get; init; } = -1;
 }
 
 internal enum PcreByteClassPrefix { None, Atom, Exact, AnyProperty, Bitmap }
