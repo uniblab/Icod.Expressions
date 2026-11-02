@@ -173,7 +173,9 @@ internal sealed class PcreByteProgramCompiler {
 		// wraps the repeat itself. ASCII and wide classes share this recovery.
 		if ( root.Branches.Count != 1 || root.Branches[0].Count == 0 ) { return default; }
 		var visits = 1;
-		var node = FindUtfCrLfLeadingNode( root.Branches[0], ref visits );
+		var leading = FindUtfCrLfLeadingNode( root.Branches[0], ref visits );
+		var node = leading.Node;
+		var skip = !leading.BlocksSkip;
 		var groupDepth = 0;
 		HashSet<int>? captures = null;
 		while ( true ) {
@@ -188,7 +190,9 @@ internal sealed class PcreByteProgramCompiler {
 				|| body.Branches[0].Count == 0 ) { return default; }
 			if ( node is PcreByteGroup capture ) { (captures ??= new()).Add( capture.Number ); }
 			groupDepth++;
-			node = FindUtfCrLfLeadingNode( body.Branches[0], ref visits );
+			leading = FindUtfCrLfLeadingNode( body.Branches[0], ref visits );
+			skip &= !leading.BlocksSkip;
+			node = leading.Node;
 		}
 		if ( node is PcreByteAtomic atomic ) { node = atomic.Child; }
 		if ( node is not PcreByteRepeat { Minimum: 1, Maximum: int.MaxValue,
@@ -200,7 +204,7 @@ internal sealed class PcreByteProgramCompiler {
 			lf |= range.Start <= '\n' && range.End >= '\n';
 		}
 		if ( !lf ) { return default; }
-		var skip = groupDepth <= 4;
+		skip &= groupDepth <= 4;
 		if ( captures is not null ) {
 			var classification = ClassifyUtfCaptureRepeat( root, captures );
 			if ( !classification.Eligible ) { return default; }
@@ -209,22 +213,31 @@ internal sealed class PcreByteProgramCompiler {
 		return (set, skip);
 	}
 
-	private PcreByteNode? FindUtfCrLfLeadingNode( IReadOnlyList<PcreByteNode> branch, ref int visits ) {
-		// Direct reference0 vanishes from native bytecode, including its possessive
-		// wrapper. Retained groups and every other node still delimit the prefix.
+	private (PcreByteNode? Node, bool BlocksSkip) FindUtfCrLfLeadingNode( IReadOnlyList<PcreByteNode> branch, ref int visits ) {
+		// Bitmap study passes retained SKIPZERO brackets, but native repeat
+		// acceleration stops there. Direct reference0 is omitted entirely.
+		var blocksSkip = false;
 		for ( var index = 0; index < branch.Count; index++ ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			var node = branch[index];
-			var omitted = node switch {
-				PcreByteRepeat { Maximum: 0, Child: PcreByteBackreference } => 2,
-				PcreByteAtomic { Child: PcreByteRepeat { Maximum: 0, Child: PcreByteBackreference } } => 3,
-				_ => 0
+			var candidate = node;
+			var wrapper = 0;
+			if ( candidate is PcreByteAtomic atomic ) { candidate = atomic.Child; wrapper = 1; }
+			var (cost, retained) = candidate switch {
+				PcreByteRepeat { Maximum: 0, Child: PcreByteBackreference } => (2, false),
+				PcreByteRepeat { Maximum: 0, Child: PcreByteGroup or PcreByteNoncapturingGroup
+					or PcreByteLookahead or PcreByteLookbehind or PcreByteLiteralAssertion
+					or PcreByteCaptureConditional } => (2, true),
+				PcreByteRepeat { Maximum: 0, Child: PcreByteAtomic { Child: PcreByteNoncapturingGroup } } => (3, true),
+				_ => (0, false)
 			};
-			if ( omitted == 0 ) { return node; }
-			if ( visits > MaximumStartClassVisits - omitted ) { return null; }
-			visits += omitted;
+			if ( cost == 0 ) { return (node, blocksSkip); }
+			cost += wrapper;
+			if ( visits > MaximumStartClassVisits - cost ) { return default; }
+			visits += cost;
+			blocksSkip |= retained;
 		}
-		return null;
+		return default;
 	}
 
 	private (bool Eligible, bool Skip) ClassifyUtfCaptureRepeat( PcreByteAlternatives root, IReadOnlySet<int> captures ) {
@@ -355,7 +368,7 @@ internal sealed class PcreByteProgramCompiler {
 				// Only skip omitted prefixes when the single-chain repeat selector
 				// already established their source shape. Other proofs stay conservative.
 				var first = utfCrLfLeadingRepeatSet is null ? branch[0]
-					: FindUtfCrLfLeadingNode( branch, ref visits );
+					: FindUtfCrLfLeadingNode( branch, ref visits ).Node;
 				if ( first is null ) { return false; }
 				pending.Push( first );
 			}
