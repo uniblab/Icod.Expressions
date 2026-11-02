@@ -42,3 +42,14 @@ existing (PcreByteNode? Node, bool BlocksSkip) FindUtfCrLfLeadingNode.
 
 Self-check: range guard and callers share ref visits; optional-set LF membership
 is irrelevant to prefix eligibility. The mandatory selected set still admits LF.
+
+## Review correction: ambiguous caseless one-key sets
+
+Files: tests/Pcre/PcreUtfOptionalSetCaseFoldReferenceTests.cs; compiler; design/
+plan and four canonical inventories. Original196-test blob remains unchanged.
+- [ ] Native-first singleton K/S/sigma/Kelvin misses and multi-key positives,
+  full captures/four UTF-UCP modes/six newline/every-offset fragment protocols.
+  Publish the separate tests; inspect successful-build expected RED.
+- [ ] After range validation, reject caseless sets with exactly one singleton
+  folded-key interval; preserve multi-key admission and all existing semantics.
+- [ ] Final complete suite/six-native GREEN and whole-branch review/exact audit.

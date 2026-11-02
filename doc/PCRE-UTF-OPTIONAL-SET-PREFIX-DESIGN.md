@@ -71,3 +71,21 @@ Python/SDK installation/public/package/version/dependency/workflow/release/
 consumer/fallback changes. Broader102 optimizer/nullable/alternative/call/DEFINE/
 conditions remain, byte99/unsafe100 separate. Grep last; CommandFramework removal
 requires publication and all known consumer migrations.
+
+## Case-folding source availability correction from author review
+
+Native compilation can turn a one-source-character caseless class into a
+PT_CLIST property query. (?i)[k]?, [s]? and sigma/Kelvin singleton forms then
+lose start-bitmap availability, whereas multi-fold-key classes such as [k-l]?
+retain it. Managed ScalarSet ranges contain canonical folded keys, so a
+caseless one-key set cannot prove which native source opcode was emitted.
+Reject that ambiguous shape conservatively after the bounded range checks:
+require !set.Caseless, more than one range, or a nonsingleton sole range.
+No source metadata or case-fold membership change is introduced. This leaves
+ordinary caseless singleton classes and differently spelled one-fold-key classes
+on their preexisting conservative path until source provenance is preserved.
+
+Add a separate native-first case-fold regression file and observe successful-build
+RED before the guard correction. Keep the original196-test file unchanged.
+Multi-fold-key caseless controls must remain admitted. This is a correction to
+the new class proof, not a full resolution of caseless/source optimizer provenance.
