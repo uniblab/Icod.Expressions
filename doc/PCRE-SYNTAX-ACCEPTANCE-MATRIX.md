@@ -434,3 +434,14 @@ General nullable/alternative/other pruned starts, calls/returned captures, DEFIN
 other conditions and broader102 optimizer provenance remain; byte99 and unsafe100
 are separate. No public/release/consumer readiness claim. See
 PCRE-UTF-PRUNED-ATOM-PREFIX-DESIGN.md and PCRE-UTF-PRUNED-ATOM-PREFIX-PLAN.md.
+
+The original optional-literal control exposed a further bounded source shape:
+QUERY adds its literal start bit but raises early-fail count to3, preventing
+type_skip. A direct Minimum0/Maximum1 Literal-not-CR (including its possessive
+wrapper) now crosses the same helper with cost2/3 and BlocksSkip=true. Optional
+input consumption remains in the unchanged VM; source newline metadata remains
+intact. PcreUtfOptionalLiteralPrefixReferenceTests separately pins native spans,
+consumed prefixes, modifiers, source CR/LF, depth/dependencies/retained and trailing
+controls plus UTF/work/cancellation protocols. Original241 tests are unchanged.
+Optional classes/types/groups, larger finite bounds and general nullable forms
+remain separate; this does not claim general optional-prefix support.

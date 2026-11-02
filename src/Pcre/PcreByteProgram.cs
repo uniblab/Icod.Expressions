@@ -214,8 +214,8 @@ internal sealed class PcreByteProgramCompiler {
 	}
 
 	private (PcreByteNode? Node, bool BlocksSkip) FindUtfCrLfLeadingNode( IReadOnlyList<PcreByteNode> branch, ref int visits ) {
-		// Bitmap study passes retained SKIPZERO brackets, but native repeat
-		// acceleration stops there. Direct primitive/reference0 is omitted entirely.
+		// Bitmap study crosses retained zero brackets and optional literals, but
+		// their opcodes prevent repeat skipping. Direct primitive/reference0 vanishes.
 		var blocksSkip = false;
 		for ( var index = 0; index < branch.Count; index++ ) {
 			cancellationToken.ThrowIfCancellationRequested();
@@ -226,6 +226,9 @@ internal sealed class PcreByteProgramCompiler {
 			var (cost, retained) = candidate switch {
 				PcreByteRepeat { Maximum: 0, Child: PcreByteBackreference or PcreByteLiteral
 					or PcreByteAny or PcreByteScalarClass or PcreByteScalarSet or PcreByteNewlineSequence } => (2, false),
+				// QUERY adds its literal start bit and raises native early-fail count
+				// to three. Its possible first character must also reject CR.
+				PcreByteRepeat { Minimum: 0, Maximum: 1, Child: PcreByteLiteral { Value: not '\r' } } => (2, true),
 				PcreByteRepeat { Maximum: 0, Child: PcreByteGroup or PcreByteNoncapturingGroup
 					or PcreByteLookahead or PcreByteLookbehind or PcreByteLiteralAssertion
 					or PcreByteCaptureConditional } => (2, true),
@@ -366,7 +369,7 @@ internal sealed class PcreByteProgramCompiler {
 			foreach ( var branch in alternatives.Branches ) {
 				cancellationToken.ThrowIfCancellationRequested();
 				if ( branch.Count == 0 ) { return false; }
-				// Only cross zero-count prefixes when the single-chain repeat selector
+				// Only cross supported prefixes when the single-chain repeat selector
 				// already established their source shape. Other proofs stay conservative.
 				var first = utfCrLfLeadingRepeatSet is null ? branch[0]
 					: FindUtfCrLfLeadingNode( branch, ref visits ).Node;
