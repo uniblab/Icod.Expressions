@@ -254,8 +254,8 @@ internal sealed class PcreByteProgramCompiler {
 				|| range.Start > range.End || range.Start <= '\r' && range.End >= '\r' ) { return false; }
 		}
 		// One folded key may originate from a native PT_CLIST property query.
-		// Closed ranges alone cannot establish that source opcode's bitmap.
-		return !set.Caseless || set.Ranges.Length != 1
+		// Proven class source shapes retain their bitmap after folding.
+		return !set.Caseless || set.Source == PcreByteScalarSetSource.Class || set.Ranges.Length != 1
 			|| set.Ranges.Span[0].Start != set.Ranges.Span[0].End;
 	}
 

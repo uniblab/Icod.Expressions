@@ -272,6 +272,8 @@ internal static class PcreByteMatcher {
 							var rangeScalar = instruction.Caseless ? PcreUtf8CaseFold.Fold( setScalar, instruction.CaselessRestricted ) : setScalar;
 							foreach ( var range in instruction.Ranges.Span ) {
 								Step(); // Each attempted interval inspection consumes work.
+								// Canonical folded intervals are sorted; raw source intervals need not be.
+								if ( instruction.Caseless && rangeScalar < range.Start ) { break; }
 								if ( rangeScalar >= range.Start && rangeScalar <= range.End ) { contained = true; break; }
 							}
 							if ( !contained ) {

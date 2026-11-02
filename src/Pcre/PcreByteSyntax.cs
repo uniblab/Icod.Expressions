@@ -36,12 +36,16 @@ internal readonly record struct PcreByteScalarPredicate(
 	PcreByteScalarClassKind Kind, bool Negated, UnicodeCategory? Category = null
 );
 
+internal enum PcreByteScalarSetSource { Unknown, Literal, Class }
+
 internal sealed record PcreByteScalarSet(
 	ReadOnlyMemory<PcreByteScalarRange> Ranges,
 	ReadOnlyMemory<PcreByteScalarPredicate> Predicates,
 	bool Negated,
 	bool ExplicitNewline
-) : PcreByteNode;
+) : PcreByteNode {
+	internal PcreByteScalarSetSource Source { get; init; }
+}
 
 internal enum PcreByteClassPrefix { None, Atom, Exact, AnyProperty, Bitmap }
 
