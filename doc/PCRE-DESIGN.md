@@ -519,3 +519,23 @@ consumed prefixes, modifiers, source CR/LF, depth/dependencies/retained and trai
 controls plus UTF/work/cancellation protocols. Original241 tests are unchanged.
 Optional classes/types/groups, larger finite bounds and general nullable forms
 remain separate; this does not claim general optional-prefix support.
+
+
+## UTF entry through optional positive sets
+
+PcreUtfOptionalSetPrefixReferenceTests pins bitmap entry after optional positive
+predicate-free sets. Native class study adds their start bits and continues;
+CRQUERY raises early-fail count to3, preventing repeat skipping. The shared
+first-node helper crosses only min0/max1 ScalarSet nodes passing
+IsUtfCrLfOptionalSet: nonempty/nonnegated/no predicates, valid scalar intervals
+and no CR member. Each range charges the shared cancellation/1000-visit budget;
+repeat/child cost2 and possessive wrapper1 remain. No scalar expansion occurs.
+Optional LF consumption and full captures stay in the existing VM. LF is not
+required in the optional set; the mandatory selected class still establishes it.
+Root/group traversal, accumulated barriers, capture dependencies and source flags
+remain unchanged. CR-admitting/negated/predicate/unknown/over-bound/all-optional
+forms stay conservative. No matcher/runtime layout/storage/Step/frame/journal/
+raised-limit/public/release/consumer changes. All7136 baseline expectations and
+frozen35 source blobs unchanged. Broader102 optimizer/nullable/call/DEFINE/
+condition forms remain; byte99 and unsafe100 separate. See
+PCRE-UTF-OPTIONAL-SET-PREFIX-DESIGN.md and PCRE-UTF-OPTIONAL-SET-PREFIX-PLAN.md.
