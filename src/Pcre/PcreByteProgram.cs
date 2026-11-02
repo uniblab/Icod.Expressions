@@ -253,7 +253,10 @@ internal sealed class PcreByteProgramCompiler {
 			if ( ++visits > MaximumStartClassVisits || range.Start < 0 || range.End > 0x10FFFF
 				|| range.Start > range.End || range.Start <= '\r' && range.End >= '\r' ) { return false; }
 		}
-		return true;
+		// One folded key may originate from a native PT_CLIST property query.
+		// Closed ranges alone cannot establish that source opcode's bitmap.
+		return !set.Caseless || set.Ranges.Length != 1
+			|| set.Ranges.Span[0].Start != set.Ranges.Span[0].End;
 	}
 
 	private (bool Eligible, bool Skip) ClassifyUtfCaptureRepeat( PcreByteAlternatives root, IReadOnlySet<int> captures ) {

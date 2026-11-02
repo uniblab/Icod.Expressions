@@ -465,3 +465,12 @@ raised-limit/public/release/consumer changes. All7136 baseline expectations and
 frozen35 source blobs unchanged. Broader102 optimizer/nullable/call/DEFINE/
 condition forms remain; byte99 and unsafe100 separate. See
 PCRE-UTF-OPTIONAL-SET-PREFIX-DESIGN.md and PCRE-UTF-OPTIONAL-SET-PREFIX-PLAN.md.
+
+Author review added PcreUtfOptionalSetCaseFoldReferenceTests before a proof
+correction. A caseless set with one canonical folded key may have originated
+from native PT_CLIST property-query bytecode, which has different bitmap
+availability. Reject that ambiguous shape after bounded range validation;
+retain multi-key caseless admission. Original196 tests are unchanged. Ordinary
+caseless singletons and different source spellings of one folded key retain
+their preexisting conservative path pending source provenance; no case-fold
+membership or source metadata is changed.
