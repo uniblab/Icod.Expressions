@@ -469,3 +469,23 @@ baseline expectations/frozen35 unchanged. Retained/nullable/alternative/other
 pruned prefixes, calls/DEFINE/other conditions and broader102/byte99/unsafe100
 remain; no public/release/consumer claim. See
 PCRE-UTF-PRUNED-REFERENCE-PREFIX-DESIGN.md and PCRE-UTF-PRUNED-REFERENCE-PREFIX-PLAN.md.
+
+
+## UTF entry after retained zero-count prefixes
+
+PcreUtfRetainedZeroPrefixReferenceTests separates bitmap entry from repeat
+acceleration after native SKIPZERO brackets. The shared helper returns Node and
+BlocksSkip; supported zero group/assertion/atomic/capture-condition prefixes can
+be crossed for the first class proof while permanently blocking repeat skipping
+along that prefix. Truly omitted references keep prior behavior; trailing retained
+brackets do not disable earlier acceleration. Capture slots/dependencies remain
+global and retain unset-prefix capture spans.
+Selector barriers accumulate across root/group bodies and are ANDed with depth
+and capture eligibility. Proof uses only Node under the existing selected-leaf
+guard. Cost2/3 plus possessive wrapper1, CT and1000 proof/classification bounds
+remain. No parser/AST/source flags/membership/UTF validation/matcher/program/
+instruction layout/Step/capture/frame/journal/runtime-state/raised-limit change.
+All6668 baseline expectations/frozen35 unchanged. Other nullable/alternative/
+pruned starts, calls/DEFINE/other conditions and broader102/byte99/unsafe100 remain;
+no public/release/consumer claim. See
+PCRE-UTF-RETAINED-ZERO-PREFIX-DESIGN.md and PCRE-UTF-RETAINED-ZERO-PREFIX-PLAN.md.
