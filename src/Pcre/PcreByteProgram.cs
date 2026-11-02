@@ -232,6 +232,13 @@ internal sealed class PcreByteProgramCompiler {
 					when HasUtfCrLfLiteralBitmap( literal.Value, literal.Caseless, literal.CaselessRestricted ) => (2, true),
 				PcreByteRepeat { Minimum: 0, Maximum: 1, Child: PcreByteScalarSet set }
 					when IsUtfCrLfOptionalSet( set, ref visits ) => (2, true),
+				// These native TYPEQUERY operands have bitmap study and exclude CR.
+				// Parsed kinds already distinguish UCP properties and ASCII restrictions.
+				PcreByteRepeat { Minimum: 0, Maximum: 1, Child: PcreByteScalarClass {
+					Kind: PcreByteScalarClassKind.AsciiDigit or PcreByteScalarClassKind.AsciiWord
+						or PcreByteScalarClassKind.HorizontalSpace, Negated: false } } => (2, true),
+				PcreByteRepeat { Minimum: 0, Maximum: 1, Child: PcreByteScalarClass {
+					Kind: PcreByteScalarClassKind.AsciiSpace, Negated: true } } => (2, true),
 				PcreByteRepeat { Maximum: 0, Child: PcreByteGroup or PcreByteNoncapturingGroup
 					or PcreByteLookahead or PcreByteLookbehind or PcreByteLiteralAssertion
 					or PcreByteCaptureConditional } => (2, true),
