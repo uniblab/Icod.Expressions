@@ -15,7 +15,7 @@ Spec constraints apply. All6789 baseline expectations/frozen35 remain unchanged.
 2. Pruned newline atoms retain source newline metadata and LF entry behavior.
 3. Retained zero brackets block acceleration, even around pruned atoms.
 4. Root/interior/deep groups and related capture dependencies keep existing rules.
-5. All-skipped/nonzero/unknown prefixes retain conservative proof/CT1000 bounds.
+5. All-skipped/other nonzero/unknown prefixes retain conservative proof/CT1000 bounds.
 
 ## Task1: Native-first regressions and observed RED
 
@@ -41,3 +41,16 @@ Interfaces: existing (PcreByteNode? Node, bool BlocksSkip) FindUtfCrLfLeadingNod
 
 Self-check: no new classifier result or runtime storage; source metadata is never
 recomputed from the selected node. Prefix barriers accumulate monotonically.
+
+## Task3: Resolve the original optional-literal control without weakening tests
+
+Files: tests/Pcre/PcreUtfOptionalLiteralPrefixReferenceTests.cs; compiler;
+design/plan and four canonical inventories. Original241 test blob stays fixed.
+Interfaces: existing Node/BlocksSkip helper; optional literal cost2/true arm.
+- [ ] Add native-first optional-literal full spans/protocols, including consumed
+  prefixes, modifiers/wide/caseless, nested depth and retained/source-CR controls.
+  Publish tests before production extension; inspect successful-build RED.
+- [ ] Admit only Minimum0/Maximum1/Literal-not-CR, blocking Skip; preserve optional
+  runtime consumption/source flags/proof and all bounds. Verify every original
+  and added test, six native Staging platforms and all configured gates.
+- [ ] Repeat final whole-branch author review/exact audit, update102/PR, mark ready.

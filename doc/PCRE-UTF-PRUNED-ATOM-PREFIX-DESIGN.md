@@ -36,7 +36,7 @@ NewlineSequence joins Backreference in the cost-two, retained-false arm. An oute
 possessive Atomic adds one visit as before. Known retained bracket arms remain
 unchanged and continue setting BlocksSkip. A pruned atom following a retained
 bracket must never clear that bit. All-skipped/over-budget sequences yield no
-proof; nonzero/unknown nodes remain significant.
+proof; other nonzero/unknown nodes remain significant (see the correction below).
 
 FindUtfCrLfLeadingRepeat and HasUtfCrLfStartClass retain their shared traversal,
 selected-leaf identity, capture dependencies and depth/proof rules. This does not
@@ -71,3 +71,29 @@ release/consumer/fallback changes. General nullable/alternative/other pruned
 starts, calls/returned captures, DEFINE/other conditions and broader optimizer
 provenance remain in102; byte99 and unsafe100 remain separate. Grep last;
 CommandFramework removal requires publication and all known consumer migrations.
+
+## In-scope optional-literal regression found during GREEN
+
+The original 241 tests include B?(S+)A on initial CRLF+A. Initial source run446
+resolves91 of92 new failures but leaves that preexisting optional control failing
+(1 new failure/7029 passes/7030 total; no baseline failure or build warning).
+Keep every original test unchanged. Extend this tranche with a separately observed
+RED for a narrowly bounded optional-literal prefix, rather than dropping coverage.
+
+Native study adds OP_QUERY's literal start bit and continues to the mandatory
+class. JIT detect_early_fail traverses QUERY but raises count to3, preventing
+later type_skip. Extend the shared first-node helper with direct Repeat{Minimum:0,
+Maximum:1,Child:Literal{Value:not CR}} at cost2/BlocksSkip=true, plus the existing
+optional possessive wrapper cost1. CR is rejected because its possible leading
+match invalidates the CR-excluding bitmap proof; no other literal case-folds to
+CR. Keep source newline flags intact. The prefix consumes input in the unchanged
+VM; only the leading-class proof and acceleration classification cross it.
+
+This deliberately revises the earlier blanket nonzero-prefix boundary for this
+one source form. Optional sets/types/groups, larger finite bounds and general
+nullable alternatives remain unadmitted. Add separate native-first optional
+literal tests for greedy/lazy/possessive/counted/ASCII/wide/caseless forms,
+consumed prefixes, root/interior/deep wrappers, source CR/LF, related captures,
+retained combinations and trailing controls, six-newline/UCP/every-offset/UTF/
+work/cancellation/default-budget/parser protocols. Observe the new tests fail on
+the first source commit before implementing. Preserve the original241 test blob.
