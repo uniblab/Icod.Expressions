@@ -458,3 +458,22 @@ All6668 baseline expectations/frozen35 unchanged. Other nullable/alternative/
 pruned starts, calls/DEFINE/other conditions and broader102/byte99/unsafe100 remain;
 no public/release/consumer claim. See
 PCRE-UTF-RETAINED-ZERO-PREFIX-DESIGN.md and PCRE-UTF-RETAINED-ZERO-PREFIX-PLAN.md.
+
+
+## UTF entry through pruned atom prefixes
+
+PcreUtfPrunedAtomPrefixReferenceTests pins native entry and acceleration after
+direct zero-count literals, character types, classes and newline sequences.
+The shared first-node helper treats supported UTF primitive repeats as omitted,
+with the same cost-two/nonretained result as direct reference0; an outer
+possessive wrapper adds one visit. Retained zero brackets still block repeat
+skipping, including brackets containing pruned atoms.
+Source newline metadata survives omission: a removed newline atom still changes
+candidate behavior. AST/source flags are unchanged. Root/group traversal, capture
+dependencies, selected-leaf proof, depth and cancellation/1000-visit bounds remain
+shared. No matcher/program/instruction layout/Step/capture/frame/journal/runtime
+state/raised-limit changes. All6789 baseline expectations/frozen35 unchanged.
+General nullable/alternative/other pruned starts, calls/returned captures, DEFINE/
+other conditions and broader102 optimizer provenance remain; byte99 and unsafe100
+are separate. No public/release/consumer readiness claim. See
+PCRE-UTF-PRUNED-ATOM-PREFIX-DESIGN.md and PCRE-UTF-PRUNED-ATOM-PREFIX-PLAN.md.
