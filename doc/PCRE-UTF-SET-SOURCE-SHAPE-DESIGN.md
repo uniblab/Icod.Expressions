@@ -74,3 +74,25 @@ consumer/fallback changes. Genuine singleton caseset classification, negated/
 predicate starts, types/groups/larger bounds and broader102 source/nullable/call/
 DEFINE/condition forms remain; byte99/unsafe100 separate. Grep last; no destructive
 CommandFramework work before publication and all known consumer migrations.
+
+## Charged folded-range rejection correction
+
+Initial source run454 resolved151 of152 new failures, leaving the original
+caseless no-LF default-budget fact red (match-work exhaustion). That fact was
+already RED in the tests-only run: case closure of a wide interval creates many
+sorted canonical intervals, and ScalarSet rejection scans all of them per CR.
+Preserve the original test and limit. Add a separate range-work fixture before
+changing this runtime loop.
+
+PcreUtf8CaseFold.CloseRanges produces sorted intervals. In the existing matcher
+ScalarSet range loop, after Step charges an inspected interval, break when
+instruction.Caseless && rangeScalar < range.Start. Later intervals cannot match.
+Noncaseless source ranges remain potentially unsorted, so they keep full search.
+A range miss still proceeds to predicates and the existing negation decision.
+No program/frame/journal/layout/storage change or uncharged probe is introduced;
+only intervals not examined stop consuming work. Exact/exhausted work and the
+original no-LF default budget must pass without raised limits.
+
+This explicitly adds a small matcher-loop change to the original metadata-only
+scope. Tests cover raw unsorted ranges, folded hits/interior misses, predicates,
+negation, low-budget rejection and observed/unobserved exact/exhausted parity.

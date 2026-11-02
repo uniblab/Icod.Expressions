@@ -44,3 +44,15 @@ PcreByteScalarSet.Source (default Unknown); existing constructor/helper unchange
 
 Pre-flight: parser produces the enum/property that the compiler consumes; the
 constructor and runtime instruction interfaces remain unchanged.
+
+## Task3: Resolve the original no-LF budget regression
+
+Files: tests/Pcre/PcreUtfCaseFoldRangeWorkTests.cs; src/Pcre/PcreByteMatcher.cs;
+design/plan and canonical inventories. Original198 tests remain unchanged.
+- [ ] Add seven native-first order/predicate/negation rows and a one-scalar
+  rejection within16 work units, exact/exhausted observed/unobserved checks.
+  Publish before matcher change; inspect successful-build RED.
+- [ ] After existing per-range Step, break only for Caseless and scalar below
+  the next sorted interval. Preserve predicate/negation flow and raw range order.
+- [ ] Verify original default-budget fact and all baseline/new tests, six native
+  platforms and configured gates; final author review and exact audit.
