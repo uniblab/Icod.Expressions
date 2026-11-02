@@ -597,3 +597,28 @@ and PCRE-UTF-OPTIONAL-TYPE-PREFIX-PLAN.md. Keep102 open for bracket predicates,
 larger optional bounds, groups/alternatives/negated/property/call/DEFINE/condition
 availability; byte99/unsafe100 separate. No complete PCRE/release/Grep-readiness
 claim. CommandFramework remains untouched until publication/all known migrations.
+
+## UTF finite optional atom prefixes
+
+PcreUtfFiniteOptionalPrefixReferenceTests extends the already supported optional
+literal/set/type source forms to positive finite maxima. The four existing
+leading-node cases keep Minimum0 and require Maximum>0 and<int.MaxValue,
+reusing literal caseset/restricted-casing classification, original set provenance/
+CR/range/predicate/CT/1000-visit guards and the four type Kind/Negated cases.
+Native UPTO/TYPEUPTO/nonexact CRRANGE use the relevant query bitmap rule and
+raise early-fail count3; existing cost2/wrapper1/retained/BlocksSkip/depth/capture
+checks remain shared. Max0 omission, required and unbounded cases are unchanged.
+No parser/membership/folding/matcher/Step/instruction/frame/journal/layout/
+storage/limit/public/package/workflow/dependency/consumer changes. Bounded
+repeats still expand under the existing4096 instruction/visit limits; native65535
+bounds are not a promise that every managed pattern of that size compiles.
+617 new cases/full8993 preserve all8376 baseline expectations/frozen35. Native
+19772 bounded JIT checks (1196 fullcapture+18576 offset protocols) cover finite
+bounds/modifiers/source forms/UCP/casing, consumed/deep/capture/dependency/mixed/
+excluded controls, six newlines/every offset/strict-tolerant UTF, work/exhaustion/
+cancellation/default budget/parser257 and count/expansion rejection. Unbounded
+controls pin ordinary consumption only; broader star availability remains open.
+See PCRE-UTF-FINITE-OPTIONAL-PREFIX-DESIGN.md and its PLAN.md. Keep102 open for
+bracket predicates, unbounded/groups/alternatives/negated/property/call/DEFINE/
+condition availability. Byte99/unsafe100 separate; no complete PCRE/release/Grep
+readiness claim. CommandFramework untouched until publication/all known migrations.
