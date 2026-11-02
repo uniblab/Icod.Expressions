@@ -172,7 +172,8 @@ internal sealed class PcreByteProgramCompiler {
 		// Explicit atomic groups wrap a noncapturing group; a possessive quantifier
 		// wraps the repeat itself. ASCII and wide classes share this recovery.
 		if ( root.Branches.Count != 1 || root.Branches[0].Count == 0 ) { return default; }
-		var node = root.Branches[0][0];
+		var visits = 1;
+		var node = FindUtfCrLfLeadingNode( root.Branches[0], ref visits );
 		var groupDepth = 0;
 		HashSet<int>? captures = null;
 		while ( true ) {
@@ -183,11 +184,11 @@ internal sealed class PcreByteProgramCompiler {
 				_ => null
 			};
 			if ( body is null ) { break; }
-			if ( groupDepth >= MaximumStartClassVisits || body.Branches.Count != 1
+			if ( ++visits > MaximumStartClassVisits || body.Branches.Count != 1
 				|| body.Branches[0].Count == 0 ) { return default; }
 			if ( node is PcreByteGroup capture ) { (captures ??= new()).Add( capture.Number ); }
 			groupDepth++;
-			node = body.Branches[0][0];
+			node = FindUtfCrLfLeadingNode( body.Branches[0], ref visits );
 		}
 		if ( node is PcreByteAtomic atomic ) { node = atomic.Child; }
 		if ( node is not PcreByteRepeat { Minimum: 1, Maximum: int.MaxValue,
@@ -206,6 +207,24 @@ internal sealed class PcreByteProgramCompiler {
 			skip &= classification.Skip;
 		}
 		return (set, skip);
+	}
+
+	private PcreByteNode? FindUtfCrLfLeadingNode( IReadOnlyList<PcreByteNode> branch, ref int visits ) {
+		// Direct reference0 vanishes from native bytecode, including its possessive
+		// wrapper. Retained groups and every other node still delimit the prefix.
+		for ( var index = 0; index < branch.Count; index++ ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			var node = branch[index];
+			var omitted = node switch {
+				PcreByteRepeat { Maximum: 0, Child: PcreByteBackreference } => 2,
+				PcreByteAtomic { Child: PcreByteRepeat { Maximum: 0, Child: PcreByteBackreference } } => 3,
+				_ => 0
+			};
+			if ( omitted == 0 ) { return node; }
+			if ( visits > MaximumStartClassVisits - omitted ) { return null; }
+			visits += omitted;
+		}
+		return null;
 	}
 
 	private (bool Eligible, bool Skip) ClassifyUtfCaptureRepeat( PcreByteAlternatives root, IReadOnlySet<int> captures ) {
@@ -333,7 +352,12 @@ internal sealed class PcreByteProgramCompiler {
 			foreach ( var branch in alternatives.Branches ) {
 				cancellationToken.ThrowIfCancellationRequested();
 				if ( branch.Count == 0 ) { return false; }
-				pending.Push( branch[0] );
+				// Only skip omitted prefixes when the single-chain repeat selector
+				// already established their source shape. Other proofs stay conservative.
+				var first = utfCrLfLeadingRepeatSet is null ? branch[0]
+					: FindUtfCrLfLeadingNode( branch, ref visits );
+				if ( first is null ) { return false; }
+				pending.Push( first );
 			}
 			return true;
 		}

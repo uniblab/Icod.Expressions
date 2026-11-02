@@ -450,3 +450,22 @@ compile1000/slots256/cancellation bounds remain. Leading-prefix pruning before
 the selected PLUS, calls/DEFINE/other conditions and broader102/byte99/unsafe100
 remain; no public/release/consumer claim. See
 PCRE-UTF-ZERO-REFERENCE-PRUNING-DESIGN.md and PCRE-UTF-ZERO-REFERENCE-PRUNING-PLAN.md.
+
+
+## UTF entry through pruned reference prefixes
+
+PcreUtfPrunedPrefixReferenceTests pins native first-class entry after direct
+zero-count references before a leading PLUS disappear. A shared compiler helper
+skips direct Repeat0Backreference or possessive AtomicRepeat0Backreference,
+charging2/3 omitted AST nodes and checking CT within1000 visits. It returns the
+first retained node or no node for exhausted/all-omitted bodies.
+Repeat selection uses it at root/group bodies; total group depth and capture-slot
+classification remain distinct. The start-class proof skips omitted prefixes only
+when the selector already recognized a repeat leaf. Other branch/prefix forms keep
+conservative admission; nonpruned proof-node charging is unchanged.
+No parser/AST/source flags/membership/UTF validation/matcher/program/instruction
+layout/Step/capture/frame/journal/runtime-state/raised-limit change. All6567
+baseline expectations/frozen35 unchanged. Retained/nullable/alternative/other
+pruned prefixes, calls/DEFINE/other conditions and broader102/byte99/unsafe100
+remain; no public/release/consumer claim. See
+PCRE-UTF-PRUNED-REFERENCE-PREFIX-DESIGN.md and PCRE-UTF-PRUNED-REFERENCE-PREFIX-PLAN.md.
