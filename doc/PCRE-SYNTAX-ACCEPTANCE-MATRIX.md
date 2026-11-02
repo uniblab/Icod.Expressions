@@ -358,3 +358,21 @@ UTF validation/matcher/program/instruction layout/Step/capture/frame/journal/
 runtime-state or raised-limit change. All6309 baseline expectations/frozen35
 unchanged. Broader102/byte99/unsafe100 remain; no public/release/consumer claim. See
 PCRE-UTF-CAPTURE-DEPENDENCIES-DESIGN.md and PCRE-UTF-CAPTURE-DEPENDENCIES-PLAN.md.
+
+
+## UTF direct zero-count reference pruning
+
+PcreUtfZeroReferencePruningReferenceTests pins native omission of a direct
+Backreference repeat with maximum0. The existing capture-dependency classifier
+skips that child without clearing Skip or rejecting class recognition. Retained
+zero-count group/assertion/condition bodies still traverse normally; nested
+direct zeros and later live references preserve their distinct native effects.
+Numeric/relative/named/duplicate targets, lazy/possessive/count forms and shared
+wrapper depth use the existing Set/Skip proof and endpoint recovery.
+One compiler handler changes; no parser/AST/source flags/membership/UTF validation/
+matcher/program/instruction layout/Step/capture/frame/journal/runtime-state or
+resource-ceiling change. All6464 baseline expectations/frozen35 unchanged. Existing
+compile1000/slots256/cancellation bounds remain. Leading-prefix pruning before
+the selected PLUS, calls/DEFINE/other conditions and broader102/byte99/unsafe100
+remain; no public/release/consumer claim. See
+PCRE-UTF-ZERO-REFERENCE-PRUNING-DESIGN.md and PCRE-UTF-ZERO-REFERENCE-PRUNING-PLAN.md.

@@ -241,9 +241,9 @@ internal sealed class PcreByteProgramCompiler {
 					if ( !AddBody( conditional.Body ) ) { return default; }
 					break;
 				case PcreByteAtomic atomic: pending.Push( atomic.Child ); break;
-				// Native omits a direct zero-count reference, but retains zero-count
-				// group bodies for subroutine use. Do not conflate those source shapes.
-				case PcreByteRepeat { Maximum: 0, Child: PcreByteBackreference }: return default;
+				// Native omits a direct zero-count reference, so it has no dependency
+				// effect. Retained zero-count group bodies still use generic traversal.
+				case PcreByteRepeat { Maximum: 0, Child: PcreByteBackreference }: break;
 				case PcreByteRepeat repeat: pending.Push( repeat.Child ); break;
 				case PcreByteLiteral or PcreByteAny or PcreByteNewlineSequence or PcreByteFailure
 					or PcreByteScalarClass or PcreByteScalarSet or PcreByteClass or PcreByteAnchor
