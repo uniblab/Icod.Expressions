@@ -253,10 +253,9 @@ internal sealed class PcreByteProgramCompiler {
 			var body = node switch {
 				PcreByteGroup group => group.Body,
 				PcreByteNoncapturingGroup group => group.Body,
-				// A proven first star permits bitmap descent through atomic groups;
-				// those groups cannot assign recovery to the following PLUS.
-				PcreByteAtomic { Child: PcreByteNoncapturingGroup group }
-					when utfCrLfLeadingStarAtom is not null => group.Body,
+				// Atomic groups retain mandatory-set bitmap study even without
+				// a first star, but cannot assign recovery to the following PLUS.
+				PcreByteAtomic { Child: PcreByteNoncapturingGroup group } => group.Body,
 				_ => null
 			};
 			if ( body is null ) { break; }
