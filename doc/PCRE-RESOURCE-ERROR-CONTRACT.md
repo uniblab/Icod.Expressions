@@ -785,3 +785,39 @@ See PCRE-UTF-FINITE-OPTIONAL-PREFIX-DESIGN.md and its PLAN.md. Keep102 open for
 bracket predicates, unbounded/groups/alternatives/negated/property/call/DEFINE/
 condition availability. Byte99/unsafe100 separate; no complete PCRE/release/Grep
 readiness claim. CommandFramework untouched until publication/all known migrations.
+
+## UTF star-prefix entry and consumed-run recovery
+
+PcreUtfStarPrefixReferenceTests pins supported Literal/ScalarSet/type stars at
+root branch start or after a locally proven retained optional prefix. The compiler
+keeps a compile-time root-first star child identity, clears it when following
+mandatory set-PLUS selection fails, and gates unbounded admission through that
+identity or local BlocksSkip. Finite classifiers/cost2/wrapper1/CT/1000-visit/
+source/CR/property/UCP/capture/depth guards remain shared. A root star owns native
+type_skip; queries/retained barriers prevent a later star from owning that cache.
+The existing SkipCrLfAfterRepeat instruction bit marks only the root star's atom,
+or the already supported leading PLUS. Literal/ScalarClass success now records
+max(utfRepeatEnd,position) after the charged comparison under the same no-call/
+no-assertion guard already used for ScalarSet. Existing per-attempt reset and
+failure recovery skip LF only after a consumed marked run ending at CR; empty
+prefix runs retain bitmap LF entry. ExplicitNewline/fragment/caller/capture/
+backtracking/Step/depth/work/cancellation policies remain intact. No new runtime
+layout/state/frame/journal/span/pointer/limit/API/package/workflow/dependency or
+consumer change. Parser/membership/folding and CF remain untouched.
+919 new cases/full9912 preserve all8993 baseline expectations/frozen35. Native
+22916 bounded JIT checks (1796 fullcapture+21120 newline/UCP/offset protocols)
+cover consumed/empty runs, first-cache ownership/barriers/mixed stars/modifiers/
+source/casing/UCP, root stars before deeper/captured/dependent sets, explicit
+newline/excluded controls, strict-tolerant UTF, exact/exhausted/observed work,
+cancellation/default budget/parser257/backtrack depth rejection. See
+PCRE-UTF-STAR-PREFIX-DESIGN.md and PCRE-UTF-STAR-PREFIX-PLAN.md. First stars inside
+wrappers/after erased prefixes remain conservative; their controls pin ordinary
+consumption only. Keep102 open for further placement, bracket predicates/group/
+alternative/negated/property/call/DEFINE/condition availability; byte99/unsafe100
+separate. No complete PCRE/release/Grep-readiness claim; publication/all known
+consumer migrations precede any CF removal.
+
+The original atomic-following-star fixtures require bitmap traversal through
+Atomic(NoncapturingGroup(body)) only behind a proven root-star barrier. That
+bounded walk retains group/visit/capture checks and assigns no later repeat skip
+marker; pre-existing unguarded atomic contexts remain conservative.

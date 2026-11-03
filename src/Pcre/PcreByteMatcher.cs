@@ -231,6 +231,9 @@ internal static class PcreByteMatcher {
 										: scalar == instruction.First )
 								: ScalarEquals( input.Span[position], instruction.First, instruction.Caseless, program.Ucp, instruction.CaselessRestricted ) ) ) {
 								position += literalWidth;
+								if ( instruction.SkipCrLfAfterRepeat && activeCall < 0 && activeScope < 0 ) {
+									utfRepeatEnd = Math.Max( utfRepeatEnd, position );
+								}
 								pc++;
 							} else { failed = true; }
 							break;
@@ -258,6 +261,9 @@ internal static class PcreByteMatcher {
 									instruction.Category, program.Utf8 && instruction.Caseless )
 									!= ( instruction.Second == 1 ) ) {
 								position += propertyWidth;
+								if ( instruction.SkipCrLfAfterRepeat && activeCall < 0 && activeScope < 0 ) {
+									utfRepeatEnd = Math.Max( utfRepeatEnd, position );
+								}
 								pc++;
 							} else { failed = true; }
 							break;
@@ -739,7 +745,7 @@ internal static class PcreByteMatcher {
 					&& ( program.Newline is PcreByteNewline.AnyCrLf or PcreByteNewline.CrLf or PcreByteNewline.Any )
 					&& utfRepeatEnd > start && utfRepeatEnd < fragment.End - 1
 					&& input.Span[utfRepeatEnd] == (byte)'\r' && input.Span[utfRepeatEnd + 1] == (byte)'\n' ) {
-					// Native root-leading PLUS resumes bumpalong at its repeat end.
+					// Native root-leading PLUS or a first star resumes at its repeat end.
 					// Its scalar comparisons were already charged; no rescan is needed.
 					start = utfRepeatEnd + 1;
 				}
