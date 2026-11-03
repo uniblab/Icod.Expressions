@@ -960,3 +960,37 @@ mandatory/nullable alternatives, root alternatives, predicate/negated/property/
 call/DEFINE/condition bitmap availability and remaining placements. Byte99/
 unsafe100 separate; no complete PCRE/release/Grep readiness claim. Publication/
 all known migrations precede CF removal; Grep last.
+
+## UTF positive finite nullable-group repeats
+
+PcreUtfPositiveGroupEntryReferenceTests extends the existing finite fallback to
+positive counts while preserving incoming recovery admission. Ordinary positive
+bodies do not force BlocksSkip; the shared classifier still refuses unbounded
+branch stars without a retained prefix or independently proven owner. Minimum0
+keeps its old barrier; possessive Atomic(Repeat) and explicit atomic descent stop
+native early-fail ownership. Existing alternative barriers remain. No repeated
+AST child is assigned a new owner, avoiding accidental cache tags on every copy.
+Required exact/ranged-count captures, last copied empties and byte spans remain
+ordinary VM instructions. Repeated-child capture collection, pending repeat/
+alternative guards, measured-copy division-before-multiplication/CT1000 budget,
+set/capture/actual-return/completed-proof checks and fallback PLUS Skip=false are
+unchanged. Old successful selectors/root/first-star finder/depth/capture policy
+and all lowering/runtime code remain. No parser/emitter/matcher/Step/VM state/
+layout/instruction/frame/journal/snapshot/span/pointer/API/limit/workflow/package/
+dependency/consumer/CommandFramework changes.
+1117 new cases/full20489 preserve all19372 baseline expectations/frozen35. Native
+19076 bounded JIT checks (2176strict-tolerant fullcapture+16896newline/UCP/offset+
+4copied captures) pin exact/ranged counts/modifiers, atomic/possessive/retained/
+erased distinctions, group types/depths/alternatives/nesting/sequential/source/
+dependencies, old root-owner and unproven positive-first-star consumed-run misses.
+Strict/tolerant fragments/work/exact/exhausted/observer/cancellation/default
+budget/parser257/capture257/backtrack/copy bounds/expansion rejection remain.
+Large-copy controls use ordinary input, not bitmap parity beyond proof1000.
+Tests-only run484 established991new failures/19498passes/0skips (all19372baseline+
+126controls), zero build warnings/errors; tests/expectations unchanged afterward.
+See PCRE-UTF-POSITIVE-GROUP-ENTRY-DESIGN.md and PCRE-UTF-POSITIVE-GROUP-ENTRY-PLAN.md.
+Keep102 open for unproven repeated-group first-star ownership, required-body/
+unbounded groups, mixed mandatory/nullable and root alternatives, predicate/
+negated/property/call/DEFINE/condition bitmap availability and other placements.
+Byte99/unsafe100 separate; no complete PCRE/release/Grep readiness claim.
+Publication/all known migrations precede CF removal; Grep last.
