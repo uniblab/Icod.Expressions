@@ -178,15 +178,19 @@ internal sealed class PcreByteProgramCompiler {
 		var branch = root.Branches[0];
 		var index = 0;
 		var groupDepth = 0;
+		var skip = true;
 		HashSet<int>? captures = null;
 		while ( index < branch.Count ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			var node = branch[index++];
 			var cost = 2;
 			if ( node is PcreByteAtomic atomic ) {
-				// Possessive repeats keep their iterator shape; explicit atomic
-				// group ancestors have different early-fail rules and stay separate.
-				if ( atomic.Child is not PcreByteRepeat ) { return default; }
+				// Bitmap study crosses explicit atomic groups, but early-fail
+				// descent does not. Possessive repeats keep their iterator rules.
+				if ( atomic.Child is PcreByteNoncapturingGroup ) {
+					if ( ++visits > MaximumStartClassVisits ) { return default; }
+					skip = false;
+				} else if ( atomic.Child is not PcreByteRepeat ) { return default; }
 				node = atomic.Child;
 				cost++;
 			}
@@ -213,7 +217,7 @@ internal sealed class PcreByteProgramCompiler {
 			// Bitmap study reaches deeper groups than iterator recovery. Only
 			// ancestors of this star count; its following capture is independent.
 			if ( node is not PcreByteRepeat { Minimum: 0, Maximum: int.MaxValue } repeat ) { return default; }
-			var skip = groupDepth <= 4;
+			skip &= groupDepth <= 4;
 			if ( captures is not null ) {
 				// Only references/tests on this ancestor chain prevent its native
 				// early-fail descent. A later capture does not own this star's cache.
@@ -249,16 +253,17 @@ internal sealed class PcreByteProgramCompiler {
 			var body = node switch {
 				PcreByteGroup group => group.Body,
 				PcreByteNoncapturingGroup group => group.Body,
-				// A preceding proven star blocks later repeat skipping; this
-				// wrapper retains its bitmap even when that star is too deep to skip.
+				// A proven first star permits bitmap descent through atomic groups;
+				// those groups cannot assign recovery to the following PLUS.
 				PcreByteAtomic { Child: PcreByteNoncapturingGroup group }
-					when !skip && utfCrLfLeadingStarAtom is not null => group.Body,
+					when utfCrLfLeadingStarAtom is not null => group.Body,
 				_ => null
 			};
 			if ( body is null ) { break; }
 			if ( ++visits > MaximumStartClassVisits || body.Branches.Count != 1
 				|| body.Branches[0].Count == 0 ) { return default; }
 			if ( node is PcreByteGroup capture ) { (captures ??= new()).Add( capture.Number ); }
+			skip &= node is not PcreByteAtomic;
 			groupDepth++;
 			leading = FindUtfCrLfLeadingNode( body.Branches[0], ref visits );
 			skip &= !leading.BlocksSkip;

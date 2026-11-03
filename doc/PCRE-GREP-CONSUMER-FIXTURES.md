@@ -743,3 +743,31 @@ Keep102 open for atomic ancestors/other placements/bracket predicates/group/
 alternative/negated/property/call/DEFINE/condition availability; byte99/unsafe100
 separate. No complete PCRE/release/Grep-readiness claim; publication/all known
 migrations precede CF removal. Unsupported placement controls pin ordinary consumption.
+
+## UTF star prefixes inside explicit atomic ancestors
+
+PcreUtfAtomicStarPrefixReferenceTests pins native bitmap entry through explicit
+atomic ancestors without assigning consumed-star endpoint recovery. Bounded
+first-star discovery now accepts Atomic(NoncapturingGroup), charges an extra1
+before its existing group1/root1/erased2+possessive-wrapper1 proof costs, and
+disables local Skip after any atomic ancestor. Nonempty/single-branch/CT/1000/
+capture-classification guards remain. Possessive Atomic(Repeat) retains iterator
+rules; outside root stars retain recovery when only their suffix is atomic.
+Mandatory-set discovery permits atomic descent only with proven first-star
+identity and disables later PLUS Skip during that descent. Existing post-star
+atomic traversal costs, final failed-proof identity/Skip reset, source/casing/r/
+UCP/CR/predicate/range/capture/BlocksSkip/ExplicitNewline/fragment/resource guards
+remain. No matcher/parser/Step/emitter/runtime state/layout/instruction/frame/
+journal/span/pointer/snapshot/API/limit/workflow/package/version/dependency/
+consumer/CommandFramework changes.
+1130 new cases/full13928 preserve all12798 baseline expectations/frozen35. Native
+19108 bounded JIT checks (2212strict-tolerant fullcapture+16896newline/UCP/offset)
+pin depths1/3/4/5/6/33/199, short/long atomic aliases, mixed ancestors, source/
+modifiers/casing/UCP, erased prefixes, related/named/duplicate capture references/
+tests, later groups/outside-root cache controls, newline/unsupported controls,
+strict-tolerant UTF/work/cancellation/default budget/parser257/captures257/depth.
+See PCRE-UTF-ATOMIC-STAR-PREFIX-DESIGN.md and PCRE-UTF-ATOMIC-STAR-PREFIX-PLAN.md.
+Keep102 open for other placements/bracket predicates/group/alternative/negated/
+property/call/DEFINE/condition bitmap availability; byte99/unsafe100 separate.
+Bare atomic PLUS/unsupported placements pin ordinary consumption only. No complete
+PCRE/release/Grep-readiness claim; publication/all known migrations precede CF removal.
