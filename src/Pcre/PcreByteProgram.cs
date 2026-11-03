@@ -304,7 +304,7 @@ internal sealed class PcreByteProgramCompiler {
 		if ( root.Branches.Count != 1 || root.Branches[0].Count == 0 ) { return null; }
 		// Compile-time branch continuations only; no VM frames or subject spans.
 		var continuations = new Stack<(IReadOnlyList<PcreByteNode> Branch, int Index,
-			PcreByteAlternatives Body, int NextBranch)>();
+			PcreByteAlternatives Body, int NextBranch, int RepeatMaximum, int RepeatStartVisits)>();
 		var captures = new HashSet<int>();
 		var branch = root.Branches[0];
 		var index = 0;
@@ -312,6 +312,7 @@ internal sealed class PcreByteProgramCompiler {
 		var blocksSkip = false;
 		var joined = false;
 		var pendingAlternatives = 0;
+		var pendingRepeats = 0;
 		while ( true ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			var leading = FindUtfCrLfLeadingNode( branch, ref visits, index, blocksSkip );
@@ -320,10 +321,21 @@ internal sealed class PcreByteProgramCompiler {
 				if ( !continuations.TryPop( out var next ) ) { return null; }
 				if ( next.NextBranch < next.Body.Branches.Count ) {
 					if ( ++visits > MaximumStartClassVisits ) { return null; }
-					continuations.Push( (next.Branch, next.Index, next.Body, next.NextBranch + 1) );
+					continuations.Push( (next.Branch, next.Index, next.Body, next.NextBranch + 1,
+						next.RepeatMaximum, next.RepeatStartVisits) );
 					branch = next.Body.Branches[next.NextBranch];
 					index = 0;
 					continue;
+				}
+				if ( next.RepeatMaximum > 0 ) {
+					var copies = next.RepeatMaximum - 1;
+					var perCopy = visits - next.RepeatStartVisits;
+					// Include the group visit even for an empty body; never multiply unchecked.
+					if ( copies > 0 ) {
+						if ( perCopy > ( MaximumStartClassVisits - visits ) / copies ) { return null; }
+						visits += perCopy * copies;
+					}
+					pendingRepeats--;
 				}
 				if ( next.Body.Branches.Count > 1 ) { pendingAlternatives--; }
 				(branch, index) = (next.Branch, next.Index);
@@ -334,28 +346,47 @@ internal sealed class PcreByteProgramCompiler {
 			}
 			var node = leading.Node;
 			if ( node is null ) { return null; }
-			var body = node switch {
+			var candidate = node;
+			var repeatMaximum = 0;
+			var repeatCost = 0;
+			if ( candidate is PcreByteAtomic { Child: PcreByteRepeat } modifier ) {
+				candidate = modifier.Child;
+				repeatCost = 1;
+			}
+			if ( candidate is PcreByteRepeat { Minimum: 0, Maximum: > 0 and < int.MaxValue } repeat ) {
+				candidate = repeat.Child;
+				repeatMaximum = repeat.Maximum;
+				repeatCost++;
+			}
+			var body = candidate switch {
 				PcreByteGroup group => group.Body,
 				PcreByteNoncapturingGroup group => group.Body,
 				PcreByteAtomic { Child: PcreByteNoncapturingGroup group } => group.Body,
 				_ => null
 			};
 			if ( body is not null ) {
-				if ( ++visits > MaximumStartClassVisits || body.Branches.Count == 0 ) { return null; }
-				if ( node is PcreByteGroup capture ) { captures.Add( capture.Number ); }
+				var cost = 1 + repeatCost;
+				if ( visits > MaximumStartClassVisits - cost || body.Branches.Count == 0 ) { return null; }
+				visits += cost;
+				if ( candidate is PcreByteGroup capture ) { captures.Add( capture.Number ); }
+				if ( repeatMaximum > 0 ) {
+					pendingRepeats++;
+					blocksSkip = true;
+				}
 				if ( body.Branches.Count > 1 ) {
 					pendingAlternatives++;
 					// Native alternative groups start early-fail study with a retained count.
 					blocksSkip = true;
 				}
-				continuations.Push( (branch, leading.NextIndex, body, 1) );
+				continuations.Push( (branch, leading.NextIndex, body, 1,
+					repeatMaximum, repeatMaximum > 0 ? visits - 1 : 0) );
 				branch = body.Branches[0];
 				index = 0;
 				continue;
 			}
 			var set = FindUtfCrLfMandatoryRepeatSet( node );
-			// A nested return must not bypass unchecked sibling alternatives.
-			if ( !joined || pendingAlternatives != 0 || set is null
+			// A nested return must not bypass unchecked alternatives or repeat bodies.
+			if ( !joined || pendingAlternatives != 0 || pendingRepeats != 0 || set is null
 				|| !ClassifyUtfCaptureRepeat( root, captures ).Eligible ) { return null; }
 			// Returned groups block later PLUS recovery, with or without a first-star owner.
 			return set;

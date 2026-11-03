@@ -851,3 +851,38 @@ quantified groups, predicates/negated/property/call/DEFINE/condition bitmap
 availability and remaining placements. Byte99/unsafe100 separate. No complete
 PCRE/release/Grep readiness claim; publication/all known migrations precede CF
 removal; Grep last.
+
+## UTF finite nullable-group repeats
+
+PcreUtfFiniteGroupEntryReferenceTests extends the existing bounded UTF fallback
+to finite Minimum0/Maximum>0 repeats of fully nullable prefix group bodies,
+including possessive Atomic(Repeat), capture/noncapture/explicit atomic groups
+and verified nullable alternatives. Repeat bodies set retained BlocksSkip;
+inner stars gain no new recovery owner. A pending-repeat count blocks early
+mandatory-set selection after nested returns until every body branch closes.
+Continuation tuples retain RepeatMaximum/RepeatStartVisits across siblings.
+One repeat/modifier visit plus the group visit is charged on entry; completed
+body cost includes that group even when empty. Remaining copies are charged
+using division before multiplication, including already charged nested repeats,
+so no copy rescans, overflow or1000-visit bypass occurs. Over-budget proofs fail.
+Old successful selectors/root/first-star/depth/capture/atomic rules, shared
+nullable-atom/set/capture/actual-return/completed-proof guards, cancellation and
+fallback PLUS Skip=false are unchanged. No matcher/parser/emitter/Step/runtime
+state/layout/instruction/frame/journal/snapshot/span/pointer/API/limit/workflow/
+package/dependency/consumer/CommandFramework changes.
+1203 new cases/full19372 preserve all18169 baseline expectations/frozen35. Native
+19248 bounded JIT checks (2348strict-tolerant fullcapture+16896newline/UCP/offset+
+4copied-body captures) pin quantifier aliases/bounds/modifiers, group types/
+depths/alternatives/nesting/sequential/source/dependency/recovery cases, greedy
+empty versus lazy omitted captures, nested early-set/property traps and strict/
+tolerant fragments. Work/exact/exhausted/observed/cancellation/default budget/
+parser257/capture257/backtrack/copied bounds/expansion rejection remain. Large
+copy controls use ordinary consumption, not native bitmap parity past proof1000.
+Tests-only run482 established1061new failures/18311passes/0skips (all18169baseline+
+142controls), zero build warnings/errors; tests/expectations unchanged afterward.
+See PCRE-UTF-FINITE-GROUP-ENTRY-DESIGN.md and PCRE-UTF-FINITE-GROUP-ENTRY-PLAN.md.
+Keep102 open for required-body/positive-minimum/unbounded group repeats, mixed
+mandatory/nullable alternatives, root alternatives, predicate/negated/property/
+call/DEFINE/condition bitmap availability and remaining placements. Byte99/
+unsafe100 separate; no complete PCRE/release/Grep readiness claim. Publication/
+all known migrations precede CF removal; Grep last.
