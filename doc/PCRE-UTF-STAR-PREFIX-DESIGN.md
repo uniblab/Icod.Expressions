@@ -75,3 +75,8 @@ UTF8 LF, root project/solution,src/tests/samples. Keep102 open for further star
 placement, bracket predicates/groups/alternatives/negated/property/call/DEFINE/
 condition availability; byte99/unsafe100 separate. No complete PCRE/release/Grep
 readiness claim. Grep last; CF untouched until publication/all known migrations.
+
+Original atomic-following-star fixtures also require group-walk traversal of
+Atomic(NoncapturingGroup(body)) behind !skip and a proven root-star identity.
+Keep the existing bounded group/capture walk; unguarded atomic contexts stay
+unchanged. This retains bitmap entry while the root star owns recovery.

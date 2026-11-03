@@ -45,3 +45,7 @@ SkipCrLfAfterRepeat bit/utfRepeatEnd integer, no runtime layout change.
   7equal workloads pass;0failed/skipped tests/build warnings/errors.
 - [ ] Wholebranch author review; strict logs/head/tree/blob/tests-afterRED/
   frozen/clean/whitespace audit; issue102/PR ready/unmerged; user review/merge next.
+
+Original-fixture completion: the bounded group walk must descend an atomic
+noncapturing wrapper behind !skip/root-star identity. Tests already pin this
+source shape before implementation; no expectation changes are permitted.

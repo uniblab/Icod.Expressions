@@ -193,6 +193,10 @@ internal sealed class PcreByteProgramCompiler {
 			var body = node switch {
 				PcreByteGroup group => group.Body,
 				PcreByteNoncapturingGroup group => group.Body,
+				// A preceding root star already owns recovery; this wrapper cannot
+				// assign type_skip to the following repeat, but its bitmap remains.
+				PcreByteAtomic { Child: PcreByteNoncapturingGroup group }
+					when !skip && utfCrLfLeadingStarAtom is not null => group.Body,
 				_ => null
 			};
 			if ( body is null ) { break; }

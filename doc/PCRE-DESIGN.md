@@ -684,3 +684,8 @@ consumption only. Keep102 open for further placement, bracket predicates/group/
 alternative/negated/property/call/DEFINE/condition availability; byte99/unsafe100
 separate. No complete PCRE/release/Grep-readiness claim; publication/all known
 consumer migrations precede any CF removal.
+
+The original atomic-following-star fixtures require bitmap traversal through
+Atomic(NoncapturingGroup(body)) only behind a proven root-star barrier. That
+bounded walk retains group/visit/capture checks and assigns no later repeat skip
+marker; pre-existing unguarded atomic contexts remain conservative.
