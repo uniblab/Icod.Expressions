@@ -178,6 +178,7 @@ internal sealed class PcreByteProgramCompiler {
 		var branch = root.Branches[0];
 		var index = 0;
 		var groupDepth = 0;
+		HashSet<int>? captures = null;
 		while ( index < branch.Count ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			var node = branch[index++];
@@ -194,19 +195,33 @@ internal sealed class PcreByteProgramCompiler {
 				visits += cost;
 				continue;
 			}
-			if ( node is PcreByteNoncapturingGroup group ) {
-				if ( visits >= MaximumStartClassVisits || group.Body.Branches.Count != 1
-					|| group.Body.Branches[0].Count == 0 ) { return default; }
+			var body = node switch {
+				PcreByteGroup group => group.Body,
+				PcreByteNoncapturingGroup group => group.Body,
+				_ => null
+			};
+			if ( body is not null ) {
+				if ( visits >= MaximumStartClassVisits || body.Branches.Count != 1
+					|| body.Branches[0].Count == 0 ) { return default; }
+				if ( node is PcreByteGroup capture ) { (captures ??= new()).Add( capture.Number ); }
 				visits++;
 				groupDepth++;
-				branch = group.Body.Branches[0];
+				branch = body.Branches[0];
 				index = 0;
 				continue;
 			}
 			// Bitmap study reaches deeper groups than iterator recovery. Only
 			// ancestors of this star count; its following capture is independent.
-			return node is PcreByteRepeat { Minimum: 0, Maximum: int.MaxValue } repeat
-				? (repeat.Child, groupDepth <= 4) : default;
+			if ( node is not PcreByteRepeat { Minimum: 0, Maximum: int.MaxValue } repeat ) { return default; }
+			var skip = groupDepth <= 4;
+			if ( captures is not null ) {
+				// Only references/tests on this ancestor chain prevent its native
+				// early-fail descent. A later capture does not own this star's cache.
+				var classification = ClassifyUtfCaptureRepeat( root, captures );
+				if ( !classification.Eligible ) { return default; }
+				skip &= classification.Skip;
+			}
+			return (repeat.Child, skip);
 		}
 		return default;
 	}

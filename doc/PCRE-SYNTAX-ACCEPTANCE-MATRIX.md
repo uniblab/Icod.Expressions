@@ -670,3 +670,33 @@ wrapper controls pin ordinary consumption only. Keep102 open for capturing/
 atomic ancestors, other placements, bracket predicates/group/alternative/negated/
 property/call/DEFINE/condition availability; byte99/unsafe100 separate. No complete
 PCRE/release/Grep readiness claim; CF removal requires publication/all migrations.
+
+## UTF star prefixes inside capturing ancestors
+
+PcreUtfCapturedStarPrefixReferenceTests pins native bitmap entry independently
+from capture-dependent consumed-run recovery. Existing bounded iterative first-star
+discovery now descends nonempty single-branch capturing as well as noncapturing
+ancestors. Both charge group1/count toward the same ancestor-depth4 boundary.
+Only capture numbers before the star enter a compile-time HashSet; existing
+ClassifyUtfCaptureRepeat determines eligibility and disables Skip for related
+references/tests while retaining identity. Direct reference0 remains erased;
+retained zero-group references remain dependencies. Named/duplicate references
+and capture tests use existing resolved numbers. Unrelated/following captures
+do not disable the earlier star's cache. Explicit atomic ancestors, alternatives
+and unsupported placements remain separate; possessive-repeat unwrapping and
+final mandatory-set identity/Skip reset stay intact. Existing source/caseset/r/
+UCP/CR/predicate/range/capture/BlocksSkip/ExplicitNewline/fragment/resource guards
+and leading-PLUS marker remain. No matcher/parser/Step/runtime state/layout/
+instruction/program/frame/journal/snapshot/span/pointer/limit/API/package/version/
+workflow/dependency/consumer/CommandFramework changes.
+1080 new cases/full12798 preserve all11718 baseline expectations/frozen35. Native
+19008 bounded JIT checks (2112fullcapture+16896newline/UCP/offset) pin depths1/3/4/
+5/6/33/199, related/unrelated/named/duplicate references/tests, erased-vs-retained
+dependencies, mixed ancestors, star source/modifiers/casing/UCP, erased prefixes,
+suffix capture/deep/atomic groups, newline flags/unsupported controls and strict/
+tolerant UTF/work/cancellation/default budget/parser257/captures257/depth limits.
+See PCRE-UTF-CAPTURED-STAR-PREFIX-DESIGN.md and PCRE-UTF-CAPTURED-STAR-PREFIX-PLAN.md.
+Keep102 open for atomic ancestors/other placements/bracket predicates/group/
+alternative/negated/property/call/DEFINE/condition availability; byte99/unsafe100
+separate. No complete PCRE/release/Grep-readiness claim; publication/all known
+migrations precede CF removal. Unsupported placement controls pin ordinary consumption.
