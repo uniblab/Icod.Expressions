@@ -829,3 +829,35 @@ Nullable prefix-only wrapper controls pin ordinary consumption only; initial
 native probes confirm their continuation/rejoin gap needs a separate traversal
 refactor. Byte99/unsafe100 separate; no complete PCRE/release/Grep readiness claim.
 Publication/all known migrations precede CF removal; Grep last.
+
+## UTF continuation after nullable prefix groups
+
+PcreUtfNullableGroupEntryReferenceTests pins bitmap continuation from a fully
+nullable prefix group into its enclosing sequence. Existing successful selector
+paths remain; only failed proofs with proven first-star identity try a bounded
+iterative fallback. Its compile-time stack stores AST branches/next indexes,
+never VM frames or subject spans. Group descent requires one nonempty branch;
+resume occurs only after existing optional-atom classifiers accept every operand
+as nullable. Retained state carries across returns; at least one actual group
+return and existing capture classification eligibility are required.
+FindUtfCrLfLeadingNode now reports NextIndex/Nullable and accepts defaulted
+startIndex/blocksSkip; budget failure differs from nullable success. Shared
+mandatory-set validation requires unbounded positive ScalarSet PLUS, nonempty
+valid scalar ranges, LF/no CR/no predicates. A compile-only joined-proof flag
+lets start-class discovery consume that completed proof; generic traversal stays
+for other paths. First-star depth/capture/atomic recovery and all VM instructions
+remain; fallback PLUS Skip is explicitly false. CT/1000/source/casing/UCP/range/
+capture/fragment/resource guards and failed-proof identity reset remain.
+No matcher/parser/emitter/Step/runtime state/layout/instruction/frame/journal/
+snapshot/span/pointer/API/limit/workflow/package/dependency/consumer/CF changes.
+1408 new cases/full16306 preserve all14898 baseline expectations/frozen35. Native
+19664 bounded JIT checks (2768strict-tolerant fullcapture+16896newline/UCP/offset)
+pin group types/depths1/3/4/5/6/33/199, empty participating capture spans, nested/
+sequential returns, source/modifiers/UCP/casing/erasures/dependencies, required/
+CR-admitting/unsupported stops and strict-tolerant UTF/work/cancellation/default
+budget/parser257/captures257/backtrack rejection. See
+PCRE-UTF-NULLABLE-GROUP-ENTRY-DESIGN.md and PCRE-UTF-NULLABLE-GROUP-ENTRY-PLAN.md.
+Keep102 open for unproven-first-star placements and broader predicate/group/
+alternative/negated/property/call/DEFINE/condition bitmap availability; byte99/
+unsafe100 separate. No complete PCRE/release/Grep readiness claim. Publication/
+all known migrations precede CF removal; Grep last.
