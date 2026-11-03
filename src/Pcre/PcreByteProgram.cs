@@ -87,6 +87,7 @@ internal sealed class PcreByteProgramCompiler {
 	private PcreByteNode? utfCrLfLeadingStarAtom;
 	private bool skipUtfCrLfLeadingStar;
 	private bool skipUtfCrLfLeadingRepeat;
+	private bool utfCrLfJoinedNullablePrefix;
 	private readonly List<(int Instruction, int Number)> calls = new();
 
 	internal PcreByteProgramCompiler( CancellationToken cancellationToken, bool utf8, bool matchInvalidUtf,
@@ -104,6 +105,12 @@ internal sealed class PcreByteProgramCompiler {
 	internal PcreByteProgram Compile( PcreByteAlternatives root, IReadOnlyDictionary<int, PcreByteGroup> targets ) {
 		(utfCrLfLeadingStarAtom, skipUtfCrLfLeadingStar) = utf8 ? FindUtfCrLfRootStarAtom( root ) : default;
 		(utfCrLfLeadingRepeatSet, skipUtfCrLfLeadingRepeat) = utf8 ? FindUtfCrLfLeadingRepeat( root ) : default;
+		utfCrLfJoinedNullablePrefix = false;
+		if ( utfCrLfLeadingRepeatSet is null && utfCrLfLeadingStarAtom is not null ) {
+			utfCrLfLeadingRepeatSet = FindUtfCrLfJoinedRepeat( root );
+			skipUtfCrLfLeadingRepeat = false;
+			utfCrLfJoinedNullablePrefix = utfCrLfLeadingRepeatSet is not null;
+		}
 		if ( utfCrLfLeadingRepeatSet is null ) {
 			utfCrLfLeadingStarAtom = null;
 			skipUtfCrLfLeadingStar = false;
@@ -268,16 +275,8 @@ internal sealed class PcreByteProgramCompiler {
 			skip &= !leading.BlocksSkip;
 			node = leading.Node;
 		}
-		if ( node is PcreByteAtomic atomic ) { node = atomic.Child; }
-		if ( node is not PcreByteRepeat { Minimum: 1, Maximum: int.MaxValue,
-			Child: PcreByteScalarSet { Negated: false } set } || !set.Predicates.IsEmpty ) { return default; }
-		var lf = false;
-		foreach ( var range in set.Ranges.Span ) {
-			cancellationToken.ThrowIfCancellationRequested();
-			if ( range.Start <= '\r' && range.End >= '\r' ) { return default; }
-			lf |= range.Start <= '\n' && range.End >= '\n';
-		}
-		if ( !lf ) { return default; }
+		var set = FindUtfCrLfMandatoryRepeatSet( node );
+		if ( set is null ) { return default; }
 		skip &= groupDepth <= 4;
 		if ( captures is not null ) {
 			var classification = ClassifyUtfCaptureRepeat( root, captures );
@@ -287,11 +286,69 @@ internal sealed class PcreByteProgramCompiler {
 		return (set, skip);
 	}
 
-	private (PcreByteNode? Node, bool BlocksSkip) FindUtfCrLfLeadingNode( IReadOnlyList<PcreByteNode> branch, ref int visits ) {
+	private PcreByteScalarSet? FindUtfCrLfMandatoryRepeatSet( PcreByteNode? node ) {
+		if ( node is PcreByteAtomic atomic ) { node = atomic.Child; }
+		if ( node is not PcreByteRepeat { Minimum: 1, Maximum: int.MaxValue,
+			Child: PcreByteScalarSet { Negated: false } set } || !set.Predicates.IsEmpty ) { return null; }
+		var lf = false;
+		foreach ( var range in set.Ranges.Span ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( range.Start < 0 || range.End > 0x10FFFF || range.Start > range.End
+				|| range.Start <= '\r' && range.End >= '\r' ) { return null; }
+			lf |= range.Start <= '\n' && range.End >= '\n';
+		}
+		return lf ? set : null;
+	}
+
+	private PcreByteScalarSet? FindUtfCrLfJoinedRepeat( PcreByteAlternatives root ) {
+		if ( root.Branches.Count != 1 || root.Branches[0].Count == 0 ) { return null; }
+		// Compile-time branch continuations only; no VM frames or subject spans.
+		var continuations = new Stack<(IReadOnlyList<PcreByteNode> Branch, int Index)>();
+		var captures = new HashSet<int>();
+		var branch = root.Branches[0];
+		var index = 0;
+		var visits = 1;
+		var blocksSkip = false;
+		var joined = false;
+		while ( true ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			var leading = FindUtfCrLfLeadingNode( branch, ref visits, index, blocksSkip );
+			blocksSkip = leading.BlocksSkip;
+			if ( leading.Nullable ) {
+				if ( !continuations.TryPop( out var next ) ) { return null; }
+				(branch, index) = next;
+				joined = true;
+				continue;
+			}
+			var node = leading.Node;
+			if ( node is null ) { return null; }
+			var body = node switch {
+				PcreByteGroup group => group.Body,
+				PcreByteNoncapturingGroup group => group.Body,
+				PcreByteAtomic { Child: PcreByteNoncapturingGroup group } => group.Body,
+				_ => null
+			};
+			if ( body is not null ) {
+				if ( ++visits > MaximumStartClassVisits || body.Branches.Count != 1
+					|| body.Branches[0].Count == 0 ) { return null; }
+				if ( node is PcreByteGroup capture ) { captures.Add( capture.Number ); }
+				continuations.Push( (branch, leading.NextIndex) );
+				branch = body.Branches[0];
+				index = 0;
+				continue;
+			}
+			var set = FindUtfCrLfMandatoryRepeatSet( node );
+			if ( !joined || set is null || !ClassifyUtfCaptureRepeat( root, captures ).Eligible ) { return null; }
+			// The proven first star already owns recovery, even after its group closes.
+			return set;
+		}
+	}
+
+	private (PcreByteNode? Node, bool BlocksSkip, int NextIndex, bool Nullable) FindUtfCrLfLeadingNode(
+		IReadOnlyList<PcreByteNode> branch, ref int visits, int startIndex = 0, bool blocksSkip = false ) {
 		// Bitmap study crosses retained zero brackets and supported optional atoms, but
 		// their opcodes prevent repeat skipping. Direct primitive/reference0 vanishes.
-		var blocksSkip = false;
-		for ( var index = 0; index < branch.Count; index++ ) {
+		for ( var index = startIndex; index < branch.Count; index++ ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			var node = branch[index];
 			var candidate = node;
@@ -321,13 +378,13 @@ internal sealed class PcreByteProgramCompiler {
 				PcreByteRepeat { Maximum: 0, Child: PcreByteAtomic { Child: PcreByteNoncapturingGroup } } => (3, true),
 				_ => (0, false)
 			};
-			if ( cost == 0 ) { return (node, blocksSkip); }
+			if ( cost == 0 ) { return (node, blocksSkip, index + 1, false); }
 			cost += wrapper;
 			if ( visits > MaximumStartClassVisits - cost ) { return default; }
 			visits += cost;
 			blocksSkip |= retained;
 		}
-		return default;
+		return (null, blocksSkip, branch.Count, true);
 	}
 
 	private bool CanCrossUtfCrLfOptionalRepeat( PcreByteRepeat repeat, bool blocksSkip ) =>
@@ -453,6 +510,11 @@ internal sealed class PcreByteProgramCompiler {
 	}
 
 	private bool HasUtfCrLfStartClass( PcreByteAlternatives root ) {
+		if ( utfCrLfJoinedNullablePrefix && utfCrLfLeadingRepeatSet is not null ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			// The complete fallback proof checked every nullable prefix and this set.
+			return true;
+		}
 		// Native prefix/start-bitmap scanning rejects CR before VM entry when
 		// every initial mandatory positive class excludes it. Wider UTF-8 leaders
 		// do not change ASCII CR/LF membership. Keep this independent
