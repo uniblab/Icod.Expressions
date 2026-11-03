@@ -232,6 +232,9 @@ internal sealed class PcreByteProgramCompiler {
 				if ( !classification.Eligible ) { return default; }
 				skip &= classification.Skip;
 			}
+			// A group loop is not a scalar early-fail cache owner.
+			if ( repeat.Child is PcreByteGroup or PcreByteNoncapturingGroup
+				or PcreByteAtomic { Child: PcreByteNoncapturingGroup } ) { skip = false; }
 			return (repeat.Child, skip);
 		}
 		return default;
@@ -304,7 +307,7 @@ internal sealed class PcreByteProgramCompiler {
 		if ( root.Branches.Count != 1 || root.Branches[0].Count == 0 ) { return null; }
 		// Compile-time branch continuations only; no VM frames or subject spans.
 		var continuations = new Stack<(IReadOnlyList<PcreByteNode> Branch, int Index,
-			PcreByteAlternatives Body, int NextBranch, int RepeatMaximum, int RepeatStartVisits)>();
+			PcreByteAlternatives Body, int NextBranch, int RepeatCopies, int RepeatStartVisits)>();
 		var captures = new HashSet<int>();
 		var branch = root.Branches[0];
 		var index = 0;
@@ -322,13 +325,13 @@ internal sealed class PcreByteProgramCompiler {
 				if ( next.NextBranch < next.Body.Branches.Count ) {
 					if ( ++visits > MaximumStartClassVisits ) { return null; }
 					continuations.Push( (next.Branch, next.Index, next.Body, next.NextBranch + 1,
-						next.RepeatMaximum, next.RepeatStartVisits) );
+						next.RepeatCopies, next.RepeatStartVisits) );
 					branch = next.Body.Branches[next.NextBranch];
 					index = 0;
 					continue;
 				}
-				if ( next.RepeatMaximum > 0 ) {
-					var copies = next.RepeatMaximum - 1;
+				if ( next.RepeatCopies > 0 ) {
+					var copies = next.RepeatCopies - 1;
 					var perCopy = visits - next.RepeatStartVisits;
 					// Include the group visit even for an empty body; never multiply unchecked.
 					if ( copies > 0 ) {
@@ -347,7 +350,8 @@ internal sealed class PcreByteProgramCompiler {
 			var node = leading.Node;
 			if ( node is null ) { return null; }
 			var candidate = node;
-			var repeatMaximum = 0;
+			var repeatCopies = 0;
+			var repeatMinimum = 0;
 			var repeatCost = 0;
 			var repeatBlocksSkip = false;
 			if ( candidate is PcreByteAtomic { Child: PcreByteRepeat } modifier ) {
@@ -355,9 +359,10 @@ internal sealed class PcreByteProgramCompiler {
 				repeatCost = 1;
 				repeatBlocksSkip = true;
 			}
-			if ( candidate is PcreByteRepeat { Minimum: >= 0, Maximum: > 0 and < int.MaxValue } repeat ) {
+			if ( candidate is PcreByteRepeat { Minimum: >= 0, Maximum: > 0 } repeat ) {
 				candidate = repeat.Child;
-				repeatMaximum = repeat.Maximum;
+				repeatCopies = repeat.Maximum;
+				repeatMinimum = repeat.Minimum;
 				repeatCost++;
 				repeatBlocksSkip |= repeat.Minimum == 0;
 			}
@@ -368,11 +373,17 @@ internal sealed class PcreByteProgramCompiler {
 				_ => null
 			};
 			if ( body is not null ) {
+				if ( repeatCopies == int.MaxValue ) {
+					// Required copies plus one loop body; guard before adding.
+					if ( repeatMinimum >= MaximumStartClassVisits ) { return null; }
+					repeatCopies = repeatMinimum + 1;
+					repeatBlocksSkip |= repeatMinimum <= 1;
+				}
 				var cost = 1 + repeatCost;
 				if ( visits > MaximumStartClassVisits - cost || body.Branches.Count == 0 ) { return null; }
 				visits += cost;
 				if ( candidate is PcreByteGroup capture ) { captures.Add( capture.Number ); }
-				if ( repeatMaximum > 0 ) {
+				if ( repeatCopies > 0 ) {
 					pendingRepeats++;
 					blocksSkip |= repeatBlocksSkip;
 				}
@@ -384,7 +395,7 @@ internal sealed class PcreByteProgramCompiler {
 					blocksSkip = true;
 				}
 				continuations.Push( (branch, leading.NextIndex, body, 1,
-					repeatMaximum, repeatMaximum > 0 ? visits - 1 : 0) );
+					repeatCopies, repeatCopies > 0 ? visits - 1 : 0) );
 				branch = body.Branches[0];
 				index = 0;
 				continue;

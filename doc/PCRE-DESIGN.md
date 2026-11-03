@@ -994,3 +994,39 @@ unbounded groups, mixed mandatory/nullable and root alternatives, predicate/
 negated/property/call/DEFINE/condition bitmap availability and other placements.
 Byte99/unsafe100 separate; no complete PCRE/release/Grep readiness claim.
 Publication/all known migrations precede CF removal; Grep last.
+
+## UTF nullable unbounded-group continuation
+
+PcreUtfUnboundedGroupEntryReferenceTests extends the existing bounded fallback
+to fully nullable group loops. Minimum0/1 loops block inner scalar early-fail
+ownership; higher required copies preserve incoming admission unless an existing
+atomic/possessive/alternative/retained barrier applies. Unproven first stars in
+those earlier copies remain rejected. Group-star identity remains compile-time
+metadata but group children never receive scalar recovery Skip eligibility;
+primitive identity/depth/capture rules and lowering are unchanged.
+Compile-time RepeatMaximum becomes RepeatCopies: finite paths still use Maximum,
+unbounded paths use guarded Minimum+1 for required copies plus one loop body.
+Minimum>=1000 stops before addition. The body is checked once, every branch must
+be fully nullable, and existing group-inclusive division-before-multiplication
+charges all bounded study copies/nested costs under1000 visits without rescans.
+Pending bodies/alternatives still reject early mandatory sets. Shared set/
+capture/actual-return/completed-proof/cancellation/reset guards and fallback PLUS
+Skip=false remain. No parser/emitter/matcher/Step/VM state/layout/instruction/
+frame/journal/snapshot/span/pointer/API/limit/workflow/package/dependency/consumer/
+CommandFramework changes; existing loop progress/resource guards stay intact.
+1443 new cases/full21932 preserve all20489 baseline expectations/frozen35. Native
+19728 bounded JIT checks (2828strict-tolerant fullcapture+16896newline/UCP/offset+
+4copied captures) pin loops/count aliases/modifiers/group types/depths/nesting/
+sequential/alternatives/source/dependencies, lazy unset versus required/greedy
+empty captures, primitive-owner versus group-loop and guarded versus unproven
+required-copy cases. Strict/tolerant fragments/work/exact/exhausted/observer/
+cancellation/default budget/parser257/capture257/backtrack/copy/expansion limits
+remain. Large-copy controls use ordinary input, not bitmap parity past proof1000.
+Tests-only run486 established1301new failures/20631passes/0skips (all20489baseline+
+142controls), zero build warnings/errors; tests/expectations unchanged afterward.
+See PCRE-UTF-UNBOUNDED-GROUP-ENTRY-DESIGN.md and PCRE-UTF-UNBOUNDED-GROUP-ENTRY-PLAN.md.
+Keep102 open for required-body groups, mixed mandatory/nullable/root alternatives,
+unproven earlier-copy owners, predicate/negated/property/call/DEFINE/condition
+bitmap availability and remaining placements. Byte99/unsafe100 separate; no
+complete PCRE/release/Grep readiness claim. Publication/all known migrations
+precede CF removal; Grep last.
