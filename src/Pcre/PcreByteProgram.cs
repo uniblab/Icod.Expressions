@@ -190,6 +190,11 @@ internal sealed class PcreByteProgramCompiler {
 		while ( index < branch.Count ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			var node = branch[index++];
+			// Native bitmap and early-fail study both ignore word boundaries.
+			if ( node is PcreByteWordBoundary ) {
+				if ( ++visits > MaximumStartClassVisits ) { return default; }
+				continue;
+			}
 			var cost = 2;
 			if ( node is PcreByteAtomic atomic ) {
 				// Bitmap study crosses explicit atomic groups, but early-fail
@@ -420,6 +425,8 @@ internal sealed class PcreByteProgramCompiler {
 			var wrapper = 0;
 			if ( candidate is PcreByteAtomic atomic ) { candidate = atomic.Child; wrapper = 1; }
 			var (cost, retained) = candidate switch {
+				// Boundaries assert at runtime but do not raise native early-fail count.
+				PcreByteWordBoundary => (1, false),
 				PcreByteRepeat omitted when IsUtfCrLfErasedRepeat( omitted ) => (2, false),
 				// Queries raise early-fail count to three. A root star owns type_skip;
 				// both prevent the following PLUS from receiving its own skip marker.
