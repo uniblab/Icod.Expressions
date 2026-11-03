@@ -226,18 +226,18 @@ internal sealed class PcreByteProgramCompiler {
 			var (cost, retained) = candidate switch {
 				PcreByteRepeat { Maximum: 0, Child: PcreByteBackreference or PcreByteLiteral
 					or PcreByteAny or PcreByteScalarClass or PcreByteScalarSet or PcreByteNewlineSequence } => (2, false),
-				// QUERY adds its literal start bit and raises native early-fail count
+				// QUERY/finite UPTO adds its start bit and raises native early-fail count
 				// to three. Its possible first character must also reject CR.
-				PcreByteRepeat { Minimum: 0, Maximum: 1, Child: PcreByteLiteral literal }
+				PcreByteRepeat { Minimum: 0, Maximum: > 0 and < int.MaxValue, Child: PcreByteLiteral literal }
 					when HasUtfCrLfLiteralBitmap( literal.Value, literal.Caseless, literal.CaselessRestricted ) => (2, true),
-				PcreByteRepeat { Minimum: 0, Maximum: 1, Child: PcreByteScalarSet set }
+				PcreByteRepeat { Minimum: 0, Maximum: > 0 and < int.MaxValue, Child: PcreByteScalarSet set }
 					when IsUtfCrLfOptionalSet( set, ref visits ) => (2, true),
-				// These native TYPEQUERY operands have bitmap study and exclude CR.
+				// These TYPEQUERY/finite TYPEUPTO operands have bitmap study and exclude CR.
 				// Parsed kinds already distinguish UCP properties and ASCII restrictions.
-				PcreByteRepeat { Minimum: 0, Maximum: 1, Child: PcreByteScalarClass {
+				PcreByteRepeat { Minimum: 0, Maximum: > 0 and < int.MaxValue, Child: PcreByteScalarClass {
 					Kind: PcreByteScalarClassKind.AsciiDigit or PcreByteScalarClassKind.AsciiWord
 						or PcreByteScalarClassKind.HorizontalSpace, Negated: false } } => (2, true),
-				PcreByteRepeat { Minimum: 0, Maximum: 1, Child: PcreByteScalarClass {
+				PcreByteRepeat { Minimum: 0, Maximum: > 0 and < int.MaxValue, Child: PcreByteScalarClass {
 					Kind: PcreByteScalarClassKind.AsciiSpace, Negated: true } } => (2, true),
 				PcreByteRepeat { Maximum: 0, Child: PcreByteGroup or PcreByteNoncapturingGroup
 					or PcreByteLookahead or PcreByteLookbehind or PcreByteLiteralAssertion
