@@ -821,3 +821,30 @@ The original atomic-following-star fixtures require bitmap traversal through
 Atomic(NoncapturingGroup(body)) only behind a proven root-star barrier. That
 bounded walk retains group/visit/capture checks and assigns no later repeat skip
 marker; pre-existing unguarded atomic contexts remain conservative.
+
+## UTF star ownership after erased primitives
+
+PcreUtfErasedStarPrefixReferenceTests pins the first surviving star after direct
+Max0 primitives/references. IsUtfCrLfErasedRepeat shares the existing six-family
+Backreference/Literal/Any/ScalarClass/ScalarSet/NewlineSequence vocabulary between
+leading-node cost2/retained-false traversal and root-star discovery. Discovery
+checks cancellation per node, charges root1+2 per erased operand+possessive
+wrapper1 under the same1000-visit bound, and stops at the first other node.
+Retained groups/assertions/conditionals and queries remain ownership barriers;
+first stars inside wrappers remain separate proof work. The star still reuses
+all source/casing/UCP/CR/predicate/range/capture/depth guards, existing instruction
+marker and consumed-run endpoint/reset/recovery. Source ExplicitNewline and its
+negated-singleton exception survive erasure. No matcher/parser/membership/folding/
+Step/runtime layout/state/frame/journal/span/pointer/limit/API/package/workflow/
+dependency/consumer or CF changes.
+885 new cases/full10797 preserve all9912 baseline expectations/frozen35. Native
+18624 bounded JIT checks (1728capture+16896newline/UCP/offset) cover six erased
+families/aliases/sequences through128, modifiers/source/UCP/casing, empty and
+consumed runs, newline flags, following capture/dependency/deep/atomic groups,
+retained/query barriers, strict-tolerant UTF/work/cancellation/default budget/
+parser257/backtrack-depth limits. See PCRE-UTF-ERASED-STAR-PREFIX-DESIGN.md and
+PCRE-UTF-ERASED-STAR-PREFIX-PLAN.md. Wrapper-first-star controls pin ordinary
+consumption only. Keep102 open for wrappers/other placement/bracket predicates/
+group/alternative/negated/property/call/DEFINE/condition availability; byte99/
+unsafe100 separate. No complete PCRE/release/Grep-readiness claim; publication/
+all known migrations precede any CF removal.

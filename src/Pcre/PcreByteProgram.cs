@@ -168,12 +168,29 @@ internal sealed class PcreByteProgramCompiler {
 		}
 	}
 
-	private static PcreByteNode? FindUtfCrLfRootStarAtom( PcreByteAlternatives root ) {
+	private PcreByteNode? FindUtfCrLfRootStarAtom( PcreByteAlternatives root ) {
 		if ( root.Branches.Count != 1 || root.Branches[0].Count == 0 ) { return null; }
-		var node = root.Branches[0][0];
-		if ( node is PcreByteAtomic atomic ) { node = atomic.Child; }
-		return node is PcreByteRepeat { Minimum: 0, Maximum: int.MaxValue } repeat ? repeat.Child : null;
+		var visits = 1;
+		foreach ( var original in root.Branches[0] ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			var node = original;
+			var cost = 2;
+			if ( node is PcreByteAtomic atomic ) { node = atomic.Child; cost++; }
+			if ( !IsUtfCrLfErasedRepeat( node ) ) {
+				return node is PcreByteRepeat { Minimum: 0, Maximum: int.MaxValue } repeat ? repeat.Child : null;
+			}
+			// Erased operands leave the next star as the first native iterator.
+			// Retained zero brackets and queries must stop this ownership proof.
+			if ( visits > MaximumStartClassVisits - cost ) { return null; }
+			visits += cost;
+		}
+		return null;
 	}
+
+	private static bool IsUtfCrLfErasedRepeat( PcreByteNode node ) => node is PcreByteRepeat {
+		Maximum: 0, Child: PcreByteBackreference or PcreByteLiteral or PcreByteAny
+			or PcreByteScalarClass or PcreByteScalarSet or PcreByteNewlineSequence
+	};
 
 	private (PcreByteScalarSet? Set, bool Skip) FindUtfCrLfLeadingRepeat( PcreByteAlternatives root ) {
 		// Native bitmap study recognizes deeper leading groups than type_skip,
@@ -238,8 +255,7 @@ internal sealed class PcreByteProgramCompiler {
 			var wrapper = 0;
 			if ( candidate is PcreByteAtomic atomic ) { candidate = atomic.Child; wrapper = 1; }
 			var (cost, retained) = candidate switch {
-				PcreByteRepeat { Maximum: 0, Child: PcreByteBackreference or PcreByteLiteral
-					or PcreByteAny or PcreByteScalarClass or PcreByteScalarSet or PcreByteNewlineSequence } => (2, false),
+				PcreByteRepeat omitted when IsUtfCrLfErasedRepeat( omitted ) => (2, false),
 				// Queries raise early-fail count to three. A root star owns type_skip;
 				// both prevent the following PLUS from receiving its own skip marker.
 				PcreByteRepeat { Minimum: 0, Maximum: > 0, Child: PcreByteLiteral literal } repeat
