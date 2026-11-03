@@ -993,3 +993,34 @@ Keep102 open for unproven-first-star placements and broader predicate/group/
 alternative/negated/property/call/DEFINE/condition bitmap availability; byte99/
 unsafe100 separate. No complete PCRE/release/Grep readiness claim. Publication/
 all known migrations precede CF removal; Grep last.
+
+## UTF finite and empty nullable-prefix continuation
+
+PcreUtfNullablePrefixEntryReferenceTests extends the bounded continuation proof
+from #146 to finite optional, omitted-only and empty prefix groups. After the
+old successful selector fails, the existing fallback runs only in UTF mode,
+without requiring a proven first-star identity. Empty single-branch bodies are
+accepted only there. A completed group return sets retained BlocksSkip even
+when every body operand vanished, matching native early-fail group counting.
+Later supported stars can join the bitmap proof without receiving new recovery
+ownership. Existing first-star finder/depth/capture/atomic/cache rules and old
+successful proofs remain unchanged; fallback PLUS Skip remains false.
+Shared nullable-atom classification, mandatory positive unbounded LF/no-CR set
+validation, actual group-return requirement, single-branch/capture eligibility,
+CT/1000/source/casing/UCP/range/predicate guards and failed-proof reset remain.
+No matcher/parser/emitter/Step/runtime state/layout/instruction/frame/journal/
+snapshot/span/pointer/API/limit/workflow/package/dependency/consumer/CF changes.
+950 new cases/full17256 preserve all16306 baseline expectations/frozen35. Native
+18748 bounded JIT checks (1852strict-tolerant fullcapture+16896newline/UCP/offset)
+pin finite bounds/modifiers, erased-only/empty aliases, group types/depths,
+empty participating captures, sequential/nested returns, later stars, capture
+dependencies, source/casing/UCP/CR/predicate/required/unsupported/final-set stops,
+previous first-star ownership and strict/tolerant fragments/work/cancellation/
+default budget/parser257/captures257/backtrack rejection. Tests-only run478
+established823new failures/16433passes/0skips (all16306baseline+127controls),
+zero build warnings/errors; expectations remain unchanged afterward. See
+PCRE-UTF-NULLABLE-PREFIX-ENTRY-DESIGN.md and PCRE-UTF-NULLABLE-PREFIX-ENTRY-PLAN.md.
+Keep102 open for broader predicate/group/alternative/negated/property/call/
+DEFINE/condition bitmap availability and remaining placements. Byte99/unsafe100
+separate; no complete PCRE/release/Grep readiness claim. Publication/all known
+migrations precede CF removal; Grep last.
