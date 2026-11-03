@@ -349,14 +349,17 @@ internal sealed class PcreByteProgramCompiler {
 			var candidate = node;
 			var repeatMaximum = 0;
 			var repeatCost = 0;
+			var repeatBlocksSkip = false;
 			if ( candidate is PcreByteAtomic { Child: PcreByteRepeat } modifier ) {
 				candidate = modifier.Child;
 				repeatCost = 1;
+				repeatBlocksSkip = true;
 			}
-			if ( candidate is PcreByteRepeat { Minimum: 0, Maximum: > 0 and < int.MaxValue } repeat ) {
+			if ( candidate is PcreByteRepeat { Minimum: >= 0, Maximum: > 0 and < int.MaxValue } repeat ) {
 				candidate = repeat.Child;
 				repeatMaximum = repeat.Maximum;
 				repeatCost++;
+				repeatBlocksSkip |= repeat.Minimum == 0;
 			}
 			var body = candidate switch {
 				PcreByteGroup group => group.Body,
@@ -371,8 +374,10 @@ internal sealed class PcreByteProgramCompiler {
 				if ( candidate is PcreByteGroup capture ) { captures.Add( capture.Number ); }
 				if ( repeatMaximum > 0 ) {
 					pendingRepeats++;
-					blocksSkip = true;
+					blocksSkip |= repeatBlocksSkip;
 				}
+				// Atomic groups stop native early-fail descent into their bodies.
+				blocksSkip |= candidate is PcreByteAtomic;
 				if ( body.Branches.Count > 1 ) {
 					pendingAlternatives++;
 					// Native alternative groups start early-fail study with a retained count.
