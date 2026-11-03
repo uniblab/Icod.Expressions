@@ -24,7 +24,7 @@ broader bitmap availability remain #102. This choice is the implementer's
 decision under the standing instruction to continue autonomously.
 
 ## Invariants and verification
-No parser/emitter/matcher/Step/VM state/journal/API/limit/workflow/dependency/
+No parser/matcher/Step/VM state/journal/API/limit/workflow/dependency/
 package/consumer/CommandFramework changes. C#13/net8/9/10, UTF8 LF; project and
 solution in root, source/src, tests/tests, samples/samples. No subagents/Python/
 SDK installation. Parser256/captures256/instructions4096/marks256/frames1024/
@@ -42,3 +42,27 @@ full/frozen214 ×net8/9/10, all configured gates/seven equal component workloads
 zero failed/skipped tests/compiler warnings/errors, exact head/tree/blob audit
 and author self-review. Leave ready PR unmerged for user review; #102 stays open.
 Publication/all known consumer migrations precede CF removal; Grep last.
+
+## Required-copy correction from run489
+The initial seven-line change resolves860 of886 new failures;26 remain, all
+new-class failures, with all21932baseline tests still passing and zero compiler
+warnings/errors. Native ordinary required group copies have KET and can expose
+their first scalar star to early-fail analysis. The existing identity finder
+stops at the repeated group, so the nullable walker rejects that unproven star
+even on non-consuming attempts. Treating boundaries as retained barriers would
+incorrectly suppress real primitive ownership.
+
+Extend the same identity finder through a positive group repeat only when it
+has an ordinary required copy: finite Maximum, or unbounded Minimum>=2. Minimum1
+unbounded group loops remain barriers. Preserve atomic/possessive, alternative,
+depth and capture eligibility. Charge the traversal under the existing budget;
+the joined walker still validates/charges every study copy and nullable branch.
+Mark only the first emitted instruction for the selected scalar star, retaining
+its AST identity for later source proof. A private compiler helper consumes the
+existing skip-eligibility flag once; no new runtime state or frame fields.
+This adds compiler marker-placement handling; the parser/matcher/Step/VM remain
+unchanged. Existing tests stay byte-for-byte unchanged; the26 observed failures
+and baseline copy/recovery controls cover the correction. Native120 additional
+bounded required-copy probes confirm ordinary versus lazy/greedy copy behavior.
+Ruling: expand this compiler-only tranche to first ordinary required-copy
+ownership, rather than falsifying boundary retained-count semantics.

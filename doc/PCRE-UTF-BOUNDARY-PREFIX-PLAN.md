@@ -36,3 +36,13 @@ Interfaces: FindUtfCrLfLeadingNode tuple and FindUtfCrLfRootStarAtom tuple uncha
   full/frozen214/net8/9/10, configured gates/seven equal workloads and zero
   failures/skips/compiler warnings/errors. Review whole branch, match remote
   tree/eight blobs, clean local workspace; ready PR remains unmerged.
+
+## Correction required by observed run489
+- [ ] Extend FindUtfCrLfRootStarAtom through first ordinary required group copies:
+  finite positive counts or unbounded Minimum>=2, existing group/atomic/depth/
+  capture guards, bounded cost. Minimum1 unbounded group loops stay excluded.
+- [ ] Replace three primitive-star marker predicates with a private
+  TakeUtfCrLfLeadingStarSkip(PcreByteNode)->bool helper, consuming the existing
+  eligibility once but retaining AST identity. No matcher/runtime changes.
+- [ ] Keep the test blob immutable. Resolve the26 existing new-class failures
+  and preserve all21932baseline tests in the next full six-native run.

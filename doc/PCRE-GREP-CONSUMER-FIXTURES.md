@@ -1009,13 +1009,13 @@ word boundaries without raising the retained count. Both existing compiler
 walkers now cross PcreByteWordBoundary with one bounded proof visit. BlocksSkip,
 first-star identity/depth/capture policy, group-return barriers and primitive
 owner placement remain; boundaries still execute as runtime assertions.
-No parser/emitter/matcher/Step/VM state/journal/API/limit/workflow/package/
+No parser/matcher/Step/VM state/journal/API/limit/workflow/package/
 dependency/consumer/CommandFramework changes. Proof1000 and all resource limits
 stay. Broader direct-class/assertion/root-alternative bitmap availability,
 required-body groups, unproven required-copy owners and other #102 gates remain.
 1414 new cases/full23346 preserve all21932 baseline expectations/frozen35.
-Native12583 bounded JIT checks (2788 strict/tolerant full-capture,9792 six-newline/
-UCP/every-offset,3long-prefix ordinary controls) plus80 initial probes pin ASCII/
+Native12703 bounded JIT checks (2788 strict/tolerant full-capture,9792 six-newline/
+UCP/every-offset,3long-prefix ordinary controls,120required-copy controls) plus80 initial probes pin ASCII/
 UCP/restrictions, positive/negative/repeated boundaries, group/depth/capture/
 reference/condition/branch-reset forms, scalar-owner versus group-loop guards,
 strict/tolerant fragments/work/exact/exhausted/observer/cancellation/default
@@ -1025,3 +1025,11 @@ baseline+528new controls passed, zero compiler warnings/errors. Tests unchanged.
 See PCRE-UTF-BOUNDARY-PREFIX-DESIGN.md and PCRE-UTF-BOUNDARY-PREFIX-PLAN.md.
 Keep102/unsafe100 open; no complete PCRE/release/Grep readiness claim.
 Publication/all known migrations precede CF removal; Grep last.
+
+Run489 exposed26 remaining new-class failures (23320passes/0skips; all21932baseline
+pass). Extend first-star identity through ordinary first required group copies:
+finite positive groups, or unbounded Minimum>=2. Keep Minimum1 unbounded loops
+excluded; preserve atomic/possessive/alternative/depth/capture guards. A private
+compiler helper consumes skip eligibility once, marking only the first emitted
+scalar-star instruction while retaining AST identity for source proof. No new
+runtime state; joined nullable-body/copy charging and all1000-visit guards stay.
