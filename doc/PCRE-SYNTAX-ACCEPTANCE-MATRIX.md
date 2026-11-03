@@ -818,3 +818,36 @@ Keep102 open for broader predicate/group/alternative/negated/property/call/
 DEFINE/condition bitmap availability and remaining placements. Byte99/unsafe100
 separate; no complete PCRE/release/Grep readiness claim. Publication/all known
 migrations precede CF removal; Grep last.
+
+## UTF continuation after fully nullable alternatives
+
+PcreUtfNullableAlternativeEntryReferenceTests extends the existing UTF fallback
+to prefix groups whose every alternative passes the shared nullable-atom proof.
+Compile-time continuation tuples now include group Body/NextBranch. Only after
+all branches finish does the walker resume its parent; additional branches each
+consume a proof visit. Alternative groups set retained BlocksSkip at entry,
+per native early-fail counting, so branch stars gain no new recovery ownership.
+A pending-alternative count prevents a nested return from accepting an early
+mandatory set before sibling branches are checked. Empty branches qualify;
+zero branches, required/unsupported/CR-admitting/predicate paths stop the proof.
+Root alternatives and mixed mandatory/nullable or quantified groups remain
+outside this extension. Captures across checked branches share the existing
+eligibility classifier. Old successful selectors/first-star discovery/depth/
+capture/atomic rules, LF/no-CR mandatory-set guard, actual group-return flag,
+failed-proof reset, CT/1000 limits and fallback PLUS Skip=false are unchanged.
+No matcher/parser/emitter/Step/runtime state/layout/instruction/frame/journal/
+snapshot/span/pointer/API/limit/workflow/package/dependency/consumer/CF changes.
+913 new cases/full18169 preserve all17256 baseline expectations/frozen35. Native
+18671 bounded JIT checks (1772strict-tolerant fullcapture+16896newline/UCP/offset+
+3empty-branch breadth) pin group types/depths/order, empty/erased/finite/star
+branches, nested/sequential groups, branch-reset/related/named/duplicate captures,
+later stars/old ownership and late-branch/nested early-set traps. Strict/tolerant
+fragments/work/cancellation/default budget/parser257/capture257/backtrack/breadth
+limits remain. Tests-only run480 established724new failures/17445passes/0skips
+(all17256baseline+189controls), zero build warnings/errors. Tests/expectations
+stay unchanged after RED. See PCRE-UTF-NULLABLE-ALTERNATIVE-ENTRY-DESIGN.md and
+PCRE-UTF-NULLABLE-ALTERNATIVE-ENTRY-PLAN.md. Keep102 open for mixed/required/
+quantified groups, predicates/negated/property/call/DEFINE/condition bitmap
+availability and remaining placements. Byte99/unsafe100 separate. No complete
+PCRE/release/Grep readiness claim; publication/all known migrations precede CF
+removal; Grep last.
