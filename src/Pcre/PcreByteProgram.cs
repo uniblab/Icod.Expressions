@@ -303,20 +303,30 @@ internal sealed class PcreByteProgramCompiler {
 	private PcreByteScalarSet? FindUtfCrLfJoinedRepeat( PcreByteAlternatives root ) {
 		if ( root.Branches.Count != 1 || root.Branches[0].Count == 0 ) { return null; }
 		// Compile-time branch continuations only; no VM frames or subject spans.
-		var continuations = new Stack<(IReadOnlyList<PcreByteNode> Branch, int Index)>();
+		var continuations = new Stack<(IReadOnlyList<PcreByteNode> Branch, int Index,
+			PcreByteAlternatives Body, int NextBranch)>();
 		var captures = new HashSet<int>();
 		var branch = root.Branches[0];
 		var index = 0;
 		var visits = 1;
 		var blocksSkip = false;
 		var joined = false;
+		var pendingAlternatives = 0;
 		while ( true ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			var leading = FindUtfCrLfLeadingNode( branch, ref visits, index, blocksSkip );
 			blocksSkip = leading.BlocksSkip;
 			if ( leading.Nullable ) {
 				if ( !continuations.TryPop( out var next ) ) { return null; }
-				(branch, index) = next;
+				if ( next.NextBranch < next.Body.Branches.Count ) {
+					if ( ++visits > MaximumStartClassVisits ) { return null; }
+					continuations.Push( (next.Branch, next.Index, next.Body, next.NextBranch + 1) );
+					branch = next.Body.Branches[next.NextBranch];
+					index = 0;
+					continue;
+				}
+				if ( next.Body.Branches.Count > 1 ) { pendingAlternatives--; }
+				(branch, index) = (next.Branch, next.Index);
 				// The returned group is retained even when its body is empty or erased.
 				blocksSkip = true;
 				joined = true;
@@ -331,15 +341,22 @@ internal sealed class PcreByteProgramCompiler {
 				_ => null
 			};
 			if ( body is not null ) {
-				if ( ++visits > MaximumStartClassVisits || body.Branches.Count != 1 ) { return null; }
+				if ( ++visits > MaximumStartClassVisits || body.Branches.Count == 0 ) { return null; }
 				if ( node is PcreByteGroup capture ) { captures.Add( capture.Number ); }
-				continuations.Push( (branch, leading.NextIndex) );
+				if ( body.Branches.Count > 1 ) {
+					pendingAlternatives++;
+					// Native alternative groups start early-fail study with a retained count.
+					blocksSkip = true;
+				}
+				continuations.Push( (branch, leading.NextIndex, body, 1) );
 				branch = body.Branches[0];
 				index = 0;
 				continue;
 			}
 			var set = FindUtfCrLfMandatoryRepeatSet( node );
-			if ( !joined || set is null || !ClassifyUtfCaptureRepeat( root, captures ).Eligible ) { return null; }
+			// A nested return must not bypass unchecked sibling alternatives.
+			if ( !joined || pendingAlternatives != 0 || set is null
+				|| !ClassifyUtfCaptureRepeat( root, captures ).Eligible ) { return null; }
 			// Returned groups block later PLUS recovery, with or without a first-star owner.
 			return set;
 		}
