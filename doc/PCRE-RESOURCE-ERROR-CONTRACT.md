@@ -934,3 +934,30 @@ Keep102 open for other placements/bracket predicates/group/alternative/negated/
 property/call/DEFINE/condition bitmap availability; byte99/unsafe100 separate.
 Bare atomic PLUS/unsupported placements pin ordinary consumption only. No complete
 PCRE/release/Grep-readiness claim; publication/all known migrations precede CF removal.
+
+## UTF atomic mandatory repeats without a star prerequisite
+
+PcreUtfAtomicRepeatEntryReferenceTests pins native mandatory-set bitmap entry
+through explicit atomic groups without requiring first-star ownership. Existing
+Atomic(NoncapturingGroup) descent now shares ordinary group eligibility; its
+local Skip remains unconditionally false. Final single-branch/nonempty/positive
+ScalarSet/mandatory unbounded PLUS/LF/no CR/no predicates/capture/depth/CT/1000
+guards and optional-source/range/casing/UCP/BlocksSkip rules remain. First-star
+discovery, outside-root/non-atomic PLUS recovery, possessive modifier handling
+and failed-proof reset are unchanged. No matcher/parser/emitter/Step/runtime
+state/layout/instruction/frame/journal/span/pointer/snapshot/API/limit/workflow/
+package/version/dependency/consumer/CommandFramework changes.
+970 new cases/full14898 preserve all13928 baseline expectations/frozen35. Native
+18788 bounded JIT checks (1892strict-tolerant fullcapture+16896newline/UCP/offset)
+pin bare/captured PLUS, greedy/lazy/possessive/aliases, depths1/3/4/5/6/33/199,
+atomic aliases/mixed ancestors, optional/erased/retained-zero prefixes, capture
+dependencies/named/duplicate references/tests, source/casing/UCP/CR/predicate and
+outside-root cache controls, strict-tolerant fragments/work/cancellation/default
+budget/parser257/captures257/backtrack limits. See
+PCRE-UTF-ATOMIC-REPEAT-ENTRY-DESIGN.md and PCRE-UTF-ATOMIC-REPEAT-ENTRY-PLAN.md.
+Keep102 open for nullable prefix-group rejoin/other placements and broader
+predicate/group/alternative/negated/property/call/DEFINE/condition bitmap availability.
+Nullable prefix-only wrapper controls pin ordinary consumption only; initial
+native probes confirm their continuation/rejoin gap needs a separate traversal
+refactor. Byte99/unsafe100 separate; no complete PCRE/release/Grep readiness claim.
+Publication/all known migrations precede CF removal; Grep last.
