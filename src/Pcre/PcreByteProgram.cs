@@ -106,7 +106,7 @@ internal sealed class PcreByteProgramCompiler {
 		(utfCrLfLeadingStarAtom, skipUtfCrLfLeadingStar) = utf8 ? FindUtfCrLfRootStarAtom( root ) : default;
 		(utfCrLfLeadingRepeatSet, skipUtfCrLfLeadingRepeat) = utf8 ? FindUtfCrLfLeadingRepeat( root ) : default;
 		utfCrLfJoinedNullablePrefix = false;
-		if ( utfCrLfLeadingRepeatSet is null && utfCrLfLeadingStarAtom is not null ) {
+		if ( utf8 && utfCrLfLeadingRepeatSet is null ) {
 			utfCrLfLeadingRepeatSet = FindUtfCrLfJoinedRepeat( root );
 			skipUtfCrLfLeadingRepeat = false;
 			utfCrLfJoinedNullablePrefix = utfCrLfLeadingRepeatSet is not null;
@@ -317,6 +317,8 @@ internal sealed class PcreByteProgramCompiler {
 			if ( leading.Nullable ) {
 				if ( !continuations.TryPop( out var next ) ) { return null; }
 				(branch, index) = next;
+				// The returned group is retained even when its body is empty or erased.
+				blocksSkip = true;
 				joined = true;
 				continue;
 			}
@@ -329,8 +331,7 @@ internal sealed class PcreByteProgramCompiler {
 				_ => null
 			};
 			if ( body is not null ) {
-				if ( ++visits > MaximumStartClassVisits || body.Branches.Count != 1
-					|| body.Branches[0].Count == 0 ) { return null; }
+				if ( ++visits > MaximumStartClassVisits || body.Branches.Count != 1 ) { return null; }
 				if ( node is PcreByteGroup capture ) { captures.Add( capture.Number ); }
 				continuations.Push( (branch, leading.NextIndex) );
 				branch = body.Branches[0];
@@ -339,7 +340,7 @@ internal sealed class PcreByteProgramCompiler {
 			}
 			var set = FindUtfCrLfMandatoryRepeatSet( node );
 			if ( !joined || set is null || !ClassifyUtfCaptureRepeat( root, captures ).Eligible ) { return null; }
-			// The proven first star already owns recovery, even after its group closes.
+			// Returned groups block later PLUS recovery, with or without a first-star owner.
 			return set;
 		}
 	}
