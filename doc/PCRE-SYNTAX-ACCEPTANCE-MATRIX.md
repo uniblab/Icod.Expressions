@@ -642,3 +642,31 @@ consumption only. Keep102 open for wrappers/other placement/bracket predicates/
 group/alternative/negated/property/call/DEFINE/condition availability; byte99/
 unsafe100 separate. No complete PCRE/release/Grep-readiness claim; publication/
 all known migrations precede any CF removal.
+
+## UTF star prefixes inside noncapturing wrappers
+
+PcreUtfWrappedStarPrefixReferenceTests separates first-star bitmap recognition
+from consumed-run recovery. Bounded discovery iteratively descends nonempty
+single-branch noncapturing ancestors and existing erased operands, returning
+compile-time Atom/Skip. It charges root1/group1/erased2+possessive wrapper1 with
+CT/shared1000-visit checks. Skip is true only through four star ancestors;
+recognition remains for supported deeper chains. Following captures/deep groups
+do not add to that star depth. Capturing/explicit atomic ancestors, alternatives,
+retained/query/unsupported nodes stay separate; atomic unwrapping requires a
+Repeat child so explicit Atomic(NoncapturingGroup) is not admitted accidentally.
+Compiler stores/clears both fields on final mandatory-set proof failure and gates
+only the star endpoint marker by Skip. Existing leading-PLUS marker/admission/
+source/casing/UCP/CR/predicate/range/capture/depth/BlocksSkip/ExplicitNewline/
+fragment/resource guards remain intact. No matcher/Step/runtime layout/state/
+frame/journal/span/pointer/limit/API/package/workflow/dependency/consumer/CF changes.
+921 new cases/full11718 preserve all10797 baseline expectations/frozen35. Native
+18696 bounded JIT checks (1800capture+16896newline/UCP/offset) pin depths1/3/4/5/6/
+33/199, empty/consumed runs and the4/5 cache boundary, star source/modifiers/UCP/
+casing, erasures across levels, later capture/dependency/deep/atomic groups,
+explicit newline/unsupported controls, strict-tolerant UTF/work/cancellation/
+default budget/parser257/depth limits. See PCRE-UTF-WRAPPED-STAR-PREFIX-DESIGN.md
+and PCRE-UTF-WRAPPED-STAR-PREFIX-PLAN.md. Unsupported ancestor/nullable-prefix
+wrapper controls pin ordinary consumption only. Keep102 open for capturing/
+atomic ancestors, other placements, bracket predicates/group/alternative/negated/
+property/call/DEFINE/condition availability; byte99/unsafe100 separate. No complete
+PCRE/release/Grep readiness claim; CF removal requires publication/all migrations.
