@@ -464,9 +464,9 @@ internal sealed class PcreByteProgramCompiler {
 				PcreByteRepeat { Maximum: > 0 } repeat when repeat.Minimum == repeat.Maximum
 					&& repeat.Maximum <= ( MaximumStartClassVisits - 1 ) / 2
 					&& IsUtfCrLfSkippedAssertion( repeat.Child ) => (repeat.Maximum * 2 + 1, true),
-				PcreByteRepeat { Maximum: > 0, Child: PcreByteLookahead { IsPositive: false } assertion } repeat
+				PcreByteRepeat { Maximum: > 0 } repeat
 					when repeat.Minimum != repeat.Maximum && repeat.Maximum <= ( MaximumStartClassVisits - 1 ) / 2
-						&& HasUtfCrLfOptionalAssertionClass( assertion.Body, ref visits ) => (repeat.Maximum * 2 + 1, true),
+						&& HasUtfCrLfOptionalAssertionBitmap( repeat.Child, ref visits ) => (repeat.Maximum * 2 + 1, true),
 				PcreByteRepeat omitted when IsUtfCrLfErasedRepeat( omitted ) => (2, false),
 				// Queries raise early-fail count to three. A root star owns type_skip;
 				// both prevent the following PLUS from receiving its own skip marker.
@@ -478,13 +478,9 @@ internal sealed class PcreByteProgramCompiler {
 						&& IsUtfCrLfOptionalSet( set, ref visits ) => (2, true),
 				// These type operands have bitmap study and exclude CR.
 				// Parsed kinds already distinguish UCP properties and ASCII restrictions.
-				PcreByteRepeat { Minimum: 0, Maximum: > 0, Child: PcreByteScalarClass {
-					Kind: PcreByteScalarClassKind.AsciiDigit or PcreByteScalarClassKind.AsciiWord
-						or PcreByteScalarClassKind.HorizontalSpace, Negated: false } } repeat
-					when CanCrossUtfCrLfOptionalRepeat( repeat, blocksSkip, allowUnboundedOptionalRepeats ) => (2, true),
-				PcreByteRepeat { Minimum: 0, Maximum: > 0, Child: PcreByteScalarClass {
-					Kind: PcreByteScalarClassKind.AsciiSpace, Negated: true } } repeat
-					when CanCrossUtfCrLfOptionalRepeat( repeat, blocksSkip, allowUnboundedOptionalRepeats ) => (2, true),
+				PcreByteRepeat { Minimum: 0, Maximum: > 0, Child: PcreByteScalarClass characterClass } repeat
+					when CanCrossUtfCrLfOptionalRepeat( repeat, blocksSkip, allowUnboundedOptionalRepeats )
+						&& HasUtfCrLfTypeBitmap( characterClass ) => (2, true),
 				PcreByteRepeat repeat when IsUtfCrLfRetainedZeroRepeat( repeat )
 					=> (repeat.Child is PcreByteAtomic ? 3 : 2, true),
 				_ => (0, false)
@@ -503,25 +499,44 @@ internal sealed class PcreByteProgramCompiler {
 			&& ( blocksSkip || ReferenceEquals( repeat.Child, utfCrLfLeadingStarAtom ) );
 
 	private bool IsUtfCrLfOptionalSet( PcreByteScalarSet set, ref int visits ) {
-		if ( set.Negated || !set.Predicates.IsEmpty || set.Ranges.IsEmpty ) { return false; }
-		foreach ( var range in set.Ranges.Span ) {
-			cancellationToken.ThrowIfCancellationRequested();
-			if ( ++visits > MaximumStartClassVisits || range.Start < 0 || range.End > 0x10FFFF
-				|| range.Start > range.End || range.Start <= '\r' && range.End >= '\r' ) { return false; }
-		}
-		// Class sources retain their bitmap after folding. Literal sources need
-		// their original scalar to distinguish CHAR/CHARI from PT_CLIST queries.
+		if ( !HasUtfCrLfClassBitmap( set, ref visits ) ) { return false; }
+		// Optional singleton folded literals can use TYPEQUERY/PT_CLIST, whose
+		// study differs from the mandatory PROP/PT_CLIST inside an assertion.
 		return !set.Caseless || set.Source == PcreByteScalarSetSource.Class || set.Ranges.Length != 1
 			|| set.Source == PcreByteScalarSetSource.Literal
 				&& HasUtfCrLfLiteralBitmap( set.SourceLiteral, set.Caseless, set.CaselessRestricted )
 			|| set.Ranges.Span[0].Start != set.Ranges.Span[0].End;
 	}
 
-	private bool HasUtfCrLfOptionalAssertionClass( PcreByteAlternatives body, ref int visits ) {
-		// BRAZERO can enter the assertion body. Require a mandatory class in every
-		// branch, so native study stops there without a nullable group continuation.
+	private bool HasUtfCrLfClassBitmap( PcreByteScalarSet set, ref int visits ) {
+		if ( set.Negated || !set.Predicates.IsEmpty || set.Ranges.IsEmpty ) { return false; }
+		foreach ( var range in set.Ranges.Span ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( ++visits > MaximumStartClassVisits || range.Start < 0 || range.End > 0x10FFFF
+				|| range.Start > range.End || range.Start <= '\r' && range.End >= '\r' ) { return false; }
+		}
+		return true;
+	}
+
+	private static bool HasUtfCrLfTypeBitmap( PcreByteScalarClass node ) => node is {
+		Kind: PcreByteScalarClassKind.AsciiDigit or PcreByteScalarClassKind.AsciiWord
+			or PcreByteScalarClassKind.HorizontalSpace, Negated: false
+	} or { Kind: PcreByteScalarClassKind.AsciiSpace, Negated: true };
+
+	private static bool HasUtfCrLfMandatoryLiteralBitmap( int scalar ) => Rune.IsValid( scalar ) && scalar != '\r';
+
+	private bool HasUtfCrLfOptionalAssertionBitmap( PcreByteNode node, ref int visits ) {
+		cancellationToken.ThrowIfCancellationRequested();
+		if ( node is PcreByteLiteralAssertion { IsPositive: false, IsBehind: false } literal ) {
+			return ++visits <= MaximumStartClassVisits
+				&& PcreUtf8.TryRead( literal.Bytes.Span, 0, out var scalar, out _ )
+				&& HasUtfCrLfMandatoryLiteralBitmap( scalar );
+		}
+		if ( node is not PcreByteLookahead { IsPositive: false } assertion ) { return false; }
+		// BRAZERO can enter the assertion body. Require a mandatory bitmap head
+		// in every branch, without inferring a nullable group continuation.
 		var pending = new Stack<(PcreByteNode? Node, PcreByteAlternatives? Body)>();
-		pending.Push( (null, body) );
+		pending.Push( (null, assertion.Body) );
 		while ( pending.TryPop( out var entry ) ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			if ( ++visits > MaximumStartClassVisits ) { return false; }
@@ -538,8 +553,14 @@ internal sealed class PcreByteProgramCompiler {
 				case PcreByteGroup group: pending.Push( (null, group.Body) ); break;
 				case PcreByteNoncapturingGroup group: pending.Push( (null, group.Body) ); break;
 				case PcreByteAtomic atomic: pending.Push( (atomic.Child, null) ); break;
+				case PcreByteLiteral head:
+					if ( !HasUtfCrLfMandatoryLiteralBitmap( head.Value ) ) { return false; }
+					break;
+				case PcreByteScalarClass characterClass:
+					if ( !HasUtfCrLfTypeBitmap( characterClass ) ) { return false; }
+					break;
 				case PcreByteScalarSet set:
-					if ( !IsUtfCrLfOptionalSet( set, ref visits ) ) { return false; }
+					if ( !HasUtfCrLfClassBitmap( set, ref visits ) ) { return false; }
 					break;
 				default: return false;
 			}

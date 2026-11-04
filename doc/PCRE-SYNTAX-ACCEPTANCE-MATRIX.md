@@ -1192,3 +1192,40 @@ Bitmap-sensitive cases and long sequential controls retain JIT. Temporary
 probes/tracing/serial scheduling are removed before final six-platform CI.
 The original442-case blob changes only for this disclosed harness correction;
 the focused310-case blob stays unchanged. See the repeated-assertion design.
+
+## Optional negative-ahead mandatory bitmap heads (PR161)
+
+After merged158/160, PcreUtfOptionalAssertionBitmapReferenceTests extends bounded
+body study to mandatory literal/type and singleton folded-class heads. Collapsed
+nonempty negative literal ahead decodes its first scalar through PcreUtf8.TryRead;
+general negative ahead reuses the existing all-branch group/atomic worklist.
+Valid mandatory literals exclude CR. Supported types are positive AsciiDigit,
+AsciiWord,HorizontalSpace and negative AsciiSpace, preserving UCP/scoped ASCII
+Kind distinctions. Positive predicate-free sets share existing bounded range/CR
+validation; mandatory CHAR/CHARI/PROP-PT_CLIST study is distinct from optional
+TYPEQUERY guards, so optional-atom source/caseless rules stay unchanged. Paired
+root optional-atom controls pin that difference. No nullable/empty/repeated-head,
+body-tail return,positive-ahead or lookbehind admission is added by this path.
+
+Maximum>0/Minimum!=Maximum and Maximum<=(1000-1)/2 remain before study/multiply;
+copy cost2*Maximum+1/retained=true,wrapper/pre-addition accounting,cancellation,
+shared visits,root-star ownership and later PLUS/star barriers stay. Exact and
+zero paths are unchanged. No parser/emitter/owner/matcher/Step/VM/frame/journal/
+API/limit/workflow/contract/dependency/consumer/CommandFramework changes. Existing
+budgets and35frozen blobs remain; no spans/pointers in long-lived VM state.
+
+689new/full26062 retain all25373baseline expectations. Native8304 qualified
+Linux x64 JIT checks =1328full-capture+6960six-newline/UCP/every-offset+16resource
+checks,with positive JIT sizes and bounded spans. Cases pin counts/modifiers,
+collapsed/general/wrapped/alternative heads,captures/rollback/dependencies,
+scoped UCP/ASCII/caseless pairs,source exceptions,PLUS/star endpoints,strict
+validation/tolerant fragments/caller boundaries,work/cancellation/default budget.
+Out-of-proof counted ordinary controls use native interpretation in CI for159;
+no bitmap parity claim beyond1000. Broader nullable/repeated/body-prefix/property/
+positive-ahead/behind availability stays open102; byte99/unsafe100/native159
+remain separate. RED514/Linux x64/net8/9/10:555new-class failures/25507passes/
+0skips each;all25373baseline+134newcontrols pass,0compilerwarnings/errors.
+New test blobb1ae0e9f2ec8039c5e17f98b23e95b3ed8d2932f is frozen after RED.
+See PCRE-UTF-OPTIONAL-ASSERTION-BITMAP-DESIGN.md and PLAN; final CI is in PR161.
+No full PCRE/release/Grep readiness claim. Publication/all known migrations
+precede CF removal; Grep last.
