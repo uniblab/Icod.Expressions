@@ -1142,3 +1142,42 @@ PCRE-UTF-RETAINED-ZERO-START-CLASS-PLAN.md; recent index gains one row.
 Keep102/unsafe100 and broader bitmap/optional/assertion/group/required-copy
 placements open; no full PCRE/release/Grep readiness claim. Publication/all known
 migrations precede CF removal; Grep last.
+
+## Finite optional prefixes and proven root stars before UTF starter classes
+
+PcreUtfFiniteOptionalStartClassReferenceTests pins general starter-class entry
+after supported finite optional primitives. HasUtfCrLfStartClass reuses the
+nullable-prefix walker. Finite repeats keep existing atom,CR-exclusion,UCP and
+source-sensitive caseless bitmap guards. Unbounded repeats require selected
+PLUS or existing root-star identity plus the original BlocksSkip/identity rule.
+The completed class proof is computed before emission and preserves first-star
+identity/skip state without a selected PLUS; unproved stars still clear. The
+existing owner classifier and one-emission marker helper are unchanged.
+This removes the duplicate zero/boundary scan without changing its accepted
+kinds,costs,retained state or exhausted-branch rejection. Every-alternative
+CR exclusion/at-least-one-LF,required-repeat/wide PLUS/range guards and1000-visit
+budget/cancellation remain. No arbitrary nullable-group continuation.
+No parser/emitter helper/matcher/Step/VM/journal/API/limit/workflow/package/
+dependency/consumer/CommandFramework changes; resource ceilings unchanged.
+377 new cases/full24324 preserve all23947baseline expectations/frozen35.
+Native6771 bounded JIT checks (560strict/tolerant full-capture,6048six-newline/
+UCP/every-offset,3long ordinary,160root-star full-capture checks) cover optional
+queries/bounded counts/literals/types/sets/caseless sources,mixed zero/boundary
+prefixes,wrappers/required repeats/alternatives/dependencies and exclusions.
+The additional PcreUtfRootStarStartClassReferenceTests pins root-star literal/
+type/set greedy/lazy/possessive forms and consumed/unconsumed CRLF endpoints.
+Existing PLUS owners,strict validation/fragments/caller boundaries,exact/
+exhausted/observed work,cancellation/default budget stay. Long ordinary controls
+claim no bitmap parity past1000.
+Tests-only run497/Linux ARM64/net8 observed166new-class failures/24078passes/
+0skips,all23947baseline+131controls passing,0compiler warnings/errors. Initial
+finite fix run498 left6root-star controls failing/24238passes/0skips; no baseline
+failures. Additional tests-only run499/Linux x64/net8 observed45failures
+(6original+39new-star)/24279passes/0skips; all23947baseline+332controls passed,
+0compiler warnings/errors. Both test files remain unchanged after their RED.
+See PCRE-UTF-FINITE-OPTIONAL-START-CLASS-DESIGN.md and
+PCRE-UTF-FINITE-OPTIONAL-START-CLASS-PLAN.md for the evidence-driven scope change;
+recent index gains one row. Keep102/unsafe100 and broader optional/assertion/
+predicate/group/required-copy/unselected wide PLUS/root-alternative bitmap
+availability open. No full PCRE/release/Grep readiness claim. Publication/all
+known migrations precede CF removal; Grep last.
