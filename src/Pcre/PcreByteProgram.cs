@@ -664,11 +664,22 @@ internal sealed class PcreByteProgramCompiler {
 					// The repeat selector already proved these broader nullable prefixes.
 					first = FindUtfCrLfLeadingNode( branch, ref visits ).Node;
 				} else {
-					// Native bitmap study ignores boundaries before any supported starter.
+					// Bitmap study ignores boundaries and erased primitive repeats.
 					var index = 0;
-					while ( index < branch.Count && branch[index] is PcreByteWordBoundary ) {
+					while ( index < branch.Count ) {
+						var cost = 1;
+						if ( branch[index] is not PcreByteWordBoundary ) {
+							var erased = branch[index];
+							cost = 2;
+							if ( erased is PcreByteAtomic { Child: PcreByteRepeat } modifier ) {
+								erased = modifier.Child;
+								cost++;
+							}
+							if ( !IsUtfCrLfErasedRepeat( erased ) ) { break; }
+						}
 						cancellationToken.ThrowIfCancellationRequested();
-						if ( ++visits > MaximumStartClassVisits ) { return false; }
+						if ( visits > MaximumStartClassVisits - cost ) { return false; }
+						visits += cost;
 						index++;
 					}
 					first = index < branch.Count ? branch[index] : null;

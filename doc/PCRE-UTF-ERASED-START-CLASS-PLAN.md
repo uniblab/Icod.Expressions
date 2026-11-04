@@ -32,6 +32,7 @@ IsUtfCrLfErasedRepeat(PcreByteNode)->bool unchanged.
 - [ ] Preserve owner/selected-repeat/range/alternative/exact-large guards and
   immutable tests/frozen35/whitespace; audit six native Staging full/frozen214/
   net8/9/10, configured gates/seven equal workloads,0failures/skips/warnings/
-  errors. Author review/exacttree/eightblobs/clean; ready PR remains unmerged.
-- [ ] Preserve issue102's recent index in a linked comment before replacing only
-  that footer; earlier body history and open state remain intact.
+  errors. Author review/exacttree/nineblobs/clean; ready PR remains unmerged.
+- [ ] Preserve issue102's recent index in doc/PCRE-UTF-RECENT-PROGRESS.md before
+  linking only that footer to the exact source commit; earlier body history
+  and open state remain intact.

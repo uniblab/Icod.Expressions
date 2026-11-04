@@ -35,10 +35,12 @@ ordinary erased-prefix controls; no bitmap parity claim beyond1000.
 Observe successful-build new-class RED/all23525baseline pass before source;
 tests immutable afterward. Six native Staging jobs/full/frozen214/net8/9/10,
 configured gates/seven equal workloads,0test failures/skips/compiler warnings/
-errors; author review/exacttree/eightblobs/frozen/clean audit before ready
+errors; author review/exacttree/nineblobs/frozen/clean audit before ready
 unmerged PR. Keep102/unsafe100 and release/Grep gates open; publication/all
 known consumer migrations precede CF removal; Grep last.
 
 Issue102 is at GitHub's body limit. Preserve its entire recent-progress index
-in a linked comment, keep all earlier body history intact, then maintain that
-index for later tranches. This is metadata maintenance, not issue completion.
+in doc/PCRE-UTF-RECENT-PROGRESS.md and link only that footer to the exact source
+commit; keep all earlier body history intact. The versioned index supports
+later tranches without a comment-only history. This is metadata maintenance,
+not issue completion.
