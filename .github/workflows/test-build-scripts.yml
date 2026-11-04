@@ -1,0 +1,19 @@
+name: test-build-scripts
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify test result gates
+        shell: pwsh
+        run: ./tests/Build/TestResults.Tests.ps1
