@@ -1345,3 +1345,39 @@ Keep102/unsafe100 and broader positive-ahead/predicate/nullable-group/required-
 copy/unselected wide PLUS/root-alternative bitmap availability open. No full
 PCRE/release/Grep readiness claim. Publication/all known migrations precede
 CommandFramework removal; Grep last.
+
+## Required exact assertion copies in UTF prefix proofs
+
+PcreUtfRepeatedAssertionPrefixReferenceTests pins required exact copies of the
+already-skipped negative-ahead/all-behind assertion kinds. The new private
+IsUtfCrLfSkippedAssertion shares exactly #157's kind list. Direct assertions
+keep cost2/retained=true; repeated children require Minimum=Maximum>0 and
+Maximum<=(MaximumStartClassVisits-1)/2 before multiplication,then charge
+2*Maximum+1/retained=true through the existing pre-addition/wrapper guard.
+Every required copy is conservatively budgeted without expansion or overflow.
+Zero-count behavior,source/atom/alternative/required-repeat guards,cancellation,
+earlier root-star identity and later PLUS/star recovery barriers remain.
+Native investigation narrowed the initial proposal: BRAZERO can enter optional
+assertion bodies and expose properties/reverse opcodes/CR bits. Optional/ranged/
+normalized-unbounded counts and positive ahead remain excluded; paired native
+property/CR controls pin that distinction. Required exact bodies stay opaque to
+bitmap study only; assertion execution,capture side effects/rollback,non-atomic
+reverse retries and fragment isolation still run normally.
+No parser/emitter helper/owner finder/matcher/Step/VM/frame/journal/API/limit/
+workflow/package/dependency/consumer/CommandFramework changes; ceilings unchanged.
+442new/full25063 preserve all24621baseline/frozen35. Native6898 bounded JIT
+checks =844strict/tolerant full captures+6048six-newline/UCP/every-offset+6long
+ordinary controls. Counts/modifiers,assertion kinds,captures/dependencies,opaque
+properties/classes,mixed prefixes,wrappers/alternatives,PLUS modifiers/star
+placement,empty assertions and exclusions are pinned. The498-copy LF fixture
+fits the total proof budget;499/500/1001-count and long sequential ordinary
+controls claim no bitmap parity beyond1000. Strict validation/tolerant fragments/
+caller boundaries,exact/exhausted/observed work,cancellation/default budget stay.
+Tests-only run503/macOS ARM64/net8 observed353new-class failures/24710passes/
+0skips,all24621baseline+89controls passing,0compiler warnings/errors. Tests then
+unchanged. See PCRE-UTF-REPEATED-ASSERTION-PREFIX-DESIGN.md and
+PCRE-UTF-REPEATED-ASSERTION-PREFIX-PLAN.md; recent index gains one row. Keep102/
+unsafe100 and broader optional/positive-ahead/predicate/nullable-group/required-
+copy/unselected wide PLUS/root-alternative bitmap availability open. No full
+PCRE/release/Grep readiness claim. Publication/all known migrations before CF
+removal; Grep last.

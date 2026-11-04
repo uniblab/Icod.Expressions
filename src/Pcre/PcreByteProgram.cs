@@ -275,6 +275,10 @@ internal sealed class PcreByteProgramCompiler {
 			or PcreByteAtomic { Child: PcreByteNoncapturingGroup }
 	};
 
+	private static bool IsUtfCrLfSkippedAssertion( PcreByteNode node ) => node is
+		PcreByteLiteralAssertion { IsPositive: false } or PcreByteLiteralAssertion { IsBehind: true }
+		or PcreByteLookahead { IsPositive: false } or PcreByteLookbehind;
+
 	private (PcreByteScalarSet? Set, bool Skip) FindUtfCrLfLeadingRepeat( PcreByteAlternatives root ) {
 		// Native bitmap study recognizes deeper leading groups than type_skip,
 		// which follows only four optimized groups to PLUS. Keep recognition
@@ -454,8 +458,12 @@ internal sealed class PcreByteProgramCompiler {
 				// Boundaries assert at runtime but do not raise native early-fail count.
 				PcreByteWordBoundary => (1, false),
 				// Bitmap study skips these bodies, but early-fail descent stops here.
-				PcreByteLiteralAssertion { IsPositive: false } or PcreByteLiteralAssertion { IsBehind: true }
-					or PcreByteLookahead { IsPositive: false } or PcreByteLookbehind => (2, true),
+				PcreByteNode assertion when IsUtfCrLfSkippedAssertion( assertion ) => (2, true),
+				// Optional assertion copies can expose their bodies to native study.
+				// Exact copies stay skipped; bound the count before multiplication.
+				PcreByteRepeat { Maximum: > 0 } repeat when repeat.Minimum == repeat.Maximum
+					&& repeat.Maximum <= ( MaximumStartClassVisits - 1 ) / 2
+					&& IsUtfCrLfSkippedAssertion( repeat.Child ) => (repeat.Maximum * 2 + 1, true),
 				PcreByteRepeat omitted when IsUtfCrLfErasedRepeat( omitted ) => (2, false),
 				// Queries raise early-fail count to three. A root star owns type_skip;
 				// both prevent the following PLUS from receiving its own skip marker.
