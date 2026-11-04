@@ -190,6 +190,11 @@ internal sealed class PcreByteProgramCompiler {
 		while ( index < branch.Count ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			var node = branch[index++];
+			// Native bitmap and early-fail study both ignore word boundaries.
+			if ( node is PcreByteWordBoundary ) {
+				if ( ++visits > MaximumStartClassVisits ) { return default; }
+				continue;
+			}
 			var cost = 2;
 			if ( node is PcreByteAtomic atomic ) {
 				// Bitmap study crosses explicit atomic groups, but early-fail
@@ -198,6 +203,8 @@ internal sealed class PcreByteProgramCompiler {
 					if ( ++visits > MaximumStartClassVisits ) { return default; }
 					skip = false;
 				} else if ( atomic.Child is not PcreByteRepeat ) { return default; }
+				if ( atomic.Child is PcreByteRepeat { Child: PcreByteGroup or PcreByteNoncapturingGroup
+					or PcreByteAtomic { Child: PcreByteNoncapturingGroup } } ) { skip = false; }
 				node = atomic.Child;
 				cost++;
 			}
@@ -205,6 +212,20 @@ internal sealed class PcreByteProgramCompiler {
 				if ( visits > MaximumStartClassVisits - cost ) { return default; }
 				visits += cost;
 				continue;
+			}
+			// Native copies required groups with ordinary KET before optional/loop bodies.
+			if ( node is PcreByteRepeat { Minimum: >= 1, Maximum: > 0 } required
+				&& ( required.Maximum != int.MaxValue || required.Minimum >= 2 ) ) {
+				if ( required.Child is not ( PcreByteGroup or PcreByteNoncapturingGroup
+					or PcreByteAtomic { Child: PcreByteNoncapturingGroup } )
+					|| visits > MaximumStartClassVisits - cost ) { return default; }
+				visits += cost;
+				node = required.Child;
+				if ( node is PcreByteAtomic { Child: PcreByteNoncapturingGroup group } ) {
+					if ( ++visits > MaximumStartClassVisits ) { return default; }
+					skip = false;
+					node = group;
+				}
 			}
 			var body = node switch {
 				PcreByteGroup group => group.Body,
@@ -420,6 +441,8 @@ internal sealed class PcreByteProgramCompiler {
 			var wrapper = 0;
 			if ( candidate is PcreByteAtomic atomic ) { candidate = atomic.Child; wrapper = 1; }
 			var (cost, retained) = candidate switch {
+				// Boundaries assert at runtime but do not raise native early-fail count.
+				PcreByteWordBoundary => (1, false),
 				PcreByteRepeat omitted when IsUtfCrLfErasedRepeat( omitted ) => (2, false),
 				// Queries raise early-fail count to three. A root star owns type_skip;
 				// both prevent the following PLUS from receiving its own skip marker.
@@ -891,6 +914,13 @@ internal sealed class PcreByteProgramCompiler {
 
 	private void ScheduleNode( PcreByteNode node ) => compileWork.Push( () => CompileNode( node ) );
 
+	private bool TakeUtfCrLfLeadingStarSkip( PcreByteNode node ) {
+		if ( !skipUtfCrLfLeadingStar || !ReferenceEquals( node, utfCrLfLeadingStarAtom ) ) { return false; }
+		// AST identity is shared by copied groups; only its first instruction owns recovery.
+		skipUtfCrLfLeadingStar = false;
+		return true;
+	}
+
 	private void CompileNode( PcreByteNode node ) {
 		cancellationToken.ThrowIfCancellationRequested();
 		if ( ++compileVisits > MaximumInstructions ) { throw RepeatExpansionLimit(); }
@@ -900,7 +930,7 @@ internal sealed class PcreByteProgramCompiler {
 				break;
 			case PcreByteLiteral literal:
 				Emit( PcreByteOpcode.Literal, literal.Value, caseless: literal.Caseless, caselessRestricted: literal.CaselessRestricted,
-					skipCrLfAfterRepeat: skipUtfCrLfLeadingStar && ReferenceEquals( literal, utfCrLfLeadingStarAtom ) );
+					skipCrLfAfterRepeat: TakeUtfCrLfLeadingStarSkip( literal ) );
 				break;
 			case PcreByteAny any:
 				Emit( PcreByteOpcode.Any, any.DotAll ? 1 : 0 );
@@ -913,13 +943,13 @@ internal sealed class PcreByteProgramCompiler {
 			case PcreByteScalarClass scalarClass:
 				Emit( PcreByteOpcode.ScalarClass, (int)scalarClass.Kind, scalarClass.Negated ? 1 : 0,
 					category: scalarClass.Category, caseless: scalarClass.Caseless, caselessRestricted: scalarClass.CaselessRestricted,
-					skipCrLfAfterRepeat: skipUtfCrLfLeadingStar && ReferenceEquals( scalarClass, utfCrLfLeadingStarAtom ) );
+					skipCrLfAfterRepeat: TakeUtfCrLfLeadingStarSkip( scalarClass ) );
 				break;
 			case PcreByteScalarSet scalarSet:
 				Emit( PcreByteOpcode.ScalarSet, second: scalarSet.Negated ? 1 : 0,
 					ranges: scalarSet.Ranges, predicates: scalarSet.Predicates, caseless: scalarSet.Caseless,
 					caselessRestricted: scalarSet.CaselessRestricted,
-					skipCrLfAfterRepeat: skipUtfCrLfLeadingStar && ReferenceEquals( scalarSet, utfCrLfLeadingStarAtom )
+					skipCrLfAfterRepeat: TakeUtfCrLfLeadingStarSkip( scalarSet )
 						|| skipUtfCrLfLeadingRepeat && ReferenceEquals( scalarSet, utfCrLfLeadingRepeatSet ) );
 				break;
 			case PcreByteClass characterClass:
