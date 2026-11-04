@@ -76,10 +76,10 @@ jobs:
         shell: pwsh
         run: |
           $probes = @(
-            'PcreUtfFiniteGroupEntryReferenceTests.EveryCallerOffsetKeepsFiniteGroupAndFragmentBoundaries',
-            'PcreByteUcpReferenceTests.EveryByteCasePairSharesLiteralClassReferenceAndAssertionSemantics',
-            'PcreResetOptionReferenceTests.ResetClearsCallerCaselessAndRestoresItAfterAScope',
-            'PcreGeneralLookaheadReferenceTests.ResetStartIsInvalidThroughoutTheActiveAssertion'
+            'PcreUtfRepeatedAssertionPrefixReferenceTests.RepeatedAssertionPrefixesPreservePinnedNativeCaptureSpans',
+            'PcreCaptureRepeatOptionReferenceTests.SuppressedGroupsDoNotChangeOctalFallbackOrConsumeCaptureBudget',
+            'PcreDuplicateNameReferenceTests.DuplicateNamesRetainCaptureAndDepthLimitsWithoutGrowingNativeStacks',
+            'PcreBracketReferenceEscapeTests.ByteAndUtfMembershipIsPinnedToLiteralSets'
           )
           foreach ($probe in $probes) {
             Write-Host "Isolating: $probe"
@@ -116,6 +116,8 @@ jobs:
             [xml]$sequence = Get-Content $_.FullName -Raw
             $sequence.SelectNodes("//*[local-name()='Test']") | Where-Object { $_.GetAttribute('Completed') -ne 'True' } | ForEach-Object { $_.OuterXml }
           }
+          Get-WinEvent -FilterHashtable @{LogName='Application'; StartTime=(Get-Date).AddMinutes(-20)} -ErrorAction SilentlyContinue |
+            Where-Object { $_.Id -in @(1000, 1001, 1026) } | Select-Object TimeCreated, Id, Message | Format-List
       - name: Verify frozen source manifest in Git Bash
         if: matrix.os == 'windows-latest'
         shell: bash
