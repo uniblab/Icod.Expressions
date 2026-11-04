@@ -49,3 +49,28 @@ nineblobs/frozen/clean before ready unmerged PR. Append one recent row and updat
 only issue102 footer after CI; earlier history/index block preserved. Keep102/
 unsafe100/release/Grep gates open. Publication/all known migrations before CF
 removal; Grep last.
+
+## Correction for four original optional capture cases
+Run504's exact-count fix resolved349 of353 original failures. Four immutable
+cases remained: (?!([B-C])){0,3} before the mandatory class/capture condition.
+They were outside the narrowed exact-only plan but remain required tests. All
+24621baseline+438new controls passed on Linux x64/net8;0compiler warnings/errors.
+
+Add a separate focused test class before the corrective source change. Extend
+only non-exact repeats of negative general lookahead whose body has a proven
+class bitmap: every branch's first node must lead through ordinary/capturing/
+atomic groups to a mandatory positive,predicate-free scalar set admitted by the
+existing IsUtfCrLfOptionalSet range/source/CR guards. Reject empty branches,
+other nodes,properties,negated sets and CR-containing heads. Since every body
+branch reaches a mandatory set,native study stops there; no group return or
+body-tail continuation is inferred. Literals/types/nullable bodies and optional
+lookbehind/positive ahead remain excluded from this new path.
+
+Use one compile-time worklist of (Node?,Body?) entries. Charge each pop and
+branch before enqueue,check cancellation throughout,and share ref visits with
+the outer proof. No recursion or ref capture in local functions. Check normalized
+Maximum<=(1000-1)/2 before body study; successful proof uses2*Maximum+1/
+retained=true plus existing wrapper/pre-addition charging. The exact path still
+skips bodies. No parser/emitter/owner/matcher/VM state changes. General optional
+assertions do more work per candidate; their separate default-budget fixture
+uses10000 CRLF pairs under the unchanged1m ceiling. Original442 tests unchanged.

@@ -39,3 +39,20 @@ FindUtfCrLfLeadingNode tuple/signature unchanged.
   errors;ready PR remains unmerged for user review.
 - [ ] Append one recent row and change only issue102 footer after CI,retaining
   all earlier issue and preserved index history.
+
+## Task3: Resolve four preserved optional class-body failures
+Files: tests/Pcre/PcreUtfOptionalAssertionClassReferenceTests.cs;
+src/Pcre/PcreByteProgram.cs;the same inventories/index above.
+Interfaces: private bool HasUtfCrLfOptionalAssertionClass(PcreByteAlternatives body,
+ref int visits);existing IsUtfCrLfOptionalSet reused unchanged.
+- [ ] Pin focused native class-body captures,all alternatives/groups/modifiers,
+  CR/property/nullable/positive-ahead/lookbehind exclusions,PLUS/star endpoints,
+  six-newline/UCP/offset fragments,strict validation and resource controls. Keep
+  the original442 tests immutable;publish follow-up tests-only and observe RED.
+- [ ] Prove only non-exact negative general ahead with every body branch leading
+  through groups to a mandatory supported scalar set. Worklist (Node?,Body?)
+  charges pops/branches before enqueue,cancels,shares visits and rejects empty/
+  unknown/CR/property heads. Bound Maximum before study/multiplication;successful
+  proof cost2*Maximum+1/retained=true. Exact path unchanged;no runtime changes.
+- [ ] Update counts/native evidence and disclose run504/expanded scope. Preserve
+  both test blobs;run every original final gate and leave ready PR unmerged.
