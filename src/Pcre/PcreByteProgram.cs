@@ -275,6 +275,10 @@ internal sealed class PcreByteProgramCompiler {
 			or PcreByteAtomic { Child: PcreByteNoncapturingGroup }
 	};
 
+	private static bool IsUtfCrLfSkippedAssertion( PcreByteNode node ) => node is
+		PcreByteLiteralAssertion { IsPositive: false } or PcreByteLiteralAssertion { IsBehind: true }
+		or PcreByteLookahead { IsPositive: false } or PcreByteLookbehind;
+
 	private (PcreByteScalarSet? Set, bool Skip) FindUtfCrLfLeadingRepeat( PcreByteAlternatives root ) {
 		// Native bitmap study recognizes deeper leading groups than type_skip,
 		// which follows only four optimized groups to PLUS. Keep recognition
@@ -454,8 +458,15 @@ internal sealed class PcreByteProgramCompiler {
 				// Boundaries assert at runtime but do not raise native early-fail count.
 				PcreByteWordBoundary => (1, false),
 				// Bitmap study skips these bodies, but early-fail descent stops here.
-				PcreByteLiteralAssertion { IsPositive: false } or PcreByteLiteralAssertion { IsBehind: true }
-					or PcreByteLookahead { IsPositive: false } or PcreByteLookbehind => (2, true),
+				PcreByteNode assertion when IsUtfCrLfSkippedAssertion( assertion ) => (2, true),
+				// Optional assertion copies can expose their bodies to native study.
+				// Exact copies stay skipped; bound the count before multiplication.
+				PcreByteRepeat { Maximum: > 0 } repeat when repeat.Minimum == repeat.Maximum
+					&& repeat.Maximum <= ( MaximumStartClassVisits - 1 ) / 2
+					&& IsUtfCrLfSkippedAssertion( repeat.Child ) => (repeat.Maximum * 2 + 1, true),
+				PcreByteRepeat { Maximum: > 0, Child: PcreByteLookahead { IsPositive: false } assertion } repeat
+					when repeat.Minimum != repeat.Maximum && repeat.Maximum <= ( MaximumStartClassVisits - 1 ) / 2
+						&& HasUtfCrLfOptionalAssertionClass( assertion.Body, ref visits ) => (repeat.Maximum * 2 + 1, true),
 				PcreByteRepeat omitted when IsUtfCrLfErasedRepeat( omitted ) => (2, false),
 				// Queries raise early-fail count to three. A root star owns type_skip;
 				// both prevent the following PLUS from receiving its own skip marker.
@@ -504,6 +515,36 @@ internal sealed class PcreByteProgramCompiler {
 			|| set.Source == PcreByteScalarSetSource.Literal
 				&& HasUtfCrLfLiteralBitmap( set.SourceLiteral, set.Caseless, set.CaselessRestricted )
 			|| set.Ranges.Span[0].Start != set.Ranges.Span[0].End;
+	}
+
+	private bool HasUtfCrLfOptionalAssertionClass( PcreByteAlternatives body, ref int visits ) {
+		// BRAZERO can enter the assertion body. Require a mandatory class in every
+		// branch, so native study stops there without a nullable group continuation.
+		var pending = new Stack<(PcreByteNode? Node, PcreByteAlternatives? Body)>();
+		pending.Push( (null, body) );
+		while ( pending.TryPop( out var entry ) ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( ++visits > MaximumStartClassVisits ) { return false; }
+			if ( entry.Body is { } alternatives ) {
+				if ( alternatives.Branches.Count == 0 ) { return false; }
+				foreach ( var branch in alternatives.Branches ) {
+					cancellationToken.ThrowIfCancellationRequested();
+					if ( ++visits > MaximumStartClassVisits || branch.Count == 0 ) { return false; }
+					pending.Push( (branch[0], null) );
+				}
+				continue;
+			}
+			switch ( entry.Node ) {
+				case PcreByteGroup group: pending.Push( (null, group.Body) ); break;
+				case PcreByteNoncapturingGroup group: pending.Push( (null, group.Body) ); break;
+				case PcreByteAtomic atomic: pending.Push( (atomic.Child, null) ); break;
+				case PcreByteScalarSet set:
+					if ( !IsUtfCrLfOptionalSet( set, ref visits ) ) { return false; }
+					break;
+				default: return false;
+			}
+		}
+		return true;
 	}
 
 	private static bool HasUtfCrLfLiteralBitmap( int scalar, bool caseless, bool restricted ) {

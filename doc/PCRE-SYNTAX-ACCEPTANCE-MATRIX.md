@@ -1139,3 +1139,56 @@ Keep102/unsafe100 and broader positive-ahead/predicate/nullable-group/required-
 copy/unselected wide PLUS/root-alternative bitmap availability open. No full
 PCRE/release/Grep readiness claim. Publication/all known migrations precede
 CommandFramework removal; Grep last.
+
+## Repeated assertions and optional class bodies in UTF prefix proofs
+
+PcreUtfRepeatedAssertionPrefixReferenceTests pins required exact copies of the
+already-skipped negative-ahead/all-behind kinds. IsUtfCrLfSkippedAssertion shares
+exactly #157's list;direct cost2/retained=true stays. Exact positive copies require
+Maximum<=(1000-1)/2 before multiplication,then cost2*Maximum+1/retained=true.
+Native investigation found BRAZERO can enter optional assertion bodies,so there
+is no blanket optional admission. Four original captured-class cases remained
+red after the exact-only fix;all original tests were preserved and310 focused
+PcreUtfOptionalAssertionClassReferenceTests cases were added before correction.
+Non-exact negative general ahead now also requires every body branch to reach a
+mandatory positive,predicate-free supported scalar set through groups. A bounded
+(Node?,Body?) compile-time worklist charges pops/branches before enqueue,cancels,
+shares visits,and reuses IsUtfCrLfOptionalSet source/range/CR guards. Empty/
+unknown/property/CR heads are rejected;body-tail/nullable-return inference is not
+added. Non-exact proof uses the same prechecked Maximum and copy cost. Literals/
+types/nullable bodies,optional behind/positive ahead and broader placements stay
+outside that path. Exact bodies stay opaque; optional class bodies are studied.
+Zero-count behavior,earlier root-star identity,later recovery barriers,all source/
+alternative/required-repeat guards and pre-addition/wrapper charging remain.
+No parser/emitter helper/owner finder/matcher/Step/VM/frame/journal/API/limit/
+workflow/package/dependency/consumer/CommandFramework changes; ceilings unchanged.
+752new/full25373 preserve all24621baseline/frozen35. Native13538 bounded JIT
+checks =844initial captures+6048initial protocol+6long ordinary+592optional-class
+captures+6048optional protocol. Counts/modifiers,assertion kinds,capture effects/
+rollback/dependencies,opaque-vs-studied properties/classes,mixed prefixes,
+wrappers/alternatives,PLUS/star endpoints,empty assertions and exclusions stay
+pinned.498 exact copies fit the total proof fixture;499/500/1001-count and long
+ordinary controls claim no bitmap parity beyond1000. Strict validation/tolerant
+fragments/caller boundaries,exact/exhausted/observed work,cancellation/default
+budget stay. The general optional default-budget fixture uses10000 CRLF pairs
+under the unchanged1m ceiling; it performs more VM work than literal assertions.
+RED503/macOS ARM64/net8:353new-class failures/24710passes/0skips,all24621baseline+
+89controls pass. Initial fix504/Linux x64/net8:left4original failures/25059passes/
+0skips,allbaseline+438controls pass. Added tests-only RED505/Linux x64/net8:
+281failures(4original+277new)/25092passes/0skips,allbaseline+471controls pass.
+Compiler warnings/errors0 throughout;both test blobs unchanged after their RED.
+See PCRE-UTF-REPEATED-ASSERTION-PREFIX-DESIGN.md and
+PCRE-UTF-REPEATED-ASSERTION-PREFIX-PLAN.md for scope corrections;recent index gains
+one row. Keep102/unsafe100 and broader optional/positive-ahead/predicate/nullable-
+group/required-copy/unselected wide PLUS/root-alternative availability open.
+No full PCRE/release/Grep readiness claim. Publication/all known migrations before
+CommandFramework removal;Grep last.
+
+PR158 oracle correction: run511 isolated a native-only PCRE.NET JIT host crash
+on Windows ARM64 for count500; the managed-only probe passes. Issue159 tracks
+it. The three counted ordinary fallback/cancellation controls use the native
+interpreter on every platform, preserving all inputs/assertions and full25373.
+Bitmap-sensitive cases and long sequential controls retain JIT. Temporary
+probes/tracing/serial scheduling are removed before final six-platform CI.
+The original442-case blob changes only for this disclosed harness correction;
+the focused310-case blob stays unchanged. See the repeated-assertion design.
