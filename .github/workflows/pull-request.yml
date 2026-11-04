@@ -74,8 +74,10 @@ jobs:
       - name: Run full suite and preserve frozen regex corpus
         shell: pwsh
         run: |
+          $diagnostics = @()
+          if ('${{ matrix.name }}' -eq 'Windows ARM64') { $diagnostics = @('--blame') }
           foreach ($framework in @('net8.0', 'net9.0', 'net10.0')) {
-            dotnet test tests/Icod.Expressions.Tests.csproj -c ${{ env.CONFIGURATION }} -f $framework --no-build --no-restore --logger "trx;LogFileName=$framework.full.trx"
+            dotnet test tests/Icod.Expressions.Tests.csproj -c ${{ env.CONFIGURATION }} -f $framework --no-build --no-restore --logger "trx;LogFileName=$framework.full.trx" @diagnostics
             if ($LASTEXITCODE -ne 0) { throw "Full test run failed: $framework" }
             [xml]$full = Get-Content "tests/TestResults/$framework.full.trx" -Raw
             $all = $full.SelectSingleNode("//*[local-name()='Counters']")
@@ -89,6 +91,14 @@ jobs:
             if ($null -eq $counters -or [int]$counters.GetAttribute('total') -ne 214 -or [int]$counters.GetAttribute('passed') -ne 214 -or [int]$counters.GetAttribute('failed') -ne 0) {
               throw "Frozen characterization test count drift: $framework"
             }
+          }
+      - name: Print Windows ARM64 crash sequence
+        if: failure() && matrix.name == 'Windows ARM64'
+        shell: pwsh
+        run: |
+          Get-ChildItem tests/TestResults -Recurse -Filter '*Sequence*.xml' | ForEach-Object {
+            Write-Host "Crash sequence: $($_.FullName)"
+            Get-Content $_.FullName -Tail 120
           }
       - name: Verify frozen source manifest in Git Bash
         if: matrix.os == 'windows-latest'
