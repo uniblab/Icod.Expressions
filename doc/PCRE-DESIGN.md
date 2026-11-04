@@ -1320,3 +1320,35 @@ before charging fallback visits. No general nested/capturing/nullable/tail-retur
 or unbounded-group admission. Scoped/global casing, consumed prefixes and option
 restoration, UCP/ASCII/property/CR controls, ownership and resource contracts are
 pinned. Both new test blobs and all baseline expectations remain unchanged.
+
+## Optional noncapturing group mandatory-body heads (PR162)
+
+After merged161, finite optional noncapturing groups can prove all branches
+through nested capture/noncapture/atomic wrappers to mandatory literal/type or
+positive predicate-free range heads excluding CR. A mandatory head can have a
+runtime tail; capture rollback and option restoration remain unchanged. The
+existing assertion body worklist becomes HasUtfCrLfMandatoryBodyBitmap, shared
+with group study. Preserve the old single-leaf path and exact charges. New body
+proofs use a bounded local visit checkpoint, committed only on success so failed
+nullable fallback keeps its prior budget. No nullable/repeated/prefix-assertion/
+empty-branch/capturing-outer/unbounded-group or tail-return inference is added.
+
+817new/full27282 preserve all26465baseline expectations and35 frozen blobs.
+Native7552 qualified Linux x64 JIT checks =1584full-capture+5952six-newline/UCP/
+every-offset+16resource; positive JIT sizes and bounded spans. Larger-count/deep-
+capture exploratory calls are excluded. Cases pin modifiers, branches/wrappers,
+tail failure, consumed-prefix captures, scoped casing/restoration, UCP/ASCII/
+property/CR controls, dependencies, PLUS/star ownership, strict/tolerant UTF,
+caller offsets, work/default budget/cancellation and count/expansion limits.
+Ordinary count199/499/500 controls use native interpretation in CI for159.
+
+Successful-build RED518/Linux x64/net8/9/10:545new-class failures/26737passes/
+0skips each; all26465baseline+272newcontrols pass;0compilerwarnings/errors. Test
+bloba35d52ccb3df261d4b58d3b22ac3711c4c86da2d remains frozen afterward. Existing
+Maximum1..499 pre-study bound,2*Maximum+1/wrapper/pre-addition charges, retained
+barriers,cancellation,source/caseless guards and root-star identity are unchanged.
+No parser/emitter/owner/matcher/Step/VM/frame/journal/API/limit/workflow/contract/
+dependency/consumer/CommandFramework changes or production reference fallback.
+See PCRE-UTF-OPTIONAL-GROUP-HEADS-DESIGN.md and PLAN; exact final CI is in PR162.
+Keep7/99/100/102/native159 and broader PCRE/release/Grep gates open. Publication/
+all known migrations precede CommandFramework removal; Grep remains last.

@@ -19,9 +19,9 @@ Files: new tests/Pcre/PcreUtfOptionalGroupHeadsReferenceTests.cs and this spec/p
 Consumes pinned PCRE.NET1.6.0/PCRE2 10.48 source/native oracle; produces literal
 capture fixtures plus protocol/work/cancellation/count/expansion tests.
 
-- [ ] Qualify native spans/JIT sizes and bounded captures; generate immutable
+- [x] Qualify native spans/JIT sizes and bounded captures; generate immutable
   literal expectations independent of managed production code.
-- [ ] Publish tests/design/plan draft. Run merged six-platform CI; successful
+- [x] Publish tests/design/plan draft. Run merged six-platform CI; successful
   build RED must be confined to the new class, with all26465 baseline cases
   passing and zero compiler warnings/errors. Freeze the new test blob.
 
@@ -30,8 +30,8 @@ capture fixtures plus protocol/work/cancellation/count/expansion tests.
 File: src/Pcre/PcreByteProgram.cs. Consume existing leaf guards and body worklist;
 produce HasUtfCrLfMandatoryBodyBitmap(PcreByteAlternatives,ref int)->bool.
 
-- [ ] Extract the existing assertion body loop unchanged into the shared helper.
-- [ ] Keep the old single-leaf group path exact; try the shared helper for other
+- [x] Extract the existing assertion body loop unchanged into the shared helper.
+- [x] Keep the old single-leaf group path exact; try the shared helper for other
   noncapturing bodies with a local visit checkpoint, committing only success.
 - [ ] Verify the immutable tests pass and all baseline tests stay green. Commit
   source and append four inventories plus one recent-progress row.
@@ -46,3 +46,7 @@ Files: four PCRE inventories and PCRE-UTF-RECENT-PROGRESS.md; issue102 footer.
   compiler warnings/errors, all configured gates and seven equal Linux workloads.
 - [ ] Update only issue102 recent footer; record complete RED/GREEN evidence in
   PR metadata; mark ready and leave unmerged for user review. No merge/tag/publish.
+
+Observed RED: run518/Linux x64, all three TFMs;545new-class failures/26737passes/
+0skips; all26465baseline+272newcontrols pass; compiler warnings/errors0. Test blob
+a35d52ccb3df261d4b58d3b22ac3711c4c86da2d is frozen. Final qualification is in PR162.
