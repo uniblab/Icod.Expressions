@@ -21,7 +21,7 @@ audit. A row is not a claim that an unreviewed PR is merged or release-ready.
 | [155](https://github.com/uniblab/Icod.Expressions/pull/155) | 223 | 23947 | Retained zero groups/assertions before general starter classes |
 | [156](https://github.com/uniblab/Icod.Expressions/pull/156) | 377 | 24324 | Finite optional primitives and proven root stars before general starter classes |
 | [157](https://github.com/uniblab/Icod.Expressions/pull/157) | 297 | 24621 | Bitmap-skipped negative lookahead and lookbehind prefixes |
-| [158](https://github.com/uniblab/Icod.Expressions/pull/158) | 442 | 25063 | Required exact copies of skipped assertions |
+| [158](https://github.com/uniblab/Icod.Expressions/pull/158) | 752 | 25373 | Exact assertion copies and optional negative-ahead class bodies |
 
 Before a tranche is ready: six native OS/architecture Staging jobs, full suite
 and frozen214 on net8/9/10, no failed/skipped tests or compiler warnings/errors,
