@@ -442,8 +442,8 @@ internal sealed class PcreByteProgramCompiler {
 	private (PcreByteNode? Node, bool BlocksSkip, int NextIndex, bool Nullable) FindUtfCrLfLeadingNode(
 		IReadOnlyList<PcreByteNode> branch, ref int visits, int startIndex = 0, bool blocksSkip = false,
 		bool allowUnboundedOptionalRepeats = true ) {
-		// Bitmap study crosses retained zero brackets and supported optional atoms, but
-		// their opcodes prevent repeat skipping. Direct primitive/reference0 vanishes.
+		// Bitmap study crosses skipped assertions, retained zero brackets and optional
+		// atoms, but their opcodes prevent repeat skipping. Primitive/reference0 vanishes.
 		for ( var index = startIndex; index < branch.Count; index++ ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			var node = branch[index];
@@ -453,6 +453,9 @@ internal sealed class PcreByteProgramCompiler {
 			var (cost, retained) = candidate switch {
 				// Boundaries assert at runtime but do not raise native early-fail count.
 				PcreByteWordBoundary => (1, false),
+				// Bitmap study skips these bodies, but early-fail descent stops here.
+				PcreByteLiteralAssertion { IsPositive: false } or PcreByteLiteralAssertion { IsBehind: true }
+					or PcreByteLookahead { IsPositive: false } or PcreByteLookbehind => (2, true),
 				PcreByteRepeat omitted when IsUtfCrLfErasedRepeat( omitted ) => (2, false),
 				// Queries raise early-fail count to three. A root star owns type_skip;
 				// both prevent the following PLUS from receiving its own skip marker.
