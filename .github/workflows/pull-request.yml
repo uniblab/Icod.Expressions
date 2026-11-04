@@ -71,28 +71,14 @@ jobs:
         run: dotnet restore Icod.Expressions.sln
       - name: Build all target frameworks
         run: dotnet build Icod.Expressions.sln -c ${{ env.CONFIGURATION }} --no-restore -p:ContinuousIntegrationBuild=true
-      - name: Isolate Windows ARM64 crash candidates
-        if: matrix.name == 'Windows ARM64'
-        shell: pwsh
-        run: |
-          $probes = @(
-            'PcreUtfRepeatedAssertionPrefixReferenceTests.RepeatedAssertionPrefixesPreservePinnedNativeCaptureSpans',
-            'PcreCaptureRepeatOptionReferenceTests.SuppressedGroupsDoNotChangeOctalFallbackOrConsumeCaptureBudget',
-            'PcreDuplicateNameReferenceTests.DuplicateNamesRetainCaptureAndDepthLimitsWithoutGrowingNativeStacks',
-            'PcreBracketReferenceEscapeTests.ByteAndUtfMembershipIsPinnedToLiteralSets'
-          )
-          foreach ($probe in $probes) {
-            Write-Host "Isolating: $probe"
-            dotnet test tests/Icod.Expressions.Tests.csproj -c ${{ env.CONFIGURATION }} -f net8.0 --no-build --no-restore --filter "FullyQualifiedName~$probe" --blame --logger "trx;LogFileName=$probe.trx"
-            if ($LASTEXITCODE -ne 0) { throw "Isolated crash probe failed: $probe" }
-          }
       - name: Run full suite and preserve frozen regex corpus
         shell: pwsh
         run: |
           $diagnostics = @()
-          if ('${{ matrix.name }}' -eq 'Windows ARM64') { $diagnostics = @('--blame') }
+          $settings = @()
+          if ('${{ matrix.name }}' -eq 'Windows ARM64') { $diagnostics = @('--blame'); $settings = @('--', 'xUnit.ParallelizeTestCollections=false') }
           foreach ($framework in @('net8.0', 'net9.0', 'net10.0')) {
-            dotnet test tests/Icod.Expressions.Tests.csproj -c ${{ env.CONFIGURATION }} -f $framework --no-build --no-restore --logger "trx;LogFileName=$framework.full.trx" @diagnostics
+            dotnet test tests/Icod.Expressions.Tests.csproj -c ${{ env.CONFIGURATION }} -f $framework --no-build --no-restore --logger "trx;LogFileName=$framework.full.trx" @diagnostics @settings
             if ($LASTEXITCODE -ne 0) { throw "Full test run failed: $framework" }
             [xml]$full = Get-Content "tests/TestResults/$framework.full.trx" -Raw
             $all = $full.SelectSingleNode("//*[local-name()='Counters']")
