@@ -1084,3 +1084,30 @@ PCRE-UTF-RECENT-PROGRESS.md preserves issue102's recent index at GitHub's body
 limit; earlier history remains intact. Keep102/unsafe100 and broader bitmap/
 optional/assertion/group/required-copy gates open; no full PCRE/release/Grep
 readiness claim. Publication/all known migrations precede CF removal; Grep last.
+
+## UTF retained zero-count prefixes before starter classes
+
+PcreUtfRetainedZeroStartClassReferenceTests shares the existing retained-zero
+group/assertion/capture-condition list through IsUtfCrLfRetainedZeroRepeat.
+The PLUS nullable walker keeps retained=true, cost2/cost3 for an atomic group
+child, plus any outer modifier charge. The general class proof accepts the same
+list and treats skipped bodies as opaque, charging the atomic child separately.
+Boundaries/erased prefixes,1000-visit pre-addition guard,cancellation,exhausted
+branches,unsupported kinds,owner/marker and every-alternative CR/LF guards stay.
+No parser/emitter/matcher/Step/VM state/journal/API/limit/workflow/package/
+dependency/consumer/CommandFramework changes; resource ceilings unchanged.
+223 new cases/full23947 preserve all23724baseline expectations/frozen35.
+Native7975 bounded JIT checks (412strict/tolerant full-capture,7560six-newline/
+UCP/every-offset,3long ordinary controls) pin zero groups/atomic groups/literal-
+general lookahead/lookbehind/capture conditions, opaque property/reference/call
+bodies, modifiers/boundaries/erased prefixes/wrappers/counts/alternatives/capture
+dependencies and exclusions. Existing PLUS/primitive-owner controls remain.
+Strict/tolerant fragments/work/exact/exhausted/observed/cancellation/default
+budget stay; long controls claim no bitmap parity past1000.
+Tests-only run495/Linux x64/net8 observed167new-class failures/23780passes/0skips,
+all23724baseline+56new controls passing,0compiler warnings/errors. Tests unchanged.
+See PCRE-UTF-RETAINED-ZERO-START-CLASS-DESIGN.md and
+PCRE-UTF-RETAINED-ZERO-START-CLASS-PLAN.md; recent index gains one row.
+Keep102/unsafe100 and broader bitmap/optional/assertion/group/required-copy
+placements open; no full PCRE/release/Grep readiness claim. Publication/all known
+migrations precede CF removal; Grep last.

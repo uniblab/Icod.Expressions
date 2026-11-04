@@ -266,6 +266,13 @@ internal sealed class PcreByteProgramCompiler {
 			or PcreByteScalarClass or PcreByteScalarSet or PcreByteNewlineSequence
 	};
 
+	private static bool IsUtfCrLfRetainedZeroRepeat( PcreByteNode node ) => node is PcreByteRepeat {
+		Maximum: 0, Child: PcreByteGroup or PcreByteNoncapturingGroup
+			or PcreByteLookahead or PcreByteLookbehind or PcreByteLiteralAssertion
+			or PcreByteCaptureConditional
+			or PcreByteAtomic { Child: PcreByteNoncapturingGroup }
+	};
+
 	private (PcreByteScalarSet? Set, bool Skip) FindUtfCrLfLeadingRepeat( PcreByteAlternatives root ) {
 		// Native bitmap study recognizes deeper leading groups than type_skip,
 		// which follows only four optimized groups to PLUS. Keep recognition
@@ -460,10 +467,8 @@ internal sealed class PcreByteProgramCompiler {
 				PcreByteRepeat { Minimum: 0, Maximum: > 0, Child: PcreByteScalarClass {
 					Kind: PcreByteScalarClassKind.AsciiSpace, Negated: true } } repeat
 					when CanCrossUtfCrLfOptionalRepeat( repeat, blocksSkip ) => (2, true),
-				PcreByteRepeat { Maximum: 0, Child: PcreByteGroup or PcreByteNoncapturingGroup
-					or PcreByteLookahead or PcreByteLookbehind or PcreByteLiteralAssertion
-					or PcreByteCaptureConditional } => (2, true),
-				PcreByteRepeat { Maximum: 0, Child: PcreByteAtomic { Child: PcreByteNoncapturingGroup } } => (3, true),
+				PcreByteRepeat repeat when IsUtfCrLfRetainedZeroRepeat( repeat )
+					=> (repeat.Child is PcreByteAtomic ? 3 : 2, true),
 				_ => (0, false)
 			};
 			if ( cost == 0 ) { return (node, blocksSkip, index + 1, false); }
@@ -664,18 +669,21 @@ internal sealed class PcreByteProgramCompiler {
 					// The repeat selector already proved these broader nullable prefixes.
 					first = FindUtfCrLfLeadingNode( branch, ref visits ).Node;
 				} else {
-					// Bitmap study ignores boundaries and erased primitive repeats.
+					// Bitmap study crosses boundaries and supported zero-count prefixes.
 					var index = 0;
 					while ( index < branch.Count ) {
 						var cost = 1;
 						if ( branch[index] is not PcreByteWordBoundary ) {
-							var erased = branch[index];
+							var prefix = branch[index];
 							cost = 2;
-							if ( erased is PcreByteAtomic { Child: PcreByteRepeat } modifier ) {
-								erased = modifier.Child;
+							if ( prefix is PcreByteAtomic { Child: PcreByteRepeat } modifier ) {
+								prefix = modifier.Child;
 								cost++;
 							}
-							if ( !IsUtfCrLfErasedRepeat( erased ) ) { break; }
+							if ( !IsUtfCrLfErasedRepeat( prefix ) ) {
+								if ( !IsUtfCrLfRetainedZeroRepeat( prefix ) ) { break; }
+								if ( prefix is PcreByteRepeat { Child: PcreByteAtomic } ) { cost++; }
+							}
 						}
 						cancellationToken.ThrowIfCancellationRequested();
 						if ( visits > MaximumStartClassVisits - cost ) { return false; }
