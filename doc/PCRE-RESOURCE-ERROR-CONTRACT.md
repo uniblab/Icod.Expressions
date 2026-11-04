@@ -1222,3 +1222,28 @@ See PCRE-UTF-BOUNDARY-START-CLASS-DESIGN.md and PCRE-UTF-BOUNDARY-START-CLASS-PL
 required-copy placements and bitmap availability; unsafe100 remains separate.
 No full PCRE/release/Grep readiness claim. Publication/all known migrations
 precede CF removal; Grep last.
+
+## UTF erased primitive prefixes before starter classes
+
+PcreUtfErasedStartClassReferenceTests reuses IsUtfCrLfErasedRepeat in the general
+class proof. Boundaries cost1, direct zero-count primitive/reference repeats
+cost2, and atomic repeat wrappers add1. Charge before addition and cancel per
+prefix; exhausted branches reject. Retained groups/assertions/calls and other
+unproven prefixes keep their existing admission. Selected-repeat traversal,
+owner selection/marker placement and every-alternative CR/LF checks stay.
+No parser/emitter/matcher/Step/VM state/journal/API/limit/workflow/package/
+dependency/consumer/CommandFramework changes; resource ceilings remain.
+199 new cases/full23724 preserve all23525baseline expectations/frozen35.
+Native7927 bounded JIT checks (364strict/tolerant full-capture,7560six-newline/
+UCP/every-offset,3long ordinary controls) pin erased literal/type/set/property/
+newline/reference forms, modifiers/casing/boundaries, wrappers/counts/alternatives/
+branch resets/capture dependencies and retained/CR/property/anchor exclusions.
+Strict/tolerant fragments/work/exact/exhausted/observed/cancellation/default
+budget remain; long controls claim no bitmap parity past proof1000.
+Tests-only run493/Linux x64/net8 observed147new-class failures/23577passes/0skips,
+all23525baseline+52new controls passing,0compiler warnings/errors. Tests unchanged.
+See PCRE-UTF-ERASED-START-CLASS-DESIGN.md and PCRE-UTF-ERASED-START-CLASS-PLAN.md.
+PCRE-UTF-RECENT-PROGRESS.md preserves issue102's recent index at GitHub's body
+limit; earlier history remains intact. Keep102/unsafe100 and broader bitmap/
+optional/assertion/group/required-copy gates open; no full PCRE/release/Grep
+readiness claim. Publication/all known migrations precede CF removal; Grep last.
