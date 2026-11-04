@@ -1214,8 +1214,8 @@ zero paths are unchanged. No parser/emitter/owner/matcher/Step/VM/frame/journal/
 API/limit/workflow/contract/dependency/consumer/CommandFramework changes. Existing
 budgets and35frozen blobs remain; no spans/pointers in long-lived VM state.
 
-689new/full26062 retain all25373baseline expectations. Native8304 qualified
-Linux x64 JIT checks =1328full-capture+6960six-newline/UCP/every-offset+16resource
+1092new/full26465 retain all25373baseline expectations. Native13324 qualified
+Linux x64 JIT checks =2084full-capture+11208six-newline/UCP/every-offset+32resource
 checks,with positive JIT sizes and bounded spans. Cases pin counts/modifiers,
 collapsed/general/wrapped/alternative heads,captures/rollback/dependencies,
 scoped UCP/ASCII/caseless pairs,source exceptions,PLUS/star endpoints,strict
@@ -1229,3 +1229,20 @@ New test blobb1ae0e9f2ec8039c5e17f98b23e95b3ed8d2932f is frozen after RED.
 See PCRE-UTF-OPTIONAL-ASSERTION-BITMAP-DESIGN.md and PLAN; final CI is in PR161.
 No full PCRE/release/Grep readiness claim. Publication/all known migrations
 precede CF removal; Grep last.
+
+Scoped-group correction: the initial proof resolved545 of555 failures; the ten
+remaining original controls are finite optional scoped noncapturing groups.
+PcreUtfOptionalScopedGroupBitmapReferenceTests adds403 cases, preserving the
+original689. Its RED516/Linux ARM64/net8/9/10 shows282failures/26183passes/0skips
+each, all25373baseline+810newcontrols pass, compiler warnings/errors0. Ten
+failures are original controls;272 are focused new cases. Focused test blob
+a4326cbb69d0f3e4a8021d9a47adb8603b741e7d stays unchanged after RED.
+
+Finite optional noncapturing single-branch/single-leaf groups share mandatory
+head classification with assertion study. Minimum0/Maximum1..499 is checked
+before study/multiply; group/body and range visits, copy/wrapper/pre-addition
+charges and retained barriers remain bounded. Unsupported shapes are rejected
+before charging fallback visits. No general nested/capturing/nullable/tail-return
+or unbounded-group admission. Scoped/global casing, consumed prefixes and option
+restoration, UCP/ASCII/property/CR controls, ownership and resource contracts are
+pinned. Both new test blobs and all baseline expectations remain unchanged.

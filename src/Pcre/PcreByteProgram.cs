@@ -467,6 +467,11 @@ internal sealed class PcreByteProgramCompiler {
 				PcreByteRepeat { Maximum: > 0 } repeat
 					when repeat.Minimum != repeat.Maximum && repeat.Maximum <= ( MaximumStartClassVisits - 1 ) / 2
 						&& HasUtfCrLfOptionalAssertionBitmap( repeat.Child, ref visits ) => (repeat.Maximum * 2 + 1, true),
+				// A retained optional group studies its mandatory inner head, rather
+				// than the optional-atom opcode used for a direct literal/type query.
+				PcreByteRepeat { Minimum: 0, Maximum: > 0 } repeat
+					when repeat.Maximum <= ( MaximumStartClassVisits - 1 ) / 2
+						&& HasUtfCrLfOptionalGroupBitmap( repeat.Child, ref visits ) => (repeat.Maximum * 2 + 1, true),
 				PcreByteRepeat omitted when IsUtfCrLfErasedRepeat( omitted ) => (2, false),
 				// Queries raise early-fail count to three. A root star owns type_skip;
 				// both prevent the following PLUS from receiving its own skip marker.
@@ -525,6 +530,26 @@ internal sealed class PcreByteProgramCompiler {
 
 	private static bool HasUtfCrLfMandatoryLiteralBitmap( int scalar ) => Rune.IsValid( scalar ) && scalar != '\r';
 
+	private bool HasUtfCrLfMandatoryBitmapHead( PcreByteNode node, ref int visits ) => node switch {
+		PcreByteLiteral literal => HasUtfCrLfMandatoryLiteralBitmap( literal.Value ),
+		PcreByteScalarClass characterClass => HasUtfCrLfTypeBitmap( characterClass ),
+		PcreByteScalarSet set => HasUtfCrLfClassBitmap( set, ref visits ),
+		_ => false
+	};
+
+	private bool HasUtfCrLfOptionalGroupBitmap( PcreByteNode node, ref int visits ) {
+		// Reject unsupported shapes without charging visits: existing nullable
+		// continuation proofs must retain their fallback budget at the boundary.
+		if ( node is not PcreByteNoncapturingGroup group || group.Body.Branches.Count != 1
+			|| group.Body.Branches[0].Count != 1 ) { return false; }
+		var head = group.Body.Branches[0][0];
+		if ( head is not (PcreByteLiteral or PcreByteScalarClass or PcreByteScalarSet) ) { return false; }
+		cancellationToken.ThrowIfCancellationRequested();
+		if ( visits > MaximumStartClassVisits - 2 ) { return false; }
+		visits += 2;
+		return HasUtfCrLfMandatoryBitmapHead( head, ref visits );
+	}
+
 	private bool HasUtfCrLfOptionalAssertionBitmap( PcreByteNode node, ref int visits ) {
 		cancellationToken.ThrowIfCancellationRequested();
 		if ( node is PcreByteLiteralAssertion { IsPositive: false, IsBehind: false } literal ) {
@@ -553,14 +578,8 @@ internal sealed class PcreByteProgramCompiler {
 				case PcreByteGroup group: pending.Push( (null, group.Body) ); break;
 				case PcreByteNoncapturingGroup group: pending.Push( (null, group.Body) ); break;
 				case PcreByteAtomic atomic: pending.Push( (atomic.Child, null) ); break;
-				case PcreByteLiteral head:
-					if ( !HasUtfCrLfMandatoryLiteralBitmap( head.Value ) ) { return false; }
-					break;
-				case PcreByteScalarClass characterClass:
-					if ( !HasUtfCrLfTypeBitmap( characterClass ) ) { return false; }
-					break;
-				case PcreByteScalarSet set:
-					if ( !HasUtfCrLfClassBitmap( set, ref visits ) ) { return false; }
+				case PcreByteLiteral or PcreByteScalarClass or PcreByteScalarSet:
+					if ( !HasUtfCrLfMandatoryBitmapHead( entry.Node, ref visits ) ) { return false; }
 					break;
 				default: return false;
 			}
