@@ -659,10 +659,20 @@ internal sealed class PcreByteProgramCompiler {
 			foreach ( var branch in alternatives.Branches ) {
 				cancellationToken.ThrowIfCancellationRequested();
 				if ( branch.Count == 0 ) { return false; }
-				// Only cross supported prefixes when the single-chain repeat selector
-				// already established their source shape. Other proofs stay conservative.
-				var first = utfCrLfLeadingRepeatSet is null ? branch[0]
-					: FindUtfCrLfLeadingNode( branch, ref visits ).Node;
+				PcreByteNode? first;
+				if ( utfCrLfLeadingRepeatSet is not null ) {
+					// The repeat selector already proved these broader nullable prefixes.
+					first = FindUtfCrLfLeadingNode( branch, ref visits ).Node;
+				} else {
+					// Native bitmap study ignores boundaries before any supported starter.
+					var index = 0;
+					while ( index < branch.Count && branch[index] is PcreByteWordBoundary ) {
+						cancellationToken.ThrowIfCancellationRequested();
+						if ( ++visits > MaximumStartClassVisits ) { return false; }
+						index++;
+					}
+					first = index < branch.Count ? branch[index] : null;
+				}
 				if ( first is null ) { return false; }
 				pending.Push( first );
 			}

@@ -1033,3 +1033,29 @@ excluded; preserve atomic/possessive/alternative/depth/capture guards. A private
 compiler helper consumes skip eligibility once, marking only the first emitted
 scalar-star instruction while retaining AST identity for source proof. No new
 runtime state; joined nullable-body/copy charging and all1000-visit guards stay.
+
+## UTF boundary-prefixed starter classes
+
+PcreUtfBoundaryStartClassReferenceTests extends the general UTF class proof to
+leading word boundaries without requiring a selected PLUS set. Local AddBranches
+skips only PcreByteWordBoundary nodes with one charged visit/cancellation per
+node, then enqueues the first significant node. Boundary-only branches reject.
+The selected-repeat path retains its existing nullable walker. Every alternative
+must still exclude CR and at least one must admit LF; group/atomic/required-repeat,
+unselected wide PLUS/exact-large/predicate/negated/source-shape guards remain.
+No owner selection/marker placement/parser/emitter/matcher/Step/VM state/journal/
+API/limit/workflow/package/dependency/consumer/CommandFramework changes.
+179 new cases/full23525 preserve all23346baseline expectations/frozen35.
+Native7887 bounded JIT checks (324strict/tolerant full-capture,7560six-newline/
+UCP/every-offset,3long-prefix ordinary controls) plus48initial probes pin ASCII/
+wide/restricted-UCP boundaries, wrappers/depths, alternatives/branch resets,
+counts/capture dependencies/casing and CR-including/boundary-only/predicate/
+anchor exclusions. Strict/tolerant fragments/work/exact/exhausted/observed/
+cancellation/default budget remain; long controls claim no bitmap parity past1000.
+Tests-only run491/macOS ARM64/net8 observed113new-class failures/23412passes/0skips,
+all23346baseline+66new controls passing,0compiler warnings/errors. Tests unchanged.
+See PCRE-UTF-BOUNDARY-START-CLASS-DESIGN.md and PCRE-UTF-BOUNDARY-START-CLASS-PLAN.md.
+#102 stays open for broader optional/assertion/predicate/root-alternative/group/
+required-copy placements and bitmap availability; unsafe100 remains separate.
+No full PCRE/release/Grep readiness claim. Publication/all known migrations
+precede CF removal; Grep last.
