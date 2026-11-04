@@ -22,6 +22,7 @@ audit. A row is not a claim that an unreviewed PR is merged or release-ready.
 | [156](https://github.com/uniblab/Icod.Expressions/pull/156) | 377 | 24324 | Finite optional primitives and proven root stars before general starter classes |
 | [157](https://github.com/uniblab/Icod.Expressions/pull/157) | 297 | 24621 | Bitmap-skipped negative lookahead and lookbehind prefixes |
 | [158](https://github.com/uniblab/Icod.Expressions/pull/158) | 752 | 25373 | Exact assertion copies and optional negative-ahead class bodies |
+| [161](https://github.com/uniblab/Icod.Expressions/pull/161) | 1092 | 26465 | Mandatory bitmap heads in optional negative lookahead and finite scoped groups |
 
 Before a tranche is ready: six native OS/architecture Staging jobs, full suite
 and frozen214 on net8/9/10, no failed/skipped tests or compiler warnings/errors,
