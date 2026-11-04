@@ -71,6 +71,15 @@ jobs:
         run: dotnet restore Icod.Expressions.sln
       - name: Build all target frameworks
         run: dotnet build Icod.Expressions.sln -c ${{ env.CONFIGURATION }} --no-restore -p:ContinuousIntegrationBuild=true
+      - name: Isolate managed and native counted assertion
+        if: matrix.name == 'Windows ARM64'
+        shell: pwsh
+        run: |
+          foreach ($probe in @('ManagedCountedAssertion500', 'NativeCountedAssertion500')) {
+            Write-Host "Isolating component: $probe"
+            dotnet test tests/Icod.Expressions.Tests.csproj -c Staging -f net8.0 --no-build --no-restore --filter "FullyQualifiedName~PcreWindowsArmCrashDiagnosticTests.$probe" --blame --diag "tests/TestResults/$probe.vstest.log" --logger "trx;LogFileName=$probe.trx"
+            if ($LASTEXITCODE -ne 0) { throw "Component probe failed: $probe" }
+          }
       - name: Run full suite and preserve frozen regex corpus
         shell: pwsh
         run: |
@@ -102,6 +111,7 @@ jobs:
             [xml]$sequence = Get-Content $_.FullName -Raw
             $sequence.SelectNodes("//*[local-name()='Test']") | Where-Object { $_.GetAttribute('Completed') -ne 'True' } | ForEach-Object { $_.OuterXml }
           }
+          Get-ChildItem tests/TestResults -Recurse -Filter '*.vstest*.log' | ForEach-Object { Get-Content $_.FullName -Tail 60 }
           Get-WinEvent -FilterHashtable @{LogName='Application'; StartTime=(Get-Date).AddMinutes(-20)} -ErrorAction SilentlyContinue |
             Where-Object { $_.Id -in @(1000, 1001, 1026) } | Select-Object TimeCreated, Id, Message | Format-List
       - name: Verify frozen source manifest in Git Bash
