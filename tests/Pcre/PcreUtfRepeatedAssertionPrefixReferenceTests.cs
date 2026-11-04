@@ -567,6 +567,8 @@ public sealed class PcreUtfRepeatedAssertionPrefixReferenceTests {
 			new() { Utf8 = true }, cancellation.Token ) );
 	}
 
+	// These controls exercise ordinary fallback, not JIT bitmap study. The pinned
+	// Windows ARM64 JIT crashes for the 500-copy control; see issue #159.
 	[Theory]
 	[InlineData( 499 )]
 	[InlineData( 500 )]
@@ -574,7 +576,7 @@ public sealed class PcreUtfRepeatedAssertionPrefixReferenceTests {
 	public void CountedAssertionProofLimitsKeepOrdinaryMatchingAndCancellation( int count ) {
 		var pattern = String.Concat( "(*ANYCRLF)(?!B){", count, @"}([\x09-\x0c\x{100}])A" );
 		var subject = Convert.FromHexString( "0B41" );
-		Compare( Reference( pattern ), subject, 0, Compile( pattern, new() { Utf8 = true } ).Match( subject ), pattern );
+		Compare( Reference( pattern, compiled: false ), subject, 0, Compile( pattern, new() { Utf8 = true } ).Match( subject ), pattern );
 		using var cancellation = new CancellationTokenSource();
 		cancellation.Cancel();
 		Assert.Throws<OperationCanceledException>( () => PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( pattern ),
@@ -607,9 +609,10 @@ public sealed class PcreUtfRepeatedAssertionPrefixReferenceTests {
 		}
 	}
 
-	private static PcreRegex8Bit Reference( string pattern, bool ucp = false, bool tolerant = false ) => new(
+	private static PcreRegex8Bit Reference( string pattern, bool ucp = false, bool tolerant = false, bool compiled = true ) => new(
 		Encoding.ASCII.GetBytes( pattern ), Encoding.UTF8, new PcreRegexSettings {
-			Options = PcreOptions.Compiled | PcreOptions.Utf | ( ucp ? PcreOptions.Ucp : PcreOptions.None )
+			Options = ( compiled ? PcreOptions.Compiled : PcreOptions.None ) | PcreOptions.Utf
+				| ( ucp ? PcreOptions.Ucp : PcreOptions.None )
 				| ( tolerant ? PcreOptions.MatchInvalidUtf : PcreOptions.None ), ParensLimit = 512 } );
 
 	private static PcreCompiledBytePattern Compile( string pattern, PcreByteOptions options ) {

@@ -42,10 +42,10 @@ stars pin ownership. Six-newline/UCP/every-offset tolerant fragments,strict
 validation/caller boundaries,exact/exhausted/observed work,cancellation/default
 budget,long ordinary multi-prefix/counted controls and an in-budget boundary
 fixture. No bitmap parity claim beyond the conservative1000 total budget.
-Successful-build new-class RED/all24621baseline pass before source; tests then
-immutable. Six native Staging/full/frozen214/net8/9/10,zero failures/skips/compiler
+Successful-build new-class RED/all24621baseline pass before source; preserve
+test inputs/assertions and disclose any necessary native-oracle harness correction. Six native Staging/full/frozen214/net8/9/10,zero failures/skips/compiler
 warnings/errors,configured gates/seven equal workloads. Author review/exacttree/
-nineblobs/frozen/clean before ready unmerged PR. Append one recent row and update
+tenblobs/frozen/clean before ready unmerged PR. Append one recent row and update
 only issue102 footer after CI; earlier history/index block preserved. Keep102/
 unsafe100/release/Grep gates open. Publication/all known migrations before CF
 removal; Grep last.
@@ -73,4 +73,30 @@ Maximum<=(1000-1)/2 before body study; successful proof uses2*Maximum+1/
 retained=true plus existing wrapper/pre-addition charging. The exact path still
 skips bodies. No parser/emitter/owner/matcher/VM state changes. General optional
 assertions do more work per candidate; their separate default-budget fixture
-uses10000 CRLF pairs under the unchanged1m ceiling. Original442 tests unchanged.
+uses10000 CRLF pairs under the unchanged1m ceiling. All original442 inputs and assertions are retained.
+
+## Windows ARM64 native-oracle correction
+
+The final source passed on five platforms, but Windows ARM64 aborted the test
+host. Sequential run510 isolated the counted500 ordinary control. Run511
+(job126508329689, source2343f9a2f693bb415dbf938226bfe198f303793f)
+then passed a managed-only compile/match/capture/cancellation probe and crashed
+a separate native-only PCRE.NET JIT probe. This is a confirmed native-oracle
+failure, not a managed assertion failure. See issue159 for the reproduction
+and the suspected Windows ARM64 SLJIT4096-byte entry allocation; the instruction
+mechanism has not been verified from the failing binary.
+
+Only the three counted ordinary fallback/cancellation controls (499/500/1001)
+now select the native interpreter on every platform. Their inputs, capture
+comparisons, cancellation assertions, and managed execution are unchanged.
+The separate long sequential controls and every bitmap-sensitive case retain
+JIT through the helper's default. No test is removed or skipped; full25373,
+new752, frozen214 and all engine limits remain. The original test blob changes
+solely for this disclosed reference-mode correction, so it is no longer claimed
+byte-for-byte immutable. The focused310-case blob remains unchanged.
+
+All temporary component probes, crash tracing, and sequential scheduling are
+removed. The PR workflow is restored byte-for-byte and parallel collection
+scheduling is restored before the final six-platform qualification. Native13538
+research checks remain Linux x64 JIT evidence; they do not establish Windows
+ARM64 JIT safety for the excluded ordinary controls. Keep issue159 open.

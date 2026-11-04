@@ -1183,3 +1183,12 @@ one row. Keep102/unsafe100 and broader optional/positive-ahead/predicate/nullabl
 group/required-copy/unselected wide PLUS/root-alternative availability open.
 No full PCRE/release/Grep readiness claim. Publication/all known migrations before
 CommandFramework removal;Grep last.
+
+PR158 oracle correction: run511 isolated a native-only PCRE.NET JIT host crash
+on Windows ARM64 for count500; the managed-only probe passes. Issue159 tracks
+it. The three counted ordinary fallback/cancellation controls use the native
+interpreter on every platform, preserving all inputs/assertions and full25373.
+Bitmap-sensitive cases and long sequential controls retain JIT. Temporary
+probes/tracing/serial scheduling are removed before final six-platform CI.
+The original442-case blob changes only for this disclosed harness correction;
+the focused310-case blob stays unchanged. See the repeated-assertion design.
