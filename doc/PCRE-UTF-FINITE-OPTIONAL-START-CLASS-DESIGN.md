@@ -47,3 +47,27 @@ tree/blobs/frozen/clean audit before ready unmerged PR. Append one progress-inde
 row; update only issue102 footer after CI. Preserve all earlier history/index
 block. Keep102/unsafe100/release/Grep gates open. Publication and all known
 consumer migrations precede CommandFramework removal; Grep last.
+
+## Observed root-star correction to the initial approach
+The original297-case tests-only run497 observed166 new-class failures and all
+23947baseline+131controls passing. The finite-only implementation (run498)
+resolved160 failures, leaving six root-star controls failing: native enters LF
+for B*/lazy/possessive before a plain class, while managed missed. Compilation
+cleared the existing root-star identity whenever no PLUS was selected. Merely
+crossing that star without retaining its marker would instead lose its native
+endpoint skip after a consumed prefix. This requires a bounded extension of
+the initial design; the original tests and native spans remain unchanged.
+
+Pin80 additional root-star/type/set/full-capture endpoint controls in a separate
+test class before the corrective production change. Reuse the existing root
+star classifier and one-emission marker helper. Compute HasUtfCrLfStartClass
+before emission,allow its nullable walker to cross guarded unbounded primitives
+when a selected PLUS or existing root-star identity is present,and retain that
+identity/skip state if either a PLUS or the completed class proof exists.
+Return the stored class proof in the program. Unproved stars still clear;
+arbitrary unbounded/nullable-group placements remain excluded. No owner finder,
+emitter helper,matcher,VM state or resource ceiling changes. Existing selected
+PLUS admission and root-star depth/capture/source/first-copy guards stay intact.
+
+Final corpus377new/full24324; native6771 =560literal+6048protocol+3long+160star
+checks. Both test files remain immutable after their respective observed RED.

@@ -111,7 +111,9 @@ internal sealed class PcreByteProgramCompiler {
 			skipUtfCrLfLeadingRepeat = false;
 			utfCrLfJoinedNullablePrefix = utfCrLfLeadingRepeatSet is not null;
 		}
-		if ( utfCrLfLeadingRepeatSet is null ) {
+		// Preserve a proven first-star owner before plain classes as well as PLUS.
+		var utfCrLfStartClass = utf8 && HasUtfCrLfStartClass( root );
+		if ( utfCrLfLeadingRepeatSet is null && !utfCrLfStartClass ) {
 			utfCrLfLeadingStarAtom = null;
 			skipUtfCrLfLeadingStar = false;
 		}
@@ -136,7 +138,7 @@ internal sealed class PcreByteProgramCompiler {
 		var bytePrefix = utf8 ? default : FindByteCrLfPrefix( root );
 		return new( instructions.ToArray(), markCount, hasCaselessComparisons, utf8, matchInvalidUtf,
 			FindRequiredLiteralSuffix( root ), newline, HasExplicitNewline( root ), CanMatchEmptyAtAnyOffset( root ),
-			bytePrefix.Unconditional, utf8 && HasUtfCrLfStartClass( root ), notEmpty, notEmptyAtStart,
+			bytePrefix.Unconditional, utfCrLfStartClass, notEmpty, notEmptyAtStart,
 			matchInvalidUtf && newline == PcreByteNewline.Any && HasLineStartSearch( root ), ucp, bytePrefix.Literal );
 	}
 
@@ -668,9 +670,10 @@ internal sealed class PcreByteProgramCompiler {
 				cancellationToken.ThrowIfCancellationRequested();
 				if ( branch.Count == 0 ) { return false; }
 				// Finite optional atoms share the established bitmap/source guards.
-				// Broader star traversal still requires the selected-repeat proof.
+				// Stars also require a selected PLUS or the existing first-star identity.
 				var first = FindUtfCrLfLeadingNode( branch, ref visits,
-					allowUnboundedOptionalRepeats: utfCrLfLeadingRepeatSet is not null ).Node;
+					allowUnboundedOptionalRepeats: utfCrLfLeadingRepeatSet is not null
+						|| utfCrLfLeadingStarAtom is not null ).Node;
 				if ( first is null ) { return false; }
 				pending.Push( first );
 			}

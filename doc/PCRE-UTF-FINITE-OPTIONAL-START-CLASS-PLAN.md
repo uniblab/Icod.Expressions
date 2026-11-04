@@ -37,3 +37,19 @@ CanCrossUtfCrLfOptionalRepeat gains that bool; existing return tuple unchanged.
   zero failures/skips/compiler warnings/errors;ready PR remains unmerged.
 - [ ] Append one progress row and update only issue102's footer after CI;
   retain earlier issue history and preserved index block.
+
+## Task3: Correct the observed root-star gap
+The initial approach leaves six immutable run498 root-star failures; see the
+design correction. Files: tests/Pcre/PcreUtfRootStarStartClassReferenceTests.cs,
+src/Pcre/PcreByteProgram.cs,the four inventories and recent index above.
+Interfaces: existing root-star classifier/one-emission helper unchanged;
+HasUtfCrLfStartClass result computed once before emission and returned later.
+- [ ] Pin80 additional native root-star/type/set endpoint controls; publish
+  tests-only follow-up and observe RED before the corrective source change.
+- [ ] Allow the nullable walker unbounded admission with selected PLUS or
+  existing root-star identity. Retain that identity/skip state with selected
+  PLUS or completed starter-class proof; clear otherwise. Store proof before
+  emission. Preserve both immutable test blobs and every existing guard.
+- [ ] Update final counts377new/full24324/native6771 and audit all original
+  completion gates. Document intermediate failures and the scope adjustment;
+  no user-approved design claim and no independent-review claim.
