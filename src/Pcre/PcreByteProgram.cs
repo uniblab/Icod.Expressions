@@ -438,7 +438,8 @@ internal sealed class PcreByteProgramCompiler {
 	}
 
 	private (PcreByteNode? Node, bool BlocksSkip, int NextIndex, bool Nullable) FindUtfCrLfLeadingNode(
-		IReadOnlyList<PcreByteNode> branch, ref int visits, int startIndex = 0, bool blocksSkip = false ) {
+		IReadOnlyList<PcreByteNode> branch, ref int visits, int startIndex = 0, bool blocksSkip = false,
+		bool allowUnboundedOptionalRepeats = true ) {
 		// Bitmap study crosses retained zero brackets and supported optional atoms, but
 		// their opcodes prevent repeat skipping. Direct primitive/reference0 vanishes.
 		for ( var index = startIndex; index < branch.Count; index++ ) {
@@ -454,19 +455,20 @@ internal sealed class PcreByteProgramCompiler {
 				// Queries raise early-fail count to three. A root star owns type_skip;
 				// both prevent the following PLUS from receiving its own skip marker.
 				PcreByteRepeat { Minimum: 0, Maximum: > 0, Child: PcreByteLiteral literal } repeat
-					when CanCrossUtfCrLfOptionalRepeat( repeat, blocksSkip )
+					when CanCrossUtfCrLfOptionalRepeat( repeat, blocksSkip, allowUnboundedOptionalRepeats )
 						&& HasUtfCrLfLiteralBitmap( literal.Value, literal.Caseless, literal.CaselessRestricted ) => (2, true),
 				PcreByteRepeat { Minimum: 0, Maximum: > 0, Child: PcreByteScalarSet set } repeat
-					when CanCrossUtfCrLfOptionalRepeat( repeat, blocksSkip ) && IsUtfCrLfOptionalSet( set, ref visits ) => (2, true),
+					when CanCrossUtfCrLfOptionalRepeat( repeat, blocksSkip, allowUnboundedOptionalRepeats )
+						&& IsUtfCrLfOptionalSet( set, ref visits ) => (2, true),
 				// These type operands have bitmap study and exclude CR.
 				// Parsed kinds already distinguish UCP properties and ASCII restrictions.
 				PcreByteRepeat { Minimum: 0, Maximum: > 0, Child: PcreByteScalarClass {
 					Kind: PcreByteScalarClassKind.AsciiDigit or PcreByteScalarClassKind.AsciiWord
 						or PcreByteScalarClassKind.HorizontalSpace, Negated: false } } repeat
-					when CanCrossUtfCrLfOptionalRepeat( repeat, blocksSkip ) => (2, true),
+					when CanCrossUtfCrLfOptionalRepeat( repeat, blocksSkip, allowUnboundedOptionalRepeats ) => (2, true),
 				PcreByteRepeat { Minimum: 0, Maximum: > 0, Child: PcreByteScalarClass {
 					Kind: PcreByteScalarClassKind.AsciiSpace, Negated: true } } repeat
-					when CanCrossUtfCrLfOptionalRepeat( repeat, blocksSkip ) => (2, true),
+					when CanCrossUtfCrLfOptionalRepeat( repeat, blocksSkip, allowUnboundedOptionalRepeats ) => (2, true),
 				PcreByteRepeat repeat when IsUtfCrLfRetainedZeroRepeat( repeat )
 					=> (repeat.Child is PcreByteAtomic ? 3 : 2, true),
 				_ => (0, false)
@@ -480,8 +482,9 @@ internal sealed class PcreByteProgramCompiler {
 		return (null, blocksSkip, branch.Count, true);
 	}
 
-	private bool CanCrossUtfCrLfOptionalRepeat( PcreByteRepeat repeat, bool blocksSkip ) =>
-		repeat.Maximum != int.MaxValue || blocksSkip || ReferenceEquals( repeat.Child, utfCrLfLeadingStarAtom );
+	private bool CanCrossUtfCrLfOptionalRepeat( PcreByteRepeat repeat, bool blocksSkip, bool allowUnboundedOptionalRepeats ) =>
+		repeat.Maximum != int.MaxValue || allowUnboundedOptionalRepeats
+			&& ( blocksSkip || ReferenceEquals( repeat.Child, utfCrLfLeadingStarAtom ) );
 
 	private bool IsUtfCrLfOptionalSet( PcreByteScalarSet set, ref int visits ) {
 		if ( set.Negated || !set.Predicates.IsEmpty || set.Ranges.IsEmpty ) { return false; }
@@ -664,34 +667,10 @@ internal sealed class PcreByteProgramCompiler {
 			foreach ( var branch in alternatives.Branches ) {
 				cancellationToken.ThrowIfCancellationRequested();
 				if ( branch.Count == 0 ) { return false; }
-				PcreByteNode? first;
-				if ( utfCrLfLeadingRepeatSet is not null ) {
-					// The repeat selector already proved these broader nullable prefixes.
-					first = FindUtfCrLfLeadingNode( branch, ref visits ).Node;
-				} else {
-					// Bitmap study crosses boundaries and supported zero-count prefixes.
-					var index = 0;
-					while ( index < branch.Count ) {
-						var cost = 1;
-						if ( branch[index] is not PcreByteWordBoundary ) {
-							var prefix = branch[index];
-							cost = 2;
-							if ( prefix is PcreByteAtomic { Child: PcreByteRepeat } modifier ) {
-								prefix = modifier.Child;
-								cost++;
-							}
-							if ( !IsUtfCrLfErasedRepeat( prefix ) ) {
-								if ( !IsUtfCrLfRetainedZeroRepeat( prefix ) ) { break; }
-								if ( prefix is PcreByteRepeat { Child: PcreByteAtomic } ) { cost++; }
-							}
-						}
-						cancellationToken.ThrowIfCancellationRequested();
-						if ( visits > MaximumStartClassVisits - cost ) { return false; }
-						visits += cost;
-						index++;
-					}
-					first = index < branch.Count ? branch[index] : null;
-				}
+				// Finite optional atoms share the established bitmap/source guards.
+				// Broader star traversal still requires the selected-repeat proof.
+				var first = FindUtfCrLfLeadingNode( branch, ref visits,
+					allowUnboundedOptionalRepeats: utfCrLfLeadingRepeatSet is not null ).Node;
 				if ( first is null ) { return false; }
 				pending.Push( first );
 			}
