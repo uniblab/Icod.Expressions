@@ -58,3 +58,26 @@ equal Linux workloads. Author whole-branch review and remote exact-tree checks
 before ready/unmerged PR. No merge/tag/publication/consumer/CommandFramework work.
 Preserve issue102 history/index; append one progress row and update only its
 recent footer after all final gates. Broader availability remains open.
+
+## Scoped-group correction after observed RED
+
+The first tests-only run compiled cleanly and failed555/26062 tests per TFM;
+all25373 baseline cases passed. The initial assertion proof resolved545 failures.
+The ten remaining original controls use optional scoped groups, e.g. (?i:s)?,
+whose mandatory inner CHAR/PROP head differs from direct optional (?i)s?.
+Preserve the original test blob and add403 focused cases before this correction.
+Native qualification adds756 literal,4248 protocol and16 resource checks.
+
+Admit only finite optional noncapturing groups with exactly one branch and one
+mandatory literal/type/set leaf. Check Minimum=0 and Maximum<=499 before study
+or multiplication. Reuse the assertion mandatory-head classifier; charge the
+group/body and existing range visits, plus2*Maximum+1 and wrapper costs. Reject
+unsupported shapes before changing the shared visit counter, preserving existing
+nullable-repeat fallback budgets. No nested/capturing/empty/nullable/tail-return
+or unbounded-group expansion is added. Direct optional-atom guards remain exact.
+
+Focused tests pair scoped and global casing, consumed prefixes and option
+restoration, type/UCP/ASCII/property/CR controls, PLUS/star/wrapper ownership,
+all caller offsets and malformed fragments, strict validation and resource
+contracts. Expected final full suite26465, including1092 new cases. Keep both
+new test blobs immutable after their successful-build RED observations.
