@@ -1107,3 +1107,35 @@ recent index gains one row. Keep102/unsafe100 and broader optional/assertion/
 predicate/group/required-copy/unselected wide PLUS/root-alternative bitmap
 availability open. No full PCRE/release/Grep readiness claim. Publication/all
 known migrations precede CF removal; Grep last.
+
+## Bitmap-skipped assertions in UTF prefix proofs
+
+PcreUtfSkippedAssertionPrefixReferenceTests pins negative lookahead and all
+lookbehind prefixes,including literal/general,positive/negative,non-atomic and
+variable forms. FindUtfCrLfLeadingNode admits exactly negative-or-behind
+PcreByteLiteralAssertion,negative PcreByteLookahead and every PcreByteLookbehind,
+returning cost2/retained=true. Native bitmap study skips these bodies; early-fail
+descent stops there,so a following PLUS/star cannot gain its own recovery marker.
+Assertion execution,captures-before-match,negative capture rollback,reverse
+retries,fragment isolation and existing earlier root-star ownership stay intact.
+Positive ahead and arbitrary optional assertion repeats are not added. Shared
+source/atom/range/alternative/required-repeat/owner guards,pre-addition1000
+budget,cancellation and exhausted branches remain. Body opacity applies only
+to bitmap study. No parser/emitter helper/owner finder/matcher/Step/VM/frame/
+journal/API/limit/workflow/package/dependency/consumer/CommandFramework changes;
+resource ceilings unchanged.297new/full24621 preserve all24324baseline/frozen35.
+Native6618 bounded JIT checks (560strict/tolerant full captures,6048six-newline/
+UCP/every-offset,3long ordinary,7empty-assertion source probes) pin opaque body
+properties/classes,capture dependencies,mixed prefixes,wrappers/counts/
+alternatives,PLUS modifiers and earlier-vs-later stars. Empty positive behind
+preserves the native recovery barrier; empty negative assertions still fail.
+Strict validation/caller boundaries/tolerant fragments,exact/exhausted/observed
+work,cancellation/default budget and long ordinary controls remain; no bitmap
+parity claim beyond1000. Tests-only run501/Linux x64/net8 observed217new-class
+failures/24404passes/0skips,all24324baseline+80controls passing,0compiler warnings/
+errors. Tests unchanged after RED. See PCRE-UTF-SKIPPED-ASSERTION-PREFIX-DESIGN.md
+and PCRE-UTF-SKIPPED-ASSERTION-PREFIX-PLAN.md; recent index gains one row.
+Keep102/unsafe100 and broader positive-ahead/predicate/nullable-group/required-
+copy/unselected wide PLUS/root-alternative bitmap availability open. No full
+PCRE/release/Grep readiness claim. Publication/all known migrations precede
+CommandFramework removal; Grep last.
