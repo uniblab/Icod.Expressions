@@ -71,6 +71,21 @@ jobs:
         run: dotnet restore Icod.Expressions.sln
       - name: Build all target frameworks
         run: dotnet build Icod.Expressions.sln -c ${{ env.CONFIGURATION }} --no-restore -p:ContinuousIntegrationBuild=true
+      - name: Isolate Windows ARM64 crash candidates
+        if: matrix.name == 'Windows ARM64'
+        shell: pwsh
+        run: |
+          $probes = @(
+            'PcreUtfFiniteGroupEntryReferenceTests.EveryCallerOffsetKeepsFiniteGroupAndFragmentBoundaries',
+            'PcreByteUcpReferenceTests.EveryByteCasePairSharesLiteralClassReferenceAndAssertionSemantics',
+            'PcreResetOptionReferenceTests.ResetClearsCallerCaselessAndRestoresItAfterAScope',
+            'PcreGeneralLookaheadReferenceTests.ResetStartIsInvalidThroughoutTheActiveAssertion'
+          )
+          foreach ($probe in $probes) {
+            Write-Host "Isolating: $probe"
+            dotnet test tests/Icod.Expressions.Tests.csproj -c ${{ env.CONFIGURATION }} -f net8.0 --no-build --no-restore --filter "FullyQualifiedName~$probe" --blame --logger "trx;LogFileName=$probe.trx"
+            if ($LASTEXITCODE -ne 0) { throw "Isolated crash probe failed: $probe" }
+          }
       - name: Run full suite and preserve frozen regex corpus
         shell: pwsh
         run: |
@@ -98,7 +113,8 @@ jobs:
         run: |
           Get-ChildItem tests/TestResults -Recurse -Filter '*Sequence*.xml' | ForEach-Object {
             Write-Host "Crash sequence: $($_.FullName)"
-            Get-Content $_.FullName -Tail 120
+            [xml]$sequence = Get-Content $_.FullName -Raw
+            $sequence.SelectNodes("//*[local-name()='Test']") | Where-Object { $_.GetAttribute('Completed') -ne 'True' } | ForEach-Object { $_.OuterXml }
           }
       - name: Verify frozen source manifest in Git Bash
         if: matrix.os == 'windows-latest'
