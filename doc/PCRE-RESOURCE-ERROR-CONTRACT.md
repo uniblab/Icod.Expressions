@@ -1624,3 +1624,25 @@ No parser/emitter/matcher/Step/VM/frame/journal/API/limit/workflow/dependency/
 consumer/CommandFramework changes or production fallback. Broader PCRE,
 release and Grep gates remain open; publication and all known migrations
 precede CommandFramework removal. Grep remains last.
+
+
+## Mandatory literal repeats after positive ahead (PR167)
+
+After merged166, optional-bracket UTF bitmap study looks past positive ahead
+when the next significant head is a mandatory direct CR-excluding literal
+repeat, including possessive atomic repeat wrappers. Its iterative all-branch
+proof uses the existing valid-scalar guard, bounded visits, cancellation and
+success-only checkpoint. Zero-minimum repeats and unsupported heads stay on
+their former paths. Parser, emitter, matcher, Step, frames, journal, API,
+limits, dependencies, workflows and consumers are unchanged.
+
+Pinned native PCRE2 10.48 JIT study showed LF in the first bitmap, CR absent,
+and positive JIT sizes for plus, exact, bounded, lazy and possessive literal
+repeats. Thirty-five full-capture fixtures / seventy strict+tolerant checks
+cover optional capture/noncapture/atomic brackets and CRLF/ordinary subjects.
+Successful-build tests-only RED [run532](https://github.com/uniblab/Icod.Expressions/actions/runs/41992936864), Linux ARM64/net8/9/10: seven failures confined to the new class,
+30,588 passes, zero skips and compiler warnings/errors per framework. All
+30,560 baseline cases and 28 new controls pass. Frozen test blob
+2ba39ba6c05fe90f5b2a1222fcc723f4a93775f5 remains unchanged after RED.
+Final six-platform results are in PR167. Keep issue102 and broader PCRE,
+release and consumer migration gates open; Grep remains last.
