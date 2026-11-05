@@ -591,6 +591,21 @@ internal sealed class PcreByteProgramCompiler {
 				foreach ( var branch in alternatives.Branches ) {
 					cancellationToken.ThrowIfCancellationRequested();
 					if ( ++visits > MaximumStartClassVisits || branch.Count == 0 ) { return false; }
+					// Native looks past assertions and boundaries before deciding
+					// whether a positive ahead can yield to a mandatory character.
+					// This proof accepts only the first direct, CR-excluding literal.
+					var hasDirectLiteralContinuation = false;
+					foreach ( var candidate in branch ) {
+						cancellationToken.ThrowIfCancellationRequested();
+						if ( candidate is PcreByteLiteral literal ) {
+							hasDirectLiteralContinuation = HasUtfCrLfMandatoryLiteralBitmap( literal.Value );
+							break;
+						}
+						if ( candidate is PcreByteWordBoundary || IsUtfCrLfSkippedAssertion( candidate )
+							|| candidate is PcreByteLookahead { IsPositive: true }
+								or PcreByteLiteralAssertion { IsPositive: true, IsBehind: false } ) { continue; }
+						break;
+					}
 					// Native bitmap study ignores these unquantified opcodes. A
 					// remaining mandatory head is still required in every branch.
 					var index = 0;
@@ -599,12 +614,11 @@ internal sealed class PcreByteProgramCompiler {
 						var cost = branch[index] switch {
 							PcreByteWordBoundary => 1,
 							PcreByteNode assertion when IsUtfCrLfSkippedAssertion( assertion ) => 2,
-							// Native skips positive ahead when the next opcode sets a
-							// mandatory character. Keep this subset to direct literals.
+							// Intermediate assertions/boundaries do not obscure a direct
+							// mandatory literal; the outer loop charges each visited node.
 							PcreByteNode ahead when ( ahead is PcreByteLookahead { IsPositive: true }
 								or PcreByteLiteralAssertion { IsPositive: true, IsBehind: false } )
-								&& index + 1 < branch.Count && branch[index + 1] is PcreByteLiteral literal
-								&& HasUtfCrLfMandatoryLiteralBitmap( literal.Value ) => 2,
+								&& hasDirectLiteralContinuation => 2,
 							_ => 0
 						};
 						if ( cost == 0 ) { break; }
