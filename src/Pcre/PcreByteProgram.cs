@@ -538,10 +538,15 @@ internal sealed class PcreByteProgramCompiler {
 	};
 
 	private bool HasUtfCrLfOptionalGroupBitmap( PcreByteNode node, ref int visits ) {
-		if ( node is not PcreByteNoncapturingGroup group ) { return false; }
-		// Preserve the established single-leaf path and its proof charges.
-		if ( group.Body.Branches.Count == 1 && group.Body.Branches[0].Count == 1 ) {
-			var head = group.Body.Branches[0][0];
+		var body = node switch {
+			PcreByteGroup capture => capture.Body,
+			PcreByteNoncapturingGroup group => group.Body,
+			_ => null
+		};
+		if ( body is null ) { return false; }
+		// Preserve the established noncapturing single-leaf path and charges.
+		if ( node is PcreByteNoncapturingGroup && body.Branches.Count == 1 && body.Branches[0].Count == 1 ) {
+			var head = body.Branches[0][0];
 			if ( head is PcreByteLiteral or PcreByteScalarClass or PcreByteScalarSet ) {
 				cancellationToken.ThrowIfCancellationRequested();
 				if ( visits > MaximumStartClassVisits - 2 ) { return false; }
@@ -552,7 +557,7 @@ internal sealed class PcreByteProgramCompiler {
 		// A failed bounded attempt must not spend the budget of the existing
 		// nullable continuation fallback. Only a successful proof is retained.
 		var bodyVisits = visits;
-		if ( !HasUtfCrLfMandatoryBodyBitmap( group.Body, ref bodyVisits ) ) { return false; }
+		if ( !HasUtfCrLfMandatoryBodyBitmap( body, ref bodyVisits ) ) { return false; }
 		visits = bodyVisits;
 		return true;
 	}
