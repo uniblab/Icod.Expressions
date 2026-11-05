@@ -1321,3 +1321,36 @@ dependency/consumer/CommandFramework changes or production reference fallback.
 See PCRE-UTF-OPTIONAL-GROUP-HEADS-DESIGN.md and PLAN; exact final CI is in PR162.
 Keep7/99/100/102/native159 and broader PCRE/release/Grep gates open. Publication/
 all known migrations precede CommandFramework removal; Grep remains last.
+
+## Optional capturing-group mandatory bitmap heads (PR163)
+
+After merged162, finite optional numbered/named capturing outer groups share
+HasUtfCrLfMandatoryBodyBitmap with noncapturing groups and negative assertions.
+Only the body selector is broadened; every branch still needs a supported
+mandatory literal/type/positive predicate-free range head excluding CR. Preserve
+the prior noncapturing single-leaf path and charges. New capture paths use the
+existing bounded success-only visit checkpoint so failed nullable fallback keeps
+its prior budget. No capture numbering/journal/rollback/reference/condition/tail/
+option-restoration runtime changes. Native CBRA study skips its capture operand
+and follows the same bracket body; retained barriers preserve early-fail rules.
+
+987new/full28269 preserve all27282baseline expectations and35frozen blobs. Native
+7892 qualified Linux x64 JIT checks =1924full-capture+5952six-newline/UCP/every-
+offset+16resource; positive JIT sizes and bounded spans. Cases pin numbered/
+named/branch-reset aliases, absent/consumed/last-iteration/rollback captures, tail
+failure, references/conditions, scoped options,UCP/ASCII/property/CR controls,
+root/nested alternatives,PLUS/star/capture-ancestor ownership,strict/tolerant UTF,
+caller offsets,work/default budget/cancellation and count/expansion limits.
+Ordinary count199/499/500 controls use native interpretation in CI for159.
+
+Successful-build RED520/Linux ARM64/net8/9/10:645new-class failures/27624passes/
+0skips each; all27282baseline+342newcontrols pass;0compilerwarnings/errors. Test
+blobae378b6c7de8354f9102e9d7e90f0f95e5cce45a remains frozen afterward. Existing
+Minimum0/Maximum1..499 pre-study bound,2*Maximum+1/wrapper/pre-addition charges,
+cancellation,source/caseless guards and all owner/limit paths remain unchanged.
+No nullable/repeated/prefix-assertion/empty/unbounded/tail-return inference or new
+walker. No parser/emitter/owner/matcher/Step/VM/frame/journal/API/limit/workflow/
+contract/dependency/consumer/CommandFramework changes or production fallback.
+See PCRE-UTF-OPTIONAL-CAPTURE-HEADS-DESIGN.md and PLAN; exact final CI is in PR163.
+Keep7/99/100/102/native159 and broader PCRE/release/Grep gates open. Publication
+and all known migrations precede CommandFramework removal; Grep remains last.

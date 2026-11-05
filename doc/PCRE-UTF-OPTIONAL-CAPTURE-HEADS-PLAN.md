@@ -13,9 +13,9 @@ Files: new tests/Pcre/PcreUtfOptionalCaptureHeadsReferenceTests.cs and this spec
 plan. Consume pinned PCRE.NET1.6.0/PCRE2 10.48 oracle; produce independent literal
 capture expectations and protocol/work/cancellation/count/expansion controls.
 
-- [ ] Qualify native JIT sizes/bounded spans and literal captures; generate the
+- [x] Qualify native JIT sizes/bounded spans and literal captures; generate the
   new test class without changing any baseline test or production source.
-- [ ] Publish tests/design/plan draft and observe successful-build RED confined
+- [x] Publish tests/design/plan draft and observe successful-build RED confined
   to the new class, with all27282 baseline cases passing and no compiler warnings/
   errors. Freeze the test blob after this observation.
 
@@ -25,7 +25,7 @@ File: src/Pcre/PcreByteProgram.cs. Existing interface:
 HasUtfCrLfOptionalGroupBitmap(PcreByteNode,ref int)->bool. Consume the existing
 HasUtfCrLfMandatoryBodyBitmap(PcreByteAlternatives,ref int) worklist.
 
-- [ ] Select a body for capture or noncapture nodes; keep the original noncapture
+- [x] Select a body for capture or noncapture nodes; keep the original noncapture
   single-leaf path/charges and use the bounded success-only checkpoint otherwise.
 - [ ] Verify immutable new tests and complete baseline suite; append four PCRE
   inventories and one recent-progress row, retaining all earlier history.
@@ -38,3 +38,7 @@ HasUtfCrLfMandatoryBodyBitmap(PcreByteAlternatives,ref int) worklist.
   warnings/errors, all configured gates and seven equal Linux workloads.
 - [ ] Update only issue102 recent footer; record exact RED/GREEN evidence in PR
   metadata, mark ready and leave unmerged for user review. No merge/tag/publish.
+
+Observed RED: run520/Linux ARM64, all three TFMs;645new-class failures/27624passes/
+0skips; all27282baseline+342newcontrols pass; compiler warnings/errors0. Test blob
+ae378b6c7de8354f9102e9d7e90f0f95e5cce45a is frozen. Final qualification is in PR163.
