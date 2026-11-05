@@ -1464,3 +1464,31 @@ controls pass, compiler warnings/errors0. The test blob is frozen as
 No parser, emitter, matcher, Step, frames, journal, API, limit, dependency,
 workflow, consumer or CommandFramework changes. Full source-pinned
 Compatibility and consumer migration remain separate; Grep stays last.
+
+
+## Positive ahead before mandatory type bitmap heads (PR166)
+
+After merged165, the optional-bracket bitmap proof accepts a positive ahead
+across unquantified skipped lookarounds and boundaries only if the first
+significant node is a direct CR-excluding literal or supported scalar type.
+The existing HasUtfCrLfTypeBitmap admits only ASCII digit/word, horizontal
+space and negated ASCII space; parser UCP distinctions and CR exclusion stay.
+All-branch mandatory heads, wrapper/copy costs, cancellation, success-only
+checkpoints, proof limits, retained owners and runtime assertion/capture
+behavior remain unchanged. No arbitrary Unicode property, class, repeat,
+unsupported or empty branch is admitted by this extension.
+
+Native PCRE.NET1.6.0/PCRE2 10.48 JIT corpus:495 literal cases/990 strict+
+tolerant full-capture checks, optional capture/noncapture/atomic wrappers,
+horizontal space under ASCII/UCP, ASCII digit/word/nonspace, UCP-excluded
+controls, skipped assertion/boundary prefixes and CRLF/ordinary subjects.
+Positive native JIT sizes and complete bounded vectors were checked. Test
+blob7b35b99cb7ce74c58c5792db76af657c2e1e7306 frozen after successful-
+build RED528/Linux ARM64/net8/9/10:126 failures/new class only,30434 passes,
+0 skips and0 compiler warnings/errors each; all30065 baseline+369 new controls
+pass. Final exact source-head six-platform results are in PR166.
+
+No parser/emitter/matcher/Step/VM/frame/journal/API/limit/workflow/dependency/
+consumer/CommandFramework changes or production fallback. Broader PCRE,
+release and Grep gates remain open; publication and all known migrations
+precede CommandFramework removal. Grep remains last.
