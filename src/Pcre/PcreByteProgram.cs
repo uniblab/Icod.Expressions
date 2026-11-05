@@ -612,6 +612,13 @@ internal sealed class PcreByteProgramCompiler {
 							hasDirectMandatoryContinuation = HasUtfCrLfTypeBitmap( characterClass );
 							break;
 						}
+						if ( candidate is PcreByteScalarSet set ) {
+							// The mandatory leaf charges the range visits. A speculative
+							// continuation check must not consume the proof budget twice.
+							var probeVisits = visits;
+							hasDirectMandatoryContinuation = HasUtfCrLfClassBitmap( set, ref probeVisits );
+							break;
+						}
 						if ( candidate is PcreByteRepeat or PcreByteAtomic { Child: PcreByteRepeat } ) {
 							hasDirectMandatoryContinuation = HasUtfCrLfMandatoryLiteralRepeatBitmap( candidate );
 							break;
