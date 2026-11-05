@@ -530,6 +530,12 @@ internal sealed class PcreByteProgramCompiler {
 
 	private static bool HasUtfCrLfMandatoryLiteralBitmap( int scalar ) => Rune.IsValid( scalar ) && scalar != '\r';
 
+	private static bool HasUtfCrLfMandatoryLiteralRepeatBitmap( PcreByteNode node ) {
+		if ( node is PcreByteAtomic { Child: PcreByteRepeat possessive } ) { node = possessive; }
+		return node is PcreByteRepeat { Minimum: > 0, Maximum: > 0, Child: PcreByteLiteral literal }
+			&& HasUtfCrLfMandatoryLiteralBitmap( literal.Value );
+	}
+
 	private bool HasUtfCrLfMandatoryBitmapHead( PcreByteNode node, ref int visits ) => node switch {
 		PcreByteLiteral literal => HasUtfCrLfMandatoryLiteralBitmap( literal.Value ),
 		PcreByteScalarClass characterClass => HasUtfCrLfTypeBitmap( characterClass ),
@@ -593,8 +599,8 @@ internal sealed class PcreByteProgramCompiler {
 					if ( ++visits > MaximumStartClassVisits || branch.Count == 0 ) { return false; }
 					// Native looks past assertions and boundaries before deciding
 					// whether a positive ahead can yield to a mandatory character.
-					// The first direct head must be a proven CR-excluding literal
-					// or one of the already supported mandatory character types.
+					// The first direct head must be a proven CR-excluding literal,
+					// its mandatory single-character repeat, or a supported type.
 					var hasDirectMandatoryContinuation = false;
 					foreach ( var candidate in branch ) {
 						cancellationToken.ThrowIfCancellationRequested();
@@ -604,6 +610,10 @@ internal sealed class PcreByteProgramCompiler {
 						}
 						if ( candidate is PcreByteScalarClass characterClass ) {
 							hasDirectMandatoryContinuation = HasUtfCrLfTypeBitmap( characterClass );
+							break;
+						}
+						if ( candidate is PcreByteRepeat or PcreByteAtomic { Child: PcreByteRepeat } ) {
+							hasDirectMandatoryContinuation = HasUtfCrLfMandatoryLiteralRepeatBitmap( candidate );
 							break;
 						}
 						if ( candidate is PcreByteWordBoundary || IsUtfCrLfSkippedAssertion( candidate )
@@ -640,6 +650,7 @@ internal sealed class PcreByteProgramCompiler {
 				case PcreByteGroup group: pending.Push( (null, group.Body) ); break;
 				case PcreByteNoncapturingGroup group: pending.Push( (null, group.Body) ); break;
 				case PcreByteAtomic atomic: pending.Push( (atomic.Child, null) ); break;
+				case PcreByteRepeat repeat when HasUtfCrLfMandatoryLiteralRepeatBitmap( repeat ): break;
 				case PcreByteLiteral or PcreByteScalarClass or PcreByteScalarSet:
 					if ( !HasUtfCrLfMandatoryBitmapHead( entry.Node, ref visits ) ) { return false; }
 					break;
