@@ -1646,3 +1646,25 @@ Successful-build tests-only RED [run532](https://github.com/uniblab/Icod.Express
 2ba39ba6c05fe90f5b2a1222fcc723f4a93775f5 remains unchanged after RED.
 Final six-platform results are in PR167. Keep issue102 and broader PCRE,
 release and consumer migration gates open; Grep remains last.
+
+
+## Mandatory direct classes after positive ahead (PR168)
+
+After merged167, the optional-bracket UTF bitmap proof recognizes a direct
+mandatory CR-excluding range class following positive lookahead. Its existing
+class predicate rejects negated, predicate-bearing, malformed and CR-containing
+sets. The speculative continuation check copies the visit count; the iterative
+mandatory leaf charges each range once under the existing proof limit and
+all-branch requirement. Parser, matcher, assertions, captures, resource limits,
+workflows and consumers are unchanged.
+
+Pinned native PCRE2 10.48 JIT reports LF present, CR absent and positive JIT
+sizes for six optional-bracket class patterns, including capture/noncapture,
+atomic, finite lazy, alternative and mixed-width ranges. Thirty-six full-capture
+fixtures / seventy-two strict+tolerant checks cover CRLF and ordinary inputs.
+Successful-build test-only RED [run534](https://github.com/uniblab/Icod.Expressions/actions/runs/42002406924), Linux ARM64/net8/9/10: six failures in this new class only,
+30,625 passes, zero skips and compiler warnings/errors per framework. All
+30,595 baseline tests plus 30 new controls passed. Frozen test blob
+6470414d4b34898d85c48ef3932779bf61aa950e is unchanged after RED.
+Final six-platform results are in PR168. Issue102 and broader PCRE, release
+and consumer migration gates remain open; Grep remains last.
