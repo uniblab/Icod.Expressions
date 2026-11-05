@@ -541,6 +541,7 @@ internal sealed class PcreByteProgramCompiler {
 		var body = node switch {
 			PcreByteGroup capture => capture.Body,
 			PcreByteNoncapturingGroup group => group.Body,
+			PcreByteAtomic { Child: PcreByteNoncapturingGroup group } => group.Body,
 			_ => null
 		};
 		if ( body is null ) { return false; }
@@ -557,6 +558,10 @@ internal sealed class PcreByteProgramCompiler {
 		// A failed bounded attempt must not spend the budget of the existing
 		// nullable continuation fallback. Only a successful proof is retained.
 		var bodyVisits = visits;
+		if ( node is PcreByteAtomic ) {
+			if ( bodyVisits >= MaximumStartClassVisits ) { return false; }
+			bodyVisits++;
+		}
 		if ( !HasUtfCrLfMandatoryBodyBitmap( body, ref bodyVisits ) ) { return false; }
 		visits = bodyVisits;
 		return true;
@@ -586,7 +591,29 @@ internal sealed class PcreByteProgramCompiler {
 				foreach ( var branch in alternatives.Branches ) {
 					cancellationToken.ThrowIfCancellationRequested();
 					if ( ++visits > MaximumStartClassVisits || branch.Count == 0 ) { return false; }
-					pending.Push( (branch[0], null) );
+					// Native bitmap study ignores these unquantified opcodes. A
+					// remaining mandatory head is still required in every branch.
+					var index = 0;
+					while ( index < branch.Count ) {
+						cancellationToken.ThrowIfCancellationRequested();
+						var cost = branch[index] switch {
+							PcreByteWordBoundary => 1,
+							PcreByteNode assertion when IsUtfCrLfSkippedAssertion( assertion ) => 2,
+							// Native skips positive ahead when the next opcode sets a
+							// mandatory character. Keep this subset to direct literals.
+							PcreByteNode ahead when ( ahead is PcreByteLookahead { IsPositive: true }
+								or PcreByteLiteralAssertion { IsPositive: true, IsBehind: false } )
+								&& index + 1 < branch.Count && branch[index + 1] is PcreByteLiteral literal
+								&& HasUtfCrLfMandatoryLiteralBitmap( literal.Value ) => 2,
+							_ => 0
+						};
+						if ( cost == 0 ) { break; }
+						if ( visits > MaximumStartClassVisits - cost ) { return false; }
+						visits += cost;
+						index++;
+					}
+					if ( index == branch.Count ) { return false; }
+					pending.Push( (branch[index], null) );
 				}
 				continue;
 			}
@@ -1230,6 +1257,10 @@ internal sealed class PcreByteProgramCompiler {
 			compileWork.Push( () => countedOffset = previousOffset );
 			if ( repeat.Child is PcreByteStaticConditional { Value: false, Body.Branches.Count: 1 } ) {
 				CompileIgnoredStaticRepeat( repeat );
+			} else if ( utf8 && repeat.Minimum == 0 && repeat.Maximum > 1
+				&& repeat.Maximum <= ( MaximumStartClassVisits - 1 ) / 2 && repeat.Greedy
+				&& repeat.Child is PcreByteLookahead { IsPositive: false, NonAtomic: false } ) {
+				CompileGreedyNegativeOptions( repeat );
 			} else { CompileCountedRepeat( repeat, 0 ); }
 			return;
 		}
@@ -1255,6 +1286,16 @@ internal sealed class PcreByteProgramCompiler {
 		} else {
 			CompileUnboundedRepeat( repeat );
 		}
+	}
+
+	private void CompileGreedyNegativeOptions( PcreByteRepeat repeat ) {
+		// Negative guards restore all body state on either outcome. Every count
+		// reaches the tail at the same position/state, so retain maximum or zero
+		// as exits while still emitting/evaluating every original assertion copy.
+		var split = Emit( PcreByteOpcode.Split );
+		var body = instructions.Count;
+		compileWork.Push( () => Patch( split, body, instructions.Count ) );
+		CompileCountedRepeat( repeat with { Minimum = repeat.Maximum }, 0 );
 	}
 
 	private void CompileIgnoredStaticRepeat( PcreByteRepeat repeat ) {
