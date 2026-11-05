@@ -27,6 +27,7 @@ audit. A row is not a claim that an unreviewed PR is merged or release-ready.
 | [163](https://github.com/uniblab/Icod.Expressions/pull/163) | 987 | 28269 | Mandatory heads in finite optional numbered and named captures |
 | [164](https://github.com/uniblab/Icod.Expressions/pull/164) | 1364 | 29633 | Atomic/skipped bracket prefixes and equivalent negative-count exits |
 | [165](https://github.com/uniblab/Icod.Expressions/pull/165) | 432 | 30065 | Positive ahead through skipped assertion and boundary prefixes |
+| [166](https://github.com/uniblab/Icod.Expressions/pull/166) | 495 | 30560 | Positive ahead before mandatory CR-excluding type heads |
 
 Before a tranche is ready: six native OS/architecture Staging jobs, full suite
 and frozen214 on net8/9/10, no failed/skipped tests or compiler warnings/errors,

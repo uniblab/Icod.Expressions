@@ -593,12 +593,17 @@ internal sealed class PcreByteProgramCompiler {
 					if ( ++visits > MaximumStartClassVisits || branch.Count == 0 ) { return false; }
 					// Native looks past assertions and boundaries before deciding
 					// whether a positive ahead can yield to a mandatory character.
-					// This proof accepts only the first direct, CR-excluding literal.
-					var hasDirectLiteralContinuation = false;
+					// The first direct head must be a proven CR-excluding literal
+					// or one of the already supported mandatory character types.
+					var hasDirectMandatoryContinuation = false;
 					foreach ( var candidate in branch ) {
 						cancellationToken.ThrowIfCancellationRequested();
 						if ( candidate is PcreByteLiteral literal ) {
-							hasDirectLiteralContinuation = HasUtfCrLfMandatoryLiteralBitmap( literal.Value );
+							hasDirectMandatoryContinuation = HasUtfCrLfMandatoryLiteralBitmap( literal.Value );
+							break;
+						}
+						if ( candidate is PcreByteScalarClass characterClass ) {
+							hasDirectMandatoryContinuation = HasUtfCrLfTypeBitmap( characterClass );
 							break;
 						}
 						if ( candidate is PcreByteWordBoundary || IsUtfCrLfSkippedAssertion( candidate )
@@ -615,10 +620,10 @@ internal sealed class PcreByteProgramCompiler {
 							PcreByteWordBoundary => 1,
 							PcreByteNode assertion when IsUtfCrLfSkippedAssertion( assertion ) => 2,
 							// Intermediate assertions/boundaries do not obscure a direct
-							// mandatory literal; the outer loop charges each visited node.
+							// mandatory head; the outer loop charges each visited node.
 							PcreByteNode ahead when ( ahead is PcreByteLookahead { IsPositive: true }
 								or PcreByteLiteralAssertion { IsPositive: true, IsBehind: false } )
-								&& hasDirectLiteralContinuation => 2,
+								&& hasDirectMandatoryContinuation => 2,
 							_ => 0
 						};
 						if ( cost == 0 ) { break; }
