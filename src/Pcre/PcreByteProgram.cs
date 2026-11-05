@@ -538,16 +538,23 @@ internal sealed class PcreByteProgramCompiler {
 	};
 
 	private bool HasUtfCrLfOptionalGroupBitmap( PcreByteNode node, ref int visits ) {
-		// Reject unsupported shapes without charging visits: existing nullable
-		// continuation proofs must retain their fallback budget at the boundary.
-		if ( node is not PcreByteNoncapturingGroup group || group.Body.Branches.Count != 1
-			|| group.Body.Branches[0].Count != 1 ) { return false; }
-		var head = group.Body.Branches[0][0];
-		if ( head is not (PcreByteLiteral or PcreByteScalarClass or PcreByteScalarSet) ) { return false; }
-		cancellationToken.ThrowIfCancellationRequested();
-		if ( visits > MaximumStartClassVisits - 2 ) { return false; }
-		visits += 2;
-		return HasUtfCrLfMandatoryBitmapHead( head, ref visits );
+		if ( node is not PcreByteNoncapturingGroup group ) { return false; }
+		// Preserve the established single-leaf path and its proof charges.
+		if ( group.Body.Branches.Count == 1 && group.Body.Branches[0].Count == 1 ) {
+			var head = group.Body.Branches[0][0];
+			if ( head is PcreByteLiteral or PcreByteScalarClass or PcreByteScalarSet ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				if ( visits > MaximumStartClassVisits - 2 ) { return false; }
+				visits += 2;
+				return HasUtfCrLfMandatoryBitmapHead( head, ref visits );
+			}
+		}
+		// A failed bounded attempt must not spend the budget of the existing
+		// nullable continuation fallback. Only a successful proof is retained.
+		var bodyVisits = visits;
+		if ( !HasUtfCrLfMandatoryBodyBitmap( group.Body, ref bodyVisits ) ) { return false; }
+		visits = bodyVisits;
+		return true;
 	}
 
 	private bool HasUtfCrLfOptionalAssertionBitmap( PcreByteNode node, ref int visits ) {
@@ -558,10 +565,14 @@ internal sealed class PcreByteProgramCompiler {
 				&& HasUtfCrLfMandatoryLiteralBitmap( scalar );
 		}
 		if ( node is not PcreByteLookahead { IsPositive: false } assertion ) { return false; }
-		// BRAZERO can enter the assertion body. Require a mandatory bitmap head
+		return HasUtfCrLfMandatoryBodyBitmap( assertion.Body, ref visits );
+	}
+
+	private bool HasUtfCrLfMandatoryBodyBitmap( PcreByteAlternatives body, ref int visits ) {
+		// BRAZERO can enter a bracket body. Require a mandatory bitmap head
 		// in every branch, without inferring a nullable group continuation.
 		var pending = new Stack<(PcreByteNode? Node, PcreByteAlternatives? Body)>();
-		pending.Push( (null, assertion.Body) );
+		pending.Push( (null, body) );
 		while ( pending.TryPop( out var entry ) ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			if ( ++visits > MaximumStartClassVisits ) { return false; }
