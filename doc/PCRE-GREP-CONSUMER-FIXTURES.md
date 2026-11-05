@@ -1354,3 +1354,36 @@ contract/dependency/consumer/CommandFramework changes or production fallback.
 See PCRE-UTF-OPTIONAL-CAPTURE-HEADS-DESIGN.md and PLAN; exact final CI is in PR163.
 Keep7/99/100/102/native159 and broader PCRE/release/Grep gates open. Publication
 and all known migrations precede CommandFramework removal; Grep remains last.
+
+## Atomic brackets and skipped mandatory-body prefixes (PR164)
+
+After merged163, explicit Atomic{NoncapturingGroup} outer bodies share the
+existing mandatory-body bitmap proof, with one wrapper visit charged inside the
+success-only checkpoint. Capture/noncapture and prior single-leaf paths stay
+unchanged. Each body branch can cross only unquantified word boundaries and
+IsUtfCrLfSkippedAssertion nodes before its mandatory head, charging1/2 with
+cancellation and checked pre-addition. Branches ending after skipped nodes fail;
+all branches still require supported literal/type/positive predicate-free ranges
+excluding CR. Native ONCE/WORD_BOUNDARY/ASSERT_NOT/ASSERTBACK study motivates this
+shared iterative scan; no recursive call to FindUtfCrLfLeadingNode is introduced.
+
+1232new/full29501 preserve all28269baseline expectations and35frozen blobs. Native
+9870 qualified Linux x64 JIT checks =2408full-capture+7440six-newline/UCP/every-
+offset+22resource; positive JIT sizes,complete vectors,bounded spans. Cases pin
+atomic tail commitment,behind captures before match start,skipped predicate
+bodies,branches/rollback/references/conditions,UCP/ASCII,PLUS/star/ancestor owners,
+strict/tolerant UTF,caller offsets,work/default budget/cancellation,count/expansion
+and skipped-prefix budget controls. Ordinary count199/499/500 and prefix33/999/
+1001 controls use native interpretation in CI for159; no bitmap claim beyond1000.
+
+Successful-build RED522/Linux x64/net8/9/10:838new-class failures/28663passes/
+0skips each; all28269baseline+394newcontrols pass;0compilerwarnings/errors. All2514
+failure records and2514xUnit FAIL records are confined to the new class. Test blob
+d0c25ed3fda55ad4c5a649c257dd728a3facce0f remains frozen afterward. Existing finite
+copy bounds/costs,retained barriers,casing/source guards,owners and limits stay.
+No optional/exact-repeat/positive-ahead/erased/nullable-return prefix admission.
+No parser/emitter/owner/matcher/Step/VM/frame/journal/API/limit/workflow/contract/
+dependency/consumer/CommandFramework changes or production fallback. See
+PCRE-UTF-BRACKET-PREFIX-BITMAP-DESIGN.md and PLAN; exact final CI is in PR164.
+Keep7/99/100/102/native159 and broader PCRE/release/Grep gates open. Publication
+and all known migrations precede CommandFramework removal; Grep remains last.

@@ -25,6 +25,7 @@ audit. A row is not a claim that an unreviewed PR is merged or release-ready.
 | [161](https://github.com/uniblab/Icod.Expressions/pull/161) | 1092 | 26465 | Mandatory bitmap heads in optional negative lookahead and finite scoped groups |
 | [162](https://github.com/uniblab/Icod.Expressions/pull/162) | 817 | 27282 | Mandatory heads across optional group alternatives and nested bodies |
 | [163](https://github.com/uniblab/Icod.Expressions/pull/163) | 987 | 28269 | Mandatory heads in finite optional numbered and named captures |
+| [164](https://github.com/uniblab/Icod.Expressions/pull/164) | 1232 | 29501 | Atomic brackets and skipped assertion/boundary body prefixes |
 
 Before a tranche is ready: six native OS/architecture Staging jobs, full suite
 and frozen214 on net8/9/10, no failed/skipped tests or compiler warnings/errors,

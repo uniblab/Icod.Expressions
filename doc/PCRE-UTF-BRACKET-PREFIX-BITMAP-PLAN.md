@@ -13,9 +13,9 @@ Files: new tests/Pcre/PcreUtfBracketPrefixBitmapReferenceTests.cs and this spec/
 plan. Consume pinned PCRE.NET1.6.0/PCRE2 10.48 oracle; produce full literal capture
 fixtures, protocol/work/cancellation/count/expansion controls and an immutable blob.
 
-- [ ] Qualify native JIT sizes, bounded/complete capture vectors and every caller
+- [x] Qualify native JIT sizes, bounded/complete capture vectors and every caller
   offset; generate tests without modifying baseline expectations or production.
-- [ ] Publish tests/design/plan draft. Observe successful-build RED confined to
+- [x] Publish tests/design/plan draft. Observe successful-build RED confined to
   the new class, all28269 baseline cases passing,0compilerwarnings/errors. Freeze
   the test blob after RED.
 
@@ -25,9 +25,9 @@ File: src/Pcre/PcreByteProgram.cs. Existing interfaces:
 HasUtfCrLfOptionalGroupBitmap(PcreByteNode,ref int)->bool and
 HasUtfCrLfMandatoryBodyBitmap(PcreByteAlternatives,ref int)->bool.
 
-- [ ] Select Atomic{NoncapturingGroup}.Body and charge its wrapper within the
+- [x] Select Atomic{NoncapturingGroup}.Body and charge its wrapper within the
   success-only checkpoint, preserving all prior paths/charges.
-- [ ] Scan only unquantified word-boundary/skipped-assertion prefix nodes in each
+- [x] Scan only unquantified word-boundary/skipped-assertion prefix nodes in each
   body branch; charge1/2 with checked pre-addition/cancellation and require a
   remaining mandatory head. Preserve the iterative all-branch leaf proof.
 - [ ] Verify immutable new tests and all baseline tests; append four inventories
@@ -41,3 +41,8 @@ HasUtfCrLfMandatoryBodyBitmap(PcreByteAlternatives,ref int)->bool.
   warnings/errors, every configured gate and seven equal Linux workloads.
 - [ ] Update only issue102 recent footer; put full RED/GREEN evidence in the PR,
   mark ready and leave unmerged for user review. No merge/tag/publication.
+
+Observed RED: run522/Linux x64, all three TFMs;838new-class failures/28663passes/
+0skips; all28269baseline+394newcontrols pass; compiler warnings/errors0. All2514
+failure lines and2514xUnit FAIL lines identify only this new class. Its test blob
+d0c25ed3fda55ad4c5a649c257dd728a3facce0f is frozen. Final qualification is in PR164.
