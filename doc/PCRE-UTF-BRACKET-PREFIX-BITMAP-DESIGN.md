@@ -86,3 +86,10 @@ positive/lazy/required controls, a scaled observed-work check (2000pairs within
 200000 of the unchanged million-work default), live cancellation/work exhaustion
 and expansion rejection. Publish focused tests first against the first fix,
 observe RED in the two new classes only, then preserve both blobs and implement.
+
+Focused524 adds two native-confirmed positive-ahead controls that fail because
+the next literal is not inspected by current proof. Native ASSERT explicitly
+skips ahead when that next opcode sets a mandatory character. Add only direct
+valid CR-excluding PcreByteLiteral continuation; no intervening prefixes/classes
+or general positive-ahead study is inferred. Both test blobs remain frozen.
+Final new1364/full29633; native10118 =2656literal+7440protocol+22resource checks.

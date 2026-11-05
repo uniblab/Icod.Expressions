@@ -1398,8 +1398,8 @@ all branches still require supported literal/type/positive predicate-free ranges
 excluding CR. Native ONCE/WORD_BOUNDARY/ASSERT_NOT/ASSERTBACK study motivates this
 shared iterative scan; no recursive call to FindUtfCrLfLeadingNode is introduced.
 
-1232new/full29501 preserve all28269baseline expectations and35frozen blobs. Native
-9870 qualified Linux x64 JIT checks =2408full-capture+7440six-newline/UCP/every-
+1364new/full29633 preserve all28269baseline expectations and35frozen blobs. Native
+10118 qualified Linux x64 JIT checks =2656full-capture+7440six-newline/UCP/every-
 offset+22resource; positive JIT sizes,complete vectors,bounded spans. Cases pin
 atomic tail commitment,behind captures before match start,skipped predicate
 bodies,branches/rollback/references/conditions,UCP/ASCII,PLUS/star/ancestor owners,
@@ -1412,9 +1412,30 @@ Successful-build RED522/Linux x64/net8/9/10:838new-class failures/28663passes/
 failure records and2514xUnit FAIL records are confined to the new class. Test blob
 d0c25ed3fda55ad4c5a649c257dd728a3facce0f remains frozen afterward. Existing finite
 copy bounds/costs,retained barriers,casing/source guards,owners and limits stay.
-No optional/exact-repeat/positive-ahead/erased/nullable-return prefix admission.
-No parser/emitter/owner/matcher/Step/VM/frame/journal/API/limit/workflow/contract/
+No optional/exact-repeat/general-positive-ahead/erased/nullable-return admission.
+No parser/owner/matcher/Step/VM/frame/journal/API/limit/workflow/contract/
 dependency/consumer/CommandFramework changes or production fallback. See
 PCRE-UTF-BRACKET-PREFIX-BITMAP-DESIGN.md and PLAN; exact final CI is in PR164.
 Keep7/99/100/102/native159 and broader PCRE/release/Grep gates open. Publication
 and all known migrations precede CommandFramework removal; Grep remains last.
+
+First implementation523 resolved837/838 failures; the remaining original dense
+negative-assertion miss exhausted the unchanged default work limit. Focused132
+cases add248native literal checks and preserve original1232cases. RED524/Linux
+x64/net8/9/10:5failures/29628passes/0skips each, all28269baseline+1231original
+controls+128focused controls pass. Failures: original dense miss, two scaled-work
+checks (200031 steps for2000CRLFpairs), and two positive-ahead/literal guards.
+Focused blob71fd17536ac8736b3f74dd65240a95f15b0ba746 is frozen after RED.
+
+Native ASSERT study explicitly skips a positive ahead immediately followed by
+a mandatory literal. Admit only that direct valid CR-excluding literal case,
+not general positive-ahead/class continuations. For UTF greedy general atomic
+negative ahead Minimum0/Maximum2..499, emit maximum-or-zero retry exits under
+one Split while scheduling every original assertion copy. Negative guards restore
+body state, so intermediate counts expose the same state to the tail. Bitmap/
+owner study retains original AST bounds; positive/lazy/required/direct-literal/
+byte-mode/other counts retain prior emission. This necessary emitter extension
+fixes redundant tail retries without changing matcher/Step/frames/journal or
+limits; all original copies remain, preserving huge expansion rejection.
+The focused524 WindowsARM64 setup failed in PowerShell TaskbarJumpList CLR before
+repository build, separate from native159; final source receives fresh full CI.

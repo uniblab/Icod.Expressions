@@ -49,11 +49,17 @@ d0c25ed3fda55ad4c5a649c257dd728a3facce0f is frozen. Final qualification is in PR
 
 ## Dense-miss correction after first implementation
 
-- [ ] Publish PcreUtfNegativeAssertionExitReferenceTests with production unchanged
+- [x] Publish PcreUtfNegativeAssertionExitReferenceTests with production unchanged
   from f2283947. Preserve original d0 blob; observe remaining default-budget RED
   and scaled-work RED while all28269baseline and new semantic controls pass.
-- [ ] In UTF greedy general negative lookahead Minimum0/Maximum2..499 only, emit
+- [x] In UTF greedy general negative lookahead Minimum0/Maximum2..499 only, emit
   maximum-or-zero exits under one Split, scheduling every original assertion
   copy through CompileCountedRepeat. Keep original AST study and all limits.
 - [ ] Qualify both immutable test blobs/all baseline and complete six-platform
   gates; disclose the emitter scope extension and exact work evidence in PR164.
+
+Focused RED524/Linux x64:5fail/29628pass/0skip per TFM; all28269baseline plus
+1231original and128focused controls pass. Original dense case, scaled-work two
+cases(200031steps), positive-ahead/direct-literal two cases fail; compiler0/0.
+Add only the native ASSERT direct-literal continuation guard; preserve both blobs.
+Final qualification expected29633 with1364new cases; native10118checks.

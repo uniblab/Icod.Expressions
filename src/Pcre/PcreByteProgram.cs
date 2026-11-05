@@ -599,6 +599,12 @@ internal sealed class PcreByteProgramCompiler {
 						var cost = branch[index] switch {
 							PcreByteWordBoundary => 1,
 							PcreByteNode assertion when IsUtfCrLfSkippedAssertion( assertion ) => 2,
+							// Native skips positive ahead when the next opcode sets a
+							// mandatory character. Keep this subset to direct literals.
+							PcreByteNode ahead when ( ahead is PcreByteLookahead { IsPositive: true }
+								or PcreByteLiteralAssertion { IsPositive: true, IsBehind: false } )
+								&& index + 1 < branch.Count && branch[index + 1] is PcreByteLiteral literal
+								&& HasUtfCrLfMandatoryLiteralBitmap( literal.Value ) => 2,
 							_ => 0
 						};
 						if ( cost == 0 ) { break; }
@@ -1251,6 +1257,10 @@ internal sealed class PcreByteProgramCompiler {
 			compileWork.Push( () => countedOffset = previousOffset );
 			if ( repeat.Child is PcreByteStaticConditional { Value: false, Body.Branches.Count: 1 } ) {
 				CompileIgnoredStaticRepeat( repeat );
+			} else if ( utf8 && repeat.Minimum == 0 && repeat.Maximum > 1
+				&& repeat.Maximum <= ( MaximumStartClassVisits - 1 ) / 2 && repeat.Greedy
+				&& repeat.Child is PcreByteLookahead { IsPositive: false, NonAtomic: false } ) {
+				CompileGreedyNegativeOptions( repeat );
 			} else { CompileCountedRepeat( repeat, 0 ); }
 			return;
 		}
@@ -1276,6 +1286,16 @@ internal sealed class PcreByteProgramCompiler {
 		} else {
 			CompileUnboundedRepeat( repeat );
 		}
+	}
+
+	private void CompileGreedyNegativeOptions( PcreByteRepeat repeat ) {
+		// Negative guards restore all body state on either outcome. Every count
+		// reaches the tail at the same position/state, so retain maximum or zero
+		// as exits while still emitting/evaluating every original assertion copy.
+		var split = Emit( PcreByteOpcode.Split );
+		var body = instructions.Count;
+		compileWork.Push( () => Patch( split, body, instructions.Count ) );
+		CompileCountedRepeat( repeat with { Minimum = repeat.Maximum }, 0 );
 	}
 
 	private void CompileIgnoredStaticRepeat( PcreByteRepeat repeat ) {
