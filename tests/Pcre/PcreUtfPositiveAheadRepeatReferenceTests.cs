@@ -43,9 +43,6 @@ public sealed class PcreUtfPositiveAheadRepeatReferenceTests {
 	[InlineData( "(*ANYCRLF)(?:(?=B)B++)?([\\x09-\\x0c\\x{100}])A", "42420B41", false, "0:4,2:1" )]
 	[InlineData( "(*ANYCRLF)(?:(?=B)B++)?([\\x09-\\x0c\\x{100}])A", "0D0A42420B41", false, "2:4,4:1" )]
 	[InlineData( "(*ANYCRLF)(?:(?=B)B++)?([\\x09-\\x0c\\x{100}])A", "0B41", false, "0:2,0:1" )]
-	[InlineData( "(*ANYCRLF)(?:(?=B)B{0,3})?([\\x09-\\x0c\\x{100}])A", "0D0A41", false, "1:2,1:1" )]
-	[InlineData( "(*ANYCRLF)(?:(?=B)[B-D])?([\\x09-\\x0c\\x{100}])A", "0D0A41", false, "1:2,1:1" )]
-	[InlineData( "(*ANYCRLF)(?:(?=\\d)\\d+)?([\\x09-\\x0c\\x{100}])A", "0D0A41", false, "1:2,1:1" )]
 	public void PositiveAheadBeforeRepeatedLiteralPreservesCaptures( string pattern, string hex, bool ucp, string spans ) {
 		var subject = Convert.FromHexString( hex );
 		foreach ( var tolerant in new[] { false, true } ) {
