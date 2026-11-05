@@ -46,3 +46,14 @@ Observed RED: run522/Linux x64, all three TFMs;838new-class failures/28663passes
 0skips; all28269baseline+394newcontrols pass; compiler warnings/errors0. All2514
 failure lines and2514xUnit FAIL lines identify only this new class. Its test blob
 d0c25ed3fda55ad4c5a649c257dd728a3facce0f is frozen. Final qualification is in PR164.
+
+## Dense-miss correction after first implementation
+
+- [ ] Publish PcreUtfNegativeAssertionExitReferenceTests with production unchanged
+  from f2283947. Preserve original d0 blob; observe remaining default-budget RED
+  and scaled-work RED while all28269baseline and new semantic controls pass.
+- [ ] In UTF greedy general negative lookahead Minimum0/Maximum2..499 only, emit
+  maximum-or-zero exits under one Split, scheduling every original assertion
+  copy through CompileCountedRepeat. Keep original AST study and all limits.
+- [ ] Qualify both immutable test blobs/all baseline and complete six-platform
+  gates; disclose the emitter scope extension and exact work evidence in PR164.

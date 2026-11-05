@@ -37,7 +37,7 @@ proofs retain the success-only checkpoint, preserving fallback visits.
 ## Constraints and verification
 
 C#13/net8/9/10; root project/solution,src/tests/samples,doc; UTF8+LF. No subagents,
-Python or SDK/PowerShell installation. No parser/emitter/owner/matcher/Step/VM/
+Python or SDK/PowerShell installation. No parser/owner/matcher/Step/VM/
 frame/journal/API/workflow/contract/dependency/consumer/CommandFramework changes
 or production reference fallback. No spans/interior pointers in VM frames.
 Limits stay parser256/captures256/instructions4096/marks256/frames1024/work1000000/
@@ -61,3 +61,28 @@ review, exact remote tree/blob checks and historical inventories/index preservat
 precede ready/unmerged PR. Only issue102 recent footer changes after success.
 Broader7/99/100/102/native159 and release/Grep gates stay open; publication and
 all known migrations precede CommandFramework removal; Grep remains last.
+
+## Dense-miss emitter correction
+
+First implementation run523 resolved837 of838 failures. All28269 baseline and
+1231 original tranche controls pass on Linux x64/net8/9/10; one original dense
+miss fixture exceeds the unchanged default million-work budget after LF entry
+is correctly enabled. Preserve its d0 test blob and add focused tests first.
+
+CompileCountedOptions retains one exit per optional copy. A general atomic
+negative lookahead is zero-width and its guard restores captures, starts, marks,
+position and enclosing scopes on either outcome. Its greedy optional counts
+therefore present equivalent states to the following tail. Emit only maximum
+or zero as retry choices, while retaining every assertion evaluation. Restrict
+this correction to UTF,greedy,Minimum0,Maximum2..499,general negative atomic
+lookahead. Positive/lazy/required/direct-literal/byte-mode and other counts keep
+their current emission. AST-based bitmap/owner study still uses original bounds.
+
+This is a necessary emitter-scope extension, not a limit/test relaxation. Reuse
+the existing exact-copy scheduler under one Split; no matcher/Step/frame/journal
+change or new opcode. All copies remain emitted, so huge repeat expansion still
+fails within4096 instructions. Add native-pinned alias/capture/call/behind and
+positive/lazy/required controls, a scaled observed-work check (2000pairs within
+200000 of the unchanged million-work default), live cancellation/work exhaustion
+and expansion rejection. Publish focused tests first against the first fix,
+observe RED in the two new classes only, then preserve both blobs and implement.
