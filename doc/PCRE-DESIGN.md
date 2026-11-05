@@ -1439,3 +1439,28 @@ fixes redundant tail retries without changing matcher/Step/frames/journal or
 limits; all original copies remain, preserving huge expansion rejection.
 The focused524 WindowsARM64 setup failed in PowerShell TaskbarJumpList CLR before
 repository build, separate from native159; final source receives fresh full CI.
+
+
+## Positive ahead across skipped bitmap prefixes (PR165)
+
+After merged164, the native PCRE2 10.48 ASSERT/ASSERT_NA start-bitmap study
+skips intervening lookarounds and word boundaries before a mandatory literal.
+The existing optional-bracket body walker now proves that finite unquantified
+prefix shape in one iterative branch scan. A branch must reach a direct valid
+CR-excluding literal; unsupported or empty branches fail. Outer visits charge
+each prefix exactly once, preserve the success-only checkpoint, cancellation,
+count/proof bounds and retained skip/owner barriers. Runtime assertion and
+capture semantics remain with the unchanged matcher.
+
+Native JIT corpus:432 literal rows/864 strict+tolerant checks, noncapturing,
+capturing and atomic optional brackets, greedy/lazy bounded copies, positive
+ahead followed by negative ahead/behind/word boundaries, ASCII/UCP and CRLF/
+ordinary subjects. Each native capture vector is complete and byte-bounded.
+Successful-build RED526/Linux ARM64/net8/9/10:108 failures in the new class,
+29957 passes and zero skips per framework; all29633 baseline and324 new
+controls pass, compiler warnings/errors0. The test blob is frozen as
+492b487337130e2514dd6a430133821ba49d8ce7. Full final CI is in PR165.
+
+No parser, emitter, matcher, Step, frames, journal, API, limit, dependency,
+workflow, consumer or CommandFramework changes. Full source-pinned
+Compatibility and consumer migration remain separate; Grep stays last.
