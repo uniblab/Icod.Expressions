@@ -1668,3 +1668,25 @@ Successful-build test-only RED [run534](https://github.com/uniblab/Icod.Expressi
 6470414d4b34898d85c48ef3932779bf61aa950e is unchanged after RED.
 Final six-platform results are in PR168. Issue102 and broader PCRE, release
 and consumer migration gates remain open; Grep remains last.
+
+
+## Mandatory range-class repeats after positive ahead (PR169)
+
+After merged168, the optional-bracket UTF bitmap proof admits positive ahead
+before mandatory CR-excluding range-class repeats, including possessive atomic
+wrappers. It reuses the established range predicate and bounds; speculative
+pre-scan checks use a copied visit count, while the mandatory leaf charges
+each range once. Zero-minimum, negated, predicate-bearing, CR-containing and
+unproven operands remain on their former paths. Parser, matcher, assertions,
+captures, APIs, limits, workflows and consumers are unchanged.
+
+Pinned native PCRE2 10.48 JIT reports LF present, CR absent and positive JIT
+sizes for seven optional bracket patterns with plus, exact, lazy, possessive
+and mixed-width class repeats. Forty-two full-capture fixtures / eighty-four
+strict+tolerant checks cover CRLF and ordinary subjects. Successful-build
+[test-only RED536](https://github.com/uniblab/Icod.Expressions/actions/runs/42129649283), macOS ARM64/net8/9/10: seven failures in the new class only,
+30,666 passes, zero skips and compiler warnings/errors per framework. All
+30,631 baseline tests plus 35 new controls passed. Immutable test blob
+7fa5a65a5f7df3c8617d0c80325480cb12f4031a remains unchanged after RED.
+Final six-platform results are in PR169. Issue102 and broader PCRE, release
+and consumer migration gates remain open; Grep remains last.

@@ -536,6 +536,12 @@ internal sealed class PcreByteProgramCompiler {
 			&& HasUtfCrLfMandatoryLiteralBitmap( literal.Value );
 	}
 
+	private bool HasUtfCrLfMandatoryClassRepeatBitmap( PcreByteNode node, ref int visits ) {
+		if ( node is PcreByteAtomic { Child: PcreByteRepeat possessive } ) { node = possessive; }
+		return node is PcreByteRepeat { Minimum: > 0, Maximum: > 0, Child: PcreByteScalarSet set }
+			&& HasUtfCrLfClassBitmap( set, ref visits );
+	}
+
 	private bool HasUtfCrLfMandatoryBitmapHead( PcreByteNode node, ref int visits ) => node switch {
 		PcreByteLiteral literal => HasUtfCrLfMandatoryLiteralBitmap( literal.Value ),
 		PcreByteScalarClass characterClass => HasUtfCrLfTypeBitmap( characterClass ),
@@ -600,7 +606,8 @@ internal sealed class PcreByteProgramCompiler {
 					// Native looks past assertions and boundaries before deciding
 					// whether a positive ahead can yield to a mandatory character.
 					// The first direct head must be a proven CR-excluding literal,
-					// its mandatory single-character repeat, or a supported type.
+					// its mandatory single-character repeat, a proven range class
+					// or its mandatory repeat, or a supported type.
 					var hasDirectMandatoryContinuation = false;
 					foreach ( var candidate in branch ) {
 						cancellationToken.ThrowIfCancellationRequested();
@@ -620,7 +627,9 @@ internal sealed class PcreByteProgramCompiler {
 							break;
 						}
 						if ( candidate is PcreByteRepeat or PcreByteAtomic { Child: PcreByteRepeat } ) {
-							hasDirectMandatoryContinuation = HasUtfCrLfMandatoryLiteralRepeatBitmap( candidate );
+							var probeVisits = visits;
+							hasDirectMandatoryContinuation = HasUtfCrLfMandatoryLiteralRepeatBitmap( candidate )
+								|| HasUtfCrLfMandatoryClassRepeatBitmap( candidate, ref probeVisits );
 							break;
 						}
 						if ( candidate is PcreByteWordBoundary || IsUtfCrLfSkippedAssertion( candidate )
@@ -658,6 +667,7 @@ internal sealed class PcreByteProgramCompiler {
 				case PcreByteNoncapturingGroup group: pending.Push( (null, group.Body) ); break;
 				case PcreByteAtomic atomic: pending.Push( (atomic.Child, null) ); break;
 				case PcreByteRepeat repeat when HasUtfCrLfMandatoryLiteralRepeatBitmap( repeat ): break;
+				case PcreByteRepeat repeat when HasUtfCrLfMandatoryClassRepeatBitmap( repeat, ref visits ): break;
 				case PcreByteLiteral or PcreByteScalarClass or PcreByteScalarSet:
 					if ( !HasUtfCrLfMandatoryBitmapHead( entry.Node, ref visits ) ) { return false; }
 					break;
