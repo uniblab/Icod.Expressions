@@ -608,8 +608,13 @@ internal sealed class PcreByteProgramCompiler {
 			cancellationToken.ThrowIfCancellationRequested();
 			if ( ++visits > MaximumStartClassVisits || branch.Count == 0 ) { return false; }
 			var head = branch[0];
-			if ( head is not (PcreByteLiteral or PcreByteScalarClass or PcreByteScalarSet)
-				|| !HasUtfCrLfMandatoryBitmapHead( head, ref visits ) ) { return false; }
+			if ( head is PcreByteLiteral or PcreByteScalarClass or PcreByteScalarSet ) {
+				if ( !HasUtfCrLfMandatoryBitmapHead( head, ref visits ) ) { return false; }
+			} else if ( head is PcreByteRepeat or PcreByteAtomic { Child: PcreByteRepeat } ) {
+				if ( !HasUtfCrLfMandatoryLiteralRepeatBitmap( head )
+					&& !HasUtfCrLfMandatoryClassRepeatBitmap( head, ref visits )
+					&& !HasUtfCrLfMandatoryTypeRepeatBitmap( head ) ) { return false; }
+			} else { return false; }
 		}
 		return true;
 	}
