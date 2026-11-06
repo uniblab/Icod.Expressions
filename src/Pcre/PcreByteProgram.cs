@@ -542,6 +542,12 @@ internal sealed class PcreByteProgramCompiler {
 			&& HasUtfCrLfClassBitmap( set, ref visits );
 	}
 
+	private static bool HasUtfCrLfMandatoryTypeRepeatBitmap( PcreByteNode node ) {
+		if ( node is PcreByteAtomic { Child: PcreByteRepeat possessive } ) { node = possessive; }
+		return node is PcreByteRepeat { Minimum: > 0, Maximum: > 0, Child: PcreByteScalarClass characterClass }
+			&& HasUtfCrLfTypeBitmap( characterClass );
+	}
+
 	private bool HasUtfCrLfMandatoryBitmapHead( PcreByteNode node, ref int visits ) => node switch {
 		PcreByteLiteral literal => HasUtfCrLfMandatoryLiteralBitmap( literal.Value ),
 		PcreByteScalarClass characterClass => HasUtfCrLfTypeBitmap( characterClass ),
@@ -607,7 +613,7 @@ internal sealed class PcreByteProgramCompiler {
 					// whether a positive ahead can yield to a mandatory character.
 					// The first direct head must be a proven CR-excluding literal,
 					// its mandatory single-character repeat, a proven range class
-					// or its mandatory repeat, or a supported type.
+					// or its mandatory repeat, or a supported type/repeat.
 					var hasDirectMandatoryContinuation = false;
 					foreach ( var candidate in branch ) {
 						cancellationToken.ThrowIfCancellationRequested();
@@ -629,7 +635,8 @@ internal sealed class PcreByteProgramCompiler {
 						if ( candidate is PcreByteRepeat or PcreByteAtomic { Child: PcreByteRepeat } ) {
 							var probeVisits = visits;
 							hasDirectMandatoryContinuation = HasUtfCrLfMandatoryLiteralRepeatBitmap( candidate )
-								|| HasUtfCrLfMandatoryClassRepeatBitmap( candidate, ref probeVisits );
+								|| HasUtfCrLfMandatoryClassRepeatBitmap( candidate, ref probeVisits )
+								|| HasUtfCrLfMandatoryTypeRepeatBitmap( candidate );
 							break;
 						}
 						if ( candidate is PcreByteWordBoundary || IsUtfCrLfSkippedAssertion( candidate )
@@ -668,6 +675,7 @@ internal sealed class PcreByteProgramCompiler {
 				case PcreByteAtomic atomic: pending.Push( (atomic.Child, null) ); break;
 				case PcreByteRepeat repeat when HasUtfCrLfMandatoryLiteralRepeatBitmap( repeat ): break;
 				case PcreByteRepeat repeat when HasUtfCrLfMandatoryClassRepeatBitmap( repeat, ref visits ): break;
+				case PcreByteRepeat repeat when HasUtfCrLfMandatoryTypeRepeatBitmap( repeat ): break;
 				case PcreByteLiteral or PcreByteScalarClass or PcreByteScalarSet:
 					if ( !HasUtfCrLfMandatoryBitmapHead( entry.Node, ref visits ) ) { return false; }
 					break;

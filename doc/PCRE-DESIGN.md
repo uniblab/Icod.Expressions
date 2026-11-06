@@ -1558,3 +1558,26 @@ strict+tolerant checks cover CRLF and ordinary subjects. Successful-build
 7fa5a65a5f7df3c8617d0c80325480cb12f4031a remains unchanged after RED.
 Final six-platform results are in PR169. Issue102 and broader PCRE, release
 and consumer migration gates remain open; Grep remains last.
+
+
+## Mandatory supported-type repeats after positive ahead (PR170)
+
+After merged169, the optional-bracket UTF bitmap proof admits positive ahead
+before mandatory repeats of types already accepted as direct bitmap heads:
+ASCII digit/word, horizontal space and negated ASCII space. It unwraps the
+possessive atomic repeat, requires positive minimum and maximum, and delegates
+to the existing CR-excluding type predicate. Zero-minimum, UCP Unicode
+properties, unsupported negated types and nested operands retain their former
+paths. Existing all-branch proof, visit bounds, cancellation and runtime
+matcher/capture behavior remain unchanged.
+
+Pinned native PCRE2 10.48 JIT reports LF present, CR absent and positive JIT
+sizes for eight optional-bracket patterns with plus, exact, lazy, possessive
+and finite supported-type repeats. Seventy-two full-capture fixtures / one
+hundred forty-four strict+tolerant checks cover CRLF and ordinary subjects.
+Successful-build [test-only RED538](https://github.com/uniblab/Icod.Expressions/actions/runs/42140939691), Linux ARM64/net8/9/10: eight failures in the new class only,
+30,737 passes, zero skips and compiler warnings/errors per framework. All
+30,673 baseline tests plus 64 new controls passed. Immutable test blob
+7e5071a1b728c50a5c8cd22ae1672a7606d3e126 remains unchanged after RED.
+Final six-platform results are in PR170. Issue102 and broader PCRE, release
+and consumer migration gates remain open; Grep remains last.
