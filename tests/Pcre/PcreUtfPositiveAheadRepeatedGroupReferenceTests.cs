@@ -10,12 +10,12 @@ namespace Icod.Expressions.Tests.Pcre;
 public sealed class PcreUtfPositiveAheadRepeatedGroupReferenceTests {
 	public static IEnumerable<object[]> NativeCases() {
 		var shapes = new[] {
-			(new Pattern: "(?:(?=B)(?:B|C)+)", CrLf: "1:2,1:1", B: "0:3,1:1", Bc: "0:4,2:1"),
-			(new Pattern: "(?:(?=B)(B|C)+)", CrLf: "1:2,-,1:1", B: "0:3,0:1,1:1", Bc: "0:4,1:1,2:1"),
-			(new Pattern: "(?:(?=B)(?:B|C){2,3})", CrLf: "1:2,1:1", B: "1:2,1:1", Bc: "0:4,2:1"),
-			(new Pattern: "(?:(?=B)(?>(?:B|C))+)", CrLf: "1:2,1:1", B: "0:3,1:1", Bc: "0:4,2:1"),
-			(new Pattern: "(?:(?=B)(?:(?:B|C)+))", CrLf: "1:2,1:1", B: "0:3,1:1", Bc: "0:4,2:1"),
-			(new Pattern: @"(?:(?=B)\b(?:B|C)+)", CrLf: "1:2,1:1", B: "0:3,1:1", Bc: "0:4,2:1")
+			(Pattern: "(?:(?=B)(?:B|C)+)", CrLf: "1:2,1:1", B: "0:3,1:1", Bc: "0:4,2:1"),
+			(Pattern: "(?:(?=B)(B|C)+)", CrLf: "1:2,-,1:1", B: "0:3,0:1,1:1", Bc: "0:4,1:1,2:1"),
+			(Pattern: "(?:(?=B)(?:B|C){2,3})", CrLf: "1:2,1:1", B: "1:2,1:1", Bc: "0:4,2:1"),
+			(Pattern: "(?:(?=B)(?>(?:B|C))+)", CrLf: "1:2,1:1", B: "0:3,1:1", Bc: "0:4,2:1"),
+			(Pattern: "(?:(?=B)(?:(?:B|C)+))", CrLf: "1:2,1:1", B: "0:3,1:1", Bc: "0:4,2:1"),
+			(Pattern: @"(?:(?=B)\b(?:B|C)+)", CrLf: "1:2,1:1", B: "0:3,1:1", Bc: "0:4,2:1")
 		};
 		foreach ( var shape in shapes ) {
 			var pattern = String.Concat( "(*ANYCRLF)", shape.Pattern, @"?([\x09-\x0c\x{100}])A" );
