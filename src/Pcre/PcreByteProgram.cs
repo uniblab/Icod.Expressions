@@ -596,6 +596,24 @@ internal sealed class PcreByteProgramCompiler {
 		return HasUtfCrLfMandatoryBodyBitmap( assertion.Body, ref visits );
 	}
 
+	private bool HasUtfCrLfDirectGroupBitmap( PcreByteNode node, ref int visits ) {
+		var body = node switch {
+			PcreByteGroup group => group.Body,
+			PcreByteNoncapturingGroup group => group.Body,
+			PcreByteAtomic { Child: PcreByteNoncapturingGroup group } => group.Body,
+			_ => null
+		};
+		if ( body is null || ++visits > MaximumStartClassVisits || body.Branches.Count == 0 ) { return false; }
+		foreach ( var branch in body.Branches ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( ++visits > MaximumStartClassVisits || branch.Count == 0 ) { return false; }
+			var head = branch[0];
+			if ( head is not (PcreByteLiteral or PcreByteScalarClass or PcreByteScalarSet)
+				|| !HasUtfCrLfMandatoryBitmapHead( head, ref visits ) ) { return false; }
+		}
+		return true;
+	}
+
 	private bool HasUtfCrLfMandatoryBodyBitmap( PcreByteAlternatives body, ref int visits ) {
 		// BRAZERO can enter a bracket body. Require a mandatory bitmap head
 		// in every branch, without inferring a nullable group continuation.
@@ -637,6 +655,12 @@ internal sealed class PcreByteProgramCompiler {
 							hasDirectMandatoryContinuation = HasUtfCrLfMandatoryLiteralRepeatBitmap( candidate )
 								|| HasUtfCrLfMandatoryClassRepeatBitmap( candidate, ref probeVisits )
 								|| HasUtfCrLfMandatoryTypeRepeatBitmap( candidate );
+							break;
+						}
+						if ( candidate is PcreByteGroup or PcreByteNoncapturingGroup
+							or PcreByteAtomic { Child: PcreByteNoncapturingGroup } ) {
+							var probeVisits = visits;
+							hasDirectMandatoryContinuation = HasUtfCrLfDirectGroupBitmap( candidate, ref probeVisits );
 							break;
 						}
 						if ( candidate is PcreByteWordBoundary || IsUtfCrLfSkippedAssertion( candidate )

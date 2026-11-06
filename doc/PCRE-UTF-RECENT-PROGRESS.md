@@ -32,6 +32,7 @@ audit. A row is not a claim that an unreviewed PR is merged or release-ready.
 | [168](https://github.com/uniblab/Icod.Expressions/pull/168) | 36 | 30631 | Positive ahead before mandatory CR-excluding direct classes |
 | [169](https://github.com/uniblab/Icod.Expressions/pull/169) | 42 | 30673 | Positive ahead before mandatory CR-excluding class repeats |
 | [170](https://github.com/uniblab/Icod.Expressions/pull/170) | 72 | 30745 | Positive ahead before mandatory CR-excluding type repeats |
+| [171](https://github.com/uniblab/Icod.Expressions/pull/171) | 30 | 30775 | Positive ahead before one-level mandatory groups with direct heads |
 
 Before a tranche is ready: six native OS/architecture Staging jobs, full suite
 and frozen214 on net8/9/10, no failed/skipped tests or compiler warnings/errors,

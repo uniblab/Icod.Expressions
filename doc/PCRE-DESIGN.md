@@ -1581,3 +1581,25 @@ Successful-build [test-only RED538](https://github.com/uniblab/Icod.Expressions/
 7e5071a1b728c50a5c8cd22ae1672a7606d3e126 remains unchanged after RED.
 Final six-platform results are in PR170. Issue102 and broader PCRE, release
 and consumer migration gates remain open; Grep remains last.
+
+
+## Direct mandatory groups after positive ahead (PR171)
+
+After merged170, the optional-bracket UTF bitmap proof admits positive ahead
+before unquantified capture, noncapture or explicit atomic noncapture groups
+when every group branch immediately begins with a proven CR-excluding direct
+literal, supported type or range class. A bounded, cancellable pre-scan uses
+a copied visit count; the existing iterative all-branch body traversal owns
+the actual visits and rejects empty, unsupported, nested or repeated group
+heads. Runtime assertions/captures, parser, VM, API, limits, workflows and
+consumers are unchanged.
+
+Pinned native PCRE2 10.48 JIT reports LF present, CR absent and positive JIT
+sizes for five group patterns. Thirty full-capture fixtures / sixty strict+
+tolerant checks cover CRLF and ordinary subjects. Successful-build
+[test-only RED540](https://github.com/uniblab/Icod.Expressions/actions/runs/42164704456), macOS ARM64/net8/9/10: five failures in the new class only,
+30,770 passes, zero skips and compiler warnings/errors per framework. All
+30,745 baseline tests plus 25 new controls passed. Immutable test blob
+0a3eb5dfaf6a78ecd2f10d636c455b9b933c619e remains unchanged after RED.
+Final six-platform results are in PR171. Issue102 and broader PCRE, release
+and consumer migration gates remain open; Grep remains last.
