@@ -596,7 +596,7 @@ internal sealed class PcreByteProgramCompiler {
 		return HasUtfCrLfMandatoryBodyBitmap( assertion.Body, ref visits );
 	}
 
-	private bool HasUtfCrLfDirectGroupBitmap( PcreByteNode node, ref int visits ) {
+	private bool HasUtfCrLfDirectGroupBitmap( PcreByteNode node, ref int visits, int nestingDepth = 0 ) {
 		var body = node switch {
 			PcreByteGroup group => group.Body,
 			PcreByteNoncapturingGroup group => group.Body,
@@ -628,6 +628,9 @@ internal sealed class PcreByteProgramCompiler {
 				if ( !HasUtfCrLfMandatoryLiteralRepeatBitmap( head )
 					&& !HasUtfCrLfMandatoryClassRepeatBitmap( head, ref visits )
 					&& !HasUtfCrLfMandatoryTypeRepeatBitmap( head ) ) { return false; }
+			} else if ( head is PcreByteGroup or PcreByteNoncapturingGroup
+				or PcreByteAtomic { Child: PcreByteNoncapturingGroup } ) {
+				if ( nestingDepth != 0 || !HasUtfCrLfDirectGroupBitmap( head, ref visits, 1 ) ) { return false; }
 			} else { return false; }
 		}
 		return true;
