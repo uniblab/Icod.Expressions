@@ -1573,3 +1573,26 @@ All 30,811 baseline cases plus 35 new controls passed. Immutable test blob
 712b9f523203fad2d37c59dd7eca3ac75d163124 remains unchanged after RED.
 Final six-platform results are in PR173. Issue102 and broader PCRE, release
 and consumer migration gates remain open; Grep remains last.
+
+
+## Lookbehind-prefixed mandatory groups after positive ahead (PR174)
+
+After merged173, the optional-bracket UTF bitmap proof admits positive ahead
+before unquantified capture, noncapture or atomic noncapture groups whose
+branches start with bounded, unquantified general or lowered literal positive/
+negative lookbehind and then a proven mandatory literal, range class,
+supported type or positive-minimum repeat head. The cancellable pre-scan
+charges a copied visit count; iterative all-branch traversal owns actual
+visits and assertion/capture execution. Empty, nullable, nested and
+unsupported heads remain conservative. Parser, VM, API, limits and consumers
+are unchanged.
+
+Pinned PCRE2 10.48 JIT reports LF present, CR absent and positive JIT sizes
+for seven group lookbehind patterns. Forty-nine full-capture fixtures /
+ninety-eight strict+tolerant checks cover CRLF and ordinary subjects.
+Successful-build [test-only RED547](https://github.com/uniblab/Icod.Expressions/actions/runs/42219733083), Linux x64/net8/9/10: seven failures in the new class only,
+30,895 passes, zero skips and zero compiler warnings/errors per framework.
+All 30,853 baseline cases plus 42 new controls passed. Immutable test blob
+d74d1490f9e4dd1531d199577acab5ec5171d151 remains unchanged after RED.
+Final six-platform results are in PR174. Issue102 and broader PCRE, release
+and consumer migration gates remain open; Grep remains last.
