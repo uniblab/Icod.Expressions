@@ -548,6 +548,21 @@ internal sealed class PcreByteProgramCompiler {
 			&& HasUtfCrLfTypeBitmap( characterClass );
 	}
 
+	private static PcreByteNode? FindUtfCrLfMandatoryGroupRepeat( PcreByteNode node ) {
+		if ( node is PcreByteAtomic { Child: PcreByteRepeat possessive } ) { node = possessive; }
+		return node is PcreByteRepeat { Minimum: > 0, Maximum: > 0,
+			Child: PcreByteGroup or PcreByteNoncapturingGroup
+				or PcreByteAtomic { Child: PcreByteNoncapturingGroup } } repeat
+			? repeat.Child
+			: null;
+	}
+
+	private bool HasUtfCrLfMandatoryGroupRepeatBitmap( PcreByteNode node, ref int visits ) {
+		var group = FindUtfCrLfMandatoryGroupRepeat( node );
+		return group is not null && ++visits <= MaximumStartClassVisits
+			&& HasUtfCrLfDirectGroupBitmap( group, ref visits );
+	}
+
 	private bool HasUtfCrLfMandatoryBitmapHead( PcreByteNode node, ref int visits ) => node switch {
 		PcreByteLiteral literal => HasUtfCrLfMandatoryLiteralBitmap( literal.Value ),
 		PcreByteScalarClass characterClass => HasUtfCrLfTypeBitmap( characterClass ),
@@ -632,7 +647,11 @@ internal sealed class PcreByteProgramCompiler {
 				} else if ( head is PcreByteRepeat or PcreByteAtomic { Child: PcreByteRepeat } ) {
 					if ( !HasUtfCrLfMandatoryLiteralRepeatBitmap( head )
 						&& !HasUtfCrLfMandatoryClassRepeatBitmap( head, ref visits )
-						&& !HasUtfCrLfMandatoryTypeRepeatBitmap( head ) ) { return false; }
+						&& !HasUtfCrLfMandatoryTypeRepeatBitmap( head ) ) {
+						var repeatedGroup = FindUtfCrLfMandatoryGroupRepeat( head );
+						if ( repeatedGroup is null || ++visits > MaximumStartClassVisits ) { return false; }
+						pending.Push( repeatedGroup );
+					}
 				} else if ( head is PcreByteGroup or PcreByteNoncapturingGroup
 					or PcreByteAtomic { Child: PcreByteNoncapturingGroup } ) {
 					pending.Push( head );
@@ -682,7 +701,8 @@ internal sealed class PcreByteProgramCompiler {
 							var probeVisits = visits;
 							hasDirectMandatoryContinuation = HasUtfCrLfMandatoryLiteralRepeatBitmap( candidate )
 								|| HasUtfCrLfMandatoryClassRepeatBitmap( candidate, ref probeVisits )
-								|| HasUtfCrLfMandatoryTypeRepeatBitmap( candidate );
+								|| HasUtfCrLfMandatoryTypeRepeatBitmap( candidate )
+								|| HasUtfCrLfMandatoryGroupRepeatBitmap( candidate, ref probeVisits );
 							break;
 						}
 						if ( candidate is PcreByteGroup or PcreByteNoncapturingGroup
@@ -728,6 +748,7 @@ internal sealed class PcreByteProgramCompiler {
 				case PcreByteRepeat repeat when HasUtfCrLfMandatoryLiteralRepeatBitmap( repeat ): break;
 				case PcreByteRepeat repeat when HasUtfCrLfMandatoryClassRepeatBitmap( repeat, ref visits ): break;
 				case PcreByteRepeat repeat when HasUtfCrLfMandatoryTypeRepeatBitmap( repeat ): break;
+				case PcreByteRepeat repeat when HasUtfCrLfMandatoryGroupRepeatBitmap( repeat, ref visits ): break;
 				case PcreByteLiteral or PcreByteScalarClass or PcreByteScalarSet:
 					if ( !HasUtfCrLfMandatoryBitmapHead( entry.Node, ref visits ) ) { return false; }
 					break;

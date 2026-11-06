@@ -1719,3 +1719,30 @@ baseline cases plus 20 new controls passed. Immutable test blob
 55dfd03c0bbfe3dd0c11ccde921f2264c233180f remains unchanged after RED.
 Final six-platform results are in PR176. Issue102 and broader PCRE, release
 and consumer migration gates remain open; Grep remains last.
+
+
+## Mandatory repeated group heads after positive ahead (PR177)
+
+After merged176, the optional-bracket UTF bitmap proof admits positive ahead
+before positive-minimum repeats of capture, noncapture or atomic noncapture
+groups. Every repeated child branch must reach a proven mandatory CR-excluding
+literal, range class, supported type or positive-minimum repeat head after
+supported unquantified assertion/boundary prefixes. An explicit stack visits
+nested group heads; the repeat, group, branch and prefix checks charge the
+existing 1,000-visit budget with cancellation. The speculative pre-scan uses
+a copy of visits, and the actual proof applies the same guard. Zero-minimum,
+empty, nullable, CR-admitting and unsupported repeated heads remain
+conservative. Runtime captures/assertions, parser, API, limits and consumers
+are unchanged.
+
+Pinned PCRE2 10.48 JIT reports LF present, CR absent and positive JIT size
+for six repeated-group shapes. Eighteen full-capture fixtures / thirty-six
+strict+tolerant checks cover CRLF and ordinary subjects. Successful-build
+[test-only RED554](https://github.com/uniblab/Icod.Expressions/actions/runs/42314672122),
+macOS ARM64/net8/9/10: six failures in the new class only, 30,977 passes,
+zero skips and zero compiler warnings/errors per framework. All 30,965
+baseline cases plus 12 new controls passed. The earlier syntax-invalid run553
+did not count as test RED. Immutable test blob
+7df5678a3f3de64d5c72bc69d37514634a68bbab remains unchanged after RED.
+Final six-platform results are in PR177. Issue102 and broader PCRE, release
+and consumer migration gates remain open; Grep remains last.
