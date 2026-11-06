@@ -612,8 +612,7 @@ internal sealed class PcreByteProgramCompiler {
 				cancellationToken.ThrowIfCancellationRequested();
 				var cost = branch[index] switch {
 					PcreByteWordBoundary => 1,
-					PcreByteLookahead => 2,
-					PcreByteLiteralAssertion { IsBehind: false } => 2,
+					PcreByteLookahead or PcreByteLookbehind or PcreByteLiteralAssertion => 2,
 					_ => 0
 				};
 				if ( cost == 0 ) { break; }
