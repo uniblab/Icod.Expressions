@@ -607,7 +607,21 @@ internal sealed class PcreByteProgramCompiler {
 		foreach ( var branch in body.Branches ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			if ( ++visits > MaximumStartClassVisits || branch.Count == 0 ) { return false; }
-			var head = branch[0];
+			var index = 0;
+			while ( index < branch.Count ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				var cost = branch[index] switch {
+					PcreByteWordBoundary => 1,
+					PcreByteLookahead => 2,
+					_ => 0
+				};
+				if ( cost == 0 ) { break; }
+				if ( visits > MaximumStartClassVisits - cost ) { return false; }
+				visits += cost;
+				index++;
+			}
+			if ( index == branch.Count ) { return false; }
+			var head = branch[index];
 			if ( head is PcreByteLiteral or PcreByteScalarClass or PcreByteScalarSet ) {
 				if ( !HasUtfCrLfMandatoryBitmapHead( head, ref visits ) ) { return false; }
 			} else if ( head is PcreByteRepeat or PcreByteAtomic { Child: PcreByteRepeat } ) {
