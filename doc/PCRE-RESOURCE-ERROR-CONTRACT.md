@@ -1826,3 +1826,28 @@ All 30,902 baseline cases plus 31 new controls passed. Immutable test blob
 5f9717a09b9fa6810e3e128d9bc3d0f6de8edd33 remains unchanged after RED.
 Final six-platform results are in PR175. Issue102 and broader PCRE, release
 and consumer migration gates remain open; Grep remains last.
+
+
+## Bounded deep mandatory groups after positive ahead (PR176)
+
+After merged175, the optional-bracket UTF bitmap proof admits positive ahead
+before chains of unquantified capture, noncapture or atomic noncapture group
+heads. Every branch must reach an existing proven mandatory literal, range
+class, supported type or positive-minimum repeat head after supported
+unquantified assertion/boundary prefixes. An explicit pending stack replaces
+the depth-one recursive helper. Group, branch and prefix visits charge the
+same 1,000-visit budget with cancellation; the speculative pre-scan retains
+a copied visit count and iterative all-branch traversal owns actual visits.
+Empty, nullable, repeated and unsupported group heads stay conservative.
+Parser, VM, API, limits and consumers are unchanged.
+
+Pinned PCRE2 10.48 JIT reports LF present, CR absent and positive JIT sizes
+for noncapture chains through depth 128 and capture chains through depth 8.
+Twenty-seven full-capture fixtures / fifty-four strict+tolerant checks cover
+CRLF and ordinary subjects. Successful-build [test-only RED551](https://github.com/uniblab/Icod.Expressions/actions/runs/42233238070),
+Linux x64/net8/9/10: seven failures in the new class only, 30,958 passes,
+zero skips and zero compiler warnings/errors per framework. All 30,938
+baseline cases plus 20 new controls passed. Immutable test blob
+55dfd03c0bbfe3dd0c11ccde921f2264c233180f remains unchanged after RED.
+Final six-platform results are in PR176. Issue102 and broader PCRE, release
+and consumer migration gates remain open; Grep remains last.

@@ -596,42 +596,48 @@ internal sealed class PcreByteProgramCompiler {
 		return HasUtfCrLfMandatoryBodyBitmap( assertion.Body, ref visits );
 	}
 
-	private bool HasUtfCrLfDirectGroupBitmap( PcreByteNode node, ref int visits, int nestingDepth = 0 ) {
-		var body = node switch {
-			PcreByteGroup group => group.Body,
-			PcreByteNoncapturingGroup group => group.Body,
-			PcreByteAtomic { Child: PcreByteNoncapturingGroup group } => group.Body,
-			_ => null
-		};
-		if ( body is null || ++visits > MaximumStartClassVisits || body.Branches.Count == 0 ) { return false; }
-		foreach ( var branch in body.Branches ) {
+	private bool HasUtfCrLfDirectGroupBitmap( PcreByteNode node, ref int visits ) {
+		// Bound group depth by charged visits instead of recursive call depth.
+		var pending = new Stack<PcreByteNode>();
+		pending.Push( node );
+		while ( pending.TryPop( out var groupNode ) ) {
 			cancellationToken.ThrowIfCancellationRequested();
-			if ( ++visits > MaximumStartClassVisits || branch.Count == 0 ) { return false; }
-			var index = 0;
-			while ( index < branch.Count ) {
+			var body = groupNode switch {
+				PcreByteGroup group => group.Body,
+				PcreByteNoncapturingGroup group => group.Body,
+				PcreByteAtomic { Child: PcreByteNoncapturingGroup group } => group.Body,
+				_ => null
+			};
+			if ( body is null || ++visits > MaximumStartClassVisits || body.Branches.Count == 0 ) { return false; }
+			foreach ( var branch in body.Branches ) {
 				cancellationToken.ThrowIfCancellationRequested();
-				var cost = branch[index] switch {
-					PcreByteWordBoundary => 1,
-					PcreByteLookahead or PcreByteLookbehind or PcreByteLiteralAssertion => 2,
-					_ => 0
-				};
-				if ( cost == 0 ) { break; }
-				if ( visits > MaximumStartClassVisits - cost ) { return false; }
-				visits += cost;
-				index++;
+				if ( ++visits > MaximumStartClassVisits || branch.Count == 0 ) { return false; }
+				var index = 0;
+				while ( index < branch.Count ) {
+					cancellationToken.ThrowIfCancellationRequested();
+					var cost = branch[index] switch {
+						PcreByteWordBoundary => 1,
+						PcreByteLookahead or PcreByteLookbehind or PcreByteLiteralAssertion => 2,
+						_ => 0
+					};
+					if ( cost == 0 ) { break; }
+					if ( visits > MaximumStartClassVisits - cost ) { return false; }
+					visits += cost;
+					index++;
+				}
+				if ( index == branch.Count ) { return false; }
+				var head = branch[index];
+				if ( head is PcreByteLiteral or PcreByteScalarClass or PcreByteScalarSet ) {
+					if ( !HasUtfCrLfMandatoryBitmapHead( head, ref visits ) ) { return false; }
+				} else if ( head is PcreByteRepeat or PcreByteAtomic { Child: PcreByteRepeat } ) {
+					if ( !HasUtfCrLfMandatoryLiteralRepeatBitmap( head )
+						&& !HasUtfCrLfMandatoryClassRepeatBitmap( head, ref visits )
+						&& !HasUtfCrLfMandatoryTypeRepeatBitmap( head ) ) { return false; }
+				} else if ( head is PcreByteGroup or PcreByteNoncapturingGroup
+					or PcreByteAtomic { Child: PcreByteNoncapturingGroup } ) {
+					pending.Push( head );
+				} else { return false; }
 			}
-			if ( index == branch.Count ) { return false; }
-			var head = branch[index];
-			if ( head is PcreByteLiteral or PcreByteScalarClass or PcreByteScalarSet ) {
-				if ( !HasUtfCrLfMandatoryBitmapHead( head, ref visits ) ) { return false; }
-			} else if ( head is PcreByteRepeat or PcreByteAtomic { Child: PcreByteRepeat } ) {
-				if ( !HasUtfCrLfMandatoryLiteralRepeatBitmap( head )
-					&& !HasUtfCrLfMandatoryClassRepeatBitmap( head, ref visits )
-					&& !HasUtfCrLfMandatoryTypeRepeatBitmap( head ) ) { return false; }
-			} else if ( head is PcreByteGroup or PcreByteNoncapturingGroup
-				or PcreByteAtomic { Child: PcreByteNoncapturingGroup } ) {
-				if ( nestingDepth != 0 || !HasUtfCrLfDirectGroupBitmap( head, ref visits, 1 ) ) { return false; }
-			} else { return false; }
 		}
 		return true;
 	}
