@@ -1763,8 +1763,8 @@ and consumer migration gates remain open; Grep remains last.
 
 After merged172, the optional-bracket UTF bitmap proof admits a positive ahead
 before unquantified capture, noncapture or atomic noncapture groups whose
-branches start with bounded unquantified word boundaries or lookaheads and
-then a proven mandatory literal, range-class, supported type or positive-
+branches start with bounded unquantified word boundaries or general/lowered
+literal lookaheads and then a proven mandatory literal, range-class, type or positive-
 minimum repeat head. The cancellable pre-scan charges a copied visit count;
 iterative all-branch body traversal owns actual visits and assertion/capture
 execution. Empty, nullable, nested and unsupported heads stay conservative.

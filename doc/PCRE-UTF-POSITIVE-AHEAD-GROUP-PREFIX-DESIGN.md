@@ -9,8 +9,9 @@ the existing iterative body proof already skips supported assertions.
 
 Admit only capture, noncapture and atomic noncapture groups with nonempty
 branches. Scan each branch's leading unquantified word boundaries and
-supported negative/positive lookaheads under the existing visit limit and
-cancellation policy, then require an already proven mandatory literal,
+supported negative/positive lookaheads (including lowered literal assertions)
+under the existing visit limit and cancellation policy, then require a proven
+mandatory literal,
 range-class or supported type head or positive-minimum repeat. Use the
 caller-provided copy of the visit count so unsuccessful speculation cannot
 spend the real budget. Leave empty, nullable, nested or unsupported heads
