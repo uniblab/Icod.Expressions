@@ -570,12 +570,12 @@ internal sealed class PcreByteProgramCompiler {
 	private bool HasUtfCrLfLiteralAheadZeroGroupRepeatBitmap( IReadOnlyList<PcreByteNode> branch, ref int visits ) {
 		// This nullable repeat cannot establish a mandatory consuming head.
 		// Its preceding literal assertion itself excludes CR at this entry.
-		if ( branch.Count is not (2 or 3 or 4) || branch[0] is not PcreByteLiteralAssertion {
+		if ( branch.Count < 2 || branch[0] is not PcreByteLiteralAssertion {
 			IsPositive: true, IsBehind: false, Caseless: false } ahead
 			|| ahead.Bytes.Length != 1 || ahead.Bytes.Span[0] >= 0x80
 			|| !HasUtfCrLfMandatoryLiteralBitmap( ahead.Bytes.Span[0] ) ) { return false; }
 		// The outer literal assertion and the repeat each charge one visit.
-		// Admit at most two zero-width nodes between them.
+		// Charge each zero-width node before probing the repeated group head.
 		var prefixCost = 2;
 		for ( var index = 1; index < branch.Count - 1; index++ ) {
 			cancellationToken.ThrowIfCancellationRequested();

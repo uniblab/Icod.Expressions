@@ -1821,3 +1821,28 @@ Immutable test blob `703159731160565b7f76f8f68ddd91f79022fc98`
 remains unchanged. Final six-platform results are in PR183. Issue102
 and broader PCRE, release and consumer migration gates remain open;
 Grep remains last.
++
+## Bounded zero-width chains before zero-minimum group repeats (PR184)
+
+After merged183, the specialized optional-bracket UTF bitmap proof no
+longer limits the middle prefix to two nodes. A leading positive
+single-byte ASCII literal lookahead excludes CR even if the following
+group repeat consumes nothing. Any number of supported word boundaries
+or single-byte noncaseless ASCII literal assertions may precede the
+zero-minimum, positive-maximum group repeat while each middle node,
+the leading assertion, the repeat and the mandatory CR-excluding group
+head fit the existing 1,000-visit budget. Cancellation is checked at
+every middle node. Unrecognized nodes remain outside this proof; parser,
+API, runtime limits and consumers are unchanged.
+
+Pinned PCRE2 10.48 JIT retained LF, excluded CR and produced positive
+JIT sizes across long boundary/assertion chains and five repeated-group
+shapes. Three hundred three native full-capture fixtures / 606
+strict+tolerant checks cover CRLF and ordinary subjects, including 900
+boundaries. Successful-build [test-only RED568](https://github.com/uniblab/Icod.Expressions/actions/runs/42354718366),
+Linux ARM64/net8: 101 new CRLF failures, 31,605 passes, zero skips and
+no compiler warnings/errors. All 31,403 baseline cases and 202 new
+controls passed. Immutable test blob
+`aa4d1bb8415881799a630852b7eaa4c51b1dae04` remains unchanged.
+Final six-platform results are in PR184. Issue102 and broader PCRE,
+release and consumer migration gates remain open; Grep remains last.
