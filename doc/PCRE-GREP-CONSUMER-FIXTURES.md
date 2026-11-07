@@ -1787,3 +1787,27 @@ All 31,013 baseline cases plus twenty new controls passed. Immutable
 test blob `2e58ca6546e3a7a78a5f31179a3966df0d08d506` remains unchanged.
 Final six-platform results are in PR180. Issue102 and broader PCRE,
 release and consumer migration gates remain open; Grep remains last.
+
+## Negative literal assertion before zero-minimum group repeat (PR181)
+
+After merged180, the optional-bracket UTF bitmap proof accepts exactly
+one negative single-byte ASCII literal assertion, ahead or behind,
+between a positive single-byte ASCII literal lookahead and a
+zero-minimum, positive-maximum group repeat. The positive assertion
+excludes CR even when the repeat consumes nothing. Every repeated child
+branch still requires a proven mandatory CR-excluding head. Charge
+two visits for the negative assertion under the same 1,000-visit
+budget. Other intermediate nodes and longer chains remain conservative;
+runtime, parser, API, limits and consumers are unchanged.
+
+Pinned PCRE2 10.48 JIT retains LF and excludes CR for `(?!Z)` and
+`(?<!Z)` between the positive lookahead and each of five nullable
+group shapes, with positive JIT sizes. Thirty native full-capture
+fixtures / sixty strict+tolerant checks cover CRLF and ordinary
+subjects. Successful-build [test-only RED562](https://github.com/uniblab/Icod.Expressions/actions/runs/42341748138),
+Linux x64/net8/9/10: ten failures in the new CRLF cases only, 31,063
+passes, zero skips and zero compiler warnings/errors per framework.
+All 31,043 baseline cases plus twenty new controls passed. Immutable
+test blob `c00998a881302dad9dabae110adf2a13c871a238` remains unchanged.
+Final six-platform results are in PR181. Issue102 and broader PCRE,
+release and consumer migration gates remain open; Grep remains last.

@@ -563,6 +563,10 @@ internal sealed class PcreByteProgramCompiler {
 			&& HasUtfCrLfDirectGroupBitmap( group, ref visits );
 	}
 
+	private static bool IsUtfCrLfNegativeLiteralAssertion( PcreByteNode node ) =>
+		node is PcreByteLiteralAssertion { IsPositive: false, Caseless: false } assertion
+			&& assertion.Bytes.Length == 1 && assertion.Bytes.Span[0] < 0x80;
+
 	private bool HasUtfCrLfLiteralAheadZeroGroupRepeatBitmap( IReadOnlyList<PcreByteNode> branch, ref int visits ) {
 		// This nullable repeat cannot establish a mandatory consuming head.
 		// Its preceding literal assertion itself excludes CR at this entry.
@@ -571,14 +575,17 @@ internal sealed class PcreByteProgramCompiler {
 			|| ahead.Bytes.Length != 1 || ahead.Bytes.Span[0] >= 0x80
 			|| !HasUtfCrLfMandatoryLiteralBitmap( ahead.Bytes.Span[0] )
 			|| branch.Count >= 3 && branch[1] is not PcreByteWordBoundary
+				&& ( branch.Count != 3 || !IsUtfCrLfNegativeLiteralAssertion( branch[1] ) )
 			|| branch.Count == 4 && branch[2] is not PcreByteWordBoundary ) { return false; }
+		// Negative literal assertions cost two visits; boundaries cost one.
+		var prefixCost = branch.Count + ( branch.Count == 3 && branch[1] is PcreByteLiteralAssertion ? 1 : 0 );
 		var repeatNode = branch[branch.Count - 1];
 		if ( repeatNode is PcreByteAtomic { Child: PcreByteRepeat possessive } ) { repeatNode = possessive; }
 		if ( repeatNode is not PcreByteRepeat { Minimum: 0, Maximum: > 0,
 			Child: PcreByteGroup or PcreByteNoncapturingGroup
 				or PcreByteAtomic { Child: PcreByteNoncapturingGroup } } repeat
-			|| visits > MaximumStartClassVisits - branch.Count ) { return false; }
-		var probeVisits = visits + branch.Count;
+			|| visits > MaximumStartClassVisits - prefixCost ) { return false; }
+		var probeVisits = visits + prefixCost;
 		if ( !HasUtfCrLfDirectGroupBitmap( repeat.Child, ref probeVisits ) ) { return false; }
 		visits = probeVisits;
 		return true;
