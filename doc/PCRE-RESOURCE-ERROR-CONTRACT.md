@@ -2102,3 +2102,30 @@ and 400 new ordinary controls passed. Immutable test blob
 `cb2aa7e1a2bbcc6c6c324eb9e3d16f8f17bc0484` remains unchanged.
 Final six-platform results are in PR186. Issue102 and broader PCRE,
 release and consumer migration gates remain open; Grep remains last.
+
+## Positive class lookahead before zero-minimum group repeats (PR187)
+
+After merged186, the specialized optional-bracket UTF bitmap proof admits
+a leading positive caseful lookahead only when its body has one branch
+and one direct CR-excluding scalar set or supported scalar class. The
+class head is checked on a success-only visit checkpoint. The general
+assertion's body and branch add two visits to the leading assertion and
+repeat charge; middle zero-width nodes and the mandatory CR-excluding
+repeated-group head keep their established checks. The 1,000-visit bound
+and cancellation remain. Multi-node, nullable, predicate, negated or
+CR-admitting lookahead bodies remain outside this proof; parser, runtime,
+API, limits and consumers are unchanged.
+
+Pinned PCRE2 10.48 JIT retained LF, excluded CR and produced positive
+JIT sizes for 90 class/prefix/group patterns. CR-admitting `\s` and
+`[B\r]` leads included CR in their native bitmaps. Two hundred seventy
+native full-capture fixtures / 540 strict+tolerant checks cover six
+leads, three zero-width prefixes, five repeated-group shapes and CRLF/
+ordinary subjects. Successful-build
+[test-only RED574](https://github.com/uniblab/Icod.Expressions/actions/runs/42374407725),
+Linux ARM64/net8/9/10: 90 new CRLF failures, 32,801 passes and zero skips
+per framework, no compiler warnings/errors. All 32,621 baseline cases
+and 180 new ordinary controls passed. Immutable test blob
+`fc233a1e9900250c0df2e418bb0152ee201006a6` remains unchanged.
+Final six-platform results are in PR187. Issue102 and broader PCRE,
+release and consumer migration gates remain open; Grep remains last.

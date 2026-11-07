@@ -569,17 +569,30 @@ internal sealed class PcreByteProgramCompiler {
 			&& PcreUtf8.TryRead( assertion.Bytes.Span, 0, out scalar, out _ );
 	}
 
-	private bool HasUtfCrLfLiteralAheadZeroGroupRepeatBitmap( IReadOnlyList<PcreByteNode> branch, ref int visits ) {
+	private bool HasUtfCrLfPositiveClassAheadBitmap( PcreByteNode node, ref int prefixCost ) {
+		if ( node is not PcreByteLookahead { IsPositive: true, Caseless: false } ahead
+			|| ahead.Body.Branches.Count != 1 || ahead.Body.Branches[0].Count != 1 ) { return false; }
+		var head = ahead.Body.Branches[0][0];
+		if ( head.Caseless || head is not ( PcreByteScalarSet or PcreByteScalarClass ) ) { return false; }
+		var headVisits = 0;
+		if ( !HasUtfCrLfMandatoryBitmapHead( head, ref headVisits )
+			|| prefixCost > MaximumStartClassVisits - 2 - headVisits ) { return false; }
+		// A general assertion visits its body and sole branch in addition to its opcode.
+		prefixCost += 2 + headVisits;
+		return true;
+	}
+
+	private bool HasUtfCrLfPositiveAheadZeroGroupRepeatBitmap( IReadOnlyList<PcreByteNode> branch, ref int visits ) {
 		// This nullable repeat cannot establish a mandatory consuming head.
-		// Its preceding literal assertion itself excludes CR at this entry.
-		var aheadScalar = 0;
-		if ( branch.Count < 2 || branch[0] is not PcreByteLiteralAssertion {
-			IsPositive: true, IsBehind: false } ahead
-			|| !TryGetUtfCrLfLiteralAssertionFirstScalar( ahead, out aheadScalar )
-			|| !HasUtfCrLfMandatoryLiteralBitmap( aheadScalar ) ) { return false; }
-		// The outer literal assertion and the repeat each charge one visit.
+		// Its preceding assertion itself excludes CR at this entry.
+		if ( branch.Count < 2 ) { return false; }
+		// The outer assertion and the repeat each charge one visit.
 		// Charge each zero-width node before probing the repeated group head.
 		var prefixCost = 2;
+		if ( branch[0] is PcreByteLiteralAssertion { IsPositive: true, IsBehind: false } ahead ) {
+			if ( !TryGetUtfCrLfLiteralAssertionFirstScalar( ahead, out var aheadScalar )
+				|| !HasUtfCrLfMandatoryLiteralBitmap( aheadScalar ) ) { return false; }
+		} else if ( !HasUtfCrLfPositiveClassAheadBitmap( branch[0], ref prefixCost ) ) { return false; }
 		for ( var index = 1; index < branch.Count - 1; index++ ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			var cost = branch[index] switch {
@@ -713,7 +726,7 @@ internal sealed class PcreByteProgramCompiler {
 				foreach ( var branch in alternatives.Branches ) {
 					cancellationToken.ThrowIfCancellationRequested();
 					if ( ++visits > MaximumStartClassVisits || branch.Count == 0 ) { return false; }
-				if ( HasUtfCrLfLiteralAheadZeroGroupRepeatBitmap( branch, ref visits ) ) { continue; }
+					if ( HasUtfCrLfPositiveAheadZeroGroupRepeatBitmap( branch, ref visits ) ) { continue; }
 					// Native looks past assertions and boundaries before deciding
 					// whether a positive ahead can yield to a mandatory character.
 					// The first direct head must be a proven CR-excluding literal,
