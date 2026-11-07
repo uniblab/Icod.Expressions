@@ -1868,3 +1868,30 @@ All 31,073 baseline cases plus 100 new controls passed. Immutable test
 blob `6162eff08a4234cf1bcf5661939690b2fd323630` remains unchanged.
 Final six-platform results are in PR182. Issue102 and broader PCRE,
 release and consumer migration gates remain open; Grep remains last.
+
+## Positive middle assertions before zero-minimum group repeats (PR183)
+
+After merged182, the optional-bracket UTF bitmap proof admits one
+positive single-byte ASCII literal assertion, ahead or behind, in
+either of at most two zero-width middle positions before a zero-minimum,
+positive-maximum group repeat. The existing negative literal assertions
+and word boundaries remain supported. Each literal assertion charges
+two visits and each boundary one under the 1,000-visit budget with
+cancellation. The leading positive literal lookahead excludes CR even
+when the repeat consumes nothing, and every repeated child branch
+requires a mandatory CR-excluding head. Other nodes or longer chains
+remain conservative; runtime, parser, API, limits and consumers are
+unchanged.
+
+Pinned PCRE2 10.48 JIT retains LF, excludes CR and reports positive
+JIT sizes for twelve assertion/boundary prefixes across five group
+repeat shapes. One hundred eighty native full-capture fixtures /
+360 strict+tolerant checks cover CRLF and ordinary subjects.
+Successful-build [test-only RED566](https://github.com/uniblab/Icod.Expressions/actions/runs/42352825688),
+macOS ARM64/net8/9/10: sixty failures in the new CRLF cases only,
+31,343 passes, zero skips and zero compiler warnings/errors per
+framework. All 31,223 baseline cases plus 120 new controls passed.
+Immutable test blob `703159731160565b7f76f8f68ddd91f79022fc98`
+remains unchanged. Final six-platform results are in PR183. Issue102
+and broader PCRE, release and consumer migration gates remain open;
+Grep remains last.

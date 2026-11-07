@@ -563,8 +563,8 @@ internal sealed class PcreByteProgramCompiler {
 			&& HasUtfCrLfDirectGroupBitmap( group, ref visits );
 	}
 
-	private static bool IsUtfCrLfNegativeLiteralAssertion( PcreByteNode node ) =>
-		node is PcreByteLiteralAssertion { IsPositive: false, Caseless: false } assertion
+	private static bool IsUtfCrLfSingleAsciiLiteralAssertion( PcreByteNode node ) =>
+		node is PcreByteLiteralAssertion { Caseless: false } assertion
 			&& assertion.Bytes.Length == 1 && assertion.Bytes.Span[0] < 0x80;
 
 	private bool HasUtfCrLfLiteralAheadZeroGroupRepeatBitmap( IReadOnlyList<PcreByteNode> branch, ref int visits ) {
@@ -581,7 +581,7 @@ internal sealed class PcreByteProgramCompiler {
 			cancellationToken.ThrowIfCancellationRequested();
 			var cost = branch[index] switch {
 				PcreByteWordBoundary => 1,
-				PcreByteLiteralAssertion assertion when IsUtfCrLfNegativeLiteralAssertion( assertion ) => 2,
+				PcreByteLiteralAssertion assertion when IsUtfCrLfSingleAsciiLiteralAssertion( assertion ) => 2,
 				_ => 0
 			};
 			if ( cost == 0 || prefixCost > MaximumStartClassVisits - cost ) { return false; }
