@@ -573,12 +573,20 @@ internal sealed class PcreByteProgramCompiler {
 		if ( branch.Count is not (2 or 3 or 4) || branch[0] is not PcreByteLiteralAssertion {
 			IsPositive: true, IsBehind: false, Caseless: false } ahead
 			|| ahead.Bytes.Length != 1 || ahead.Bytes.Span[0] >= 0x80
-			|| !HasUtfCrLfMandatoryLiteralBitmap( ahead.Bytes.Span[0] )
-			|| branch.Count >= 3 && branch[1] is not PcreByteWordBoundary
-				&& ( branch.Count != 3 || !IsUtfCrLfNegativeLiteralAssertion( branch[1] ) )
-			|| branch.Count == 4 && branch[2] is not PcreByteWordBoundary ) { return false; }
-		// Negative literal assertions cost two visits; boundaries cost one.
-		var prefixCost = branch.Count + ( branch.Count == 3 && branch[1] is PcreByteLiteralAssertion ? 1 : 0 );
+			|| !HasUtfCrLfMandatoryLiteralBitmap( ahead.Bytes.Span[0] ) ) { return false; }
+		// The outer literal assertion and the repeat each charge one visit.
+		// Admit at most two zero-width nodes between them.
+		var prefixCost = 2;
+		for ( var index = 1; index < branch.Count - 1; index++ ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			var cost = branch[index] switch {
+				PcreByteWordBoundary => 1,
+				PcreByteLiteralAssertion assertion when IsUtfCrLfNegativeLiteralAssertion( assertion ) => 2,
+				_ => 0
+			};
+			if ( cost == 0 || prefixCost > MaximumStartClassVisits - cost ) { return false; }
+			prefixCost += cost;
+		}
 		var repeatNode = branch[branch.Count - 1];
 		if ( repeatNode is PcreByteAtomic { Child: PcreByteRepeat possessive } ) { repeatNode = possessive; }
 		if ( repeatNode is not PcreByteRepeat { Minimum: 0, Maximum: > 0,
