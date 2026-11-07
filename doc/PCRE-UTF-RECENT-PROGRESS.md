@@ -41,6 +41,7 @@ audit. A row is not a claim that an unreviewed PR is merged or release-ready.
 | [177](https://github.com/uniblab/Icod.Expressions/pull/177) | 18 | 30983 | Positive ahead before mandatory repeated group heads |
 | [178](https://github.com/uniblab/Icod.Expressions/pull/178) | 15 | 30998 | Literal positive ahead before zero-minimum group repeats |
 | [179](https://github.com/uniblab/Icod.Expressions/pull/179) | 15 | 31013 | Word boundary between literal positive ahead and zero-minimum group repeat |
+| [180](https://github.com/uniblab/Icod.Expressions/pull/180) | 30 | 31043 | Two boundaries between literal positive ahead and zero-minimum group repeat |
 
 Before a tranche is ready: six native OS/architecture Staging jobs, full suite
 and frozen214 on net8/9/10, no failed/skipped tests or compiler warnings/errors,
