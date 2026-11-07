@@ -7,7 +7,7 @@ a group. The repeat may consume nothing, so the mandatory group-repeat
 proof from PR177 correctly rejects it. The positive assertion itself
 excludes CR from any successful nonempty entry into that optional body.
 
-Recognize only a branch consisting of a positive single-scalar literal
+Recognize only a branch consisting of a positive single-byte ASCII literal
 lookahead immediately followed by a zero-minimum, positive-maximum repeat
 of a capture, noncapture or atomic noncapture group, optionally wrapped
 by a possessive modifier. Require the assertion scalar to be valid and
