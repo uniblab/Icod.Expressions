@@ -563,6 +563,25 @@ internal sealed class PcreByteProgramCompiler {
 			&& HasUtfCrLfDirectGroupBitmap( group, ref visits );
 	}
 
+	private bool HasUtfCrLfLiteralAheadZeroGroupRepeatBitmap( IReadOnlyList<PcreByteNode> branch, ref int visits ) {
+		// This nullable repeat cannot establish a mandatory consuming head.
+		// Its preceding literal assertion itself excludes CR at this entry.
+		if ( branch.Count != 2 || branch[0] is not PcreByteLiteralAssertion {
+			IsPositive: true, IsBehind: false, Caseless: false } ahead
+			|| ahead.Bytes.Length != 1 || ahead.Bytes.Span[0] >= 0x80
+			|| !HasUtfCrLfMandatoryLiteralBitmap( ahead.Bytes.Span[0] ) ) { return false; }
+		var repeatNode = branch[1];
+		if ( repeatNode is PcreByteAtomic { Child: PcreByteRepeat possessive } ) { repeatNode = possessive; }
+		if ( repeatNode is not PcreByteRepeat { Minimum: 0, Maximum: > 0,
+			Child: PcreByteGroup or PcreByteNoncapturingGroup
+				or PcreByteAtomic { Child: PcreByteNoncapturingGroup } } repeat
+			|| visits > MaximumStartClassVisits - 2 ) { return false; }
+		var probeVisits = visits + 2;
+		if ( !HasUtfCrLfDirectGroupBitmap( repeat.Child, ref probeVisits ) ) { return false; }
+		visits = probeVisits;
+		return true;
+	}
+
 	private bool HasUtfCrLfMandatoryBitmapHead( PcreByteNode node, ref int visits ) => node switch {
 		PcreByteLiteral literal => HasUtfCrLfMandatoryLiteralBitmap( literal.Value ),
 		PcreByteScalarClass characterClass => HasUtfCrLfTypeBitmap( characterClass ),
@@ -674,6 +693,7 @@ internal sealed class PcreByteProgramCompiler {
 				foreach ( var branch in alternatives.Branches ) {
 					cancellationToken.ThrowIfCancellationRequested();
 					if ( ++visits > MaximumStartClassVisits || branch.Count == 0 ) { return false; }
+				if ( HasUtfCrLfLiteralAheadZeroGroupRepeatBitmap( branch, ref visits ) ) { continue; }
 					// Native looks past assertions and boundaries before deciding
 					// whether a positive ahead can yield to a mandatory character.
 					// The first direct head must be a proven CR-excluding literal,

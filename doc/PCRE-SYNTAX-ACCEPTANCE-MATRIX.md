@@ -1672,3 +1672,28 @@ did not count as test RED. Immutable test blob
 7df5678a3f3de64d5c72bc69d37514634a68bbab remains unchanged after RED.
 Final six-platform results are in PR177. Issue102 and broader PCRE, release
 and consumer migration gates remain open; Grep remains last.
+
+
+## Literal positive ahead before zero-minimum group repeats (PR178)
+
+After merged177, the optional-bracket UTF bitmap proof admits a positive
+single-byte ASCII literal lookahead immediately followed by a zero-minimum,
+positive-maximum repeat of a capture, noncapture or atomic noncapture group,
+optionally possessive. The assertion itself excludes CR from entry even when
+the group repeat consumes nothing. Its child branches must still reach proven
+mandatory CR-excluding heads. A copied bounded visit count charges the
+assertion, repeat, group and branch proof with cancellation; runtime assertion
+and capture execution remain unchanged. Other nullable continuations,
+unsupported heads and wider assertions remain conservative. Parser, VM, API,
+limits and consumers are unchanged.
+
+Pinned PCRE2 10.48 JIT reports LF present, CR absent and positive JIT sizes
+for five zero-minimum repeated-group shapes. Fifteen full-capture fixtures /
+thirty strict+tolerant checks cover CRLF and ordinary subjects. Successful-
+build [test-only RED556](https://github.com/uniblab/Icod.Expressions/actions/runs/42322153350),
+Linux ARM64/net8/9/10: five failures in the new class only, 30,993 passes,
+zero skips and zero compiler warnings/errors per framework. All 30,983
+baseline cases plus 10 new controls passed. Immutable test blob
+476fde060f4d6812075a2987c682cb2fde6c203c remains unchanged after RED.
+Final six-platform results are in PR178. Issue102 and broader PCRE, release
+and consumer migration gates remain open; Grep remains last.
