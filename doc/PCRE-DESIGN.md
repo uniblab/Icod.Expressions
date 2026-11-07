@@ -1945,3 +1945,28 @@ and 210 new controls passed. Immutable test blob
 `feb7d68cb5aea9d6d071add8b58177ed9b80ad9d` remains unchanged.
 Final six-platform results are in PR185. Issue102 and broader PCRE,
 release and consumer migration gates remain open; Grep remains last.
+
+## Multi-scalar literal assertions before zero-minimum group repeats (PR186)
+
+After merged185, the specialized optional-bracket UTF bitmap proof reads
+the first complete scalar of each caseful literal assertion. A leading
+positive forward assertion must begin with a CR-excluding scalar; its
+remaining literal bytes do not change CR exclusion at the entry. Middle
+caseful literal assertions may likewise contain multiple scalars. The
+same two-visit assertion charge, 1,000-visit bound, cancellation and
+mandatory CR-excluding repeated-group head remain. Caseless/general
+lookaround and unrecognized nodes remain outside this proof; parser,
+runtime, API, limits and consumers are unchanged.
+
+Pinned PCRE2 10.48 JIT retained LF and excluded CR for 200 lead/middle/
+group combinations; a CR-first leading lookahead instead included CR.
+Six hundred native full-capture fixtures / 1,200 strict+tolerant checks
+cover ASCII/UTF mixed literals, five nullable-group shapes and CRLF/
+ordinary subjects. Successful-build
+[test-only RED572](https://github.com/uniblab/Icod.Expressions/actions/runs/42371394007),
+Linux x64/net8/9/10: 150 new CRLF failures, 32,471 passes and zero skips
+per framework, no compiler warnings/errors. All 32,021 baseline cases
+and 400 new ordinary controls passed. Immutable test blob
+`cb2aa7e1a2bbcc6c6c324eb9e3d16f8f17bc0484` remains unchanged.
+Final six-platform results are in PR186. Issue102 and broader PCRE,
+release and consumer migration gates remain open; Grep remains last.

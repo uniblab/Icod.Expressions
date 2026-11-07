@@ -563,11 +563,10 @@ internal sealed class PcreByteProgramCompiler {
 			&& HasUtfCrLfDirectGroupBitmap( group, ref visits );
 	}
 
-	private static bool TryGetUtfCrLfSingleLiteralAssertionScalar( PcreByteNode node, out int scalar ) {
+	private static bool TryGetUtfCrLfLiteralAssertionFirstScalar( PcreByteNode node, out int scalar ) {
 		scalar = 0;
 		return node is PcreByteLiteralAssertion { Caseless: false } assertion
-			&& PcreUtf8.TryRead( assertion.Bytes.Span, 0, out scalar, out var width )
-			&& width == assertion.Bytes.Length;
+			&& PcreUtf8.TryRead( assertion.Bytes.Span, 0, out scalar, out _ );
 	}
 
 	private bool HasUtfCrLfLiteralAheadZeroGroupRepeatBitmap( IReadOnlyList<PcreByteNode> branch, ref int visits ) {
@@ -576,7 +575,7 @@ internal sealed class PcreByteProgramCompiler {
 		var aheadScalar = 0;
 		if ( branch.Count < 2 || branch[0] is not PcreByteLiteralAssertion {
 			IsPositive: true, IsBehind: false } ahead
-			|| !TryGetUtfCrLfSingleLiteralAssertionScalar( ahead, out aheadScalar )
+			|| !TryGetUtfCrLfLiteralAssertionFirstScalar( ahead, out aheadScalar )
 			|| !HasUtfCrLfMandatoryLiteralBitmap( aheadScalar ) ) { return false; }
 		// The outer literal assertion and the repeat each charge one visit.
 		// Charge each zero-width node before probing the repeated group head.
@@ -585,7 +584,7 @@ internal sealed class PcreByteProgramCompiler {
 			cancellationToken.ThrowIfCancellationRequested();
 			var cost = branch[index] switch {
 				PcreByteWordBoundary => 1,
-				PcreByteLiteralAssertion assertion when TryGetUtfCrLfSingleLiteralAssertionScalar( assertion, out _ ) => 2,
+				PcreByteLiteralAssertion assertion when TryGetUtfCrLfLiteralAssertionFirstScalar( assertion, out _ ) => 2,
 				_ => 0
 			};
 			if ( cost == 0 || prefixCost > MaximumStartClassVisits - cost ) { return false; }
