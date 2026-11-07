@@ -563,17 +563,21 @@ internal sealed class PcreByteProgramCompiler {
 			&& HasUtfCrLfDirectGroupBitmap( group, ref visits );
 	}
 
-	private static bool IsUtfCrLfSingleAsciiLiteralAssertion( PcreByteNode node ) =>
-		node is PcreByteLiteralAssertion { Caseless: false } assertion
-			&& assertion.Bytes.Length == 1 && assertion.Bytes.Span[0] < 0x80;
+	private static bool TryGetUtfCrLfSingleLiteralAssertionScalar( PcreByteNode node, out int scalar ) {
+		scalar = 0;
+		return node is PcreByteLiteralAssertion { Caseless: false } assertion
+			&& PcreUtf8.TryRead( assertion.Bytes.Span, 0, out scalar, out var width )
+			&& width == assertion.Bytes.Length;
+	}
 
 	private bool HasUtfCrLfLiteralAheadZeroGroupRepeatBitmap( IReadOnlyList<PcreByteNode> branch, ref int visits ) {
 		// This nullable repeat cannot establish a mandatory consuming head.
 		// Its preceding literal assertion itself excludes CR at this entry.
+		var aheadScalar = 0;
 		if ( branch.Count < 2 || branch[0] is not PcreByteLiteralAssertion {
-			IsPositive: true, IsBehind: false, Caseless: false } ahead
-			|| ahead.Bytes.Length != 1 || ahead.Bytes.Span[0] >= 0x80
-			|| !HasUtfCrLfMandatoryLiteralBitmap( ahead.Bytes.Span[0] ) ) { return false; }
+			IsPositive: true, IsBehind: false } ahead
+			|| !TryGetUtfCrLfSingleLiteralAssertionScalar( ahead, out aheadScalar )
+			|| !HasUtfCrLfMandatoryLiteralBitmap( aheadScalar ) ) { return false; }
 		// The outer literal assertion and the repeat each charge one visit.
 		// Charge each zero-width node before probing the repeated group head.
 		var prefixCost = 2;
@@ -581,7 +585,7 @@ internal sealed class PcreByteProgramCompiler {
 			cancellationToken.ThrowIfCancellationRequested();
 			var cost = branch[index] switch {
 				PcreByteWordBoundary => 1,
-				PcreByteLiteralAssertion assertion when IsUtfCrLfSingleAsciiLiteralAssertion( assertion ) => 2,
+				PcreByteLiteralAssertion assertion when TryGetUtfCrLfSingleLiteralAssertionScalar( assertion, out _ ) => 2,
 				_ => 0
 			};
 			if ( cost == 0 || prefixCost > MaximumStartClassVisits - cost ) { return false; }
