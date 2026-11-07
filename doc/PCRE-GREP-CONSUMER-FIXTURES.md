@@ -1765,3 +1765,25 @@ baseline cases plus 10 new controls passed. Immutable test blob
 d016b78205d40b08809852adb0dee445b5bfd19e remains unchanged after RED.
 Final six-platform results are in PR179. Issue102 and broader PCRE, release
 and consumer migration gates remain open; Grep remains last.
+
+## Two boundaries before zero-minimum group repeat (PR180)
+
+After merged179, the optional-bracket UTF bitmap proof accepts two
+unquantified word-boundary nodes between a positive single-byte ASCII
+literal lookahead and a zero-minimum, positive-maximum group repeat.
+The lookahead excludes CR even if the repeat consumes nothing; every
+repeated child branch still requires a mandatory CR-excluding head.
+Both boundaries charge visits in the existing 1,000-visit budget.
+Other intermediate nodes or longer chains remain conservative; runtime,
+parser, API, limits and consumers are unchanged.
+
+Pinned PCRE2 10.48 JIT retains LF and excludes CR for `\b\b` and
+`\B\B`, across five group shapes, with positive JIT sizes. Thirty native
+full-capture fixtures / sixty strict+tolerant checks cover CRLF and
+ordinary subjects. Successful-build [test-only RED560](https://github.com/uniblab/Icod.Expressions/actions/runs/42336029188),
+Linux x64/net8/9/10: ten failures in the new CRLF cases only, 31,033
+passes, zero skips and zero compiler warnings/errors per framework.
+All 31,013 baseline cases plus twenty new controls passed. Immutable
+test blob `2e58ca6546e3a7a78a5f31179a3966df0d08d506` remains unchanged.
+Final six-platform results are in PR180. Issue102 and broader PCRE,
+release and consumer migration gates remain open; Grep remains last.

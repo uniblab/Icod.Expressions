@@ -566,11 +566,12 @@ internal sealed class PcreByteProgramCompiler {
 	private bool HasUtfCrLfLiteralAheadZeroGroupRepeatBitmap( IReadOnlyList<PcreByteNode> branch, ref int visits ) {
 		// This nullable repeat cannot establish a mandatory consuming head.
 		// Its preceding literal assertion itself excludes CR at this entry.
-		if ( branch.Count is not (2 or 3) || branch[0] is not PcreByteLiteralAssertion {
+		if ( branch.Count is not (2 or 3 or 4) || branch[0] is not PcreByteLiteralAssertion {
 			IsPositive: true, IsBehind: false, Caseless: false } ahead
 			|| ahead.Bytes.Length != 1 || ahead.Bytes.Span[0] >= 0x80
 			|| !HasUtfCrLfMandatoryLiteralBitmap( ahead.Bytes.Span[0] )
-			|| branch.Count == 3 && branch[1] is not PcreByteWordBoundary ) { return false; }
+			|| branch.Count >= 3 && branch[1] is not PcreByteWordBoundary
+			|| branch.Count == 4 && branch[2] is not PcreByteWordBoundary ) { return false; }
 		var repeatNode = branch[branch.Count - 1];
 		if ( repeatNode is PcreByteAtomic { Child: PcreByteRepeat possessive } ) { repeatNode = possessive; }
 		if ( repeatNode is not PcreByteRepeat { Minimum: 0, Maximum: > 0,
