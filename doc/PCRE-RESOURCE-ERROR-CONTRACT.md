@@ -1903,3 +1903,28 @@ baseline cases plus 10 new controls passed. Immutable test blob
 476fde060f4d6812075a2987c682cb2fde6c203c remains unchanged after RED.
 Final six-platform results are in PR178. Issue102 and broader PCRE, release
 and consumer migration gates remain open; Grep remains last.
+
+
+## Word boundary before zero-minimum group repeat (PR179)
+
+After merged178, the optional-bracket UTF bitmap proof admits one
+unquantified word boundary between a positive single-byte ASCII literal
+lookahead and a zero-minimum, positive-maximum repeat of a capture,
+noncapture or atomic noncapture group, optionally possessive. The assertion
+excludes CR from entry even if the group repeat consumes nothing. Every
+repeated child branch still reaches a proven mandatory CR-excluding head.
+The extra boundary charges one visit in the same 1,000-visit budget with
+cancellation. Other intermediate assertions, multiple boundaries and
+unsupported heads remain conservative. Runtime assertion, boundary,
+repeat and capture execution, parser, API, limits and consumers are unchanged.
+
+Pinned PCRE2 10.48 JIT reports LF present, CR absent and positive JIT sizes
+for five boundary-prefixed zero-minimum repeated-group shapes. Fifteen
+full-capture fixtures / thirty strict+tolerant checks cover CRLF and
+ordinary subjects. Successful-build [test-only RED558](https://github.com/uniblab/Icod.Expressions/actions/runs/42328717262),
+Linux x64/net8/9/10: five failures in the new class only, 31,008 passes,
+zero skips and zero compiler warnings/errors per framework. All 30,998
+baseline cases plus 10 new controls passed. Immutable test blob
+d016b78205d40b08809852adb0dee445b5bfd19e remains unchanged after RED.
+Final six-platform results are in PR179. Issue102 and broader PCRE, release
+and consumer migration gates remain open; Grep remains last.
