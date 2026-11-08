@@ -2179,3 +2179,27 @@ and 120 new ordinary controls passed. Immutable test blob
 `62dd6b45d8a40c6064c67a02107ee7dfd55d9194` remains unchanged.
 Final six-platform results are in PR189. Issue102 and broader PCRE,
 release and consumer migration gates remain open; Grep remains last.
+
+## Leading class lookbehind before zero-minimum group repeats (PR190)
+
+After merged189, the specialized optional-bracket UTF bitmap proof reuses
+the one-branch, one-head positive caseful class assertion check for a
+leading lookbehind. It charges the assertion body, branch and class-range
+visits on a success-only proof. Middle zero-width nodes, mandatory
+CR-excluding repeated-group head, cancellation and 1,000-visit ceiling
+keep their checks. Multi-node, nullable, negated, predicate and
+CR-admitting lookbehind heads remain outside this proof; parser, runtime,
+API, limits and consumers are unchanged.
+
+Pinned PCRE2 10.48 compile/JIT retained LF and excluded CR for 90
+lead/prefix/group patterns, with positive JIT sizes and three native
+subject checks each. Two hundred seventy native full-capture fixtures /
+540 strict+tolerant checks cover six leading lookbehinds, three middle
+prefixes, five repeated-group shapes and CRLF/ordinary subjects.
+Successful-build [test-only RED580](https://github.com/uniblab/Icod.Expressions/actions/runs/42452100008),
+Linux ARM64/net8/9/10: 90 new CRLF failures, 33,461 passes and zero skips
+per framework, no compiler warnings/errors. All 33,281 baseline cases
+and 180 new ordinary controls passed. Immutable test blob
+`b9f1c10f46ac791523fa8365f86426bbfcf3515b` remains unchanged.
+Final six-platform results are in PR190. Issue102 and broader PCRE,
+release and consumer migration gates remain open; Grep remains last.
