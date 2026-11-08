@@ -574,6 +574,7 @@ internal sealed class PcreByteProgramCompiler {
 		if ( behind.Caseless || bytes.IsEmpty ) { return false; }
 		var offset = 0;
 		for ( var count = 0; count < 8 && offset < bytes.Length; count++ ) {
+			// CR behind a candidate LF can succeed inside CRLF; the specialized skip cannot discard that LF.
 			if ( !PcreUtf8.TryRead( bytes, offset, out var scalar, out var width )
 				|| !HasUtfCrLfMandatoryLiteralBitmap( scalar ) ) { return false; }
 			offset += width;

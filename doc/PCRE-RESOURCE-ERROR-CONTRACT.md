@@ -2276,3 +2276,25 @@ and 180 new ordinary controls passed. Immutable test blob
 `aac6226ccc391715a79c494fd0da30f46ff8d0c5` remains unchanged.
 Final six-platform results are in PR193. Issue102 and broader PCRE,
 release and consumer migration gates remain open; Grep remains last.
+
+## CR-containing leading literal lookbehind guard (PR194)
+
+After merged193, pinned PCRE2 10.48 compile/JIT retained LF and excluded
+CR for 135 leading lookbehind/prefix/group patterns, with positive JIT
+sizes and three native subject positions each. Yet `(?<=\\r)` can match
+at the LF within CRLF. The existing CR exclusion in the bounded leading
+lookbehind start-skip proof is necessary: admitting that lookbehind would
+skip a valid LF candidate. The test-only full-suite run passed before a
+production change, so this PR retains the guard and pins native full
+match/capture parity as regression coverage.
+
+Three hundred ninety distinct fixtures / 780 strict+tolerant checks
+cover nine leading literals, three middle prefixes, five nullable group
+shapes and CRLF/ordinary/positive subjects. The single-CR positive
+subject duplicates its CRLF fixture and is listed once. Successful-build
+[test-only run588](https://github.com/uniblab/Icod.Expressions/actions/runs/42477284630)
+passed 34,571 cases per framework on Linux ARM64/net8/9/10, including
+frozen214, with zero failed/skipped tests. The initial theory enumerated
+15 duplicate IDs, removed before final CI. Final six-platform results
+are in PR194. Issue102 and broader PCRE, release and consumer migration
+gates remain open; Grep remains last.
