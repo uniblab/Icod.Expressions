@@ -599,9 +599,9 @@ internal sealed class PcreByteProgramCompiler {
 		return true;
 	}
 
-	private bool HasUtfCrLfPositiveAssertionZeroGroupRepeatBitmap( IReadOnlyList<PcreByteNode> branch, ref int visits ) {
+	private bool HasUtfCrLfLeadingAssertionZeroGroupRepeatBitmap( IReadOnlyList<PcreByteNode> branch, ref int visits ) {
 		// This nullable repeat cannot establish a mandatory consuming head.
-		// Require a proven CR-excluding head in the leading assertion.
+		// Require a bounded leading assertion and a CR-excluding repeated-group head.
 		if ( branch.Count < 2 ) { return false; }
 		// The outer assertion and the repeat each charge one visit.
 		// Charge each zero-width node before probing the repeated group head.
@@ -611,6 +611,12 @@ internal sealed class PcreByteProgramCompiler {
 				|| !HasUtfCrLfMandatoryLiteralBitmap( aheadScalar ) ) { return false; }
 		} else if ( branch[0] is PcreByteLiteralAssertion { IsPositive: true, IsBehind: true, Caseless: false } behind ) {
 			if ( !HasUtfCrLfLeadingLiteralBehindBitmap( behind ) ) { return false; }
+		} else if ( branch[0] is PcreByteLiteralAssertion { IsPositive: false, Caseless: false } negative ) {
+			// A single newline-free negative assertion can fall through the optional group at LF.
+			var bytes = negative.Bytes.Span;
+			if ( !PcreUtf8.TryRead( bytes, 0, out var scalar, out var width )
+				|| width != bytes.Length || !HasUtfCrLfMandatoryLiteralBitmap( scalar )
+				|| scalar == '\n' ) { return false; }
 		} else if ( !HasUtfCrLfPositiveClassAssertionBitmap( branch[0], ref prefixCost, 0 ) ) { return false; }
 		for ( var index = 1; index < branch.Count - 1; index++ ) {
 			cancellationToken.ThrowIfCancellationRequested();
@@ -749,7 +755,7 @@ internal sealed class PcreByteProgramCompiler {
 				foreach ( var branch in alternatives.Branches ) {
 					cancellationToken.ThrowIfCancellationRequested();
 					if ( ++visits > MaximumStartClassVisits || branch.Count == 0 ) { return false; }
-					if ( HasUtfCrLfPositiveAssertionZeroGroupRepeatBitmap( branch, ref visits ) ) { continue; }
+				if ( HasUtfCrLfLeadingAssertionZeroGroupRepeatBitmap( branch, ref visits ) ) { continue; }
 					// Native looks past assertions and boundaries before deciding
 					// whether a positive ahead can yield to a mandatory character.
 					// The first direct head must be a proven CR-excluding literal,
