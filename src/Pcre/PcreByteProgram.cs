@@ -569,16 +569,16 @@ internal sealed class PcreByteProgramCompiler {
 			&& PcreUtf8.TryRead( assertion.Bytes.Span, 0, out scalar, out _ );
 	}
 
-	private bool HasUtfCrLfPositiveClassAheadBitmap( PcreByteNode node, ref int prefixCost ) {
+	private bool HasUtfCrLfPositiveClassAheadBitmap( PcreByteNode node, ref int prefixCost, int opcodeCost ) {
 		if ( node is not PcreByteLookahead { IsPositive: true, Caseless: false } ahead
 			|| ahead.Body.Branches.Count != 1 || ahead.Body.Branches[0].Count != 1 ) { return false; }
 		var head = ahead.Body.Branches[0][0];
 		if ( head.Caseless || head is not ( PcreByteScalarSet or PcreByteScalarClass ) ) { return false; }
 		var headVisits = 0;
 		if ( !HasUtfCrLfMandatoryBitmapHead( head, ref headVisits )
-			|| prefixCost > MaximumStartClassVisits - 2 - headVisits ) { return false; }
-		// A general assertion visits its body and sole branch in addition to its opcode.
-		prefixCost += 2 + headVisits;
+			|| prefixCost > MaximumStartClassVisits - opcodeCost - 2 - headVisits ) { return false; }
+		// Charge the general assertion's body and branch, plus an uncharged middle opcode.
+		prefixCost += opcodeCost + 2 + headVisits;
 		return true;
 	}
 
@@ -592,9 +592,13 @@ internal sealed class PcreByteProgramCompiler {
 		if ( branch[0] is PcreByteLiteralAssertion { IsPositive: true, IsBehind: false } ahead ) {
 			if ( !TryGetUtfCrLfLiteralAssertionFirstScalar( ahead, out var aheadScalar )
 				|| !HasUtfCrLfMandatoryLiteralBitmap( aheadScalar ) ) { return false; }
-		} else if ( !HasUtfCrLfPositiveClassAheadBitmap( branch[0], ref prefixCost ) ) { return false; }
+		} else if ( !HasUtfCrLfPositiveClassAheadBitmap( branch[0], ref prefixCost, 0 ) ) { return false; }
 		for ( var index = 1; index < branch.Count - 1; index++ ) {
 			cancellationToken.ThrowIfCancellationRequested();
+			if ( branch[index] is PcreByteLookahead classAhead ) {
+				if ( !HasUtfCrLfPositiveClassAheadBitmap( classAhead, ref prefixCost, 2 ) ) { return false; }
+				continue;
+			}
 			var cost = branch[index] switch {
 				PcreByteWordBoundary => 1,
 				PcreByteLiteralAssertion assertion when TryGetUtfCrLfLiteralAssertionFirstScalar( assertion, out _ ) => 2,

@@ -49,6 +49,7 @@ audit. A row is not a claim that an unreviewed PR is merged or release-ready.
 | [185](https://github.com/uniblab/Icod.Expressions/pull/185) | 315 | 32021 | Wide scalar literal assertions before zero-minimum group repeats |
 | [186](https://github.com/uniblab/Icod.Expressions/pull/186) | 600 | 32621 | Multi-scalar literal assertions before zero-minimum group repeats |
 | [187](https://github.com/uniblab/Icod.Expressions/pull/187) | 270 | 32891 | Positive class lookahead before zero-minimum group repeats |
+| [188](https://github.com/uniblab/Icod.Expressions/pull/188) | 210 | 33101 | Middle class lookaheads before zero-minimum group repeats |
 
 Before a tranche is ready: six native OS/architecture Staging jobs, full suite
 and frozen214 on net8/9/10, no failed/skipped tests or compiler warnings/errors,

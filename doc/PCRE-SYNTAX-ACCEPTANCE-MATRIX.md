@@ -1923,3 +1923,28 @@ and 180 new ordinary controls passed. Immutable test blob
 `fc233a1e9900250c0df2e418bb0152ee201006a6` remains unchanged.
 Final six-platform results are in PR187. Issue102 and broader PCRE,
 release and consumer migration gates remain open; Grep remains last.
+
+## Middle class lookahead before zero-minimum group repeats (PR188)
+
+After merged187, the specialized optional-bracket UTF bitmap proof reuses
+the one-branch, one-head positive caseful class lookahead check at each
+supported middle prefix position. Each middle class assertion charges
+its opcode, body, branch and class-range visits on a success-only proof.
+The leading assertion still excludes CR; word boundaries, literal
+assertions, the 1,000-visit bound, cancellation and mandatory CR-excluding
+repeated-group head keep their checks. Other lookaround bodies and
+unrecognized nodes remain outside this extension; parser, runtime, API,
+limits and consumers are unchanged.
+
+Pinned PCRE2 10.48 JIT retained LF, excluded CR and produced positive
+JIT sizes for 70 lead/middle/group patterns. Two hundred ten native
+full-capture fixtures / 420 strict+tolerant checks cover two leading
+assertions, seven middle prefixes, five repeated-group shapes and CRLF/
+ordinary subjects. Successful-build
+[test-only RED576](https://github.com/uniblab/Icod.Expressions/actions/runs/42442001453),
+macOS ARM64/net8/9/10: 70 new CRLF failures, 33,031 passes and zero skips
+per framework, no compiler warnings/errors. All 32,891 baseline cases
+and 140 new ordinary controls passed. Immutable test blob
+`368303ed4aad8d9ac59b0b827ac3ef8fb7b6d8aa` remains unchanged.
+Final six-platform results are in PR188. Issue102 and broader PCRE,
+release and consumer migration gates remain open; Grep remains last.
