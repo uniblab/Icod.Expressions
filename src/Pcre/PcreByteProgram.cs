@@ -586,9 +586,9 @@ internal sealed class PcreByteProgramCompiler {
 		return true;
 	}
 
-	private bool HasUtfCrLfPositiveAheadZeroGroupRepeatBitmap( IReadOnlyList<PcreByteNode> branch, ref int visits ) {
+	private bool HasUtfCrLfPositiveAssertionZeroGroupRepeatBitmap( IReadOnlyList<PcreByteNode> branch, ref int visits ) {
 		// This nullable repeat cannot establish a mandatory consuming head.
-		// Its preceding assertion itself excludes CR at this entry.
+		// Require a proven CR-excluding head in the leading assertion.
 		if ( branch.Count < 2 ) { return false; }
 		// The outer assertion and the repeat each charge one visit.
 		// Charge each zero-width node before probing the repeated group head.
@@ -596,8 +596,7 @@ internal sealed class PcreByteProgramCompiler {
 		if ( branch[0] is PcreByteLiteralAssertion { IsPositive: true, IsBehind: false } ahead ) {
 			if ( !TryGetUtfCrLfLiteralAssertionFirstScalar( ahead, out var aheadScalar )
 				|| !HasUtfCrLfMandatoryLiteralBitmap( aheadScalar ) ) { return false; }
-		} else if ( branch[0] is not PcreByteLookahead
-			|| !HasUtfCrLfPositiveClassAssertionBitmap( branch[0], ref prefixCost, 0 ) ) { return false; }
+		} else if ( !HasUtfCrLfPositiveClassAssertionBitmap( branch[0], ref prefixCost, 0 ) ) { return false; }
 		for ( var index = 1; index < branch.Count - 1; index++ ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			if ( branch[index] is PcreByteLookahead or PcreByteLookbehind ) {
@@ -735,7 +734,7 @@ internal sealed class PcreByteProgramCompiler {
 				foreach ( var branch in alternatives.Branches ) {
 					cancellationToken.ThrowIfCancellationRequested();
 					if ( ++visits > MaximumStartClassVisits || branch.Count == 0 ) { return false; }
-					if ( HasUtfCrLfPositiveAheadZeroGroupRepeatBitmap( branch, ref visits ) ) { continue; }
+					if ( HasUtfCrLfPositiveAssertionZeroGroupRepeatBitmap( branch, ref visits ) ) { continue; }
 					// Native looks past assertions and boundaries before deciding
 					// whether a positive ahead can yield to a mandatory character.
 					// The first direct head must be a proven CR-excluding literal,
