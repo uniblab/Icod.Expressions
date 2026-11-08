@@ -38,7 +38,10 @@ public sealed class PcreUtfLeadingCrLiteralBehindZeroGroupReferenceTests {
 					yield return new object[] { pattern, "420B41", ordinary };
 					var start = lead.Start;
 					var spans = shape.Captured ? $"{start}:2,-,{start}:1" : $"{start}:2,{start}:1";
-					yield return new object[] { pattern, String.Concat( lead.PrefixHex, "0A41" ), spans };
+					if ( lead.PrefixHex != "0D" ) {
+						// This is identical to the CRLF subject for the single-CR lead.
+						yield return new object[] { pattern, String.Concat( lead.PrefixHex, "0A41" ), spans };
+					}
 				}
 			}
 		}

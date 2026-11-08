@@ -55,6 +55,7 @@ audit. A row is not a claim that an unreviewed PR is merged or release-ready.
 | [191](https://github.com/uniblab/Icod.Expressions/pull/191) | 180 | 33731 | Leading literal lookbehinds before zero-minimum group repeats |
 | [192](https://github.com/uniblab/Icod.Expressions/pull/192) | 180 | 33911 | Leading two-scalar lookbehinds before zero-minimum group repeats |
 | [193](https://github.com/uniblab/Icod.Expressions/pull/193) | 270 | 34181 | Bounded leading literal lookbehinds before zero-minimum group repeats |
+| [194](https://github.com/uniblab/Icod.Expressions/pull/194) | 390 | 34571 | CR-containing leading literal lookbehind guard and native capture controls |
 
 Before a tranche is ready: six native OS/architecture Staging jobs, full suite
 and frozen214 on net8/9/10, no failed/skipped tests or compiler warnings/errors,
