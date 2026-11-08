@@ -596,6 +596,9 @@ internal sealed class PcreByteProgramCompiler {
 		if ( branch[0] is PcreByteLiteralAssertion { IsPositive: true, IsBehind: false } ahead ) {
 			if ( !TryGetUtfCrLfLiteralAssertionFirstScalar( ahead, out var aheadScalar )
 				|| !HasUtfCrLfMandatoryLiteralBitmap( aheadScalar ) ) { return false; }
+		} else if ( branch[0] is PcreByteLiteralAssertion { IsPositive: true, IsBehind: true, Caseless: false } behind ) {
+			if ( !PcreUtf8.TryRead( behind.Bytes.Span, 0, out var behindScalar, out var width )
+				|| width != behind.Bytes.Length || !HasUtfCrLfMandatoryLiteralBitmap( behindScalar ) ) { return false; }
 		} else if ( !HasUtfCrLfPositiveClassAssertionBitmap( branch[0], ref prefixCost, 0 ) ) { return false; }
 		for ( var index = 1; index < branch.Count - 1; index++ ) {
 			cancellationToken.ThrowIfCancellationRequested();

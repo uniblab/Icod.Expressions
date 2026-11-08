@@ -2040,3 +2040,28 @@ and 180 new ordinary controls passed. Immutable test blob
 `b9f1c10f46ac791523fa8365f86426bbfcf3515b` remains unchanged.
 Final six-platform results are in PR190. Issue102 and broader PCRE,
 release and consumer migration gates remain open; Grep remains last.
+
+## Leading literal lookbehind before zero-minimum group repeats (PR191)
+
+After merged190, the specialized optional-bracket UTF bitmap proof admits
+a leading positive caseful literal lookbehind containing exactly one
+CR-excluding UTF scalar. The existing mandatory-literal proof checks its
+scalar; the prior literal-ahead path and supported middle zero-width
+prefixes remain. The mandatory repeated-group head, cancellation and
+1,000-visit ceiling keep their guards. Multi-scalar, caseless or
+CR-admitting leading literal lookbehind remains outside this extension;
+parser, runtime, API, limits and consumers are unchanged.
+
+Pinned PCRE2 10.48 compile/JIT retained LF and excluded CR for 60
+lead/prefix/group patterns, with positive JIT sizes and three native
+subject checks each. One hundred eighty native full-capture fixtures /
+360 strict+tolerant checks cover four leading literals (including a
+wide UTF scalar), three middle prefixes, five repeated-group shapes and
+CRLF/ordinary subjects. Successful-build
+[test-only RED582](https://github.com/uniblab/Icod.Expressions/actions/runs/42455740589),
+macOS ARM64/net8/9/10: 60 new CRLF failures, 33,671 passes and zero skips
+per framework, no compiler warnings/errors. All 33,551 baseline cases
+and 120 new ordinary controls passed. Immutable test blob
+`a932566cdf7b3d639b01251b3c3419e8544b5d9b` remains unchanged.
+Final six-platform results are in PR191. Issue102 and broader PCRE,
+release and consumer migration gates remain open; Grep remains last.
