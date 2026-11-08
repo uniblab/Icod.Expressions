@@ -569,6 +569,18 @@ internal sealed class PcreByteProgramCompiler {
 			&& PcreUtf8.TryRead( assertion.Bytes.Span, 0, out scalar, out _ );
 	}
 
+	private static bool HasUtfCrLfLeadingLiteralBehindBitmap( PcreByteLiteralAssertion behind ) {
+		var bytes = behind.Bytes.Span;
+		if ( behind.Caseless || bytes.IsEmpty ) { return false; }
+		var offset = 0;
+		for ( var count = 0; count < 2 && offset < bytes.Length; count++ ) {
+			if ( !PcreUtf8.TryRead( bytes, offset, out var scalar, out var width )
+				|| !HasUtfCrLfMandatoryLiteralBitmap( scalar ) ) { return false; }
+			offset += width;
+		}
+		return offset == bytes.Length;
+	}
+
 	private bool HasUtfCrLfPositiveClassAssertionBitmap( PcreByteNode node, ref int prefixCost, int opcodeCost ) {
 		var body = node switch {
 			PcreByteLookahead { IsPositive: true, Caseless: false } ahead => ahead.Body,
@@ -597,8 +609,7 @@ internal sealed class PcreByteProgramCompiler {
 			if ( !TryGetUtfCrLfLiteralAssertionFirstScalar( ahead, out var aheadScalar )
 				|| !HasUtfCrLfMandatoryLiteralBitmap( aheadScalar ) ) { return false; }
 		} else if ( branch[0] is PcreByteLiteralAssertion { IsPositive: true, IsBehind: true, Caseless: false } behind ) {
-			if ( !PcreUtf8.TryRead( behind.Bytes.Span, 0, out var behindScalar, out var width )
-				|| width != behind.Bytes.Length || !HasUtfCrLfMandatoryLiteralBitmap( behindScalar ) ) { return false; }
+			if ( !HasUtfCrLfLeadingLiteralBehindBitmap( behind ) ) { return false; }
 		} else if ( !HasUtfCrLfPositiveClassAssertionBitmap( branch[0], ref prefixCost, 0 ) ) { return false; }
 		for ( var index = 1; index < branch.Count - 1; index++ ) {
 			cancellationToken.ThrowIfCancellationRequested();

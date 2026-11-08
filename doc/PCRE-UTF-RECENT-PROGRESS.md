@@ -53,6 +53,7 @@ audit. A row is not a claim that an unreviewed PR is merged or release-ready.
 | [189](https://github.com/uniblab/Icod.Expressions/pull/189) | 180 | 33281 | Middle class lookbehinds before zero-minimum group repeats |
 | [190](https://github.com/uniblab/Icod.Expressions/pull/190) | 270 | 33551 | Leading class lookbehinds before zero-minimum group repeats |
 | [191](https://github.com/uniblab/Icod.Expressions/pull/191) | 180 | 33731 | Leading literal lookbehinds before zero-minimum group repeats |
+| [192](https://github.com/uniblab/Icod.Expressions/pull/192) | 180 | 33911 | Leading two-scalar lookbehinds before zero-minimum group repeats |
 
 Before a tranche is ready: six native OS/architecture Staging jobs, full suite
 and frozen214 on net8/9/10, no failed/skipped tests or compiler warnings/errors,

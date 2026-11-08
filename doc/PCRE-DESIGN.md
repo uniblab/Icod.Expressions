@@ -2096,3 +2096,27 @@ and 120 new ordinary controls passed. Immutable test blob
 `a932566cdf7b3d639b01251b3c3419e8544b5d9b` remains unchanged.
 Final six-platform results are in PR191. Issue102 and broader PCRE,
 release and consumer migration gates remain open; Grep remains last.
+
+## Leading two-scalar lookbehind before zero-minimum group repeats (PR192)
+
+After merged191, the specialized optional-bracket UTF bitmap proof
+validates one or two scalars in a leading positive caseful literal
+lookbehind, requiring each to exclude CR. The two-scalar scan is bounded;
+existing middle prefix, mandatory repeated-group head, cancellation and
+1,000-visit checks remain. Three-scalar, caseless and CR-containing heads
+remain outside this extension. Parser, runtime, API, limits and consumers
+are unchanged.
+
+Pinned PCRE2 10.48 compile/JIT retained LF and excluded CR for 60
+lead/prefix/group patterns with positive JIT sizes and three native
+subject checks each. One hundred eighty native full-capture fixtures /
+360 strict+tolerant checks cover four two-scalar lookbehinds (including
+wide UTF), three middle prefixes, five repeated-group shapes and CRLF/
+ordinary subjects. Successful-build
+[test-only RED584](https://github.com/uniblab/Icod.Expressions/actions/runs/42465995689),
+macOS ARM64/net8/9/10: 60 new CRLF failures, 33,851 passes and zero skips
+per framework, no compiler warnings/errors. All 33,731 baseline cases
+and 120 new ordinary controls passed. Immutable test blob
+`a61b8e7cae700c8096d70594dc13dfa136f906c5` remains unchanged.
+Final six-platform results are in PR192. Issue102 and broader PCRE,
+release and consumer migration gates remain open; Grep remains last.
