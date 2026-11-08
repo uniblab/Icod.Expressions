@@ -2159,3 +2159,27 @@ and 150 new controls passed. Immutable test blob
 `69929f9054b7249a34c631a9192568af41e7fbd8` remains unchanged.
 Final six-platform results are in PR195. Issue102 and broader PCRE,
 release and consumer migration gates remain open; Grep remains last.
+
+## Bounded multi-scalar negative assertions before zero-minimum group repeats (PR196)
+
+After merged195, the specialized optional-bracket UTF proof scans at most
+eight valid CR/LF-excluding scalars in a leading caseful negative literal
+lookahead or lookbehind. The optional group, supported middle zero-width
+prefixes, mandatory CR-excluding repeated-group head, cancellation and
+1,000-visit ceiling keep their guards. Longer, newline-containing or
+caseless negative assertions remain outside this extension. Parser,
+matcher, API, limits and consumers are unchanged.
+
+Pinned PCRE2 10.48 compile/JIT retained LF and excluded CR for 120
+lead/prefix/group patterns, with positive JIT sizes and two native
+subject offsets each. Two hundred forty native full-capture fixtures /
+480 strict+tolerant checks cover eight negative literals of two, three
+or eight scalars (including wide UTF), three middle prefixes, five
+nullable group shapes and CRLF/ordinary subjects. Successful-build
+[test-only RED594](https://github.com/uniblab/Icod.Expressions/actions/runs/42511015475),
+Linux ARM64/net8/9/10: 120 new CRLF failures, 34,931 passes and zero
+skips per framework, no compiler warnings/errors. All 34,811 baseline
+cases and 120 new ordinary controls passed. Immutable test blob
+`f565c50e0a3c77e09c73d135a1767435051513fb` remains unchanged.
+Final six-platform results are in PR196. Issue102 and broader PCRE,
+release and consumer migration gates remain open; Grep remains last.

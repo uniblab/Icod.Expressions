@@ -582,6 +582,18 @@ internal sealed class PcreByteProgramCompiler {
 		return offset == bytes.Length;
 	}
 
+	private static bool HasUtfCrLfLeadingNegativeLiteralBitmap( PcreByteLiteralAssertion negative ) {
+		var bytes = negative.Bytes.Span;
+		if ( negative.Caseless || bytes.IsEmpty ) { return false; }
+		var offset = 0;
+		for ( var count = 0; count < 8 && offset < bytes.Length; count++ ) {
+			if ( !PcreUtf8.TryRead( bytes, offset, out var scalar, out var width )
+				|| !HasUtfCrLfMandatoryLiteralBitmap( scalar ) || scalar == '\n' ) { return false; }
+			offset += width;
+		}
+		return offset == bytes.Length;
+	}
+
 	private bool HasUtfCrLfPositiveClassAssertionBitmap( PcreByteNode node, ref int prefixCost, int opcodeCost ) {
 		var body = node switch {
 			PcreByteLookahead { IsPositive: true, Caseless: false } ahead => ahead.Body,
@@ -612,11 +624,8 @@ internal sealed class PcreByteProgramCompiler {
 		} else if ( branch[0] is PcreByteLiteralAssertion { IsPositive: true, IsBehind: true, Caseless: false } behind ) {
 			if ( !HasUtfCrLfLeadingLiteralBehindBitmap( behind ) ) { return false; }
 		} else if ( branch[0] is PcreByteLiteralAssertion { IsPositive: false, Caseless: false } negative ) {
-			// A single newline-free negative assertion can fall through the optional group at LF.
-			var bytes = negative.Bytes.Span;
-			if ( !PcreUtf8.TryRead( bytes, 0, out var scalar, out var width )
-				|| width != bytes.Length || !HasUtfCrLfMandatoryLiteralBitmap( scalar )
-				|| scalar == '\n' ) { return false; }
+			// A bounded newline-free negative assertion can fall through the optional group at LF.
+			if ( !HasUtfCrLfLeadingNegativeLiteralBitmap( negative ) ) { return false; }
 		} else if ( !HasUtfCrLfPositiveClassAssertionBitmap( branch[0], ref prefixCost, 0 ) ) { return false; }
 		for ( var index = 1; index < branch.Count - 1; index++ ) {
 			cancellationToken.ThrowIfCancellationRequested();
