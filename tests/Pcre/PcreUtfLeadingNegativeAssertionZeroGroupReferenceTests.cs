@@ -16,7 +16,10 @@ public sealed class PcreUtfLeadingNegativeAssertionZeroGroupReferenceTests {
 			(Pattern: "(?>(?:B|C))*", Captured: false),
 			(Pattern: "(?:B|C)*+", Captured: false)
 		};
-		var leads = new[] { @"(?<!\r)", @"(?!\n)", "(?<!B)", "(?!B)" };
+		var leads = new[] {
+			"(?<!B)", "(?!B)", "(?<!C)", "(?!C)",
+			@"(?<!\x{100})", @"(?!\x{100})", @"(?<!\r)", @"(?!\n)"
+		};
 		var middles = new[] { "", "(?!Z)", "(?=B)" };
 		foreach ( var lead in leads ) {
 			foreach ( var middle in middles ) {
