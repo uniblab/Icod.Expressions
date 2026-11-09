@@ -563,9 +563,10 @@ internal sealed class PcreByteProgramCompiler {
 			&& HasUtfCrLfDirectGroupBitmap( group, ref visits );
 	}
 
-	private static bool TryGetUtfCrLfLiteralAssertionFirstScalar( PcreByteNode node, out int scalar ) {
+	private static bool TryGetUtfCrLfLiteralAssertionFirstScalar( PcreByteNode node, out int scalar,
+		bool allowCaseless = false ) {
 		scalar = 0;
-		return node is PcreByteLiteralAssertion { Caseless: false } assertion
+		return node is PcreByteLiteralAssertion assertion && ( allowCaseless || !assertion.Caseless )
 			&& PcreUtf8.TryRead( assertion.Bytes.Span, 0, out scalar, out _ );
 	}
 
@@ -627,6 +628,7 @@ internal sealed class PcreByteProgramCompiler {
 			// A bounded newline-free negative assertion can fall through the optional group at LF.
 			if ( !HasUtfCrLfLeadingNegativeLiteralBitmap( negative ) ) { return false; }
 		} else if ( !HasUtfCrLfPositiveClassAssertionBitmap( branch[0], ref prefixCost, 0 ) ) { return false; }
+		var allowCaselessMiddle = branch[0] is PcreByteLiteralAssertion { IsPositive: false, Caseless: true };
 		for ( var index = 1; index < branch.Count - 1; index++ ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			if ( branch[index] is PcreByteLookahead or PcreByteLookbehind ) {
@@ -635,7 +637,8 @@ internal sealed class PcreByteProgramCompiler {
 			}
 			var cost = branch[index] switch {
 				PcreByteWordBoundary => 1,
-				PcreByteLiteralAssertion assertion when TryGetUtfCrLfLiteralAssertionFirstScalar( assertion, out _ ) => 2,
+				PcreByteLiteralAssertion assertion when TryGetUtfCrLfLiteralAssertionFirstScalar( assertion, out _,
+					allowCaselessMiddle ) => 2,
 				_ => 0
 			};
 			if ( cost == 0 || prefixCost > MaximumStartClassVisits - cost ) { return false; }

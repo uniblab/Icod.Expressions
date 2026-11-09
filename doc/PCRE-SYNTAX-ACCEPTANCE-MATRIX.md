@@ -2164,5 +2164,9 @@ Linux ARM64/net8/9/10: 210 new CRLF failures, 35,261 passes and zero
 skips per framework, no compiler warnings/errors. All 35,051 baseline
 cases and 210 new ordinary controls passed. Immutable test blob
 `cc504846e40f4c0e87184f92169738b813d3e4a8` remains unchanged.
+Initial source-only [run598](https://github.com/uniblab/Icod.Expressions/actions/runs/42603410291)
+passed the 70 no-middle CRLF cases but still failed 140 cases with
+caseless middle literal assertions per framework. The final proof
+permits those only beneath a validated caseless negative leading assertion.
 Final six-platform results are in PR197. Issue102 and broader PCRE,
 release and consumer migration gates remain open; Grep remains last.
