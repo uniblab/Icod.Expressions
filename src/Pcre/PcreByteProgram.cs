@@ -584,7 +584,7 @@ internal sealed class PcreByteProgramCompiler {
 
 	private static bool HasUtfCrLfLeadingNegativeLiteralBitmap( PcreByteLiteralAssertion negative ) {
 		var bytes = negative.Bytes.Span;
-		if ( negative.Caseless || bytes.IsEmpty ) { return false; }
+		if ( bytes.IsEmpty ) { return false; }
 		var offset = 0;
 		for ( var count = 0; count < 8 && offset < bytes.Length; count++ ) {
 			if ( !PcreUtf8.TryRead( bytes, offset, out var scalar, out var width )
@@ -623,7 +623,7 @@ internal sealed class PcreByteProgramCompiler {
 				|| !HasUtfCrLfMandatoryLiteralBitmap( aheadScalar ) ) { return false; }
 		} else if ( branch[0] is PcreByteLiteralAssertion { IsPositive: true, IsBehind: true, Caseless: false } behind ) {
 			if ( !HasUtfCrLfLeadingLiteralBehindBitmap( behind ) ) { return false; }
-		} else if ( branch[0] is PcreByteLiteralAssertion { IsPositive: false, Caseless: false } negative ) {
+		} else if ( branch[0] is PcreByteLiteralAssertion { IsPositive: false } negative ) {
 			// A bounded newline-free negative assertion can fall through the optional group at LF.
 			if ( !HasUtfCrLfLeadingNegativeLiteralBitmap( negative ) ) { return false; }
 		} else if ( !HasUtfCrLfPositiveClassAssertionBitmap( branch[0], ref prefixCost, 0 ) ) { return false; }
