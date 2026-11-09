@@ -597,13 +597,13 @@ internal sealed class PcreByteProgramCompiler {
 
 	private bool HasUtfCrLfPositiveClassAssertionBitmap( PcreByteNode node, ref int prefixCost, int opcodeCost ) {
 		var body = node switch {
-			PcreByteLookahead { IsPositive: true, Caseless: false } ahead => ahead.Body,
-			PcreByteLookbehind { IsPositive: true, Caseless: false } behind => behind.Body,
+			PcreByteLookahead { IsPositive: true } ahead => ahead.Body,
+			PcreByteLookbehind { IsPositive: true } behind => behind.Body,
 			_ => null
 		};
 		if ( body is null || body.Branches.Count != 1 || body.Branches[0].Count != 1 ) { return false; }
 		var head = body.Branches[0][0];
-		if ( head.Caseless || head is not ( PcreByteScalarSet or PcreByteScalarClass ) ) { return false; }
+		if ( head is not ( PcreByteScalarSet or PcreByteScalarClass ) ) { return false; }
 		var headVisits = 0;
 		if ( !HasUtfCrLfMandatoryBitmapHead( head, ref headVisits )
 			|| prefixCost > MaximumStartClassVisits - opcodeCost - 2 - headVisits ) { return false; }
@@ -628,7 +628,8 @@ internal sealed class PcreByteProgramCompiler {
 			// A bounded newline-free negative assertion can fall through the optional group at LF.
 			if ( !HasUtfCrLfLeadingNegativeLiteralBitmap( negative ) ) { return false; }
 		} else if ( !HasUtfCrLfPositiveClassAssertionBitmap( branch[0], ref prefixCost, 0 ) ) { return false; }
-		var allowCaselessMiddle = branch[0] is PcreByteLiteralAssertion { Caseless: true };
+		var allowCaselessMiddle = branch[0].Caseless && branch[0] is
+			( PcreByteLiteralAssertion or PcreByteLookahead or PcreByteLookbehind );
 		for ( var index = 1; index < branch.Count - 1; index++ ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			if ( branch[index] is PcreByteLookahead or PcreByteLookbehind ) {
