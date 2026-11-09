@@ -19,7 +19,9 @@ public sealed class PcreUtfCaselessNegativeAssertionZeroGroupReferenceTests {
 		var leads = new[] {
 			"(?<!B)", "(?!B)", "(?<!BC)", "(?!BC)",
 			@"(?<!B\x{100}C)", @"(?!B\x{100}C)",
-			"(?<!BBBBBBBB)", "(?!BBBBBBBB)"
+			"(?<!BBBBBBBB)", "(?!BBBBBBBB)",
+			"(?<!S)", "(?!S)", "(?<!K)", "(?!K)",
+			@"(?<!\x{212A})", @"(?!\x{212A})"
 		};
 		var middles = new[] { "", "(?!Z)", "(?=B)" };
 		foreach ( var lead in leads ) {

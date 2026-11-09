@@ -1,8 +1,8 @@
 # Caseless negative assertion implementation plan
 
-1. Commit 240 native full-capture fixtures against unchanged production
-   code. Observe successful-build RED limited to 120 CRLF entries per
-   framework; baseline and 120 ordinary controls pass. Freeze test blob.
+1. Commit 420 native full-capture fixtures against unchanged production
+   code. Observe successful-build RED limited to 210 CRLF entries per
+   framework; baseline and 210 ordinary controls pass. Freeze test blob.
 2. Admit caseless leading negative literals under the existing eight
    non-CR/LF-scalar guard. Keep all other proof conditions.
 3. Update four canonical inventories and recent index. Verify six
