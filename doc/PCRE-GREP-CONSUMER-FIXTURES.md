@@ -2213,3 +2213,30 @@ caseless middle literal assertions per framework. The final proof
 permits those only beneath a validated caseless negative leading assertion.
 Final six-platform results are in PR197. Issue102 and broader PCRE,
 release and consumer migration gates remain open; Grep remains last.
++
+## Caseless positive assertions before zero-minimum group repeats (PR198)
+
+The bounded optional-bracket UTF proof now admits a leading caseless
+literal positive lookahead or lookbehind before a zero-minimum group
+repeat. The lookahead requires a valid CR-excluding first scalar; the
+lookbehind validates its complete one-to-eight-scalar body and excludes
+CR at every position. After a validated caseless literal lead, a bounded
+caseless literal middle assertion may precede the repeat. The existing
+mandatory CR-excluding repeated-group head, cancellation and 1,000-visit
+ceiling remain in force. CR-containing lookbehinds and longer bodies
+remain on the general path. Parser, matcher, API, limits and consumers
+are unchanged.
+
+Pinned PCRE2 10.48 compile/JIT retained LF and excluded CR for 150
+lead/prefix/group patterns with positive JIT sizes and native match
+spans on both CRLF and ordinary subjects. Three hundred full-capture
+fixtures / 600 strict+tolerant checks cover ten positive lookahead and
+lookbehind leads (including two-scalar, wide UTF, S/K folds), three
+middle prefixes, five nullable group shapes and two subjects.
+Successful-build [test-only RED600](https://github.com/uniblab/Icod.Expressions/actions/runs/42608674631)
+on Linux ARM64/net8/9/10 failed exactly 150 new CRLF cases per framework,
+with 35,621 passes and zero skips: all 35,471 earlier fixtures and 150
+new ordinary controls passed. The test blob
+`394c5ef84d35aabf2ecd5d7209e9a630143725d7` remains unchanged.
+Six-platform final results are in PR198. Issue102 and broader PCRE,
+release and consumer migration gates remain open; Grep remains last.
