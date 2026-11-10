@@ -29,7 +29,7 @@ internal static class PcreByteCompiler {
 			}
 		}
 
-		var parser = new PcreByteParser( source, options.Caseless, options.AsciiBsD, settings, cancellationToken );
+		var parser = new PcreByteParser( source, options.Caseless, options.AsciiBsD, settings, cancellationToken, options.AltExtendedClass );
 		try {
 			var root = parser.Parse();
 			var program = new PcreByteProgramCompiler(

@@ -9,6 +9,8 @@ internal sealed record PcreByteOptions {
 	public bool Utf8 { get; init; }
 	public bool MatchInvalidUtf { get; init; }
 	public bool Ucp { get; init; }
+	/// <summary>Enable PCRE2 UTS#18 nested brackets and doubled set operators.</summary>
+	public bool AltExtendedClass { get; init; }
 	public bool AsciiBsD { get; init; }
 	/// <summary>Recognize CR, LF, and CRLF as newlines, as in Grep's pinned PCRE2 build.</summary>
 	public bool AnyCrLfNewline { get; init; }

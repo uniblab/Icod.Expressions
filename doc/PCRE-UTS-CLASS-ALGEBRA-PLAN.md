@@ -28,3 +28,11 @@ cancellation at every term. Keep generic optimizer gaps scoped to issue102.
    result rows, frozen/extraction/API/package/workloads, five Unicode
    regenerators, build scripts and all applicable compatibility jobs. Record
    evidence, mark ready, preserve the branch for user merge.
+
+## Execution evidence
+
+Test-only3aa3121 / RED639 run42926866683, Linux x64 job130215440647:
+all frameworks compile with0warnings/errors; 46127 cases,58 expected failures
+from the absent AltExtendedClass option,46069 baseline passes,0skips.
+Fixed test blob997476f58dc8e310a42c9a39d0e1107df87d6060;
+fixture1f9af6684d32ecd7c9ad518e890cf58ed1073ea5. Both remain unchanged.
