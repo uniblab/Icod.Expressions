@@ -1,0 +1,57 @@
+name: Verify one native macOS Intel framework
+description: Build and verify one framework and publish its fresh full-suite result.
+inputs:
+  framework:
+    required: true
+    description: Contract framework to run
+  configuration:
+    required: true
+    description: Staging or Release configuration
+  sdk:
+    required: true
+    description: SDK10 plus the selected framework SDK where needed
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ inputs.sdk }}
+    - name: Restore selected framework
+      shell: bash
+      env:
+        FRAMEWORK: ${{ inputs.framework }}
+      run: dotnet restore Icod.Expressions.sln -p:TargetFrameworks="$FRAMEWORK"
+    - name: Build selected framework
+      shell: bash
+      env:
+        FRAMEWORK: ${{ inputs.framework }}
+        CONFIGURATION: ${{ inputs.configuration }}
+      run: dotnet build Icod.Expressions.sln -c "$CONFIGURATION" --no-restore -p:TargetFrameworks="$FRAMEWORK" -p:ContinuousIntegrationBuild=true
+    - name: Run full suite and verify selected framework results
+      shell: pwsh
+      env:
+        FRAMEWORK: ${{ inputs.framework }}
+        CONFIGURATION: ${{ inputs.configuration }}
+      run: >-
+        ./packaging/Invoke-Tests.ps1
+        -Path tests/Icod.Expressions.Tests.csproj
+        -Configuration $env:CONFIGURATION
+        -Framework $env:FRAMEWORK
+        -ResultsDirectory artifacts/test-results
+        -ContractPath packaging/test-results.json
+    - name: Verify selected framework extraction parity
+      shell: bash
+      env:
+        FRAMEWORK: ${{ inputs.framework }}
+        CONFIGURATION: ${{ inputs.configuration }}
+      run: >-
+        dotnet run --project tools/RegularExpressionParityBaseline/RegularExpressionParityBaseline.csproj
+        -c "$CONFIGURATION" -f "$FRAMEWORK" -p:TargetFrameworks="$FRAMEWORK"
+        -- --verify doc/Icod.Expressions-A04-Parity-Baseline.jsonl
+    - uses: actions/upload-artifact@v4
+      with:
+        name: macos-x64-${{ inputs.framework }}
+        path: artifacts/test-results/*.trx
+        if-no-files-found: error
+        retention-days: 1
+        compression-level: 1

@@ -17,3 +17,7 @@ jobs:
       - name: Verify test result gates
         shell: pwsh
         run: ./tests/Build/TestResults.Tests.ps1
+      - name: Verify complete main job prerequisite
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: sh tests/Build/MainJobs.Tests.sh
