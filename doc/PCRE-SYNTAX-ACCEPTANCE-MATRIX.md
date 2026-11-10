@@ -2281,3 +2281,28 @@ Six CR/LF-excluding negated sets in leading and middle negative lookahead and
 lookbehind compile and preserve pinned PCRE2 10.48 capture spans over 1,680
 fixtures. All 3,360 strict/tolerant comparisons passed without a production
 change. The broader unsupported syntax and issue102 work remain open.
+
+## Negated-range negative assertions before nullable groups (PR203)
+
+The existing bounded proof now admits a leading or middle negative class
+lookahead/lookbehind with one predicate-free negated scalar set and valid
+nonempty excluded ranges. Native PCRE2 10.48 start-bitmap study skips negative
+assertion bodies; their newline membership need not restrict admission.
+The repeated group's mandatory CR-excluding head, single-body shape,
+supported placements, middle-opcode charges, cancellation and 1,000-visit
+ceiling remain. Each range is validated and charged before committing the
+shared visit count. Positive assertion and mandatory-head classification,
+source ExplicitNewline metadata, parser, matcher, API and limits are unchanged.
+
+Original immutable test blob `2aba532d50a5b630c5180ab18f3b3d7399387489`
+adds840 full-capture fixtures/1680 strict+tolerant checks for endpoint-implicit
+CR/LF-excluding ranges. [Test-only run610](https://github.com/uniblab/Icod.Expressions/actions/runs/42760807042)
+compiled cleanly on six native runners and failed420 CRLF cases per framework,
+with40031 passes and zero skips. The separate48 native guard fixtures retain
+ranges excluding onlyCR, onlyLF or neither. [Test-only run611](https://github.com/uniblab/Icod.Expressions/actions/runs/42762304905)
+revealed24 additional CRLF misses and24 passing ordinary controls on the
+inspected LinuxARM64/macOSARM64 frameworks, establishing that requiring both
+newlines to be excluded would be too restrictive. Both test corpora remain
+unchanged after RED. Total committed suite:40499 per framework.
+See the PR203 design and final PR audit. Broader issue102, release qualification
+and consumer migration remain open; Grep stays last.
