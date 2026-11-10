@@ -43,6 +43,9 @@ limits and validated fragment starts bound reads. Neither cache nor lazy Step
 delegate lives on the compiled reusable pattern. Invalid gaps reset usable
 context; start offsets inside valid clusters remain authoritative. Audit
 assertion end limits where zero-width lookaheads are nested in lookbehind.
+Native fixed-width behind allows the forward assertion to see following text;
+native variable behind bounds it at the consuming end. Preserve both, including
+negative-assertion outcomes; the existing scope rules need no correction.
 
 ## Evidence and review
 

@@ -16,7 +16,8 @@ lookbehind. Check that added loop work scales linearly on contiguous RI runs.
 
 ## Task1: Native fixtures and RED
 
-Create tests/Pcre/PcreGraphemeReferenceTests.cs and PcreGraphemeFixtureData.cs;
+Create tests/Pcre/PcreGraphemeReferenceTests.cs, PcreGraphemeFixtureData.cs and
+PcreGraphemeLookaheadScopeTests.cs;
 force raw data LF framing. Replace three obsolete unfrozen pending-X rows with
 other deliberately unsupported constructs; retain bracket/behind diagnostics.
 Publish draft, run full CI, require successful-build unsupported-X RED, freeze
@@ -39,3 +40,12 @@ new test/data blobs. Expected baseline45,948 cases remain qualified.
   build-script/package/API/extraction/workload and exact data regeneration.
   Review all files, unchanged tests and exact proposed merge tree; record
   evidence and mark ready. User owns merge/publication; Grep last.
+
+## Execution evidence
+
+Test-only a3c2c74 / RED631 run42892405304, Linux x64 job130096658309:
+all frameworks compiled with zero warnings/errors. Each suite46006:53
+expected new failures,45953 passes,0skips. All45948 baseline cases pass.
+New tests/data fixed after RED; additional variable-behind scope fixtures
+pin native bounded behavior, alongside the existing fixed-behind fixtures.
+No assertion-scope implementation correction is warranted by the oracle.
