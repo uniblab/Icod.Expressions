@@ -65,7 +65,7 @@ public sealed class PcreByteAtomTests {
 
 	[Theory]
 	[InlineData( "\\q" )]
-	[InlineData( "\\p{Alphabetic}" )]
+	[InlineData( "\\p{IsAlphabetic}" )]
 	public void RejectsPendingEscapesInsteadOfLiteralizingThem( string pattern ) {
 		var result = PcreByteCompiler.Compile( System.Text.Encoding.ASCII.GetBytes( pattern ) );
 		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );

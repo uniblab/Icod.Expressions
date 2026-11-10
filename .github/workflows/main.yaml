@@ -79,6 +79,15 @@ jobs:
           dotnet run --project tools/GeneratePcreUnicodeScripts -c Release -- --verify \
             "$RUNNER_TEMP/Scripts.txt" "$RUNNER_TEMP/ScriptExtensions.txt" "$RUNNER_TEMP/PropertyValueAliases.txt" \
             src/Pcre/PcreUnicodeScripts.Data.cs
+          for unicode_property_source in PropList.txt DerivedCoreProperties.txt emoji-data.txt BidiMirroring.txt DerivedBidiClass.txt PropertyAliases.txt; do
+            curl --fail --silent --show-error --location --retry 3 \
+              "https://raw.githubusercontent.com/PCRE2Project/pcre2/7978954dbd2efc6f2196869290553cf1871b4ce6/maint/Unicode.tables/$unicode_property_source" \
+              --output "$RUNNER_TEMP/$unicode_property_source"
+          done
+          dotnet run --project tools/GeneratePcreUnicodeProperties -c Release -- --verify \
+            "$RUNNER_TEMP/PropList.txt" "$RUNNER_TEMP/DerivedCoreProperties.txt" "$RUNNER_TEMP/emoji-data.txt" \
+            "$RUNNER_TEMP/BidiMirroring.txt" "$RUNNER_TEMP/DerivedBidiClass.txt" "$RUNNER_TEMP/PropertyAliases.txt" \
+            "$RUNNER_TEMP/PropertyValueAliases.txt" src/Pcre/PcreUnicodeProperties.Data.cs
 
       - name: Verify exact extraction parity
         shell: bash

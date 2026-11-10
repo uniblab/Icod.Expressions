@@ -211,11 +211,12 @@ public sealed class PcreSpecialPropertyReferenceTests {
 	}
 
 	[Fact]
-	public void ExistingBinaryFamiliesKeepTheirLibraryGate() {
+	public void BinaryFamiliesUseTheSharedPropertyPath() {
 		foreach ( var pattern in new[] { @"\p{Emoji}", @"\p{Alphabetic}" } ) {
 			foreach ( var utf8 in new[] { false, true } ) {
-				_ = Reference( pattern, utf8: utf8 );
-				Diagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax, 0, utf8: utf8 );
+				var subject = "A"u8.ToArray();
+				var native = Reference( pattern, utf8: utf8 );
+				Compare( native, subject, 0, Compile( pattern, new PcreByteOptions { Utf8 = utf8 } ).Match( subject ), pattern );
 			}
 		}
 	}

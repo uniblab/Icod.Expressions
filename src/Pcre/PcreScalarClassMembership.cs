@@ -9,6 +9,9 @@ internal static class PcreScalarClassMembership {
 		if ( kind is PcreByteScalarClassKind.Script or PcreByteScalarClassKind.ScriptExtensions ) {
 			return PcreUnicodeScripts.Contains( scalar, propertyValue, kind == PcreByteScalarClassKind.ScriptExtensions );
 		}
+		if ( kind is PcreByteScalarClassKind.BinaryProperty or PcreByteScalarClassKind.BidiClass ) {
+			return PcreUnicodeProperties.Contains( scalar, propertyValue, kind == PcreByteScalarClassKind.BidiClass );
+		}
 		if ( kind == PcreByteScalarClassKind.AnyScalar ) { return true; } // Decoder admits valid scalars only.
 		if ( kind == PcreByteScalarClassKind.UniversalCharacterName ) { return scalar is '$' or '@' or '`' or >= 0xA0; }
 		if ( kind == PcreByteScalarClassKind.Letter && scalar <= 0x7F ) {

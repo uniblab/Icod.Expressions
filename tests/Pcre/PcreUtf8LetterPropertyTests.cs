@@ -69,9 +69,9 @@ public sealed class PcreUtf8LetterPropertyTests {
 	}
 
 	[Theory]
-	[InlineData( "\\p{Alphabetic}", 0, true )]
-	[InlineData( "\\p{Alphabetic}", 0, false )]
-	public void UnimplementedPropertyFamiliesRemainExplicitlyUnsupported( string pattern, int offset, bool utf8 ) {
+	[InlineData( "\\p{IsAlphabetic}", 0, true )]
+	[InlineData( "\\p{IsAlphabetic}", 0, false )]
+	public void UnsupportedPropertyNamesRemainExplicitlyUnsupported( string pattern, int offset, bool utf8 ) {
 		var result = PcreByteCompiler.Compile( Encoding.UTF8.GetBytes( pattern ),
 			new PcreByteOptions { Utf8 = utf8 } );
 		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );

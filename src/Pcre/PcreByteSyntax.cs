@@ -23,7 +23,7 @@ internal enum PcreByteScalarClassKind {
 	UnicodePrintable, UnicodePunctuation, UnicodeUpper, UnicodeHexDigit,
 	CategoryOther, CasedLetter, CategoryMark, CategoryNumber, CategoryPunctuation,
 	CategorySymbol, CategorySeparator, SpecificCategory, HorizontalSpace, VerticalSpace,
-	AnyScalar, UniversalCharacterName, Script, ScriptExtensions
+	AnyScalar, UniversalCharacterName, Script, ScriptExtensions, BinaryProperty, BidiClass
 }
 
 internal sealed record PcreByteScalarClass(
