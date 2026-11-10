@@ -80,7 +80,7 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: bash
         run: sh tools/verify-frozen-source.sh
-      - name: Verify pinned Unicode category regeneration
+      - name: Verify pinned Unicode data regeneration
         if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |
@@ -89,6 +89,11 @@ jobs:
             --output "$RUNNER_TEMP/DerivedGeneralCategory.txt"
           dotnet run --project tools/GeneratePcreUnicodeCategories -c Staging -- --verify \
             "$RUNNER_TEMP/DerivedGeneralCategory.txt" src/Pcre/PcreUnicodeCategories.Data.cs
+          curl --fail --silent --show-error --location --retry 3 \
+            https://raw.githubusercontent.com/PCRE2Project/pcre2/7978954dbd2efc6f2196869290553cf1871b4ce6/maint/Unicode.tables/CaseFolding.txt \
+            --output "$RUNNER_TEMP/CaseFolding.txt"
+          dotnet run --project tools/GeneratePcreUnicodeCaseFold -c Staging -- --verify \
+            "$RUNNER_TEMP/CaseFolding.txt" src/Pcre/PcreUtf8CaseFold.Data.cs
 
       - name: Compare Grep PCRE component workload smoke
         if: matrix.os == 'ubuntu-latest'

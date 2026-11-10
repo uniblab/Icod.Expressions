@@ -1,7 +1,9 @@
-The PCRE Unicode general-category data in
-src/Pcre/PcreUnicodeCategories.Data.cs is derived from the Unicode Character
-Database 17.0.0 (DerivedGeneralCategory.txt, Copyright © 2025 Unicode, Inc.).
+The PCRE Unicode general-category and simple-case data in
+src/Pcre/PcreUnicodeCategories.Data.cs and src/Pcre/PcreUtf8CaseFold.Data.cs
+are derived from the Unicode Character Database 17.0.0:
+DerivedGeneralCategory.txt and CaseFolding.txt (Copyright © 2025 Unicode, Inc.).
 https://www.unicode.org/Public/17.0.0/ucd/extracted/DerivedGeneralCategory.txt
+https://www.unicode.org/Public/17.0.0/ucd/CaseFolding.txt
 
 UNICODE LICENSE V3
 

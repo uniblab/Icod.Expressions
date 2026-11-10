@@ -44,3 +44,8 @@ installation. Managed verification runs in six-platform/net8/9/10 CI.
 This closes default simple-case table ownership. Extra Turkic modes, full-string
 folding, scripts/binary properties, graphemes/class algebra, optimizer gaps and
 API/release/consumer gates remain distinct. Grep stays last.
+
+Successful-build RED622 on Linux ARM64 observed 17 expected new failures and
+45,829 passes on net8/9/10, with every baseline case passing. Test blob
+`7f2927cdd90176f0cdee90867035bbc3c8803d73` remains unchanged. The local native
+JIT probe verified 1,656 comparison-path cases before implementation.

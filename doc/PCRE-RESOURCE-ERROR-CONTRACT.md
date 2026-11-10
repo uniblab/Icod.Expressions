@@ -2589,3 +2589,30 @@ scripts/binary properties, grapheme/class algebra and broader native optimizer
 parity remain gates. No public API/release/consumer change; frozen35 intact and
 Grep last. See `PCRE-UNICODE-CATEGORIES-DESIGN.md`,
 `PCRE-UNICODE-CATEGORIES-PLAN.md` and `PCRE-ROADMAP-STATUS.md`.
+
+
+## Pinned Unicode17 simple-case equivalence
+
+PR208 replaces host Rune uppercase/lowercase round trips and special-case
+patches with the complete Unicode17 C/S mapping used by PCRE2 10.48. The
+existing Fold/Equals/CloseRanges paths retain scalar widths, byte-UCP
+projection, local i/r, source metadata, cancellation and charged matcher work.
+ASCII remains a direct fast path; 1,486 immutable packed mappings occupy
+11,888 data bytes. There is no new VM state, runtime dependency or public API.
+
+Independent native fingerprints cover semantic equivalence classes over all
+1,112,064 valid scalars, both unrestricted and restricted, independently of
+canonical key choice. A native JIT probe verified 1,656 existing comparison-path
+cases. The 35-case test blob remains
+`7f2927cdd90176f0cdee90867035bbc3c8803d73` after successful-build RED622:
+Linux ARM64 had 17 expected new failures and 45,829 passes on each framework;
+all 45,811 baseline cases passed. Live fixtures include new pairs, multi-member
+sets, literals/brackets/ranges, backreferences/assertions, non-growing defaults
+and malformed-UTF offsets/capture widths.
+
+The hash-checked C# generator and Linux byte-for-byte gate make this data
+reproducible; the existing packaged Unicode notice now covers both sources.
+This closes default simple-case table ownership, not full-string F or optional
+Turkic T modes. Remaining syntax, optimizer, API/release and consumer gates stay
+open; frozen35 intact and Grep last. See `PCRE-UNICODE-CASEFOLD-DESIGN.md`,
+`PCRE-UNICODE-CASEFOLD-PLAN.md` and `PCRE-ROADMAP-STATUS.md`.
