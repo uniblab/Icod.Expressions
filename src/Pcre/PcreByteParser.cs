@@ -811,7 +811,8 @@ internal sealed partial class PcreByteParser {
 		}
 		if ( name.Length == 0 ) { throw Invalid( offset, "property escape requires a name" ); }
 		return CreatePropertyClass( GeneralCategory( name, negated ) ?? ( categoryOnly ? null : SpecialProperty( name, negated ) )
-			?? ( categoryOnly ? null : ScriptProperty( name, negated, offset ) ) ?? throw Unsupported( offset ) );
+			?? ( categoryOnly ? null : ScriptProperty( name, negated, offset ) )
+			?? ( categoryOnly ? null : BinaryBidiProperty( name, negated, offset ) ) ?? throw Unsupported( offset ) );
 	}
 
 	private static PcreByteScalarClass? ScriptProperty( string name, bool negated, int offset ) {
@@ -827,6 +828,23 @@ internal sealed partial class PcreByteParser {
 		}
 		return PcreUnicodeScripts.TryGetScript( name, out var script )
 			? new( extensions ? PcreByteScalarClassKind.ScriptExtensions : PcreByteScalarClassKind.Script, negated, PropertyValue: script )
+			: null;
+	}
+
+	private static PcreByteScalarClass? BinaryBidiProperty( string name, bool negated, int offset ) {
+		if ( PcreUnicodeProperties.TryGetBinary( name, out var binary ) ) {
+			return new( PcreByteScalarClassKind.BinaryProperty, negated, PropertyValue: binary );
+		}
+		if ( name.StartsWith( "BIDI", StringComparison.Ordinal ) && PcreUnicodeProperties.TryGetBidi( name[4..], out var bare ) ) {
+			return new( PcreByteScalarClassKind.BidiClass, negated, PropertyValue: bare );
+		}
+		var separator = name.IndexOf( ':' );
+		if ( separator < 0 ) { separator = name.IndexOf( '=' ); }
+		if ( separator < 0 || name[..separator] is not ( "BC" or "BIDICLASS" ) ) { return null; }
+		var value = name[( separator + 1 )..];
+		if ( value.Length == 0 ) { throw Invalid( offset, "Bidi property requires a value" ); }
+		return PcreUnicodeProperties.TryGetBidi( value, out var bidi )
+			? new( PcreByteScalarClassKind.BidiClass, negated, PropertyValue: bidi )
 			: null;
 	}
 

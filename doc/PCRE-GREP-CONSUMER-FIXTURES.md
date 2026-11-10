@@ -2484,3 +2484,36 @@ Binary/Bidi properties, script runs, graphemes/class algebra and broader
 optimizer/API/release/consumer gates remain open. Frozen35/frozen214 preserved,
 no public API/version/publication/migration change, Grep last. See
 `PCRE-UNICODE-SCRIPTS-DESIGN.md` and `PCRE-UNICODE-SCRIPTS-PLAN.md`.
+
+
+## Unicode17 binary and Bidi properties
+
+PR210 completes the PCRE2 10.48 property catalogue:57 binary predicates,
+106 normalized binary aliases and23 short Bidi_Class values. Binary names
+are bare; BC/Bidi_Class accept colon/equal, and native bare bidi-prefixed
+values are preserved. InCB means native non-None membership, and
+Bidi_Mirrored follows the native mirroring list. Unassigned Bidi ranges
+retain ordered @missing defaults. Long Bidi values, Is/block names,
+Boolean assignments and wrong namespaces stay explicitly unsupported.
+
+Binary/Bidi predicates reuse immutable PropertyValue and the existing
+ScalarClass/ScalarSet opcodes. They ignore UCP/i/r/ASCII policy, use the
+same byte projection and preserve complements, capture widths, journals,
+Step and cancellation. Bounded per-property interval searches require no
+runtime files, host Unicode service, native fallback or new VM state.
+The C# generator checks seven pinned source hashes and the native9-byte
+record fingerprint over all1,112,064 valid scalars; Linux CI verifies exact
+regeneration. The package includes the expanded Unicode notice.
+
+The test-only RED629 compiled without warnings/errors and had47 expected
+feature failures/45,901 passes on each framework. New immutable tests and
+fixtures pin7,706 native state boundaries, all aliases/Bidi forms, every
+byte value, nested grammar, malformed UTF, resources and diagnostic spans.
+Independent native JIT probes verified1,232,960 boundary/capture outcomes
+and47 grammar cases. See PCRE-BINARY-BIDI-PROPERTIES-DESIGN.md and
+PCRE-BINARY-BIDI-PROPERTIES-PLAN.md for fingerprints and fixed test blobs.
+
+This closes native property coverage, while script-run groups, graphemes,
+class algebra, optional Turkic folding and broader optimizer/UTF16/API,
+performance/release/consumer gates remain open. Frozen35/frozen214 stay
+intact; no public API/version/publication/migration change and Grep last.

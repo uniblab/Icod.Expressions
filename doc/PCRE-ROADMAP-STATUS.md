@@ -1,6 +1,6 @@
 # PCRE roadmap status
 
-Reviewed after PR208, 2026-11-10. Issue7 remains the delivery roadmap; the
+Reviewed after PR209, with PR210 in progress, 2026-11-10. Issue7 remains the delivery roadmap; the
 [syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md),
 [resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) and
 [Grep fixture inventory](PCRE-GREP-CONSUMER-FIXTURES.md) define the detailed gates.
@@ -24,8 +24,9 @@ retaining each framework's complete suite and frozen-result qualification.
    default simple-case mapping, closing host-version dependence in that path.
    Continue offsets, resources and malformed-UTF evidence;
    keep native optimizer differences and unsafe native cases explicitly tracked.
-2. **Expand deliberate syntax coverage.** Script/script-extension properties are implemented in PR209. Binary/Bidi
-   properties, grapheme clusters, extended class algebra, UTF code-unit escape,
+2. **Expand deliberate syntax coverage.** Script/script-extension properties are
+   implemented in PR209; PR210 adds the remaining native binary/Bidi catalogue.
+   Grapheme clusters, extended class algebra, UTF code-unit escape,
    remaining directives/verbs/callouts and other matrix gaps require their own
    pinned reference fixtures. Decide any intentional exclusions before release;
    successful compilation must never imply an unsupported construct works.
@@ -42,13 +43,13 @@ retaining each framework's complete suite and frozen-result qualification.
 
 ## Current increment and next syntax work
 
-PR209 adds all native script/scx properties after the pinned category and
-simple-case tables in PR207/208. It preserves native primary-or-extension
-membership, all aliases/complements, byte projection and existing grammar.
-Source hashes, an exhaustive native membership fingerprint and live JIT
-boundary fixtures qualify data ownership.
+PR210 adds the remaining57 native binary properties/106 aliases and23 Bidi
+values after scripts/scx in PR209 and category/simple-case data in PR207/208.
+It preserves native aliases, unassigned Bidi defaults, InCB/Mirrored rules,
+complements, byte projection and existing grammar. Source hashes, complete
+native fingerprints and live JIT boundary fixtures qualify data ownership.
 
-Binary Unicode and Bidi properties are next, followed by the other deliberate
-syntax families. Script-run groups remain separate from script membership.
+The native property catalogue is covered. Graphemes and extended class algebra
+are the next deliberate syntax work; script-run groups remain a separate gate.
 General optimizer/resource, UTF16/API, realistic consumer performance and
 release gates remain open. Grep stays last; GNU/BRE/ERE and frozen35 stay intact.

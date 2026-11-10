@@ -1,8 +1,11 @@
 The PCRE Unicode data in src/Pcre/PcreUnicodeCategories.Data.cs,
-src/Pcre/PcreUtf8CaseFold.Data.cs and src/Pcre/PcreUnicodeScripts.Data.cs
+src/Pcre/PcreUtf8CaseFold.Data.cs, src/Pcre/PcreUnicodeScripts.Data.cs and
+src/Pcre/PcreUnicodeProperties.Data.cs
 is derived from the Unicode Character Database 17.0.0 (Copyright © 2025
 Unicode, Inc.): DerivedGeneralCategory.txt, CaseFolding.txt, Scripts.txt,
-ScriptExtensions.txt and PropertyValueAliases.txt.
+ScriptExtensions.txt, PropertyValueAliases.txt, PropList.txt,
+DerivedCoreProperties.txt, emoji-data.txt, BidiMirroring.txt,
+DerivedBidiClass.txt and PropertyAliases.txt.
 https://www.unicode.org/Public/17.0.0/ucd/
 
 UNICODE LICENSE V3
