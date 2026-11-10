@@ -316,8 +316,9 @@ internal sealed partial class PcreByteParser {
 			catch ( PcreByteParseException error ) when (
 				error.Diagnostic.Code == PcreByteDiagnosticCode.UnsupportedSyntax
 			) { throw Unsupported( openingOffset ); }
-			return escaped is PcreByteLiteral or PcreByteScalarClass
-				? escaped : throw Unsupported( openingOffset );
+			if ( escaped is PcreByteLiteral or PcreByteScalarClass ) { return escaped; }
+			if ( classAlgebra ) { throw Invalid( openingOffset, "escape is not an extended class member" ); }
+			throw Unsupported( openingOffset );
 		}
 		if ( utf8 && value >= 0x80 ) {
 			PcreUtf8.TryRead( source, offset, out var scalar, out var width ); // Validated at compile entry.

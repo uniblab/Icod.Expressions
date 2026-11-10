@@ -1,6 +1,6 @@
 # PCRE roadmap status
 
-Reviewed after PR210, with PR211 in progress, 2026-11-10. Issue7 remains the delivery roadmap; the
+Reviewed after PR211, with PR212 in progress, 2026-11-10. Issue7 remains the delivery roadmap; the
 [syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md),
 [resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) and
 [Grep fixture inventory](PCRE-GREP-CONSUMER-FIXTURES.md) define the detailed gates.
@@ -26,7 +26,7 @@ retaining each framework's complete suite and frozen-result qualification.
    keep native optimizer differences and unsafe native cases explicitly tracked.
 2. **Expand deliberate syntax coverage.** Script/script-extension properties are
    implemented in PR209; PR210 completes the native binary/Bidi catalogue and
-   PR211 adds atomic grapheme clusters. Extended class algebra, UTF code-unit escape,
+   PR211 adds atomic grapheme clusters. PR212 adds Perl class algebra; UTS#18 activation, UTF code-unit escape,
    remaining directives/verbs/callouts and other matrix gaps require their own
    pinned reference fixtures. Decide any intentional exclusions before release;
    successful compilation must never imply an unsupported construct works.
@@ -43,13 +43,13 @@ retaining each framework's complete suite and frozen-result qualification.
 
 ## Current increment and next syntax work
 
-PR211 adds atomic byte/UTF8 grapheme clusters after PR210 completed native
-property coverage. It preserves the pinned native segmentation rules, RI
-context before the start offset, capture/repetition paths and malformed-UTF
-fragment/scope bounds. Source hashes, a complete native classification
-fingerprint and live JIT fixtures qualify data ownership.
+PR212 implements Perl `(?[...])` class algebra after PR211 completed atomic
+grapheme matching. The native grammar, operator precedence, case closure and
+byte bitmap projection have independent reference fixtures. Heap parser stacks,
+shared compile budgets and charged UTF evaluation preserve bounded execution.
 
-Extended class algebra is the next deliberate syntax work. Script-run groups,
-other matrix gaps, general optimizer/resource conformance, UTF16/API, realistic
+UTS#18 class grammar activated through ALT_EXTENDED_CLASS is the next deliberate
+syntax increment, reusing the algebra representation. Script-run groups, other
+matrix gaps, general optimizer/resource conformance, UTF16/API, realistic
 consumer performance and release gates remain open. Grep stays last; GNU/BRE/ERE
-and frozen35 stay intact.
+and frozen35/frozen214 stay intact.

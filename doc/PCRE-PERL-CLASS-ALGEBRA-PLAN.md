@@ -29,3 +29,9 @@ all frameworks compile with0 warnings/errors; each suite46069 has52 expected
 new failures,46017 baseline passes,0skips. Test blob
 fa40f9c570bb7d80b76beb8f6c10f82d7a715059 and fixture blob
 cf8ce1099aa863199816e218a24644cd50227b1e remain fixed after RED.
+
+Implementation4fcc73d / RED637 run42916734476, macOS ARM64 job130180995200:
+all frameworks46069, one remaining diagnostic failure/46068 passes/0skips,
+clean compilation. The existing bracket reader returned UnsupportedSyntax for
+a non-member anchor escape; algebra must report InvalidSyntax at its opening.
+Correct that classAlgebra-only branch; retain all fixed tests/data unchanged.
