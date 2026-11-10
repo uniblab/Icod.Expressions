@@ -21,3 +21,11 @@ class-level versus predicate complement, mixed Any/property byte projection,
 local whitespace/quote scope, invalid source offsets, nesting and flat term
 budgets, shared compilation budget, cancellation inside one atom, malformed
 fragments and candidate search metadata. UTS#18 activation remains pending.
+
+## Execution evidence
+
+Test-only910b03c / RED636 run42915560079, Linux x64 job130176944661:
+all frameworks compile with0 warnings/errors; each suite46069 has52 expected
+new failures,46017 baseline passes,0skips. Test blob
+fa40f9c570bb7d80b76beb8f6c10f82d7a715059 and fixture blob
+cf8ce1099aa863199816e218a24644cd50227b1e remain fixed after RED.

@@ -50,6 +50,16 @@ internal sealed record PcreByteScalarSet(
 	internal int SourceLiteral { get; init; } = -1;
 }
 
+internal enum PcreScalarSetOperation { Operand, Not, And, Or, Subtract, Xor }
+
+internal readonly record struct PcreScalarSetTerm( PcreScalarSetOperation Operation, PcreByteScalarSet? Operand = null );
+
+internal sealed record PcreByteScalarExpression(
+	ReadOnlyMemory<PcreScalarSetTerm> Terms, int StackDepth, bool ExplicitNewline, int OpeningOffset
+) : PcreByteNode {
+	internal PcreByteSet ByteProjection { get; init; }
+}
+
 internal enum PcreByteClassPrefix { None, Atom, Exact, AnyProperty, Bitmap }
 
 internal sealed record PcreByteClass(
