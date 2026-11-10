@@ -2274,3 +2274,10 @@ new ordinary controls passed. Immutable test blob
 `bfb521fcb21f206cd22d6742f3a36367148509e9` remains unchanged.
 Final six-platform results are in PR201. Issue102 and broader PCRE,
 release and consumer migration gates remain open; Grep remains last.
+
+## Negative negated-set assertion corpus (PR202)
+
+Six CR/LF-excluding negated sets in leading and middle negative lookahead and
+lookbehind compile and preserve pinned PCRE2 10.48 capture spans over 1,680
+fixtures. All 3,360 strict/tolerant comparisons passed without a production
+change. The broader unsupported syntax and issue102 work remain open.

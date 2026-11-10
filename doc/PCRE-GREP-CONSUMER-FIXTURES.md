@@ -2317,3 +2317,11 @@ new ordinary controls passed. Immutable test blob
 `bfb521fcb21f206cd22d6742f3a36367148509e9` remains unchanged.
 Final six-platform results are in PR201. Issue102 and broader PCRE,
 release and consumer migration gates remain open; Grep remains last.
+
+## CR/LF-excluding negated assertion controls (PR202)
+
+The 840 pinned native patterns and 1,680 full-capture fixtures cover leading
+and middle negative lookahead/lookbehind, six negated set spellings, five
+nullable group shapes, CRLF and ordinary subjects. Existing managed matching
+passes 3,360 strict/tolerant comparisons. This is reference coverage for
+already-supported behavior; consumer migration remains gated.
