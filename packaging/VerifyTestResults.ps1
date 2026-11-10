@@ -1,7 +1,8 @@
 param(
     [Parameter(Mandatory)][string]$ResultsDirectory,
     [Parameter(Mandatory)][string]$ContractPath,
-    [DateTimeOffset]$NotBeforeUtc = [DateTimeOffset]::MinValue
+    [DateTimeOffset]$NotBeforeUtc = [DateTimeOffset]::MinValue,
+    [string]$Framework
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
@@ -9,6 +10,10 @@ $contract = Get-Content -LiteralPath $ContractPath -Raw | ConvertFrom-Json -AsHa
 $frameworks = @($contract.expectedFrameworks)
 if ($frameworks.Count -eq 0 -or @($frameworks | Select-Object -Unique).Count -ne $frameworks.Count) {
     throw 'The contract requires distinct expectedFrameworks.'
+}
+if ($Framework) {
+    if ($frameworks -cnotcontains $Framework) { throw 'Selected framework is outside the result contract.' }
+    $frameworks = @($Framework)
 }
 if ($contract.minimumTests -isnot [long] -and $contract.minimumTests -isnot [int]) { throw 'minimumTests must be an integer.' }
 if ($contract.minimumTests -le 0) { throw 'minimumTests must be positive.' }

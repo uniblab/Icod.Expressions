@@ -51,9 +51,6 @@ jobs:
           - os: windows-11-arm
             arch: ARM64
             name: Windows ARM64
-          - os: macos-15-intel
-            arch: x64
-            name: macOS x64
           - os: macos-latest
             arch: ARM64
             name: macOS ARM64
@@ -167,3 +164,55 @@ jobs:
       - name: Run pinned Gnulib included regex oracle
         if: matrix.os == 'ubuntu-latest'
         run: sh tools/GnulibRegexOracle/run.sh
+
+  macos_x64_tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - framework: net8.0
+            sdk: |
+              8.0.x
+              10.0.x
+          - framework: net9.0
+            sdk: |
+              9.0.x
+              10.0.x
+          - framework: net10.0
+            sdk: 10.0.x
+    name: macOS x64 ${{ matrix.framework }}
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/macos-framework
+        with:
+          framework: ${{ matrix.framework }}
+          configuration: ${{ env.CONFIGURATION }}
+          sdk: ${{ matrix.sdk }}
+
+  macos_x64:
+    name: macOS x64
+    needs: macos_x64_tests
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Require every native Intel framework job
+        shell: bash
+        env:
+          FRAMEWORK_RESULT: ${{ needs.macos_x64_tests.result }}
+        run: test "$FRAMEWORK_RESULT" = success
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: macos-x64-*
+          merge-multiple: true
+          path: artifacts/macos-test-results
+      - name: Verify complete three-framework Intel results
+        shell: pwsh
+        run: >-
+          ./packaging/VerifyTestResults.ps1
+          -ResultsDirectory artifacts/macos-test-results
+          -ContractPath packaging/test-results.json

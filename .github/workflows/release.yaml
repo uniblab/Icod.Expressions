@@ -47,7 +47,7 @@ jobs:
             throw "Tag version $version differs from project version $projectVersion."
           }
           "version=$version" >> $env:GITHUB_OUTPUT
-      - name: Require six successful Release CI jobs at this main commit
+      - name: Require complete successful Release CI at this main commit
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -58,7 +58,7 @@ jobs:
             | jq -r --arg sha "$GITHUB_SHA" '[.workflow_runs[] | select(.head_sha == $sha and .head_branch == "main" and .event == "push" and .status == "completed" and .conclusion == "success")] | first | .id // empty')"
           test -n "$run_id" || { echo 'No successful main CI run exists for this exact commit.'; exit 1; }
           gh api --method GET "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/jobs" -f per_page=100 \
-            | jq -e '(.total_count == 6) and ([.jobs[] | select(.status == "completed" and .conclusion == "success")] | length == 6)' > /dev/null
+            | jq -e -f .github/scripts/verify-main-jobs.jq > /dev/null
   validate:
     needs: metadata
     strategy:
