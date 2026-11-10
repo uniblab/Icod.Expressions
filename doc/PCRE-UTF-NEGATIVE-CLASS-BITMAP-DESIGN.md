@@ -34,3 +34,10 @@ Use C#13/net8/9/10 and six native Staging OS/architecture runners. No subagents,
 Python, SDK or PowerShell installation. Local native C probes are temporary
 oracle research; managed validation uses CI. Preserve all40499 baseline tests,
 frozen214 expectations and frozen35 source. Issue102 remains open; Grep last.
+
+Pinned native research used tag `pcre2-10.48`, commit
+`7978954dbd2efc6f2196869290553cf1871b4ce6`, built locally with Unicode/JIT.
+All2,560 strict/tolerant compilations had positive JIT size, LF present and
+CR absent in FIRSTBITMAP. All5,120 full-capture matches had the literal expected
+spans. The corresponding2,560 managed fixtures (5,120 final comparisons) are
+pinned at test blob `c6bc29aab5ea31f66ca486336c48d4c0529f7f46`.

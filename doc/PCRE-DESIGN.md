@@ -2383,3 +2383,26 @@ newlines to be excluded would be too restrictive. Both test corpora remain
 unchanged after RED. Total committed suite:40499 per framework.
 See the PR203 design and final PR audit. Broader issue102, release qualification
 and consumer migration remain open; Grep stays last.
+
+
+## Negative scalar-class assertion bitmap entry (PR204)
+
+The bounded negative-class ahead/behind proof now accepts every already-parsed
+scalar class and nonempty scalar-set range/predicate union, regardless of
+newline membership or negation. PCRE2 10.48 start-bitmap study skips these
+negative assertion bodies before studying the repeated group's mandatory
+CR-excluding head. Positive assertions, consuming-head classification,
+source ExplicitNewline metadata, parser, matcher and limits are unchanged.
+Range validation, per-range/per-predicate cancellation and visit charges,
+supported leading/middle positions and the shared1,000-visit ceiling remain.
+
+Pinned native10.48 JIT research passed2,560 compile/bitmap/JIT-size checks and
+5,120 literal full-capture checks. All start bitmaps includeLF and excludeCR.
+The immutable2,560-fixture blob `c6bc29aab5ea31f66ca486336c48d4c0529f7f46`
+pins5,120 strict/tolerant comparisons across16 bodies, UCP/caseless modes,
+leading/middle negative ahead/behind and five nullable group-repeat shapes.
+[Test-only run613](https://github.com/uniblab/Icod.Expressions/actions/runs/42766233793)
+on LinuxARM64 compiled cleanly and failed1,240 new CRLF cases per framework,
+with41,819 passes and zero skips; all40,499 baseline tests and ordinary controls
+passed. Expected final suite:43,059 per framework. Final CI is recorded in PR204.
+Broader issue102 and PCRE/release qualification remain open; Grep stays last.
