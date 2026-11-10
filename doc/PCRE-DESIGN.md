@@ -2296,3 +2296,28 @@ new ordinary controls passed. Immutable test blob
 `7007ff894cb5412391fe5871017e7f69ed601f84` remains unchanged.
 Final six-platform results are in PR199. Issue102 and broader PCRE,
 release and consumer migration gates remain open; Grep remains last.
++
+## Caseless negative classes before zero-minimum group repeats (PR200)
+
+The bounded optional-bracket UTF proof now admits leading negative
+class lookahead or lookbehind, including caseless bodies, when a single
+supported scalar set or type excludes both CR and LF. Negated and
+predicate-bearing sets, newline-containing ranges, unsupported types
+and compound assertion bodies remain outside this extension. The
+existing mandatory CR-excluding repeated-group head, cancellation,
+1,000-visit ceiling and bounded middle assertions retain their guards.
+Parser, matcher, API, limits and consumers are unchanged.
+
+Pinned PCRE2 10.48 compile/JIT retained LF and excluded CR for 270
+lead/prefix/group patterns with positive JIT sizes and correct native
+spans on CRLF and ordinary subjects. Five hundred forty full-capture
+fixtures / 1,080 strict+tolerant checks cover eighteen negative class
+lookahead/lookbehind leads (ASCII ranges, wide UTF, types and S/K/Kelvin
+folds), three middle prefixes, five nullable group shapes and two
+subjects. Successful-build [test-only RED604](https://github.com/uniblab/Icod.Expressions/actions/runs/42751357677)
+on Linux x64/net8/9/10 failed exactly 270 new CRLF cases per framework,
+with 36,581 passes and zero skips: all 36,311 earlier fixtures and 270
+new ordinary controls passed. Immutable test blob
+`d2a479cd1c70ec0679ca45ea1c0973ef63b42727` remains unchanged.
+Final six-platform results are in PR200. Issue102 and broader PCRE,
+release and consumer migration gates remain open; Grep remains last.

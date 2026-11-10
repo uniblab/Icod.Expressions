@@ -612,6 +612,29 @@ internal sealed class PcreByteProgramCompiler {
 		return true;
 	}
 
+	private bool HasUtfCrLfNegativeClassAssertionBitmap( PcreByteNode node, ref int prefixCost ) {
+		var body = node switch {
+			PcreByteLookahead { IsPositive: false } ahead => ahead.Body,
+			PcreByteLookbehind { IsPositive: false } behind => behind.Body,
+			_ => null
+		};
+		if ( body is null || body.Branches.Count != 1 || body.Branches[0].Count != 1 ) { return false; }
+		var head = body.Branches[0][0];
+		if ( head is not ( PcreByteScalarSet or PcreByteScalarClass ) ) { return false; }
+		var headVisits = 0;
+		if ( !HasUtfCrLfMandatoryBitmapHead( head, ref headVisits )
+			|| prefixCost > MaximumStartClassVisits - 2 - headVisits ) { return false; }
+		if ( head is PcreByteScalarSet set ) {
+			foreach ( var range in set.Ranges.Span ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				if ( range.Start <= '\n' && range.End >= '\n' ) { return false; }
+			}
+		}
+		// Supported scalar types and the checked sets exclude both CR and LF.
+		prefixCost += 2 + headVisits;
+		return true;
+	}
+
 	private bool HasUtfCrLfLeadingAssertionZeroGroupRepeatBitmap( IReadOnlyList<PcreByteNode> branch, ref int visits ) {
 		// This nullable repeat cannot establish a mandatory consuming head.
 		// Require a bounded leading assertion and a CR-excluding repeated-group head.
@@ -627,7 +650,8 @@ internal sealed class PcreByteProgramCompiler {
 		} else if ( branch[0] is PcreByteLiteralAssertion { IsPositive: false } negative ) {
 			// A bounded newline-free negative assertion can fall through the optional group at LF.
 			if ( !HasUtfCrLfLeadingNegativeLiteralBitmap( negative ) ) { return false; }
-		} else if ( !HasUtfCrLfPositiveClassAssertionBitmap( branch[0], ref prefixCost, 0 ) ) { return false; }
+		} else if ( !HasUtfCrLfPositiveClassAssertionBitmap( branch[0], ref prefixCost, 0 )
+			&& !HasUtfCrLfNegativeClassAssertionBitmap( branch[0], ref prefixCost ) ) { return false; }
 		var allowCaselessMiddle = branch[0].Caseless && branch[0] is
 			( PcreByteLiteralAssertion or PcreByteLookahead or PcreByteLookbehind );
 		for ( var index = 1; index < branch.Count - 1; index++ ) {
