@@ -622,23 +622,21 @@ internal sealed class PcreByteProgramCompiler {
 		var head = body.Branches[0][0];
 		if ( head is not ( PcreByteScalarSet or PcreByteScalarClass ) ) { return false; }
 		var headVisits = 0;
-		if ( head is PcreByteScalarSet { Negated: true } excluded ) {
-			if ( !excluded.Predicates.IsEmpty || excluded.Ranges.IsEmpty ) { return false; }
-			foreach ( var range in excluded.Ranges.Span ) {
+		if ( head is PcreByteScalarSet set ) {
+			if ( set.Ranges.IsEmpty && set.Predicates.IsEmpty ) { return false; }
+			foreach ( var range in set.Ranges.Span ) {
 				cancellationToken.ThrowIfCancellationRequested();
 				if ( ++headVisits > MaximumStartClassVisits || range.Start < 0 || range.End > 0x10FFFF
 					|| range.Start > range.End ) { return false; }
 			}
-		} else if ( !HasUtfCrLfMandatoryBitmapHead( head, ref headVisits ) ) { return false; }
-		if ( prefixCost > MaximumStartClassVisits - opcodeCost - 2 - headVisits ) { return false; }
-		if ( head is PcreByteScalarSet { Negated: false } set ) {
-			foreach ( var range in set.Ranges.Span ) {
+			foreach ( var predicate in set.Predicates.Span ) {
 				cancellationToken.ThrowIfCancellationRequested();
-				if ( range.Start <= '\n' && range.End >= '\n' ) { return false; }
+				if ( ++headVisits > MaximumStartClassVisits ) { return false; }
 			}
 		}
-		// Native study skips a negative assertion body. A negated set need not
-		// exclude CR/LF; the repeated group's mandatory head is checked separately.
+		if ( prefixCost > MaximumStartClassVisits - opcodeCost - 2 - headVisits ) { return false; }
+		// Native study skips negative assertion bodies independently of scalar
+		// membership. The repeated group's mandatory head is checked separately.
 		prefixCost += opcodeCost + 2 + headVisits;
 		return true;
 	}
