@@ -211,8 +211,8 @@ public sealed class PcreSpecialPropertyReferenceTests {
 	}
 
 	[Fact]
-	public void ExistingScriptAndBinaryFamiliesKeepTheirLibraryGate() {
-		foreach ( var pattern in new[] { @"\p{Greek}", @"\p{Alphabetic}" } ) {
+	public void ExistingBinaryFamiliesKeepTheirLibraryGate() {
+		foreach ( var pattern in new[] { @"\p{Emoji}", @"\p{Alphabetic}" } ) {
 			foreach ( var utf8 in new[] { false, true } ) {
 				_ = Reference( pattern, utf8: utf8 );
 				Diagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax, 0, utf8: utf8 );

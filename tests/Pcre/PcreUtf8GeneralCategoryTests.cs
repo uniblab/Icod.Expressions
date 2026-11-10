@@ -122,9 +122,9 @@ public sealed class PcreUtf8GeneralCategoryTests {
 	}
 
 	[Theory]
-	[InlineData( @"\p{Greek}", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( @"\p{Emoji}", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
 	[InlineData( @"\p{gc:Greek}", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( @"\p{Script=Greek}", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( @"\p{Bidi_Class=L}", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
 	[InlineData( @"\p{Cq}", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
 	[InlineData( @"\p{Letter}", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
 	[InlineData( @"[a-\p{N}]", (int)PcreByteDiagnosticCode.InvalidSyntax )]
