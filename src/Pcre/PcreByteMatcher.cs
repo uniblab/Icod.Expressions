@@ -76,6 +76,7 @@ internal static partial class PcreByteMatcher {
 			return new( null, null );
 		}
 		var work = 0;
+		bool[]? scalarExpressionStack = null;
 		void Step() => ChargeWork( ref work, matchWorkLimit, workObserver, cancellationToken );
 		void SkipFailedLiteralCandidates( long count ) {
 			// A capture wrapper adds one instruction before the failed literal.
@@ -274,6 +275,16 @@ internal static partial class PcreByteMatcher {
 									utfRepeatEnd = Math.Max( utfRepeatEnd, position );
 								}
 								pc++;
+							} else { failed = true; }
+							break;
+						case PcreByteOpcode.ScalarExpression:
+							Step();
+							if ( position < subjectEnd && PcreUtf8.TryRead( input.Span, position, out var expressionScalar, out var expressionWidth )
+								&& expressionWidth <= subjectEnd - position
+								&& ContainsScalarExpression( instruction.Terms, expressionScalar,
+									scalarExpressionStack ??= new bool[program.ScalarExpressionStackDepth],
+									ref work, matchWorkLimit, workObserver, cancellationToken ) ) {
+								position += expressionWidth; pc++;
 							} else { failed = true; }
 							break;
 						case PcreByteOpcode.ScalarSet:

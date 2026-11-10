@@ -2724,3 +2724,34 @@ backward probes. Strict mode keeps its contiguous RI memo. Eight additional
 immutable regressions were observed failing in successful-build RED634 before
 the correction (9failures/46008passes,46017total). Native probes qualify every
 valid prefix scalar and672 compound-prefix cases.
+
+
+## Perl extended class algebra (PR212)
+
+The internal byte/UTF8 compiler supports Perl `(?[...])` as one scalar:
+operand complement, intersection, union (`|`/`+`), subtraction, symmetric
+difference and grouping. Native precedence is `!`, then `&`, then equally
+binding left-associative `| + - ^`. Operands reuse escaped literals,
+shorthands, pinned Unicode predicates, direct POSIX names and ordinary brackets.
+Spaces/tabs are ignored locally; other ordinary pattern trivia is not.
+
+Postfix terms avoid recursive parsing/evaluation. Native class nesting is
+bounded at15; terms share the4096 compilation budget, including byte-mode
+expressions. Operand case closure precedes algebra. Byte expressions project
+to a precomputed bitmap with native mixed-Any/property bitmap behavior. UTF
+evaluation uses one lazy scratch array per Match, charging every term and
+interval/predicate probe to the existing work/cancellation contract. Captures,
+frames, malformed fragments and width-one lookbehind use existing machinery.
+
+PcrePerlClassAlgebraReferenceTests and fixed native fixture masks qualify308
+expressions ×8 profiles ×256 values and12 expressions ×4 profiles ×7592
+Unicode boundary scalars, plus52 total test cases covering grammar, source
+offsets, folding, capture/repetition/behind, malformed UTF and exact limits.
+The tests-first successful-build RED636 retained all46017 baseline passes.
+See PCRE-PERL-CLASS-ALGEBRA-DESIGN.md and PCRE-PERL-CLASS-ALGEBRA-PLAN.md.
+
+UTS#18's ALT_EXTENDED_CLASS activation remains a separate frontend increment.
+General start-optimizer equivalence (issue102), script-run groups, UTF code-unit
+escape, directives/verbs/callouts, UTF16/API, realistic performance and release/
+consumer gates remain open. GNU/BRE/ERE, frozen35/frozen214 and public API stay
+intact. Grep stays last; no publication/migration change.

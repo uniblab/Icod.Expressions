@@ -262,7 +262,7 @@ internal sealed partial class PcreByteParser {
 				var sourceKind = sourceTermCount == 1 && soleLiteral
 					? PcreByteScalarSetSource.Literal : PcreByteScalarSetSource.Class;
 				var sourceLiteral = sourceKind == PcreByteScalarSetSource.Literal ? ranges[0].Start : -1;
-				return new( caseless ? PcreUtf8CaseFold.CloseRanges( ranges, cancellationToken, caselessRestricted )
+				return new( caseless && utf8 ? PcreUtf8CaseFold.CloseRanges( ranges, cancellationToken, caselessRestricted )
 					: ranges.ToArray(), predicates.ToArray(), negated,
 					explicitNewline && !( negated && sourceTermCount == 1 && soleLiteral ) ) {
 					Source = sourceKind, SourceLiteral = sourceLiteral
@@ -316,10 +316,11 @@ internal sealed partial class PcreByteParser {
 			catch ( PcreByteParseException error ) when (
 				error.Diagnostic.Code == PcreByteDiagnosticCode.UnsupportedSyntax
 			) { throw Unsupported( openingOffset ); }
-			return escaped is PcreByteLiteral or PcreByteScalarClass
-				? escaped : throw Unsupported( openingOffset );
+			if ( escaped is PcreByteLiteral or PcreByteScalarClass ) { return escaped; }
+			if ( classAlgebra ) { throw Invalid( openingOffset, "escape is not an extended class member" ); }
+			throw Unsupported( openingOffset );
 		}
-		if ( value >= 0x80 ) {
+		if ( utf8 && value >= 0x80 ) {
 			PcreUtf8.TryRead( source, offset, out var scalar, out var width ); // Validated at compile entry.
 			index = offset + width;
 			return new PcreByteLiteral( scalar );
@@ -635,24 +636,24 @@ internal sealed partial class PcreByteParser {
 		if ( value is (byte)'h' or (byte)'H' or (byte)'v' or (byte)'V' ) {
 			var horizontal = value is (byte)'h' or (byte)'H';
 			var negated = value is (byte)'H' or (byte)'V';
-			if ( utf8 ) {
+			if ( utf8 || classAlgebra ) {
 				return new PcreByteScalarClass( horizontal ? PcreByteScalarClassKind.HorizontalSpace
 					: PcreByteScalarClassKind.VerticalSpace, negated );
 			}
 			var set = horizontal ? PcreByteSet.HorizontalSpace : PcreByteSet.VerticalSpace;
 			return new PcreByteClass( negated ? set.Complement() : set );
 		}
-		if ( ( utf8 || ucp ) && ( value is (byte)'d' or (byte)'D' ) ) {
+		if ( ( utf8 || ucp || classAlgebra ) && ( value is (byte)'d' or (byte)'D' ) ) {
 			var unicode = ucp && !HasAsciiRestriction( AsciiRestriction.BackslashD );
 			return CreatePropertyClass( new( unicode ? PcreByteScalarClassKind.DecimalDigit
 				: PcreByteScalarClassKind.AsciiDigit, value == (byte)'D' ), !inBracket || unicode );
 		}
-		if ( ( utf8 || ucp ) && ( value is (byte)'w' or (byte)'W' ) ) {
+		if ( ( utf8 || ucp || classAlgebra ) && ( value is (byte)'w' or (byte)'W' ) ) {
 			var unicode = ucp && !HasAsciiRestriction( AsciiRestriction.BackslashW );
 			return CreatePropertyClass( new( unicode ? PcreByteScalarClassKind.UnicodeWord
 				: PcreByteScalarClassKind.AsciiWord, value == (byte)'W' ), !inBracket || unicode );
 		}
-		if ( ( utf8 || ucp ) && ( value is (byte)'s' or (byte)'S' ) ) {
+		if ( ( utf8 || ucp || classAlgebra ) && ( value is (byte)'s' or (byte)'S' ) ) {
 			var unicode = ucp && !HasAsciiRestriction( AsciiRestriction.BackslashS );
 			return CreatePropertyClass( new( unicode ? PcreByteScalarClassKind.UnicodeSpace
 				: PcreByteScalarClassKind.AsciiSpace, value == (byte)'S' ), !inBracket || unicode );
@@ -853,7 +854,7 @@ internal sealed partial class PcreByteParser {
 	}
 
 	private PcreByteNode CreatePropertyClass( PcreByteScalarClass property, bool prefixAny = true ) {
-		if ( utf8 ) { return property; }
+		if ( utf8 || classAlgebra ) { return property; }
 		var members = PcreByteSet.FromPredicate( value => {
 			cancellationToken.ThrowIfCancellationRequested();
 			return PcreScalarClassMembership.Contains( property.Kind, value, property.Category, caseless, property.PropertyValue ) != property.Negated;

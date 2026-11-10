@@ -240,6 +240,7 @@ internal sealed partial class PcreByteParser {
 
 	private PcreByteNode? ParseGroupOpening( int offset, int depth, int assertionOpeningContext, out GroupFrame? group ) {
 		group = null;
+		if ( source.AsSpan( index ).StartsWith( "?["u8 ) ) { index += 2; return ParsePerlClass( offset ); }
 		var capturing = !noAutoCapture;
 		var atomic = false;
 		var branchReset = false;

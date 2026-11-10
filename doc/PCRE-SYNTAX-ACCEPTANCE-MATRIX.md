@@ -33,10 +33,11 @@ the matcher returns spans, leaving framing, status and output to Grep.
 | `\R` newline sequence | Atomic CRLF-first matching; Unicode line endings by default, internal `BsrAnyCrLf` restriction independent of newline convention; invalid in brackets | `PcreNewlineSequenceReferenceTests`; membership, captures/repetition, every CRLF/invalid-UTF offset, work and expansion limits |
 | `\N` non-newline, UTF `\N{U+...}` literal | Bare form obeys LF/AnyCRLF and ignores DotAll; counted repetitions supported; Unicode codepoint form shares braced-hex literal/range/fixed-assertion rules | `PcreNonNewlineReferenceTests`; byte/scalar membership, braced-form disambiguation, captures, offsets and diagnostics |
 | Bare and braced octal literals | Default up-to-three-digit octals and `\o{...}` in byte/UTF atoms, brackets/ranges and fixed literal assertions; byte/scalar range checks, brace-edge space/tab | `PcreNumericEscapeReferenceTests`; all 256 byte values, UTF bounds, quoting, offsets and diagnostics; extra Python/NO_BS0 modes pending |
-| Ordinary `[ ]` ranges, negation, shorthand unions, 14 POSIX names | Supported subset in byte and UTF modes; nested/extended class algebra pending, rejected | Bracket and POSIX tests; Unicode table/version reconciliation |
+| Ordinary `[ ]` ranges, negation, shorthand unions, 14 POSIX names | Supported subset in byte and UTF modes; ordinary bracket grammar unchanged, Perl algebra listed separately | Bracket and POSIX tests; Unicode table/version reconciliation |
 | `\p`/`\P` general categories and special properties | Byte/UTF categories plus Any/Xan/Xps/Xsp/Xwd/Xuc; loose names, P/caret complements and property predicates independent of UCP/ASCII/i/r. Category-prefixed aliases remain a library extension for categories only. UTF class source operands/endpoints preserve CR/LF flags before folding, including the native negated-singleton exception. Scripts/scx now have pinned Unicode17 data; binary/Bidi properties now have pinned native data | `PcreBytePropertyReferenceTests`, `PcreSpecialPropertyReferenceTests`, `PcreClassNewlineMetadataReferenceTests`, `PcreUtf8GeneralCategoryTests`; see `PCRE-SPECIAL-PROPERTIES-DESIGN.md`; Unicode17 categories and default simple-case mappings are pinned; byte search-optimization parity remains a gate |
 | Unicode script/scx properties | All175 scripts/344 normalized long, short and legacy aliases; bare names are scx, explicit sc/Script and scx/Script_Extensions, native primary-or-extension membership, byte projection and mixed predicates | `PcreScriptPropertyReferenceTests`, 3508 native boundaries and source-hash/native-fingerprint-checked regeneration; script-run groups remain separate |
 | Unicode binary/Bidi properties | All57 binary predicates/106 aliases and23 Bidi short values, native bare bidi names, byte/UTF projection, complements and mixed predicates; UCP/i/r/ASCII independent | `PcreBinaryBidiPropertyReferenceTests`, 7706 native boundaries, source hashes/native fingerprint and exact C# regeneration; long Bidi values, Is/block names and boolean assignments rejected |
+| Perl `(?[...])` extended character classes | Complement, intersection, union, subtraction, symmetric difference, grouping; escaped/property/POSIX/bracket operands, local space/tab grammar, operand case folding, native byte projection | `PcrePerlClassAlgebraReferenceTests`, fixed native JIT masks, bounded nesting/shared compilation and match work; UTS#18 activation remains pending |
 | Atomic \X grapheme clusters | Byte/UTF8, pinned Unicode17/native rules, atomic clusters and whole-cluster repeats, RI prefix context and fragment/scope bounds | `PcreGraphemeReferenceTests`, `PcreGraphemeLookaheadScopeTests`; native table exceptions pinned; brackets invalid, consuming lookbehind unsupported |
 | `* + ? {n,m}` greedy/lazy and possessive forms | Supported subset, bounded expansion and work; direct lookaround repeats use finite PCRE2 bounds (unlimited maximum becomes minimum plus one) | Counted-repeat, atomic and `PcreAssertionRepeatReferenceTests`; capture growth, optional rollback, zero counts, UTF offsets and resource limits; stress limits against consumer workloads |
 | `(?>...)` atomic group | Supported subset, including exact lowercase `(*atomic:...)` | `PcreAtomicTests`, `PcreGroupAliasReferenceTests` |
@@ -2521,3 +2522,34 @@ backward probes. Strict mode keeps its contiguous RI memo. Eight additional
 immutable regressions were observed failing in successful-build RED634 before
 the correction (9failures/46008passes,46017total). Native probes qualify every
 valid prefix scalar and672 compound-prefix cases.
+
+
+## Perl extended class algebra (PR212)
+
+The internal byte/UTF8 compiler supports Perl `(?[...])` as one scalar:
+operand complement, intersection, union (`|`/`+`), subtraction, symmetric
+difference and grouping. Native precedence is `!`, then `&`, then equally
+binding left-associative `| + - ^`. Operands reuse escaped literals,
+shorthands, pinned Unicode predicates, direct POSIX names and ordinary brackets.
+Spaces/tabs are ignored locally; other ordinary pattern trivia is not.
+
+Postfix terms avoid recursive parsing/evaluation. Native class nesting is
+bounded at15; terms share the4096 compilation budget, including byte-mode
+expressions. Operand case closure precedes algebra. Byte expressions project
+to a precomputed bitmap with native mixed-Any/property bitmap behavior. UTF
+evaluation uses one lazy scratch array per Match, charging every term and
+interval/predicate probe to the existing work/cancellation contract. Captures,
+frames, malformed fragments and width-one lookbehind use existing machinery.
+
+PcrePerlClassAlgebraReferenceTests and fixed native fixture masks qualify308
+expressions ×8 profiles ×256 values and12 expressions ×4 profiles ×7592
+Unicode boundary scalars, plus52 total test cases covering grammar, source
+offsets, folding, capture/repetition/behind, malformed UTF and exact limits.
+The tests-first successful-build RED636 retained all46017 baseline passes.
+See PCRE-PERL-CLASS-ALGEBRA-DESIGN.md and PCRE-PERL-CLASS-ALGEBRA-PLAN.md.
+
+UTS#18's ALT_EXTENDED_CLASS activation remains a separate frontend increment.
+General start-optimizer equivalence (issue102), script-run groups, UTF code-unit
+escape, directives/verbs/callouts, UTF16/API, realistic performance and release/
+consumer gates remain open. GNU/BRE/ERE, frozen35/frozen214 and public API stay
+intact. Grep stays last; no publication/migration change.

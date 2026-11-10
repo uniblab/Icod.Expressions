@@ -9,6 +9,7 @@ internal enum PcreByteOpcode {
 	Any,
 	ScalarClass,
 	ScalarSet,
+	ScalarExpression,
 	Class,
 	Backreference,
 	CaptureTest,
@@ -46,7 +47,7 @@ internal sealed record PcreByteInstruction(
 	ReadOnlyMemory<byte> Bytes = default, ReadOnlyMemory<PcreByteScalarRange> Ranges = default,
 	ReadOnlyMemory<PcreByteScalarPredicate> Predicates = default, UnicodeCategory? Category = null,
 	bool Caseless = false, bool CaselessRestricted = false, ReadOnlyMemory<int> CaptureNumbers = default,
-	bool SkipCrLfAfterRepeat = false, int PropertyValue = 0
+	bool SkipCrLfAfterRepeat = false, int PropertyValue = 0, ReadOnlyMemory<PcreScalarSetTerm> Terms = default
 );
 
 internal readonly record struct PcreBytePrefixLiteral( int ByteOffset, int Value, bool Caseless, bool CaselessRestricted );
@@ -57,6 +58,7 @@ internal sealed record PcreByteProgram(
 	bool CanMatchEmptyAtAnyOffset, bool ByteCrLfPrefix, bool UtfCrLfStartClass, bool NotEmpty, bool NotEmptyAtStart,
 	bool LineStartSearch, bool Ucp, PcreBytePrefixLiteral? ByteCrLfPrefixLiteral
 ) {
+	internal int ScalarExpressionStackDepth { get; init; }
 	internal bool AnyCrLfNewline => Newline == PcreByteNewline.AnyCrLf;
 	internal byte NewlineCharacter => Newline.Character();
 }
@@ -84,6 +86,7 @@ internal sealed class PcreByteProgramCompiler {
 	private int countedOffset = -1;
 	private int lastCountedOffset = -1;
 	private int compileVisits;
+	private int scalarExpressionStackDepth;
 	private PcreByteScalarSet? utfCrLfLeadingRepeatSet;
 	private PcreByteNode? utfCrLfLeadingStarAtom;
 	private bool skipUtfCrLfLeadingStar;
@@ -140,7 +143,7 @@ internal sealed class PcreByteProgramCompiler {
 		return new( instructions.ToArray(), markCount, hasCaselessComparisons, utf8, matchInvalidUtf,
 			FindRequiredLiteralSuffix( root ), newline, HasExplicitNewline( root ), CanMatchEmptyAtAnyOffset( root ),
 			bytePrefix.Unconditional, utfCrLfStartClass, notEmpty, notEmptyAtStart,
-			matchInvalidUtf && newline == PcreByteNewline.Any && HasLineStartSearch( root ), ucp, bytePrefix.Literal );
+			matchInvalidUtf && newline == PcreByteNewline.Any && HasLineStartSearch( root ), ucp, bytePrefix.Literal ) { ScalarExpressionStackDepth = scalarExpressionStackDepth };
 	}
 
 	private bool HasLineStartSearch( PcreByteAlternatives root ) {
@@ -266,7 +269,7 @@ internal sealed class PcreByteProgramCompiler {
 
 	private static bool IsUtfCrLfErasedRepeat( PcreByteNode node ) => node is PcreByteRepeat {
 		Maximum: 0, Child: PcreByteBackreference or PcreByteLiteral or PcreByteAny
-			or PcreByteScalarClass or PcreByteScalarSet or PcreByteNewlineSequence or PcreByteGrapheme
+			or PcreByteScalarClass or PcreByteScalarSet or PcreByteScalarExpression or PcreByteNewlineSequence or PcreByteGrapheme
 	};
 
 	private static bool IsUtfCrLfRetainedZeroRepeat( PcreByteNode node ) => node is PcreByteRepeat {
@@ -1289,6 +1292,7 @@ internal sealed class PcreByteProgramCompiler {
 		PcreByteLiteral literal => literal.Value is '\r' or '\n',
 		PcreByteClass characterClass => characterClass.ExplicitNewline,
 		PcreByteScalarSet scalarSet => scalarSet.ExplicitNewline,
+		PcreByteScalarExpression expression => expression.ExplicitNewline,
 		PcreByteLiteralAssertion assertion => assertion.Bytes.Span.IndexOf( (byte)'\r' ) >= 0
 			|| assertion.Bytes.Span.IndexOf( (byte)'\n' ) >= 0,
 		PcreByteLookahead assertion => HasExplicitNewline( assertion.Body ),
@@ -1332,12 +1336,12 @@ internal sealed class PcreByteProgramCompiler {
 		ReadOnlyMemory<byte> bytes = default, ReadOnlyMemory<PcreByteScalarRange> ranges = default,
 		ReadOnlyMemory<PcreByteScalarPredicate> predicates = default, UnicodeCategory? category = null,
 		bool caseless = false, bool caselessRestricted = false, ReadOnlyMemory<int> captureNumbers = default,
-		bool skipCrLfAfterRepeat = false, int propertyValue = 0 ) {
+		bool skipCrLfAfterRepeat = false, int propertyValue = 0, ReadOnlyMemory<PcreScalarSetTerm> terms = default ) {
 		cancellationToken.ThrowIfCancellationRequested();
 		if ( instructions.Count >= MaximumInstructions ) { throw RepeatExpansionLimit(); }
 		var index = instructions.Count;
 		instructions.Add( new( opcode, first, second, set, bytes, ranges, predicates, category, caseless, caselessRestricted,
-			captureNumbers, skipCrLfAfterRepeat, propertyValue ) );
+			captureNumbers, skipCrLfAfterRepeat, propertyValue, terms ) );
 		hasCaselessComparisons |= caseless;
 		return index;
 	}
@@ -1425,6 +1429,14 @@ internal sealed class PcreByteProgramCompiler {
 					caselessRestricted: scalarSet.CaselessRestricted,
 					skipCrLfAfterRepeat: TakeUtfCrLfLeadingStarSkip( scalarSet )
 						|| skipUtfCrLfLeadingRepeat && ReferenceEquals( scalarSet, utfCrLfLeadingRepeatSet ) );
+				break;
+			case PcreByteScalarExpression expression:
+				if ( expression.Terms.Length > MaximumInstructions - compileVisits ) { throw PcreByteParser.ClassTermLimit( expression.OpeningOffset ); }
+				compileVisits += expression.Terms.Length;
+				if ( utf8 ) {
+					scalarExpressionStackDepth = Math.Max( scalarExpressionStackDepth, expression.StackDepth );
+					Emit( PcreByteOpcode.ScalarExpression, terms: expression.Terms, caseless: expression.Caseless );
+				} else { Emit( PcreByteOpcode.Class, set: expression.ByteProjection, caseless: expression.Caseless ); }
 				break;
 			case PcreByteClass characterClass:
 				Emit( PcreByteOpcode.Class, set: characterClass.Set, caseless: characterClass.Caseless, caselessRestricted: characterClass.CaselessRestricted );
