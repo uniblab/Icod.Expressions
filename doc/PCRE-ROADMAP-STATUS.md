@@ -1,6 +1,6 @@
 # PCRE roadmap status
 
-Reviewed after PR207, 2026-11-10. Issue7 remains the delivery roadmap; the
+Reviewed after PR208, 2026-11-10. Issue7 remains the delivery roadmap; the
 [syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md),
 [resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) and
 [Grep fixture inventory](PCRE-GREP-CONSUMER-FIXTURES.md) define the detailed gates.
@@ -24,7 +24,7 @@ retaining each framework's complete suite and frozen-result qualification.
    default simple-case mapping, closing host-version dependence in that path.
    Continue offsets, resources and malformed-UTF evidence;
    keep native optimizer differences and unsafe native cases explicitly tracked.
-2. **Expand deliberate syntax coverage.** Scripts/script extensions, binary
+2. **Expand deliberate syntax coverage.** Script/script-extension properties are implemented in PR209. Binary/Bidi
    properties, grapheme clusters, extended class algebra, UTF code-unit escape,
    remaining directives/verbs/callouts and other matrix gaps require their own
    pinned reference fixtures. Decide any intentional exclusions before release;
@@ -42,13 +42,13 @@ retaining each framework's complete suite and frozen-result qualification.
 
 ## Current increment and next syntax work
 
-PR208 pins default simple-case equivalence after PR207's category table. Both
-sources have hash-checked C# regeneration, exhaustive native fingerprints and
-live JIT fixtures. Default single-scalar mappings include C/S only; full-string
-F and optional Turkic T modes are separate from this supported contract.
+PR209 adds all native script/scx properties after the pinned category and
+simple-case tables in PR207/208. It preserves native primary-or-extension
+membership, all aliases/complements, byte projection and existing grammar.
+Source hashes, an exhaustive native membership fingerprint and live JIT
+boundary fixtures qualify data ownership.
 
-The next syntax priority is script/script-extension and binary Unicode
-properties, using the same pinned-data ownership pattern. Graphemes, class
-algebra and other pending families retain their own matrix gates. No version
-bump, publication or consumer migration belongs to these increments. Grep
-remains last; GNU/BRE/ERE behavior and frozen35 stay intact.
+Binary Unicode and Bidi properties are next, followed by the other deliberate
+syntax families. Script-run groups remain separate from script membership.
+General optimizer/resource, UTF16/API, realistic consumer performance and
+release gates remain open. Grep stays last; GNU/BRE/ERE and frozen35 stay intact.

@@ -188,9 +188,9 @@ public sealed class PcreBytePropertyReferenceTests {
 	}
 
 	[Theory]
-	[InlineData( @"\p{Greek}", 0 )]
+	[InlineData( @"\p{Emoji}", 0 )]
 	[InlineData( @"\p{Alphabetic}", 0 )]
-	[InlineData( @"\p{Script=Greek}", 0 )]
+	[InlineData( @"\p{Bidi_Class=L}", 0 )]
 	[InlineData( @"\p{gc:Any}", 0 )]
 	[InlineData( @"[\p{Alphabetic}]", 1 )]
 	[InlineData( @"\p{^^Xwd}", 0 )]

@@ -5,7 +5,10 @@ namespace Icod.Expressions.Pcre;
 /// <summary>Shared membership over decoded scalars and same-valued byte code points.</summary>
 internal static class PcreScalarClassMembership {
 	internal static bool Contains( PcreByteScalarClassKind kind, int scalar,
-		UnicodeCategory? specificCategory = null, bool caseless = false ) {
+		UnicodeCategory? specificCategory = null, bool caseless = false, int propertyValue = 0 ) {
+		if ( kind is PcreByteScalarClassKind.Script or PcreByteScalarClassKind.ScriptExtensions ) {
+			return PcreUnicodeScripts.Contains( scalar, propertyValue, kind == PcreByteScalarClassKind.ScriptExtensions );
+		}
 		if ( kind == PcreByteScalarClassKind.AnyScalar ) { return true; } // Decoder admits valid scalars only.
 		if ( kind == PcreByteScalarClassKind.UniversalCharacterName ) { return scalar is '$' or '@' or '`' or >= 0xA0; }
 		if ( kind == PcreByteScalarClassKind.Letter && scalar <= 0x7F ) {

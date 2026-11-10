@@ -105,7 +105,7 @@ public sealed class PcreUtf8BracketUnionTests {
 	[InlineData( @"[\p{L}-a]", (int)PcreByteDiagnosticCode.InvalidSyntax )]
 	[InlineData( "[[:nosuch:]_]", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
 	[InlineData( "[[.ch.]]", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
-	[InlineData( @"[\p{Greek}]", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
+	[InlineData( @"[\p{Alphabetic}]", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
 	[InlineData( @"[\B]", (int)PcreByteDiagnosticCode.UnsupportedSyntax )]
 	public void InvalidOrUnimplementedItemsAreDiagnosed( string pattern, int code ) {
 		var result = PcreByteCompiler.Compile( Encoding.UTF8.GetBytes( pattern ), GrepOptions );

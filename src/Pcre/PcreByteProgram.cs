@@ -45,7 +45,7 @@ internal sealed record PcreByteInstruction(
 	ReadOnlyMemory<byte> Bytes = default, ReadOnlyMemory<PcreByteScalarRange> Ranges = default,
 	ReadOnlyMemory<PcreByteScalarPredicate> Predicates = default, UnicodeCategory? Category = null,
 	bool Caseless = false, bool CaselessRestricted = false, ReadOnlyMemory<int> CaptureNumbers = default,
-	bool SkipCrLfAfterRepeat = false
+	bool SkipCrLfAfterRepeat = false, int PropertyValue = 0
 );
 
 internal readonly record struct PcreBytePrefixLiteral( int ByteOffset, int Value, bool Caseless, bool CaselessRestricted );
@@ -1331,12 +1331,12 @@ internal sealed class PcreByteProgramCompiler {
 		ReadOnlyMemory<byte> bytes = default, ReadOnlyMemory<PcreByteScalarRange> ranges = default,
 		ReadOnlyMemory<PcreByteScalarPredicate> predicates = default, UnicodeCategory? category = null,
 		bool caseless = false, bool caselessRestricted = false, ReadOnlyMemory<int> captureNumbers = default,
-		bool skipCrLfAfterRepeat = false ) {
+		bool skipCrLfAfterRepeat = false, int propertyValue = 0 ) {
 		cancellationToken.ThrowIfCancellationRequested();
 		if ( instructions.Count >= MaximumInstructions ) { throw RepeatExpansionLimit(); }
 		var index = instructions.Count;
 		instructions.Add( new( opcode, first, second, set, bytes, ranges, predicates, category, caseless, caselessRestricted,
-			captureNumbers, skipCrLfAfterRepeat ) );
+			captureNumbers, skipCrLfAfterRepeat, propertyValue ) );
 		hasCaselessComparisons |= caseless;
 		return index;
 	}
@@ -1413,7 +1413,7 @@ internal sealed class PcreByteProgramCompiler {
 			case PcreByteScalarClass scalarClass:
 				Emit( PcreByteOpcode.ScalarClass, (int)scalarClass.Kind, scalarClass.Negated ? 1 : 0,
 					category: scalarClass.Category, caseless: scalarClass.Caseless, caselessRestricted: scalarClass.CaselessRestricted,
-					skipCrLfAfterRepeat: TakeUtfCrLfLeadingStarSkip( scalarClass ) );
+					skipCrLfAfterRepeat: TakeUtfCrLfLeadingStarSkip( scalarClass ), propertyValue: scalarClass.PropertyValue );
 				break;
 			case PcreByteScalarSet scalarSet:
 				Emit( PcreByteOpcode.ScalarSet, second: scalarSet.Negated ? 1 : 0,

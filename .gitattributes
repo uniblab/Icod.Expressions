@@ -1,3 +1,4 @@
 doc/*.jsonl text eol=lf
 doc/Icod.Expressions-A05-Source-Blobs.txt text eol=lf
 *.sh text eol=lf
+tests/Pcre/PcreScriptPropertyFixtureData.cs text eol=lf

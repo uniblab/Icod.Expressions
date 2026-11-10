@@ -258,7 +258,7 @@ internal static class PcreByteMatcher {
 								&& PcreUtf8.TryRead( input.Span, position, out var propertyScalar, out var propertyWidth )
 								&& propertyWidth <= subjectEnd - position
 								&& PcreScalarClassMembership.Contains( (PcreByteScalarClassKind)instruction.First, propertyScalar,
-									instruction.Category, program.Utf8 && instruction.Caseless )
+									instruction.Category, program.Utf8 && instruction.Caseless, instruction.PropertyValue )
 									!= ( instruction.Second == 1 ) ) {
 								position += propertyWidth;
 								if ( instruction.SkipCrLfAfterRepeat && activeCall < 0 && activeScope < 0 ) {
@@ -286,7 +286,7 @@ internal static class PcreByteMatcher {
 								foreach ( var predicate in instruction.Predicates.Span ) {
 									Step(); // Each attempted scalar predicate consumes work.
 									if ( PcreScalarClassMembership.Contains( predicate.Kind, setScalar, predicate.Category,
-										instruction.Caseless ) != predicate.Negated ) {
+										instruction.Caseless, predicate.PropertyValue ) != predicate.Negated ) {
 										contained = true;
 										break;
 									}

@@ -23,17 +23,17 @@ internal enum PcreByteScalarClassKind {
 	UnicodePrintable, UnicodePunctuation, UnicodeUpper, UnicodeHexDigit,
 	CategoryOther, CasedLetter, CategoryMark, CategoryNumber, CategoryPunctuation,
 	CategorySymbol, CategorySeparator, SpecificCategory, HorizontalSpace, VerticalSpace,
-	AnyScalar, UniversalCharacterName
+	AnyScalar, UniversalCharacterName, Script, ScriptExtensions
 }
 
 internal sealed record PcreByteScalarClass(
-	PcreByteScalarClassKind Kind, bool Negated, UnicodeCategory? Category = null
+	PcreByteScalarClassKind Kind, bool Negated, UnicodeCategory? Category = null, int PropertyValue = 0
 ) : PcreByteNode;
 
 internal readonly record struct PcreByteScalarRange( int Start, int End );
 
 internal readonly record struct PcreByteScalarPredicate(
-	PcreByteScalarClassKind Kind, bool Negated, UnicodeCategory? Category = null
+	PcreByteScalarClassKind Kind, bool Negated, UnicodeCategory? Category = null, int PropertyValue = 0
 );
 
 internal enum PcreByteScalarSetSource { Unknown, Literal, Class }

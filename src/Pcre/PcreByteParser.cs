@@ -288,7 +288,7 @@ internal sealed partial class PcreByteParser {
 			} else if ( first is PcreByteLiteral literal ) {
 				ranges.Add( new( literal.Value, literal.Value ) );
 			} else if ( first is PcreByteScalarClass scalarClass ) {
-				predicates.Add( new( scalarClass.Kind, scalarClass.Negated, scalarClass.Category ) );
+				predicates.Add( new( scalarClass.Kind, scalarClass.Negated, scalarClass.Category, scalarClass.PropertyValue ) );
 			} else { throw Unsupported( openingOffset ); }
 			// Native metadata uses original operand shape, before folding/deduplication.
 			// A duplicate literal or predicate prevents the negated-singleton shortcut.
@@ -811,14 +811,30 @@ internal sealed partial class PcreByteParser {
 		}
 		if ( name.Length == 0 ) { throw Invalid( offset, "property escape requires a name" ); }
 		return CreatePropertyClass( GeneralCategory( name, negated ) ?? ( categoryOnly ? null : SpecialProperty( name, negated ) )
-			?? throw Unsupported( offset ) );
+			?? ( categoryOnly ? null : ScriptProperty( name, negated, offset ) ) ?? throw Unsupported( offset ) );
+	}
+
+	private static PcreByteScalarClass? ScriptProperty( string name, bool negated, int offset ) {
+		var extensions = true;
+		var separator = name.IndexOf( ':' );
+		if ( separator < 0 ) { separator = name.IndexOf( '=' ); }
+		if ( separator >= 0 ) {
+			var type = name[..separator];
+			if ( type is "SC" or "SCRIPT" ) { extensions = false; }
+			else if ( type is not ( "SCX" or "SCRIPTEXTENSIONS" ) ) { return null; }
+			name = name[( separator + 1 )..];
+			if ( name.Length == 0 ) { throw Invalid( offset, "script property requires a value" ); }
+		}
+		return PcreUnicodeScripts.TryGetScript( name, out var script )
+			? new( extensions ? PcreByteScalarClassKind.ScriptExtensions : PcreByteScalarClassKind.Script, negated, PropertyValue: script )
+			: null;
 	}
 
 	private PcreByteNode CreatePropertyClass( PcreByteScalarClass property, bool prefixAny = true ) {
 		if ( utf8 ) { return property; }
 		var members = PcreByteSet.FromPredicate( value => {
 			cancellationToken.ThrowIfCancellationRequested();
-			return PcreScalarClassMembership.Contains( property.Kind, value, property.Category, caseless ) != property.Negated;
+			return PcreScalarClassMembership.Contains( property.Kind, value, property.Category, caseless, property.PropertyValue ) != property.Negated;
 		} );
 		var prefixKind = !prefixAny ? PcreByteClassPrefix.None
 			: property.Kind == PcreByteScalarClassKind.AnyScalar ? PcreByteClassPrefix.AnyProperty : PcreByteClassPrefix.Exact;
