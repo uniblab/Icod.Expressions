@@ -2348,3 +2348,13 @@ new ordinary controls passed. Immutable test blob
 `bfb521fcb21f206cd22d6742f3a36367148509e9` remains unchanged.
 Final six-platform results are in PR201. Issue102 and broader PCRE,
 release and consumer migration gates remain open; Grep remains last.
+
+## CR/LF-excluding negated sets in negative assertions (PR202)
+
+Pinned PCRE2 10.48 reports LF in the start bitmap and CR absent for 840
+leading and middle assertion patterns. The existing managed matcher already
+visits LF after CR for these patterns because the negated class explicitly
+mentions CR/LF. PR202 adds 1,680 native full-capture fixtures and 3,360
+strict/tolerant parity checks. Its test-only run passed all 39,611 tests per
+framework on the completed runners. No new optimizer proof or public API is
+claimed; issue102 and the broader release and Grep gates remain open.

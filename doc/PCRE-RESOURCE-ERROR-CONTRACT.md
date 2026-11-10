@@ -2480,3 +2480,10 @@ new ordinary controls passed. Immutable test blob
 `bfb521fcb21f206cd22d6742f3a36367148509e9` remains unchanged.
 Final six-platform results are in PR201. Issue102 and broader PCRE,
 release and consumer migration gates remain open; Grep remains last.
+
+## Negative assertion reference coverage (PR202)
+
+The new CR/LF-excluding negated-set corpus pins native and managed capture
+parity under strict and invalid-UTF-tolerant options. It changes no match-work
+limit, cancellation, diagnostic, API or resource behavior. All new cases passed
+in the test-only run; broader PCRE and consumer gates remain open.
