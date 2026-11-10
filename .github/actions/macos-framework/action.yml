@@ -53,5 +53,6 @@ runs:
         name: macos-x64-${{ inputs.framework }}
         path: artifacts/test-results/*.trx
         if-no-files-found: error
+        overwrite: true
         retention-days: 1
         compression-level: 1
