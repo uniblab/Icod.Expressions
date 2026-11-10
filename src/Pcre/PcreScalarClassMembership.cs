@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text;
 
 namespace Icod.Expressions.Pcre;
 
@@ -58,7 +57,7 @@ internal static class PcreScalarClassMembership {
 			return scalar is >= '0' and <= '9' or >= 'A' and <= 'F' or >= 'a' and <= 'f'
 				or >= 0xFF10 and <= 0xFF19 or >= 0xFF21 and <= 0xFF26 or >= 0xFF41 and <= 0xFF46;
 		}
-		var category = Rune.GetUnicodeCategory( new Rune( scalar ) );
+		var category = PcreUnicodeCategories.GetCategory( scalar );
 		return kind switch {
 			PcreByteScalarClassKind.SpecificCategory => specificCategory.HasValue
 				? caseless && IsCasedCategory( specificCategory.Value )

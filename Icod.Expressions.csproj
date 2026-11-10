@@ -22,6 +22,7 @@
 	<ItemGroup>
 		<Compile Include="src/**/*.cs" />
 		<None Include="README.md" Pack="true" PackagePath="/" />
+		<None Include="THIRD-PARTY-NOTICES.txt" Pack="true" PackagePath="/" />
 	</ItemGroup>
 	<PropertyGroup Condition="'$(Configuration)' == 'Staging'">
 		<DefineConstants>TRACE</DefineConstants>

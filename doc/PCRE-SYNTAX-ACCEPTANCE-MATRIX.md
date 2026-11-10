@@ -34,11 +34,11 @@ the matcher returns spans, leaving framing, status and output to Grep.
 | `\N` non-newline, UTF `\N{U+...}` literal | Bare form obeys LF/AnyCRLF and ignores DotAll; counted repetitions supported; Unicode codepoint form shares braced-hex literal/range/fixed-assertion rules | `PcreNonNewlineReferenceTests`; byte/scalar membership, braced-form disambiguation, captures, offsets and diagnostics |
 | Bare and braced octal literals | Default up-to-three-digit octals and `\o{...}` in byte/UTF atoms, brackets/ranges and fixed literal assertions; byte/scalar range checks, brace-edge space/tab | `PcreNumericEscapeReferenceTests`; all 256 byte values, UTF bounds, quoting, offsets and diagnostics; extra Python/NO_BS0 modes pending |
 | Ordinary `[ ]` ranges, negation, shorthand unions, 14 POSIX names | Supported subset in byte and UTF modes; nested/extended class algebra pending, rejected | Bracket and POSIX tests; Unicode table/version reconciliation |
-| `\p`/`\P` general categories and special properties | Byte/UTF categories plus Any/Xan/Xps/Xsp/Xwd/Xuc; loose names, P/caret complements and property predicates independent of UCP/ASCII/i/r. Category-prefixed aliases remain a library extension for categories only. UTF class source operands/endpoints preserve CR/LF flags before folding, including the native negated-singleton exception. Scripts/binary properties remain pending, rejected | `PcreBytePropertyReferenceTests`, `PcreSpecialPropertyReferenceTests`, `PcreClassNewlineMetadataReferenceTests`, `PcreUtf8GeneralCategoryTests`; see `PCRE-SPECIAL-PROPERTIES-DESIGN.md`; Unicode-version and byte search-optimization parity remain gates |
+| `\p`/`\P` general categories and special properties | Byte/UTF categories plus Any/Xan/Xps/Xsp/Xwd/Xuc; loose names, P/caret complements and property predicates independent of UCP/ASCII/i/r. Category-prefixed aliases remain a library extension for categories only. UTF class source operands/endpoints preserve CR/LF flags before folding, including the native negated-singleton exception. Scripts/binary properties remain pending, rejected | `PcreBytePropertyReferenceTests`, `PcreSpecialPropertyReferenceTests`, `PcreClassNewlineMetadataReferenceTests`, `PcreUtf8GeneralCategoryTests`; see `PCRE-SPECIAL-PROPERTIES-DESIGN.md`; Unicode17 general categories are pinned; full case-fold and byte search-optimization parity remain gates |
 | `* + ? {n,m}` greedy/lazy and possessive forms | Supported subset, bounded expansion and work; direct lookaround repeats use finite PCRE2 bounds (unlimited maximum becomes minimum plus one) | Counted-repeat, atomic and `PcreAssertionRepeatReferenceTests`; capture growth, optional rollback, zero counts, UTF offsets and resource limits; stress limits against consumer workloads |
 | `(?>...)` atomic group | Supported subset, including exact lowercase `(*atomic:...)` | `PcreAtomicTests`, `PcreGroupAliasReferenceTests` |
 | Bare decimal, absolute and signed relative numeric `\gN`/`\g{N}` backreferences | Default reference/octal disambiguation within 256 captures; braced g accepts edge space/tab. Nonrecursive subroutine forms are distinct calls, described below | Backreference/capture tests, `PcreNumericEscapeReferenceTests`; current-branch numbering, leading-8/9 forward references and entire decimal runs |
-| Named captures and backreferences | Three declaration forms, five reference forms; unique names alias numbered slots, J permits duplicate names whose references select the first participating slot in declaration order without comparison fallback, forward references, case-sensitive names and a 128-byte name limit. UTF letters/digits use runtime categories. Nonrecursive subroutines are described below; bracket-literal `\g`/`\k` consume only the escaped letter and use ordinary class rules | `PcreNamedCaptureReferenceTests`, `PcreDuplicateNameReferenceTests`; all captures, rollback, UTF/invalid-UTF offsets, name grammar and boundaries; see `PCRE-NAMED-CAPTURES-DESIGN.md` and `PCRE-DUPLICATE-NAMES-DESIGN.md` |
+| Named captures and backreferences | Three declaration forms, five reference forms; unique names alias numbered slots, J permits duplicate names whose references select the first participating slot in declaration order without comparison fallback, forward references, case-sensitive names and a 128-byte name limit. UTF letters/digits use pinned Unicode17 categories. Nonrecursive subroutines are described below; bracket-literal `\g`/`\k` consume only the escaped letter and use ordinary class rules | `PcreNamedCaptureReferenceTests`, `PcreDuplicateNameReferenceTests`; all captures, rollback, UTF/invalid-UTF offsets, name grammar and boundaries; see `PCRE-NAMED-CAPTURES-DESIGN.md` and `PCRE-DUPLICATE-NAMES-DESIGN.md` |
 | `(?|...)` branch-reset captures | Parser-scoped numbering, highest-branch continuation, same-number name aliases and ordinary numbered capture/journal semantics | `PcreBranchResetReferenceTests`; unequal widths, nesting, relative references, aliases, repeated captures, invalid-UTF offsets and resource boundaries |
 | `(?=...)`, `(?!...)` atomic lookahead | General bodies over existing grammar, options, numbered/named captures, alternatives/repeats and nested assertions. Inline bytecode shares guards/journal; first success commits positive captures, negatives discard body state; original caller/fragment retained. Direct quantifiers use finite bounds with ordinary greedy/lazy/U and possessive choices; short/long atomic lookahead aliases use the same group path; non-atomic positive variants are listed below | `PcreGroupAliasReferenceTests`, `PcreGeneralLookaheadReferenceTests`; capture transactions, spans beyond G0, UTF offsets, 256 depth and guard-inclusive saved-path/work limits |
 | `(?<=...)`, `(?<!...)` lookbehind | General fixed and bounded-variable branches over existing grammar, including classes/captures/groups/bounded repeats, R, nested assertions and local options. Heap min/max analysis, longest-first reverse retries, scoped JIT end limits and shared guards/journal preserve captures. Variable assertions cap all branch maxima at255; all-fixed branches retain65535. Bounded capture-body lengths for consumed numbered/named/relative/forward references resolve globally; lexical self/cycles, actual consumed duplicate names and global branch reset reject. Short/long atomic lookbehind aliases share the same width rules. Unlimited consumed groups remain pending | `PcreGroupAliasReferenceTests`, `PcreFixedLookbehindReferenceTests`, `PcreVariableLookbehindReferenceTests`, `PcreLookbehindReferenceLengthTests`, literal lookaround and explicit diagnostic controls; byte/UTF widths, capture transactions, nested visibility, malformed offsets, heap depth and resource limits |
@@ -85,7 +85,7 @@ internal saved-path boundary and identifies Grep's remaining command-level
 error and cancellation fixtures. Expand start-offset and resource parity
 cases, then implement the highest-priority pending families against
 the pinned reference. General atomic lookahead now has capture transactions;
-the remaining gaps include Unicode table parity, character-set algebra and other unsupported syntax.
+the remaining gaps include full Unicode case-fold parity, character-set algebra and other unsupported syntax.
 Full workload measurements and command-level Grep comparisons follow before
 public API/release review. No CommandFramework ownership change belongs to
 this checkpoint.
@@ -2356,3 +2356,30 @@ on macOSARM64 compiled cleanly and failed1,360 new CRLF cases per framework,
 with44,419 passes and zero skips. All43,059 baseline tests and ordinary controls
 passed. Expected final suite:45,779 per framework. Final CI is recorded in PR205.
 Broader issue102, PCRE/release qualification and Grep migration remain open.
+
+
+## Pinned Unicode17 general categories
+
+PR207 replaces host .NET/OS category queries with an immutable managed
+Unicode17.0.0 table matching PCRE2 10.48. Explicit properties, category-derived
+UCP/POSIX classes and UTF capture-name letters/digits share the same lookup;
+non-ASCII subroutine numbers retain controlled InvalidSyntax diagnostics.
+Packed ranges plus an ASCII fast path occupy16,592 data bytes, require no
+runtime files/native dependency and add no VM state, charged work or limits.
+Existing complements, caseless category widening, local ASCII policies, byte
+projection, spans and cancellation remain shared.
+
+The source-hash-checked C# generator and Linux byte-for-byte regeneration gate
+make data ownership reproducible. Unicode permission terms ship in the package.
+An independent native fingerprint covers all1,112,064 valid scalars; new JIT
+fixtures cover recent assignments, complements/brackets, category capture
+selection and UTF names. The test-only run620 built successfully: LinuxARM64
+net8 had29 expected new failures,45,782 passes and all45,779 baseline cases
+passed. The32-case test blob is
+`18e46522c52a6750b83a147350e7b48ae64f65f3`.
+
+This closes general-category version ownership only. Full Unicode fold tables,
+scripts/binary properties, grapheme/class algebra and broader native optimizer
+parity remain gates. No public API/release/consumer change; frozen35 intact and
+Grep last. See `PCRE-UNICODE-CATEGORIES-DESIGN.md`,
+`PCRE-UNICODE-CATEGORIES-PLAN.md` and `PCRE-ROADMAP-STATUS.md`.

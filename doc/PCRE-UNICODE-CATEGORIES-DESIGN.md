@@ -46,3 +46,9 @@ research is a scratch C probe, not shipped code or a production fallback.
 Use C#13/net8/9/10 and all six native OS/architectures (Intel frameworks now
 separate jobs). No subagents, Python, SDK or PowerShell installation. CI supplies
 managed execution. Preserve all45,779 baseline tests and frozen214 results.
+
+Native research compared every valid scalar from the pinned Unicode source
+against the native UCD table: zero mismatches. The table needs4,116 non-ASCII
+ranges plus128 ASCII bytes (16,592 data bytes). Test-only CI620 confirmed the
+expected successful-build RED; test blob remains immutable at
+`18e46522c52a6750b83a147350e7b48ae64f65f3`.
