@@ -2290,3 +2290,30 @@ new ordinary controls passed. Immutable test blob
 `d2a479cd1c70ec0679ca45ea1c0973ef63b42727` remains unchanged.
 Final six-platform results are in PR200. Issue102 and broader PCRE,
 release and consumer migration gates remain open; Grep remains last.
++
+## Negative class middle assertions before zero-minimum group repeats (PR201)
+
+The bounded optional-bracket UTF proof now permits a negative class
+lookahead or lookbehind after a validated leading literal or class
+assertion and before a zero-minimum repeated group. It reuses the
+single-body class/type CR/LF exclusion from PR200 and charges the
+middle opcode against the established 1,000-visit ceiling. Negated
+or predicate-bearing sets, newline-containing ranges, unsupported
+types and compound assertion bodies remain outside the proof. The
+mandatory CR-excluding repeated-group head, cancellation and other
+prefix guards remain. Parser, matcher, API, limits and consumers are
+unchanged.
+
+Pinned PCRE2 10.48 compile/JIT retained LF and excluded CR for 540
+lead/middle/group patterns with positive JIT sizes and correct native
+spans on CRLF and ordinary subjects. One thousand eighty full-capture
+fixtures / 2,160 strict+tolerant checks cover six positive/negative
+literal/class leads, eighteen negative class middle lookahead/lookbehind
+forms (ASCII ranges, wide UTF, types and S/K/Kelvin folds), five nullable
+group shapes and two subjects. Successful-build [test-only RED606](https://github.com/uniblab/Icod.Expressions/actions/runs/42754755781)
+on Linux x64/net8/9/10 failed exactly 540 new CRLF cases per framework,
+with 37,391 passes and zero skips: all 36,851 earlier fixtures and 540
+new ordinary controls passed. Immutable test blob
+`bfb521fcb21f206cd22d6742f3a36367148509e9` remains unchanged.
+Final six-platform results are in PR201. Issue102 and broader PCRE,
+release and consumer migration gates remain open; Grep remains last.
