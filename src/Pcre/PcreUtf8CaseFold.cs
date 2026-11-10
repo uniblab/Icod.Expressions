@@ -2,8 +2,8 @@ using System.Text;
 
 namespace Icod.Expressions.Pcre;
 
-/// <summary>Provisional Unicode equivalence shared by UTF-8 and byte-UCP matching.</summary>
-internal static class PcreUtf8CaseFold {
+/// <summary>Unicode17 simple-case equivalence shared by UTF-8 and byte-UCP matching.</summary>
+internal static partial class PcreUtf8CaseFold {
 	internal static bool Equals( int left, int right, bool restricted = false ) =>
 		left == right || Fold( left, restricted ) == Fold( right, restricted );
 
@@ -67,12 +67,22 @@ internal static class PcreUtf8CaseFold {
 	}
 
 	private static int FoldUnrestricted( int scalar ) {
-		// PCRE2's default mode keeps dotted and dotless Turkish I separate from ASCII I/i.
-		if ( scalar is 0x0130 or 0x0131 ) { return scalar; }
-		// These three simple folds have more than the usual two case equivalents.
-		if ( scalar == 0x212A ) { return 'k'; } // Kelvin sign
-		if ( scalar == 0x017F ) { return 's'; } // Long s
-		if ( scalar == 0x03C2 ) { return 0x03C3; } // Greek final sigma
-		return Rune.ToLowerInvariant( Rune.ToUpperInvariant( new Rune( scalar ) ) ).Value;
+		if ( (uint)scalar < 128 ) { return scalar is >= 'A' and <= 'Z' ? scalar + 32 : scalar; }
+		if ( !Rune.IsValid( scalar ) ) { throw new ArgumentOutOfRangeException( nameof( scalar ) ); }
+		var mappings = UnicodeMappings;
+		// Most of the scalar domain has no case mapping. Avoid searching beyond
+		// the sorted source bounds, especially during broad range closure.
+		if ( scalar < (int)( mappings[0] >> 21 ) || scalar > (int)( mappings[^1] >> 21 ) ) { return scalar; }
+		var low = 0;
+		var high = mappings.Length - 1;
+		while ( low <= high ) {
+			var middle = low + ( high - low ) / 2;
+			var mapping = mappings[middle];
+			var source = (int)( mapping >> 21 );
+			if ( source < scalar ) { low = middle + 1; }
+			else if ( source > scalar ) { high = middle - 1; }
+			else { return (int)( mapping & 0x1FFFFFUL ); }
+		}
+		return scalar; // Includes default dotted/dotless Turkish I; T mappings are not admitted.
 	}
 }
