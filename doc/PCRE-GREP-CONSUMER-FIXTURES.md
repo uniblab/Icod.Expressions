@@ -2373,3 +2373,30 @@ on LinuxARM64 compiled cleanly and failed1,240 new CRLF cases per framework,
 with41,819 passes and zero skips; all40,499 baseline tests and ordinary controls
 passed. Expected final suite:43,059 per framework. Final CI is recorded in PR204.
 Broader issue102 and PCRE/release qualification remain open; Grep stays last.
+
+
+## Regular negative assertion body bitmap entry (PR205)
+
+A bounded structural fallback now recognizes regular negative ahead/behind
+bodies containing sequences, alternatives, capturing/noncapturing/atomic groups,
+repeats, literals/classes/dot/boundaries and ordinary nested assertions. Native
+PCRE2 10.48 start-bitmap study skips the body; the existing following repeated
+group must still prove a mandatory CR-excluding head. Empty/nullable inner
+paths need no consuming head. Calls, backreferences, conditions, anchors,
+match-start reset and unknown/non-atomic assertion forms remain excluded.
+
+The existing single-class path and exact charges remain. The new iterative
+compiler-only walk charges bodies, branches, nodes, ranges, predicates and
+literal-assertion scalars under cancellation, bounds visited and queued work
+at1,000 and commits speculative costs only on complete success. Positive and
+literal assertion admission, source metadata, parser, VM, API and limits stay.
+
+Pinned native10.48 research passed2,720 compile/bitmap/positive-JIT-size checks
+and5,440 literal full-capture comparisons. All bitmaps includeLF and excludeCR.
+The immutable2,720-fixture blob `a6137a8f9f5a14fd9c9adce6509d385f2215cb96`
+includes200-deep groups,64 alternatives, UCP/caseless and leading/middle
+placements. [Test-only run615](https://github.com/uniblab/Icod.Expressions/actions/runs/42772123598)
+on macOSARM64 compiled cleanly and failed1,360 new CRLF cases per framework,
+with44,419 passes and zero skips. All43,059 baseline tests and ordinary controls
+passed. Expected final suite:45,779 per framework. Final CI is recorded in PR205.
+Broader issue102, PCRE/release qualification and Grep migration remain open.
