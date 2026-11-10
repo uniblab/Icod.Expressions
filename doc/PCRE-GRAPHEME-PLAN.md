@@ -58,3 +58,14 @@ failures/45955 passes,0skips; all45948 baseline cases pass. Fixed test blobs:
 e450749ae1940ba36775afb9a49df25b8f1be013 (scope tests).
 Native probes also reject consuming behind \X even with a zero count;
 existing width validation remains appropriate.
+
+Implementation112e60e / RED633: all frameworks46009, one unchanged malformed-UTF
+fixture failed (expected12 versus8);46008 passed, clean build. Native JIT
+invalid-mode backward payload chunks explain literal-RI/CJK prefix differences.
+Eight focused regressions were published in test-only2cb948b before correction.
+RED634 run42895573184, Linux ARM64 job130107930840: all frameworks46017,
+9expected tolerant-mode failures/46008 passes,0warnings/errors/skips. New test
+blob f84c946cbb67a174ff9c7a6fd5f51e7054bdbc72 remains fixed. Standalone native
+probes over1112064 valid prefix scalars (26 mapped prefixes) and672 compound
+prefixes agree. MatchInvalidUtf changes only the backward RI predicate; strict
+RI memo and all other cluster/capture/resource paths remain.

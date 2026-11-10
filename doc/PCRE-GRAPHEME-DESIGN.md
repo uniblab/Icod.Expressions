@@ -37,7 +37,12 @@ Independent source parsing agrees with native for all1,112,064 valid scalars.
 No PCRE source implementation is copied; data derives from Unicode inputs.
 
 The scanner uses Step for each attempted scalar and each preceding RI inspected.
-A per-match, input-derived contiguous RI-run cache avoids quadratic rescanning;
+In MatchInvalidUtf mode, preserve the pinned JIT backward-context view: its
+four-byte payload-chunk permutation does not count literal RI prefixes, but
+26 mapped CJK prefixes can count. Forward classification is unchanged.
+Independent probes over every valid preceding scalar and672 mixed-prefix
+cases qualify this mode-specific behavior.
+A strict-mode per-match, input-derived contiguous RI-run cache avoids quadratic rescanning;
 its two byte offsets are memoized facts, not backtracked semantic state. Scope
 limits and validated fragment starts bound reads. The shared Step primitive receives the work counter by reference; no Step
 delegate or per-atom allocation is needed. The cache does not live on the

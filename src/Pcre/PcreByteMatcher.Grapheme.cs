@@ -8,7 +8,7 @@ internal static partial class PcreByteMatcher {
 	private readonly record struct RegionalRun( int Start, int End );
 
 	private static int ConsumeGrapheme( ReadOnlyMemory<byte> input, int start, int end, int fragmentStart,
-		bool utf8, ref int work, int matchWorkLimit, Action<int>? workObserver, CancellationToken cancellationToken,
+		bool utf8, bool matchInvalidUtf, ref int work, int matchWorkLimit, Action<int>? workObserver, CancellationToken cancellationToken,
 		ref RegionalRun regionalRun ) {
 		ChargeWork( ref work, matchWorkLimit, workObserver, cancellationToken );
 		if ( !TryReadGrapheme( input, start, end, utf8, out var left, out var width ) ) { return -1; }
@@ -20,8 +20,8 @@ internal static partial class PcreByteMatcher {
 			if ( !TryReadGrapheme( input, cursor, end, utf8, out var right, out width )
 				|| !GraphemeJoins( left, right, pictographBeforeZwj ) ) { break; }
 			if ( left == PcreGraphemeBreak.RegionalIndicator && right == PcreGraphemeBreak.RegionalIndicator ) {
-				var runStart = FindRegionalRunStart( input, leftStart, cursor, fragmentStart, ref work, matchWorkLimit, workObserver, cancellationToken, ref regionalRun );
-				// Every native RI is a four-byte UTF8 scalar (generator-checked).
+				var runStart = FindRegionalRunStart( input, leftStart, cursor, fragmentStart, matchInvalidUtf, ref work, matchWorkLimit, workObserver, cancellationToken, ref regionalRun );
+				// Both native RI and its invalid-mode prefix view use four-byte scalars.
 				if ( ( ( leftStart - runStart ) / 4 & 1 ) != 0 ) { break; }
 			}
 			pictographBeforeZwj = left == PcreGraphemeBreak.ExtendedPictographic && right == PcreGraphemeBreak.Zwj;
@@ -62,21 +62,33 @@ internal static partial class PcreByteMatcher {
 	}
 
 	private static int FindRegionalRunStart( ReadOnlyMemory<byte> input, int leftStart, int rightStart,
-		int fragmentStart, ref int work, int matchWorkLimit, Action<int>? workObserver, CancellationToken cancellationToken,
+		int fragmentStart, bool matchInvalidUtf, ref int work, int matchWorkLimit, Action<int>? workObserver, CancellationToken cancellationToken,
 		ref RegionalRun memo ) {
 		var cursor = leftStart;
 		while ( cursor > fragmentStart ) {
-			if ( memo.Start >= fragmentStart && cursor >= memo.Start && cursor <= memo.End ) {
+			if ( !matchInvalidUtf && memo.Start >= fragmentStart && cursor >= memo.Start && cursor <= memo.End ) {
 				cursor = memo.Start;
 				break;
 			}
 			ChargeWork( ref work, matchWorkLimit, workObserver, cancellationToken ); // Backward context inspection is bounded, observable and cancellable.
 			if ( Rune.DecodeLastFromUtf8( input.Span.Slice( fragmentStart, cursor - fragmentStart ), out var previous, out var width )
-				!= OperationStatus.Done || PcreUnicodeGraphemes.GetBreak( previous.Value ) != PcreGraphemeBreak.RegionalIndicator ) { break; }
+				!= OperationStatus.Done ) { break; }
+			var scalar = previous.Value;
+			if ( matchInvalidUtf ) {
+				// PCRE2 10.48 JIT's invalid-mode backward view exchanges these
+				// four-byte payload chunks. Literal RI prefixes stop the count;
+				// 26 mapped CJK prefixes can contribute. Forward decoding stays normal.
+				if ( width != 4 ) { break; }
+				scalar = ( scalar & ~0x3FFFF ) | ( ( scalar & 63 ) << 12 ) | ( scalar & 0xFC0 ) | ( ( scalar >> 12 ) & 63 );
+				if ( scalar is < 0x10000 or > 0x10FFFF ) { break; }
+			}
+			if ( PcreUnicodeGraphemes.GetBreak( scalar ) != PcreGraphemeBreak.RegionalIndicator ) { break; }
 			cursor -= width;
 		}
-		var end = memo.Start == cursor ? Math.Max( memo.End, rightStart ) : rightStart;
-		memo = new( cursor, end );
+		if ( !matchInvalidUtf ) {
+			var end = memo.Start == cursor ? Math.Max( memo.End, rightStart ) : rightStart;
+			memo = new( cursor, end );
+		}
 		return cursor;
 	}
 }

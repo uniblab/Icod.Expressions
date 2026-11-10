@@ -257,7 +257,7 @@ internal static partial class PcreByteMatcher {
 							break;
 						case PcreByteOpcode.Grapheme:
 							var graphemeEnd = ConsumeGrapheme( input, position, subjectEnd, fragment.Start,
-								program.Utf8, ref work, matchWorkLimit, workObserver, cancellationToken, ref regionalRun );
+								program.Utf8, program.MatchInvalidUtf, ref work, matchWorkLimit, workObserver, cancellationToken, ref regionalRun );
 							if ( graphemeEnd >= 0 ) { position = graphemeEnd; pc++; }
 							else { failed = true; }
 							break;

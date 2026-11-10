@@ -2512,3 +2512,12 @@ Extended class algebra, script-run groups, optional Turkic folding, other
 pending syntax, optimizer/resource, UTF16/API and realistic performance/
 release/consumer gates remain. Frozen35/frozen214 preserved; no public API,
 version, publication or migration change. Grep stays last.
+
+The existing malformed-UTF fixture exposed a pinned JIT mode distinction.
+MatchInvalidUtf uses a different backward RI context view: literal RI prefixes
+are not counted, while26 mapped CJK prefixes can count. The compatibility
+predicate preserves that view, with normal forward classification and charged
+backward probes. Strict mode keeps its contiguous RI memo. Eight additional
+immutable regressions were observed failing in successful-build RED634 before
+the correction (9failures/46008passes,46017total). Native probes qualify every
+valid prefix scalar and672 compound-prefix cases.
