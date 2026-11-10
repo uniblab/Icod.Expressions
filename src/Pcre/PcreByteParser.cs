@@ -567,6 +567,10 @@ internal sealed partial class PcreByteParser {
 			if ( utf8 ) { throw Unsupported( offset ); }
 			return new PcreByteAny( true );
 		}
+		if ( value == (byte)'X' ) {
+			if ( inBracket ) { throw Invalid( offset, "a grapheme cluster is not a character class member" ); }
+			return new PcreByteGrapheme();
+		}
 		if ( value == (byte)'R' ) {
 			if ( inBracket ) { throw Invalid( offset, "a newline sequence is not a character class member" ); }
 			return new PcreByteNewlineSequence();

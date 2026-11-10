@@ -1,6 +1,6 @@
 # PCRE roadmap status
 
-Reviewed after PR209, with PR210 in progress, 2026-11-10. Issue7 remains the delivery roadmap; the
+Reviewed after PR210, with PR211 in progress, 2026-11-10. Issue7 remains the delivery roadmap; the
 [syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md),
 [resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) and
 [Grep fixture inventory](PCRE-GREP-CONSUMER-FIXTURES.md) define the detailed gates.
@@ -25,8 +25,8 @@ retaining each framework's complete suite and frozen-result qualification.
    Continue offsets, resources and malformed-UTF evidence;
    keep native optimizer differences and unsafe native cases explicitly tracked.
 2. **Expand deliberate syntax coverage.** Script/script-extension properties are
-   implemented in PR209; PR210 adds the remaining native binary/Bidi catalogue.
-   Grapheme clusters, extended class algebra, UTF code-unit escape,
+   implemented in PR209; PR210 completes the native binary/Bidi catalogue and
+   PR211 adds atomic grapheme clusters. Extended class algebra, UTF code-unit escape,
    remaining directives/verbs/callouts and other matrix gaps require their own
    pinned reference fixtures. Decide any intentional exclusions before release;
    successful compilation must never imply an unsupported construct works.
@@ -43,13 +43,13 @@ retaining each framework's complete suite and frozen-result qualification.
 
 ## Current increment and next syntax work
 
-PR210 adds the remaining57 native binary properties/106 aliases and23 Bidi
-values after scripts/scx in PR209 and category/simple-case data in PR207/208.
-It preserves native aliases, unassigned Bidi defaults, InCB/Mirrored rules,
-complements, byte projection and existing grammar. Source hashes, complete
-native fingerprints and live JIT boundary fixtures qualify data ownership.
+PR211 adds atomic byte/UTF8 grapheme clusters after PR210 completed native
+property coverage. It preserves the pinned native segmentation rules, RI
+context before the start offset, capture/repetition paths and malformed-UTF
+fragment/scope bounds. Source hashes, a complete native classification
+fingerprint and live JIT fixtures qualify data ownership.
 
-The native property catalogue is covered. Graphemes and extended class algebra
-are the next deliberate syntax work; script-run groups remain a separate gate.
-General optimizer/resource, UTF16/API, realistic consumer performance and
-release gates remain open. Grep stays last; GNU/BRE/ERE and frozen35 stay intact.
+Extended class algebra is the next deliberate syntax work. Script-run groups,
+other matrix gaps, general optimizer/resource conformance, UTF16/API, realistic
+consumer performance and release gates remain open. Grep stays last; GNU/BRE/ERE
+and frozen35 stay intact.

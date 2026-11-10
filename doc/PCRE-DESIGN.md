@@ -2550,3 +2550,48 @@ This closes native property coverage, while script-run groups, graphemes,
 class algebra, optional Turkic folding and broader optimizer/UTF16/API,
 performance/release/consumer gates remain open. Frozen35/frozen214 stay
 intact; no public API/version/publication/migration change and Grep last.
+
+
+## Atomic grapheme clusters
+
+PR211 adds byte/UTF8 \X with PCRE2 10.48's pinned Unicode17 break data.
+Each cluster is atomic and nonempty; outer repeats retain whole-cluster
+backtracking and existing captures/calls/assertions. Native RI prefix parity,
+EP/Extend/ZWJ state and table exceptions are preserved, including RI before
+Extend and Prepend before EP. Native Indic-conjunct GB9c segmentation is not
+implemented by the oracle; this is native parity, not a blanket UAX claim.
+Bracket \X is invalid and consuming lookbehind use remains unsupported.
+Fixed/variable-behind nested forward assertion bounds retain native behavior.
+
+A dedicated node/opcode consumes validated bytes within the current fragment
+and scope. Every scalar/prefix probe uses the shared Step primitive with its
+ref work counter; no Step delegate or per-atom allocation is introduced. A
+two-offset, input-derived RI memo avoids quadratic contiguous-prefix scans
+without adding saved VM state. Unicode classification uses128 ASCII entries
+and2,035 packed range ends (8,268 data bytes), independent of host services.
+Hash-checked C# generation, exhaustive native fingerprint and Linux exact
+regeneration qualify the data; the package includes its Unicode notice.
+
+The initial successful-build RED631 had53 expected feature failures and45953
+passes. Scope-complete RED632 had54 expected failures/45955 passes, zero skips
+on every framework; all45948 baseline cases pass. New test/data blobs remain
+fixed after RED. Fixtures cover3535 Unicode boundaries, all225 type pairs,
+3375 triples at every scalar start, all65536 byte pairs, atomicity/repeats,
+captures and nested grammar, malformed UTF, scope bounds, work/cancellation
+and linear RI scans. Standalone native JIT probes verified222675 boundary/
+capture outcomes and41 grammar/policy outcomes. See PCRE-GRAPHEME-DESIGN.md
+and PCRE-GRAPHEME-PLAN.md for the fingerprint and execution evidence.
+
+Extended class algebra, script-run groups, optional Turkic folding, other
+pending syntax, optimizer/resource, UTF16/API and realistic performance/
+release/consumer gates remain. Frozen35/frozen214 preserved; no public API,
+version, publication or migration change. Grep stays last.
+
+The existing malformed-UTF fixture exposed a pinned JIT mode distinction.
+MatchInvalidUtf uses a different backward RI context view: literal RI prefixes
+are not counted, while26 mapped CJK prefixes can count. The compatibility
+predicate preserves that view, with normal forward classification and charged
+backward probes. Strict mode keeps its contiguous RI memo. Eight additional
+immutable regressions were observed failing in successful-build RED634 before
+the correction (9failures/46008passes,46017total). Native probes qualify every
+valid prefix scalar and672 compound-prefix cases.

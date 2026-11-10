@@ -1,8 +1,18 @@
 namespace Icod.Expressions.Pcre;
 
 /// <summary>Executes ordered bytecode with a bounded explicit backtracking stack.</summary>
-internal static class PcreByteMatcher {
+internal static partial class PcreByteMatcher {
 	private const int MaximumBacktrackFrames = 1024;
+
+	private static void ChargeWork( ref int work, int matchWorkLimit, Action<int>? workObserver, CancellationToken cancellationToken ) {
+		cancellationToken.ThrowIfCancellationRequested();
+		if ( work >= matchWorkLimit ) {
+			throw new MatchLimitException( PcreByteDiagnosticCode.MatchWorkLimitExceeded, "match work limit exceeded" );
+		}
+		work++;
+		workObserver?.Invoke( work );
+		cancellationToken.ThrowIfCancellationRequested();
+	}
 
 	internal static PcreByteMatchResult Match(
 		PcreByteProgram program,
@@ -66,15 +76,7 @@ internal static class PcreByteMatcher {
 			return new( null, null );
 		}
 		var work = 0;
-		void Step() {
-			cancellationToken.ThrowIfCancellationRequested();
-			if ( work >= matchWorkLimit ) {
-				throw new MatchLimitException( PcreByteDiagnosticCode.MatchWorkLimitExceeded, "match work limit exceeded" );
-			}
-			work++;
-			workObserver?.Invoke( work );
-			cancellationToken.ThrowIfCancellationRequested();
-		}
+		void Step() => ChargeWork( ref work, matchWorkLimit, workObserver, cancellationToken );
 		void SkipFailedLiteralCandidates( long count ) {
 			// A capture wrapper adds one instruction before the failed literal.
 			var cost = count * failedLiteralCost;
@@ -168,6 +170,7 @@ internal static class PcreByteMatcher {
 			List<CallScope>? callScopes = null;
 			int[]? restoredFields = null;
 			var returnGeneration = 0;
+			var regionalRun = new RegionalRun( -1, -1 );
 			// Keep the observed and cancellable path byte-for-byte accountable to Step().
 			var nullableInvalidCandidates = program.MatchInvalidUtf && program.CanMatchEmptyAtAnyOffset;
 			var previousFragmentEnd = -1;
@@ -251,6 +254,12 @@ internal static class PcreByteMatcher {
 								position += scalarWidth;
 								pc++;
 							} else { failed = true; }
+							break;
+						case PcreByteOpcode.Grapheme:
+							var graphemeEnd = ConsumeGrapheme( input, position, subjectEnd, fragment.Start,
+								program.Utf8, program.MatchInvalidUtf, ref work, matchWorkLimit, workObserver, cancellationToken, ref regionalRun );
+							if ( graphemeEnd >= 0 ) { position = graphemeEnd; pc++; }
+							else { failed = true; }
 							break;
 						case PcreByteOpcode.ScalarClass:
 							Step(); // Attempted scalar class evaluation.

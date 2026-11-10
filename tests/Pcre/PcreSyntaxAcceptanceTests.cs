@@ -20,7 +20,7 @@ public sealed class PcreSyntaxAcceptanceTests {
 	[InlineData( "(?[a|b])", 0, false )]
 	[InlineData( "(?C1)a", 0, false )]
 	[InlineData( @"\C", 0, true )]
-	[InlineData( @"\X", 0, true )]
+	[InlineData( "(*script_run:a)", 0, true )]
 	public void PendingConstructHasExplicitOpeningByteDiagnostic( string pattern, int expectedOffset, bool utf8 ) {
 		var result = PcreByteCompiler.Compile( Encoding.UTF8.GetBytes( pattern ), new PcreByteOptions {
 			Utf8 = utf8, Ucp = utf8, AsciiBsD = utf8, MatchInvalidUtf = utf8

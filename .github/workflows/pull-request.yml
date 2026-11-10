@@ -111,6 +111,11 @@ jobs:
             "$RUNNER_TEMP/PropList.txt" "$RUNNER_TEMP/DerivedCoreProperties.txt" "$RUNNER_TEMP/emoji-data.txt" \
             "$RUNNER_TEMP/BidiMirroring.txt" "$RUNNER_TEMP/DerivedBidiClass.txt" "$RUNNER_TEMP/PropertyAliases.txt" \
             "$RUNNER_TEMP/PropertyValueAliases.txt" src/Pcre/PcreUnicodeProperties.Data.cs
+          curl --fail --silent --show-error --location --retry 3 \
+            https://raw.githubusercontent.com/PCRE2Project/pcre2/7978954dbd2efc6f2196869290553cf1871b4ce6/maint/Unicode.tables/GraphemeBreakProperty.txt \
+            --output "$RUNNER_TEMP/GraphemeBreakProperty.txt"
+          dotnet run --project tools/GeneratePcreUnicodeGraphemes -c Staging -- --verify \
+            "$RUNNER_TEMP/GraphemeBreakProperty.txt" "$RUNNER_TEMP/emoji-data.txt" src/Pcre/PcreUnicodeGraphemes.Data.cs
 
       - name: Compare Grep PCRE component workload smoke
         if: matrix.os == 'ubuntu-latest'
