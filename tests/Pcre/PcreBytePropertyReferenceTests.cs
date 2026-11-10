@@ -188,13 +188,13 @@ public sealed class PcreBytePropertyReferenceTests {
 	}
 
 	[Theory]
-	[InlineData( @"\p{Emoji}", 0 )]
-	[InlineData( @"\p{Alphabetic}", 0 )]
-	[InlineData( @"\p{Bidi_Class=L}", 0 )]
+	[InlineData( @"\p{InEmoticons}", 0 )]
+	[InlineData( @"\p{IsAlphabetic}", 0 )]
+	[InlineData( @"\p{Bidi_Class=Left_To_Right}", 0 )]
 	[InlineData( @"\p{gc:Any}", 0 )]
-	[InlineData( @"[\p{Alphabetic}]", 1 )]
+	[InlineData( @"[\p{IsAlphabetic}]", 1 )]
 	[InlineData( @"\p{^^Xwd}", 0 )]
-	public void UnimplementedPropertyFamiliesStayExplicitlyRejected( string pattern, int offset ) =>
+	public void UnsupportedPropertyNamesStayExplicitlyRejected( string pattern, int offset ) =>
 		Diagnostic( Encoding.ASCII.GetBytes( pattern ), PcreByteDiagnosticCode.UnsupportedSyntax, offset );
 
 	[Theory]
