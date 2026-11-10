@@ -612,7 +612,7 @@ internal sealed class PcreByteProgramCompiler {
 		return true;
 	}
 
-	private bool HasUtfCrLfNegativeClassAssertionBitmap( PcreByteNode node, ref int prefixCost ) {
+	private bool HasUtfCrLfNegativeClassAssertionBitmap( PcreByteNode node, ref int prefixCost, int opcodeCost ) {
 		var body = node switch {
 			PcreByteLookahead { IsPositive: false } ahead => ahead.Body,
 			PcreByteLookbehind { IsPositive: false } behind => behind.Body,
@@ -623,7 +623,7 @@ internal sealed class PcreByteProgramCompiler {
 		if ( head is not ( PcreByteScalarSet or PcreByteScalarClass ) ) { return false; }
 		var headVisits = 0;
 		if ( !HasUtfCrLfMandatoryBitmapHead( head, ref headVisits )
-			|| prefixCost > MaximumStartClassVisits - 2 - headVisits ) { return false; }
+			|| prefixCost > MaximumStartClassVisits - opcodeCost - 2 - headVisits ) { return false; }
 		if ( head is PcreByteScalarSet set ) {
 			foreach ( var range in set.Ranges.Span ) {
 				cancellationToken.ThrowIfCancellationRequested();
@@ -631,7 +631,7 @@ internal sealed class PcreByteProgramCompiler {
 			}
 		}
 		// Supported scalar types and the checked sets exclude both CR and LF.
-		prefixCost += 2 + headVisits;
+		prefixCost += opcodeCost + 2 + headVisits;
 		return true;
 	}
 
@@ -651,13 +651,14 @@ internal sealed class PcreByteProgramCompiler {
 			// A bounded newline-free negative assertion can fall through the optional group at LF.
 			if ( !HasUtfCrLfLeadingNegativeLiteralBitmap( negative ) ) { return false; }
 		} else if ( !HasUtfCrLfPositiveClassAssertionBitmap( branch[0], ref prefixCost, 0 )
-			&& !HasUtfCrLfNegativeClassAssertionBitmap( branch[0], ref prefixCost ) ) { return false; }
+			&& !HasUtfCrLfNegativeClassAssertionBitmap( branch[0], ref prefixCost, 0 ) ) { return false; }
 		var allowCaselessMiddle = branch[0].Caseless && branch[0] is
 			( PcreByteLiteralAssertion or PcreByteLookahead or PcreByteLookbehind );
 		for ( var index = 1; index < branch.Count - 1; index++ ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			if ( branch[index] is PcreByteLookahead or PcreByteLookbehind ) {
-				if ( !HasUtfCrLfPositiveClassAssertionBitmap( branch[index], ref prefixCost, 2 ) ) { return false; }
+				if ( !HasUtfCrLfPositiveClassAssertionBitmap( branch[index], ref prefixCost, 2 )
+					&& !HasUtfCrLfNegativeClassAssertionBitmap( branch[index], ref prefixCost, 2 ) ) { return false; }
 				continue;
 			}
 			var cost = branch[index] switch {
