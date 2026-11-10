@@ -55,3 +55,13 @@ all updated/new test blobs after successful-build RED. Baseline45,846 cases and
 frozen214/frozen35 remain. C#13/net8/9/10; six native OS/architectures. No
 subagents, Python, SDK or PowerShell installation; managed execution uses CI.
 No public API, version bump, publication or consumer migration; Grep stays last.
+
+Native JIT research verified 7,092 alias/literal and 1,227,800 complete boundary
+outcomes. Corrected test-only RED626 built and observed42 new failures/45,851
+passes on Linux ARM64/net8; all45,846 baseline cases passed. Test blobs:
+reference292afaff1801a69b607060b7652e675fadc93211;
+fixture07fba8b99edb62113858f6d49c9b035846020054;
+bracket8fc864b00b32600e60643e1eeb574decccdee2ce;
+foundationa47b704a9735b699566603da761d7672cfc360da;
+bytepropertyc407f3adee8ab4960927db1daf0bc4d7739db318;
+acceptancedb621d9550da07e17e970bb3a0205a3f641d7061.

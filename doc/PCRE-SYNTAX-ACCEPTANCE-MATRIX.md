@@ -34,7 +34,8 @@ the matcher returns spans, leaving framing, status and output to Grep.
 | `\N` non-newline, UTF `\N{U+...}` literal | Bare form obeys LF/AnyCRLF and ignores DotAll; counted repetitions supported; Unicode codepoint form shares braced-hex literal/range/fixed-assertion rules | `PcreNonNewlineReferenceTests`; byte/scalar membership, braced-form disambiguation, captures, offsets and diagnostics |
 | Bare and braced octal literals | Default up-to-three-digit octals and `\o{...}` in byte/UTF atoms, brackets/ranges and fixed literal assertions; byte/scalar range checks, brace-edge space/tab | `PcreNumericEscapeReferenceTests`; all 256 byte values, UTF bounds, quoting, offsets and diagnostics; extra Python/NO_BS0 modes pending |
 | Ordinary `[ ]` ranges, negation, shorthand unions, 14 POSIX names | Supported subset in byte and UTF modes; nested/extended class algebra pending, rejected | Bracket and POSIX tests; Unicode table/version reconciliation |
-| `\p`/`\P` general categories and special properties | Byte/UTF categories plus Any/Xan/Xps/Xsp/Xwd/Xuc; loose names, P/caret complements and property predicates independent of UCP/ASCII/i/r. Category-prefixed aliases remain a library extension for categories only. UTF class source operands/endpoints preserve CR/LF flags before folding, including the native negated-singleton exception. Scripts/binary properties remain pending, rejected | `PcreBytePropertyReferenceTests`, `PcreSpecialPropertyReferenceTests`, `PcreClassNewlineMetadataReferenceTests`, `PcreUtf8GeneralCategoryTests`; see `PCRE-SPECIAL-PROPERTIES-DESIGN.md`; Unicode17 categories and default simple-case mappings are pinned; byte search-optimization parity remains a gate |
+| `\p`/`\P` general categories and special properties | Byte/UTF categories plus Any/Xan/Xps/Xsp/Xwd/Xuc; loose names, P/caret complements and property predicates independent of UCP/ASCII/i/r. Category-prefixed aliases remain a library extension for categories only. UTF class source operands/endpoints preserve CR/LF flags before folding, including the native negated-singleton exception. Scripts/scx now have pinned Unicode17 data; binary properties remain pending, rejected | `PcreBytePropertyReferenceTests`, `PcreSpecialPropertyReferenceTests`, `PcreClassNewlineMetadataReferenceTests`, `PcreUtf8GeneralCategoryTests`; see `PCRE-SPECIAL-PROPERTIES-DESIGN.md`; Unicode17 categories and default simple-case mappings are pinned; byte search-optimization parity remains a gate |
+| Unicode script/scx properties | All175 scripts/344 normalized long, short and legacy aliases; bare names are scx, explicit sc/Script and scx/Script_Extensions, native primary-or-extension membership, byte projection and mixed predicates | `PcreScriptPropertyReferenceTests`, 3508 native boundaries and source-hash/native-fingerprint-checked regeneration; binary/Bidi properties and script runs remain separate |
 | `* + ? {n,m}` greedy/lazy and possessive forms | Supported subset, bounded expansion and work; direct lookaround repeats use finite PCRE2 bounds (unlimited maximum becomes minimum plus one) | Counted-repeat, atomic and `PcreAssertionRepeatReferenceTests`; capture growth, optional rollback, zero counts, UTF offsets and resource limits; stress limits against consumer workloads |
 | `(?>...)` atomic group | Supported subset, including exact lowercase `(*atomic:...)` | `PcreAtomicTests`, `PcreGroupAliasReferenceTests` |
 | Bare decimal, absolute and signed relative numeric `\gN`/`\g{N}` backreferences | Default reference/octal disambiguation within 256 captures; braced g accepts edge space/tab. Nonrecursive subroutine forms are distinct calls, described below | Backreference/capture tests, `PcreNumericEscapeReferenceTests`; current-branch numbering, leading-8/9 forward references and entire decimal runs |
@@ -2410,3 +2411,33 @@ This closes default simple-case table ownership, not full-string F or optional
 Turkic T modes. Remaining syntax, optimizer, API/release and consumer gates stay
 open; frozen35 intact and Grep last. See `PCRE-UNICODE-CASEFOLD-DESIGN.md`,
 `PCRE-UNICODE-CASEFOLD-PLAN.md` and `PCRE-ROADMAP-STATUS.md`.
+
+
+## Unicode17 script properties
+
+PR209 implements all 175 PCRE2 10.48 scripts and 344 normalized aliases: bare
+names mean scx, with explicit sc/Script and scx/Script_Extensions namespaces,
+colon/equal separators and existing loose names/complements. Native scx retains
+primary membership plus extension bits, including Common/Inherited. Script
+predicates ignore i/r/UCP/ASCII policy; byte projection uses the same semantics.
+
+An explicit immutable PropertyValue flows through existing scalar class,
+predicate and instruction metadata. Existing ScalarClass/ScalarSet opcodes,
+scalar widths, captures/journal, Step and cancellation paths remain. Generated
+per-script interval lookup has bounds checks and bounded binary search; no
+runtime dependency or new saved state. The C# generator validates three source
+hashes and a complete independent native fingerprint over 1,112,064 scalars;
+Linux CI verifies exact regeneration, with the Unicode notice in the package.
+
+Native probes verified 7,092 alias/literal and 1,227,800 script-boundary JIT
+outcomes. Test data pins 3,508 boundaries, every alias, all256 byte values,
+nested grammar/captures, case/ASCII independence, malformed UTF and resources.
+The corrected test-only RED626 built successfully: Linux ARM64 had42 new
+failures and45,851 passes on net8, with all45,846 baseline cases passing. Old
+unfrozen pending-Greek rows now retain rejection coverage for binary/Bidi
+families. New/updated test blobs stay unchanged after that RED.
+
+Binary/Bidi properties, script runs, graphemes/class algebra and broader
+optimizer/API/release/consumer gates remain open. Frozen35/frozen214 preserved,
+no public API/version/publication/migration change, Grep last. See
+`PCRE-UNICODE-SCRIPTS-DESIGN.md` and `PCRE-UNICODE-SCRIPTS-PLAN.md`.

@@ -2454,3 +2454,33 @@ This closes default simple-case table ownership, not full-string F or optional
 Turkic T modes. Remaining syntax, optimizer, API/release and consumer gates stay
 open; frozen35 intact and Grep last. See `PCRE-UNICODE-CASEFOLD-DESIGN.md`,
 `PCRE-UNICODE-CASEFOLD-PLAN.md` and `PCRE-ROADMAP-STATUS.md`.
+
+
+## Unicode17 script properties
+
+PR209 implements all 175 PCRE2 10.48 scripts and 344 normalized aliases: bare
+names mean scx, with explicit sc/Script and scx/Script_Extensions namespaces,
+colon/equal separators and existing loose names/complements. Native scx retains
+primary membership plus extension bits, including Common/Inherited. Script
+predicates ignore i/r/UCP/ASCII policy; byte projection uses the same semantics.
+
+An explicit immutable PropertyValue flows through existing scalar class,
+predicate and instruction metadata. Existing ScalarClass/ScalarSet opcodes,
+scalar widths, captures/journal, Step and cancellation paths remain. Generated
+per-script interval lookup has bounds checks and bounded binary search; no
+runtime dependency or new saved state. The C# generator validates three source
+hashes and a complete independent native fingerprint over 1,112,064 scalars;
+Linux CI verifies exact regeneration, with the Unicode notice in the package.
+
+Native probes verified 7,092 alias/literal and 1,227,800 script-boundary JIT
+outcomes. Test data pins 3,508 boundaries, every alias, all256 byte values,
+nested grammar/captures, case/ASCII independence, malformed UTF and resources.
+The corrected test-only RED626 built successfully: Linux ARM64 had42 new
+failures and45,851 passes on net8, with all45,846 baseline cases passing. Old
+unfrozen pending-Greek rows now retain rejection coverage for binary/Bidi
+families. New/updated test blobs stay unchanged after that RED.
+
+Binary/Bidi properties, script runs, graphemes/class algebra and broader
+optimizer/API/release/consumer gates remain open. Frozen35/frozen214 preserved,
+no public API/version/publication/migration change, Grep last. See
+`PCRE-UNICODE-SCRIPTS-DESIGN.md` and `PCRE-UNICODE-SCRIPTS-PLAN.md`.

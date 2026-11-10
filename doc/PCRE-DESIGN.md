@@ -47,7 +47,7 @@ The internal byte VM journals prior capture, capture-start, and repetition-mark 
 | Internal `PcreByteOptions.Caseless` | Caller-supplied caseless compile option uses ASCII non-UCP byte behavior or shared Unicode17 simple-case behavior for byte-UCP/UTF literals, properties, backreferences and fixed literal assertions; leading options preserve or explicitly unset it. Grep `-i` integration remains pending. |
 | Internal `PcreByteOptions.Utf8` | Opt-in strict UTF-8 scalar literals and dot preserve source-byte spans, with invalid pattern/subject diagnostics and character-boundary search offsets. Ordinary UTF brackets combine literal ranges, supported shorthands/properties and all fourteen POSIX predicates in caseful or provisional caseless mode. Caseless ranges are compiled to folded intervals; wide ranges can add compilation work. Nonliteral lookarounds remain explicitly unsupported. |
 | Internal `PcreByteOptions.MatchInvalidUtf` | Opt-in PCRE2-style valid UTF-8 fragments in malformed subjects, implying UTF-8 and preserving whole-source byte spans. Consuming atoms and backreferences cannot cross a malformed sequence; fragment edges govern word boundaries while `\\z`/`\\Z` require the whole-subject end. Pinned PCRE2 10.48 exhaustive offset conformance remains pending. |
-| Byte/UTF-8 `\p`/`\P` general categories | The abbreviated C/L/M/N/P/S/Z groups and two-letter Unicode general categories (including `Lc`/`L&`) work as scalar atoms and bracket members, with complements and original byte spans. Loose name matching and `gc:`/`General_Category=` forms are supported. Category data is pinned to Unicode17.0.0, matching PCRE2 10.48, independently of .NET/OS data. Default simple-case tables are also pinned; additional Unicode modes remain separate. Any/Xan/Xps/Xsp/Xwd/Xuc now share scalar predicates with exact complements and local-mode independence; source operand provenance controls UTF class CR/LF search metadata before folding. The existing gc/category-prefix aliases remain a library extension restricted to categories. Script, binary and other properties remain unsupported. See `PCRE-SPECIAL-PROPERTIES-DESIGN.md`. |
+| Byte/UTF-8 `\p`/`\P` general categories | The abbreviated C/L/M/N/P/S/Z groups and two-letter Unicode general categories (including `Lc`/`L&`) work as scalar atoms and bracket members, with complements and original byte spans. Loose name matching and `gc:`/`General_Category=` forms are supported. Category data is pinned to Unicode17.0.0, matching PCRE2 10.48, independently of .NET/OS data. Default simple-case tables are also pinned; additional Unicode modes remain separate. Any/Xan/Xps/Xsp/Xwd/Xuc now share scalar predicates with exact complements and local-mode independence; source operand provenance controls UTF class CR/LF search metadata before folding. The existing gc/category-prefix aliases remain a library extension restricted to categories. Script/scx properties now use pinned Unicode17 data; binary and other properties remain unsupported. See `PCRE-SPECIAL-PROPERTIES-DESIGN.md`. |
 | UTF-8 UCP digit policy | Internal `Ucp` and `AsciiBsD` options distinguish ASCII `\d` from Unicode POSIX `[[:digit:]]` and explicit `\p{Nd}`. Leading, mid-pattern, scoped and combined aD settings select the local `\d`/`\D` restriction; reset preserves it and unset wins. Byte UCP now uses these same predicates over its one-byte domain. UTF brackets combine these predicates with literal scalar ranges; aP restricts all POSIX classes and aT only digit/xdigit; Unicode POSIX punct follows pinned execution (P plus ASCII symbols, despite stale below256 manual prose); Unicode-version parity remains pending. |
 | UTF-8 UCP word behavior | Scalar `\w`/`\W` use Unicode L/N/Mn/Pc under UCP and ASCII word membership without it; `\b`/`\B` compare adjacent UTF scalars under UCP, while non-UCP retains ASCII boundaries. Local aW selects ASCII word classes and boundaries independently of POSIX word. Bracket unions follow the same scalar predicates. |
 | UTF-8 UCP whitespace | Scalar `\s`/`\S` use Unicode separators plus HT/LF/VT/FF/CR, U+0085 and U+180E under UCP; without UCP they use the six ASCII whitespace characters. Local aS selects ASCII s/S; aP independently selects ASCII POSIX space/word. h/v/R stay independent. |
@@ -60,7 +60,7 @@ The internal byte VM journals prior capture, capture-start, and repetition-mark 
 | Atomic `(?>...)` and possessive `*+`, `++`, `?+`, `{n,m}+` | Implemented internally as scoped pruning of backtracking choices. Nested groups retain captures, and preceding alternatives can still backtrack. The exact lowercase `(*atomic:...)` alias uses the same group path; performance conformance remains pending. See `PCRE-GROUP-ALIASES-DESIGN.md`. |
 | `\Q...\E` literal quoting | Implemented internally for ordinary patterns, ordinary brackets and fixed literal assertions, including isolated `\E`, unterminated quotes through pattern end, and UTF-8 scalar literals. A quoted hyphen in a bracket is a member; quoted characters can end a range if its hyphen lies outside the quote. See `PCRE-QUOTED-LITERALS-DESIGN.md`. |
 | Other escapes, remaining inline options and other special groups | Explicit compile-time `UnsupportedSyntax` diagnostic. |
-| Script, binary and remaining UCP property names and additional Unicode modes, pinned invalid-UTF offset conformance, broader backreference syntax, script runs, backtracking verbs and broader PCRE2 syntax | Pending separate implementation and conformance fixtures. |
+| Binary and remaining UCP property names and additional Unicode modes, pinned invalid-UTF offset conformance, broader backreference syntax, script runs, backtracking verbs and broader PCRE2 syntax | Pending separate implementation and conformance fixtures. |
 
 The initial parser limits group nesting, total captures, and repeat-state marks to 256 each. The matcher executes ordered bytecode with an explicit stack bounded at 1,024 saved paths and a work budget of 1,000,000 steps by default; long linear matches do not spend stack slots. Ordinary unbounded empty iterations proceed to the continuation once while retaining captures and alternative paths. Direct assertion repeats instead execute finite bounds, including every required zero-width iteration, and need no progress marks. These limits are provisional and require stress and performance review before a consumer switch.
 
@@ -2487,3 +2487,33 @@ This closes default simple-case table ownership, not full-string F or optional
 Turkic T modes. Remaining syntax, optimizer, API/release and consumer gates stay
 open; frozen35 intact and Grep last. See `PCRE-UNICODE-CASEFOLD-DESIGN.md`,
 `PCRE-UNICODE-CASEFOLD-PLAN.md` and `PCRE-ROADMAP-STATUS.md`.
+
+
+## Unicode17 script properties
+
+PR209 implements all 175 PCRE2 10.48 scripts and 344 normalized aliases: bare
+names mean scx, with explicit sc/Script and scx/Script_Extensions namespaces,
+colon/equal separators and existing loose names/complements. Native scx retains
+primary membership plus extension bits, including Common/Inherited. Script
+predicates ignore i/r/UCP/ASCII policy; byte projection uses the same semantics.
+
+An explicit immutable PropertyValue flows through existing scalar class,
+predicate and instruction metadata. Existing ScalarClass/ScalarSet opcodes,
+scalar widths, captures/journal, Step and cancellation paths remain. Generated
+per-script interval lookup has bounds checks and bounded binary search; no
+runtime dependency or new saved state. The C# generator validates three source
+hashes and a complete independent native fingerprint over 1,112,064 scalars;
+Linux CI verifies exact regeneration, with the Unicode notice in the package.
+
+Native probes verified 7,092 alias/literal and 1,227,800 script-boundary JIT
+outcomes. Test data pins 3,508 boundaries, every alias, all256 byte values,
+nested grammar/captures, case/ASCII independence, malformed UTF and resources.
+The corrected test-only RED626 built successfully: Linux ARM64 had42 new
+failures and45,851 passes on net8, with all45,846 baseline cases passing. Old
+unfrozen pending-Greek rows now retain rejection coverage for binary/Bidi
+families. New/updated test blobs stay unchanged after that RED.
+
+Binary/Bidi properties, script runs, graphemes/class algebra and broader
+optimizer/API/release/consumer gates remain open. Frozen35/frozen214 preserved,
+no public API/version/publication/migration change, Grep last. See
+`PCRE-UNICODE-SCRIPTS-DESIGN.md` and `PCRE-UNICODE-SCRIPTS-PLAN.md`.
