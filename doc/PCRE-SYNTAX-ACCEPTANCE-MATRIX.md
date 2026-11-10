@@ -37,6 +37,7 @@ the matcher returns spans, leaving framing, status and output to Grep.
 | `\p`/`\P` general categories and special properties | Byte/UTF categories plus Any/Xan/Xps/Xsp/Xwd/Xuc; loose names, P/caret complements and property predicates independent of UCP/ASCII/i/r. Category-prefixed aliases remain a library extension for categories only. UTF class source operands/endpoints preserve CR/LF flags before folding, including the native negated-singleton exception. Scripts/scx now have pinned Unicode17 data; binary/Bidi properties now have pinned native data | `PcreBytePropertyReferenceTests`, `PcreSpecialPropertyReferenceTests`, `PcreClassNewlineMetadataReferenceTests`, `PcreUtf8GeneralCategoryTests`; see `PCRE-SPECIAL-PROPERTIES-DESIGN.md`; Unicode17 categories and default simple-case mappings are pinned; byte search-optimization parity remains a gate |
 | Unicode script/scx properties | All175 scripts/344 normalized long, short and legacy aliases; bare names are scx, explicit sc/Script and scx/Script_Extensions, native primary-or-extension membership, byte projection and mixed predicates | `PcreScriptPropertyReferenceTests`, 3508 native boundaries and source-hash/native-fingerprint-checked regeneration; script-run groups remain separate |
 | Unicode binary/Bidi properties | All57 binary predicates/106 aliases and23 Bidi short values, native bare bidi names, byte/UTF projection, complements and mixed predicates; UCP/i/r/ASCII independent | `PcreBinaryBidiPropertyReferenceTests`, 7706 native boundaries, source hashes/native fingerprint and exact C# regeneration; long Bidi values, Is/block names and boolean assignments rejected |
+| Atomic \X grapheme clusters | Byte/UTF8, pinned Unicode17/native rules, atomic clusters and whole-cluster repeats, RI prefix context and fragment/scope bounds | `PcreGraphemeReferenceTests`, `PcreGraphemeLookaheadScopeTests`; native table exceptions pinned; brackets invalid, consuming lookbehind unsupported |
 | `* + ? {n,m}` greedy/lazy and possessive forms | Supported subset, bounded expansion and work; direct lookaround repeats use finite PCRE2 bounds (unlimited maximum becomes minimum plus one) | Counted-repeat, atomic and `PcreAssertionRepeatReferenceTests`; capture growth, optional rollback, zero counts, UTF offsets and resource limits; stress limits against consumer workloads |
 | `(?>...)` atomic group | Supported subset, including exact lowercase `(*atomic:...)` | `PcreAtomicTests`, `PcreGroupAliasReferenceTests` |
 | Bare decimal, absolute and signed relative numeric `\gN`/`\g{N}` backreferences | Default reference/octal disambiguation within 256 captures; braced g accepts edge space/tab. Nonrecursive subroutine forms are distinct calls, described below | Backreference/capture tests, `PcreNumericEscapeReferenceTests`; current-branch numbering, leading-8/9 forward references and entire decimal runs |
@@ -2475,3 +2476,39 @@ This closes native property coverage, while script-run groups, graphemes,
 class algebra, optional Turkic folding and broader optimizer/UTF16/API,
 performance/release/consumer gates remain open. Frozen35/frozen214 stay
 intact; no public API/version/publication/migration change and Grep last.
+
+
+## Atomic grapheme clusters
+
+PR211 adds byte/UTF8 \X with PCRE2 10.48's pinned Unicode17 break data.
+Each cluster is atomic and nonempty; outer repeats retain whole-cluster
+backtracking and existing captures/calls/assertions. Native RI prefix parity,
+EP/Extend/ZWJ state and table exceptions are preserved, including RI before
+Extend and Prepend before EP. Native Indic-conjunct GB9c segmentation is not
+implemented by the oracle; this is native parity, not a blanket UAX claim.
+Bracket \X is invalid and consuming lookbehind use remains unsupported.
+Fixed/variable-behind nested forward assertion bounds retain native behavior.
+
+A dedicated node/opcode consumes validated bytes within the current fragment
+and scope. Every scalar/prefix probe uses the shared Step primitive with its
+ref work counter; no Step delegate or per-atom allocation is introduced. A
+two-offset, input-derived RI memo avoids quadratic contiguous-prefix scans
+without adding saved VM state. Unicode classification uses128 ASCII entries
+and2,035 packed range ends (8,268 data bytes), independent of host services.
+Hash-checked C# generation, exhaustive native fingerprint and Linux exact
+regeneration qualify the data; the package includes its Unicode notice.
+
+The initial successful-build RED631 had53 expected feature failures and45953
+passes. Scope-complete RED632 had54 expected failures/45955 passes, zero skips
+on every framework; all45948 baseline cases pass. New test/data blobs remain
+fixed after RED. Fixtures cover3535 Unicode boundaries, all225 type pairs,
+3375 triples at every scalar start, all65536 byte pairs, atomicity/repeats,
+captures and nested grammar, malformed UTF, scope bounds, work/cancellation
+and linear RI scans. Standalone native JIT probes verified222675 boundary/
+capture outcomes and41 grammar/policy outcomes. See PCRE-GRAPHEME-DESIGN.md
+and PCRE-GRAPHEME-PLAN.md for the fingerprint and execution evidence.
+
+Extended class algebra, script-run groups, optional Turkic folding, other
+pending syntax, optimizer/resource, UTF16/API and realistic performance/
+release/consumer gates remain. Frozen35/frozen214 preserved; no public API,
+version, publication or migration change. Grep stays last.

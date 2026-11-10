@@ -37,7 +37,8 @@ internal enum PcreByteOpcode {
 	AtomicEnter,
 	AtomicExit,
 	Accept,
-	Fail
+	Fail,
+	Grapheme
 }
 
 internal sealed record PcreByteInstruction(
@@ -265,7 +266,7 @@ internal sealed class PcreByteProgramCompiler {
 
 	private static bool IsUtfCrLfErasedRepeat( PcreByteNode node ) => node is PcreByteRepeat {
 		Maximum: 0, Child: PcreByteBackreference or PcreByteLiteral or PcreByteAny
-			or PcreByteScalarClass or PcreByteScalarSet or PcreByteNewlineSequence
+			or PcreByteScalarClass or PcreByteScalarSet or PcreByteNewlineSequence or PcreByteGrapheme
 	};
 
 	private static bool IsUtfCrLfRetainedZeroRepeat( PcreByteNode node ) => node is PcreByteRepeat {
@@ -1404,6 +1405,9 @@ internal sealed class PcreByteProgramCompiler {
 				break;
 			case PcreByteAny any:
 				Emit( PcreByteOpcode.Any, any.DotAll ? 1 : 0 );
+				break;
+			case PcreByteGrapheme:
+				Emit( PcreByteOpcode.Grapheme );
 				break;
 			case PcreByteNewlineSequence:
 				// Synthetic CR/LF literals must not mark the source pattern as

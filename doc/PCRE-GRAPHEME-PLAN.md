@@ -31,8 +31,8 @@ new test/data blobs. Expected baseline45,948 cases remain qualified.
 - Add PcreByteGrapheme node in PcreByteSyntax, parse outside brackets, emit
   Grapheme opcode in PcreByteProgram. Leave consuming lookbehind unsupported;
   zero-count direct atoms follow native erased-node rules where applicable.
-- Add focused PcreByteMatcher.Grapheme.cs scanner, partial matcher and lazy Step
-  delegate plus two-offset RI memo. Charge every scalar probe/prefix inspection.
+- Add focused PcreByteMatcher.Grapheme.cs scanner, partial matcher, shared ref-counter Step
+  primitive and two-offset RI memo. Charge every scalar probe/prefix inspection.
   Handle scopes/fragments without new frames or capture mutations. Audit node
   visitors/start proofs conservatively and validate nested forward assertions.
 - Update four inventories and current roadmap. Run frozen checks and full CI:
@@ -49,3 +49,12 @@ expected new failures,45953 passes,0skips. All45948 baseline cases pass.
 New tests/data fixed after RED; additional variable-behind scope fixtures
 pin native bounded behavior, alongside the existing fixed-behind fixtures.
 No assertion-scope implementation correction is warranted by the oracle.
+
+Scope-complete test-only4685328 / RED632 run42893407574, Linux ARM64
+job130100354947: all3 frameworks compile cleanly,46009 cases with54 expected
+failures/45955 passes,0skips; all45948 baseline cases pass. Fixed test blobs:
+08c832b81db8ed538fafd54a6b8522f6163a02bb (main tests),
+45d8d47c0fe67ed3343bb3b6b5a5e2df8d0c82f0 (data),
+e450749ae1940ba36775afb9a49df25b8f1be013 (scope tests).
+Native probes also reject consuming behind \X even with a zero count;
+existing width validation remains appropriate.

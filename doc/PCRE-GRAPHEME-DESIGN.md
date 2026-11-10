@@ -39,8 +39,9 @@ No PCRE source implementation is copied; data derives from Unicode inputs.
 The scanner uses Step for each attempted scalar and each preceding RI inspected.
 A per-match, input-derived contiguous RI-run cache avoids quadratic rescanning;
 its two byte offsets are memoized facts, not backtracked semantic state. Scope
-limits and validated fragment starts bound reads. Neither cache nor lazy Step
-delegate lives on the compiled reusable pattern. Invalid gaps reset usable
+limits and validated fragment starts bound reads. The shared Step primitive receives the work counter by reference; no Step
+delegate or per-atom allocation is needed. The cache does not live on the
+compiled reusable pattern. Invalid gaps reset usable
 context; start offsets inside valid clusters remain authoritative. Audit
 assertion end limits where zero-width lookaheads are nested in lookbehind.
 Native fixed-width behind allows the forward assertion to see following text;
