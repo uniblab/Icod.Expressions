@@ -66,6 +66,7 @@ audit. A row is not a claim that an unreviewed PR is merged or release-ready.
 | [202](https://github.com/uniblab/Icod.Expressions/pull/202) | 1680 | 39611 | Already-supported CR/LF-excluding negated sets in negative assertions: capture reference coverage |
 | [203](https://github.com/uniblab/Icod.Expressions/pull/203) | 888 | 40499 | Negated-range negative assertions: endpoint-implicit ranges and newline-admitting native controls |
 | [204](https://github.com/uniblab/Icod.Expressions/pull/204) | 2560 | 43059 | Negative scalar-class assertions: newline membership and Unicode predicate unions |
+| [205](https://github.com/uniblab/Icod.Expressions/pull/205) | 2720 | 45779 | Bounded regular negative assertion bodies: sequences, alternatives, groups and repeats |
 
 Before a tranche is ready: six native OS/architecture Staging jobs, full suite
 and frozen214 on net8/9/10, no failed/skipped tests or compiler warnings/errors,

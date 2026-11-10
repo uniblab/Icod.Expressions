@@ -641,6 +641,84 @@ internal sealed class PcreByteProgramCompiler {
 		return true;
 	}
 
+	private bool HasUtfCrLfNegativeAssertionBitmap( PcreByteNode node, ref int prefixCost, int opcodeCost ) {
+		// Preserve the established single-class path and its exact charges.
+		if ( HasUtfCrLfNegativeClassAssertionBitmap( node, ref prefixCost, opcodeCost ) ) { return true; }
+		var body = node switch {
+			PcreByteLookahead { IsPositive: false, NonAtomic: false } ahead => ahead.Body,
+			PcreByteLookbehind { IsPositive: false, NonAtomic: false } behind => behind.Body,
+			_ => null
+		};
+		if ( body is null ) { return false; }
+		var bodyVisits = 0;
+		var pending = new Stack<(PcreByteNode? Node, PcreByteAlternatives? Body)>();
+		pending.Push( (null, body) );
+		while ( pending.TryPop( out var entry ) ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( ++bodyVisits > MaximumStartClassVisits ) { return false; }
+			if ( entry.Body is { } alternatives ) {
+				if ( alternatives.Branches.Count == 0
+					|| alternatives.Branches.Count > MaximumStartClassVisits - bodyVisits - pending.Count ) { return false; }
+				foreach ( var branch in alternatives.Branches ) {
+					cancellationToken.ThrowIfCancellationRequested();
+					if ( ++bodyVisits > MaximumStartClassVisits
+						|| branch.Count > MaximumStartClassVisits - bodyVisits - pending.Count ) { return false; }
+					foreach ( var child in branch ) {
+						cancellationToken.ThrowIfCancellationRequested();
+						pending.Push( (child, null) );
+					}
+				}
+				continue;
+			}
+			var childBody = entry.Node switch {
+				PcreByteGroup group => group.Body,
+				PcreByteNoncapturingGroup group => group.Body,
+				PcreByteLookahead { NonAtomic: false } ahead => ahead.Body,
+				PcreByteLookbehind { NonAtomic: false } behind => behind.Body,
+				_ => null
+			};
+			if ( childBody is not null ) {
+				pending.Push( (null, childBody) );
+			} else {
+				switch ( entry.Node ) {
+					case PcreByteLiteral literal:
+						if ( !Rune.IsValid( literal.Value ) ) { return false; }
+						break;
+					case PcreByteScalarClass or PcreByteAny or PcreByteWordBoundary: break;
+					case PcreByteScalarSet set:
+						if ( set.Ranges.IsEmpty && set.Predicates.IsEmpty ) { return false; }
+						foreach ( var range in set.Ranges.Span ) {
+							cancellationToken.ThrowIfCancellationRequested();
+							if ( ++bodyVisits > MaximumStartClassVisits || range.Start < 0 || range.End > 0x10FFFF
+								|| range.Start > range.End ) { return false; }
+						}
+						foreach ( var predicate in set.Predicates.Span ) {
+							cancellationToken.ThrowIfCancellationRequested();
+							if ( ++bodyVisits > MaximumStartClassVisits ) { return false; }
+						}
+						break;
+					case PcreByteLiteralAssertion literal:
+						for ( var offset = 0; offset < literal.Bytes.Length; ) {
+							cancellationToken.ThrowIfCancellationRequested();
+							if ( ++bodyVisits > MaximumStartClassVisits
+								|| !PcreUtf8.TryRead( literal.Bytes.Span, offset, out _, out var width ) ) { return false; }
+							offset += width;
+						}
+						break;
+					case PcreByteAtomic atomic: pending.Push( (atomic.Child, null) ); break;
+					case PcreByteRepeat repeat: pending.Push( (repeat.Child, null) ); break;
+					default: return false;
+				}
+			}
+			if ( pending.Count > MaximumStartClassVisits - bodyVisits ) { return false; }
+		}
+		// Native skips this body. No inner mandatory head is required, but all
+		// structural validation must succeed before committing speculative costs.
+		if ( prefixCost > MaximumStartClassVisits - opcodeCost - bodyVisits ) { return false; }
+		prefixCost += opcodeCost + bodyVisits;
+		return true;
+	}
+
 	private bool HasUtfCrLfLeadingAssertionZeroGroupRepeatBitmap( IReadOnlyList<PcreByteNode> branch, ref int visits ) {
 		// This nullable repeat cannot establish a mandatory consuming head.
 		// Require a bounded leading assertion and a CR-excluding repeated-group head.
@@ -657,14 +735,14 @@ internal sealed class PcreByteProgramCompiler {
 			// A bounded newline-free negative assertion can fall through the optional group at LF.
 			if ( !HasUtfCrLfLeadingNegativeLiteralBitmap( negative ) ) { return false; }
 		} else if ( !HasUtfCrLfPositiveClassAssertionBitmap( branch[0], ref prefixCost, 0 )
-			&& !HasUtfCrLfNegativeClassAssertionBitmap( branch[0], ref prefixCost, 0 ) ) { return false; }
+			&& !HasUtfCrLfNegativeAssertionBitmap( branch[0], ref prefixCost, 0 ) ) { return false; }
 		var allowCaselessMiddle = branch[0].Caseless && branch[0] is
 			( PcreByteLiteralAssertion or PcreByteLookahead or PcreByteLookbehind );
 		for ( var index = 1; index < branch.Count - 1; index++ ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			if ( branch[index] is PcreByteLookahead or PcreByteLookbehind ) {
 				if ( !HasUtfCrLfPositiveClassAssertionBitmap( branch[index], ref prefixCost, 2 )
-					&& !HasUtfCrLfNegativeClassAssertionBitmap( branch[index], ref prefixCost, 2 ) ) { return false; }
+					&& !HasUtfCrLfNegativeAssertionBitmap( branch[index], ref prefixCost, 2 ) ) { return false; }
 				continue;
 			}
 			var cost = branch[index] switch {
