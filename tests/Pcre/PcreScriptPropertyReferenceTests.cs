@@ -145,18 +145,18 @@ public sealed class PcreScriptPropertyReferenceTests {
 	}
 
 	[Theory]
-	[InlineData( @"\p{sc=}", PcreByteDiagnosticCode.InvalidSyntax, 0 )]
-	[InlineData( @"a\p{scx: }", PcreByteDiagnosticCode.InvalidSyntax, 1 )]
-	[InlineData( @"é\p{Script_Extensions=}", PcreByteDiagnosticCode.InvalidSyntax, 2 )]
-	[InlineData( @"\p{sc=NoSuch}", PcreByteDiagnosticCode.UnsupportedSyntax, 0 )]
-	[InlineData( @"\p{Hrkt}", PcreByteDiagnosticCode.UnsupportedSyntax, 0 )]
-	[InlineData( @"\p{sc=Alphabetic}", PcreByteDiagnosticCode.UnsupportedSyntax, 0 )]
-	[InlineData( @"\p{gc=Greek}", PcreByteDiagnosticCode.UnsupportedSyntax, 0 )]
-	[InlineData( @"\p{sc=Greek", PcreByteDiagnosticCode.InvalidSyntax, 0 )]
-	public void InvalidValuesAndWrongNamespacesKeepOpeningByteDiagnostics( string pattern, PcreByteDiagnosticCode code, int offset ) {
+	[InlineData( @"\p{sc=}", (int)PcreByteDiagnosticCode.InvalidSyntax, 0 )]
+	[InlineData( @"a\p{scx: }", (int)PcreByteDiagnosticCode.InvalidSyntax, 1 )]
+	[InlineData( @"é\p{Script_Extensions=}", (int)PcreByteDiagnosticCode.InvalidSyntax, 2 )]
+	[InlineData( @"\p{sc=NoSuch}", (int)PcreByteDiagnosticCode.UnsupportedSyntax, 0 )]
+	[InlineData( @"\p{Hrkt}", (int)PcreByteDiagnosticCode.UnsupportedSyntax, 0 )]
+	[InlineData( @"\p{sc=Alphabetic}", (int)PcreByteDiagnosticCode.UnsupportedSyntax, 0 )]
+	[InlineData( @"\p{gc=Greek}", (int)PcreByteDiagnosticCode.UnsupportedSyntax, 0 )]
+	[InlineData( @"\p{sc=Greek", (int)PcreByteDiagnosticCode.InvalidSyntax, 0 )]
+	public void InvalidValuesAndWrongNamespacesKeepOpeningByteDiagnostics( string pattern, int code, int offset ) {
 		Assert.Throws<PcrePatternException>( () => Reference( pattern, true ) );
 		var actual = PcreByteCompiler.Compile( Encoding.UTF8.GetBytes( pattern ), new() { Utf8 = true } );
-		Assert.Equal( code, actual.Diagnostic?.Code );
+		Assert.Equal( (PcreByteDiagnosticCode)code, actual.Diagnostic?.Code );
 		Assert.Equal( offset, actual.Diagnostic?.ByteOffset );
 	}
 
