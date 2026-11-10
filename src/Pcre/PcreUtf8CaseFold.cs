@@ -70,6 +70,9 @@ internal static partial class PcreUtf8CaseFold {
 		if ( (uint)scalar < 128 ) { return scalar is >= 'A' and <= 'Z' ? scalar + 32 : scalar; }
 		if ( !Rune.IsValid( scalar ) ) { throw new ArgumentOutOfRangeException( nameof( scalar ) ); }
 		var mappings = UnicodeMappings;
+		// Most of the scalar domain has no case mapping. Avoid searching beyond
+		// the sorted source bounds, especially during broad range closure.
+		if ( scalar < (int)( mappings[0] >> 21 ) || scalar > (int)( mappings[^1] >> 21 ) ) { return scalar; }
 		var low = 0;
 		var high = mappings.Length - 1;
 		while ( low <= high ) {
