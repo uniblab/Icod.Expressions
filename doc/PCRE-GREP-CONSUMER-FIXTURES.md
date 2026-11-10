@@ -2400,3 +2400,30 @@ on macOSARM64 compiled cleanly and failed1,360 new CRLF cases per framework,
 with44,419 passes and zero skips. All43,059 baseline tests and ordinary controls
 passed. Expected final suite:45,779 per framework. Final CI is recorded in PR205.
 Broader issue102, PCRE/release qualification and Grep migration remain open.
+
+
+## Pinned Unicode17 general categories
+
+PR207 replaces host .NET/OS category queries with an immutable managed
+Unicode17.0.0 table matching PCRE2 10.48. Explicit properties, category-derived
+UCP/POSIX classes and UTF capture-name letters/digits share the same lookup;
+non-ASCII subroutine numbers retain controlled InvalidSyntax diagnostics.
+Packed ranges plus an ASCII fast path occupy16,592 data bytes, require no
+runtime files/native dependency and add no VM state, charged work or limits.
+Existing complements, caseless category widening, local ASCII policies, byte
+projection, spans and cancellation remain shared.
+
+The source-hash-checked C# generator and Linux byte-for-byte regeneration gate
+make data ownership reproducible. Unicode permission terms ship in the package.
+An independent native fingerprint covers all1,112,064 valid scalars; new JIT
+fixtures cover recent assignments, complements/brackets, category capture
+selection and UTF names. The test-only run620 built successfully: LinuxARM64
+net8 had29 expected new failures,45,782 passes and all45,779 baseline cases
+passed. The32-case test blob is
+`18e46522c52a6750b83a147350e7b48ae64f65f3`.
+
+This closes general-category version ownership only. Full Unicode fold tables,
+scripts/binary properties, grapheme/class algebra and broader native optimizer
+parity remain gates. No public API/release/consumer change; frozen35 intact and
+Grep last. See `PCRE-UNICODE-CATEGORIES-DESIGN.md`,
+`PCRE-UNICODE-CATEGORIES-PLAN.md` and `PCRE-ROADMAP-STATUS.md`.

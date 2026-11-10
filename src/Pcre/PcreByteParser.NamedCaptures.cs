@@ -54,9 +54,9 @@ internal sealed partial class PcreByteParser {
 			var scalar = (int)source[index];
 			var width = 1;
 			if ( utf8 ) { PcreUtf8.TryRead( source, index, out scalar, out width ); } // Validated at compile entry.
-			var letter = scalar == '_' || ( utf8 ? Rune.IsLetter( new Rune( scalar ) )
+			var letter = scalar == '_' || ( utf8 ? PcreScalarClassMembership.Contains( PcreByteScalarClassKind.Letter, scalar )
 				: scalar is >= 'A' and <= 'Z' or >= 'a' and <= 'z' );
-			var digit = utf8 ? Rune.IsDigit( new Rune( scalar ) ) : scalar is >= '0' and <= '9';
+			var digit = utf8 ? PcreScalarClassMembership.Contains( PcreByteScalarClassKind.DecimalDigit, scalar ) : scalar is >= '0' and <= '9';
 			if ( !letter && ( index == start || !digit ) ) {
 				throw Invalid( offset, "invalid capture name" );
 			}

@@ -57,6 +57,16 @@ jobs:
           -Configuration '${{ env.CONFIGURATION }}'
           -ContractPath packaging/test-results.json
 
+      - name: Verify pinned Unicode category regeneration
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          curl --fail --silent --show-error --location --retry 3 \
+            https://raw.githubusercontent.com/PCRE2Project/pcre2/7978954dbd2efc6f2196869290553cf1871b4ce6/maint/Unicode.tables/DerivedGeneralCategory.txt \
+            --output "$RUNNER_TEMP/DerivedGeneralCategory.txt"
+          dotnet run --project tools/GeneratePcreUnicodeCategories -c Release -- --verify \
+            "$RUNNER_TEMP/DerivedGeneralCategory.txt" src/Pcre/PcreUnicodeCategories.Data.cs
+
       - name: Verify exact extraction parity
         shell: bash
         run: |

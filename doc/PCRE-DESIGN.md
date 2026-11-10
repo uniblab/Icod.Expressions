@@ -47,7 +47,7 @@ The internal byte VM journals prior capture, capture-start, and repetition-mark 
 | Internal `PcreByteOptions.Caseless` | Caller-supplied caseless compile option uses ASCII non-UCP byte behavior or shared provisional Unicode behavior for byte-UCP/UTF literals, properties, backreferences and fixed literal assertions; leading options preserve or explicitly unset it. Grep `-i` integration remains pending. |
 | Internal `PcreByteOptions.Utf8` | Opt-in strict UTF-8 scalar literals and dot preserve source-byte spans, with invalid pattern/subject diagnostics and character-boundary search offsets. Ordinary UTF brackets combine literal ranges, supported shorthands/properties and all fourteen POSIX predicates in caseful or provisional caseless mode. Caseless ranges are compiled to folded intervals; wide ranges can add compilation work. Nonliteral lookarounds remain explicitly unsupported. |
 | Internal `PcreByteOptions.MatchInvalidUtf` | Opt-in PCRE2-style valid UTF-8 fragments in malformed subjects, implying UTF-8 and preserving whole-source byte spans. Consuming atoms and backreferences cannot cross a malformed sequence; fragment edges govern word boundaries while `\\z`/`\\Z` require the whole-subject end. Pinned PCRE2 10.48 exhaustive offset conformance remains pending. |
-| Byte/UTF-8 `\p`/`\P` general categories | The abbreviated C/L/M/N/P/S/Z groups and two-letter Unicode general categories (including `Lc`/`L&`) work as scalar atoms and bracket members, with complements and original byte spans. Loose name matching and `gc:`/`General_Category=` forms are supported. Category data comes from the target .NET runtime; version reconciliation remains a conformance gate before Grep migration. Any/Xan/Xps/Xsp/Xwd/Xuc now share scalar predicates with exact complements and local-mode independence; source operand provenance controls UTF class CR/LF search metadata before folding. The existing gc/category-prefix aliases remain a library extension restricted to categories. Script, binary and other properties remain unsupported. See `PCRE-SPECIAL-PROPERTIES-DESIGN.md`. |
+| Byte/UTF-8 `\p`/`\P` general categories | The abbreviated C/L/M/N/P/S/Z groups and two-letter Unicode general categories (including `Lc`/`L&`) work as scalar atoms and bracket members, with complements and original byte spans. Loose name matching and `gc:`/`General_Category=` forms are supported. Category data is pinned to Unicode17.0.0, matching PCRE2 10.48, independently of .NET/OS data. Full case-fold table reconciliation remains a conformance gate before Grep migration. Any/Xan/Xps/Xsp/Xwd/Xuc now share scalar predicates with exact complements and local-mode independence; source operand provenance controls UTF class CR/LF search metadata before folding. The existing gc/category-prefix aliases remain a library extension restricted to categories. Script, binary and other properties remain unsupported. See `PCRE-SPECIAL-PROPERTIES-DESIGN.md`. |
 | UTF-8 UCP digit policy | Internal `Ucp` and `AsciiBsD` options distinguish ASCII `\d` from Unicode POSIX `[[:digit:]]` and explicit `\p{Nd}`. Leading, mid-pattern, scoped and combined aD settings select the local `\d`/`\D` restriction; reset preserves it and unset wins. Byte UCP now uses these same predicates over its one-byte domain. UTF brackets combine these predicates with literal scalar ranges; aP restricts all POSIX classes and aT only digit/xdigit; Unicode POSIX punct follows pinned execution (P plus ASCII symbols, despite stale below256 manual prose); Unicode-version parity remains pending. |
 | UTF-8 UCP word behavior | Scalar `\w`/`\W` use Unicode L/N/Mn/Pc under UCP and ASCII word membership without it; `\b`/`\B` compare adjacent UTF scalars under UCP, while non-UCP retains ASCII boundaries. Local aW selects ASCII word classes and boundaries independently of POSIX word. Bracket unions follow the same scalar predicates. |
 | UTF-8 UCP whitespace | Scalar `\s`/`\S` use Unicode separators plus HT/LF/VT/FF/CR, U+0085 and U+180E under UCP; without UCP they use the six ASCII whitespace characters. Local aS selects ASCII s/S; aP independently selects ASCII POSIX space/word. h/v/R stay independent. |
@@ -2433,3 +2433,30 @@ on macOSARM64 compiled cleanly and failed1,360 new CRLF cases per framework,
 with44,419 passes and zero skips. All43,059 baseline tests and ordinary controls
 passed. Expected final suite:45,779 per framework. Final CI is recorded in PR205.
 Broader issue102, PCRE/release qualification and Grep migration remain open.
+
+
+## Pinned Unicode17 general categories
+
+PR207 replaces host .NET/OS category queries with an immutable managed
+Unicode17.0.0 table matching PCRE2 10.48. Explicit properties, category-derived
+UCP/POSIX classes and UTF capture-name letters/digits share the same lookup;
+non-ASCII subroutine numbers retain controlled InvalidSyntax diagnostics.
+Packed ranges plus an ASCII fast path occupy16,592 data bytes, require no
+runtime files/native dependency and add no VM state, charged work or limits.
+Existing complements, caseless category widening, local ASCII policies, byte
+projection, spans and cancellation remain shared.
+
+The source-hash-checked C# generator and Linux byte-for-byte regeneration gate
+make data ownership reproducible. Unicode permission terms ship in the package.
+An independent native fingerprint covers all1,112,064 valid scalars; new JIT
+fixtures cover recent assignments, complements/brackets, category capture
+selection and UTF names. The test-only run620 built successfully: LinuxARM64
+net8 had29 expected new failures,45,782 passes and all45,779 baseline cases
+passed. The32-case test blob is
+`18e46522c52a6750b83a147350e7b48ae64f65f3`.
+
+This closes general-category version ownership only. Full Unicode fold tables,
+scripts/binary properties, grapheme/class algebra and broader native optimizer
+parity remain gates. No public API/release/consumer change; frozen35 intact and
+Grep last. See `PCRE-UNICODE-CATEGORIES-DESIGN.md`,
+`PCRE-UNICODE-CATEGORIES-PLAN.md` and `PCRE-ROADMAP-STATUS.md`.
