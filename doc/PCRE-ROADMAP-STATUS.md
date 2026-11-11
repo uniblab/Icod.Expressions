@@ -1,6 +1,6 @@
 # PCRE roadmap status
 
-Reviewed after PR214, with PR215 in progress, 2026-11-11. Issue7 remains the delivery roadmap; the
+Reviewed after PR215, with PR216 in progress, 2026-11-11. Issue7 remains the delivery roadmap; the
 [syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md),
 [resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) and
 [Grep fixture inventory](PCRE-GREP-CONSUMER-FIXTURES.md) define the detailed gates.
@@ -27,7 +27,8 @@ retaining each framework's complete suite and frozen-result qualification.
 2. **Expand deliberate syntax coverage.** Script/script-extension properties are
    implemented in PR209; PR210 completes the native binary/Bidi catalogue and
    PR211 adds atomic grapheme clusters. PR212 adds Perl class algebra; PR213 adds
-   UTS#18 activation, PR214 adds script-run groups and PR215 adds scoped ACCEPT. UTF code-unit escape,
+   UTS#18 activation, PR214 adds script-run groups, PR215 adds scoped ACCEPT and
+   PR216 adds no-argument PRUNE. UTF code-unit escape,
    remaining directives/verbs/callouts and other matrix gaps require their own
    pinned reference fixtures. Decide any intentional exclusions before release;
    successful compilation must never imply an unsupported construct works.
@@ -44,16 +45,16 @@ retaining each framework's complete suite and frozen-result qualification.
 
 ## Current increment and next syntax work
 
-PR215 adds exact no-argument ACCEPT after PR214's four script-run aliases.
-The new verb closes open captures at the current assertion level, commits the
-accepted assertion/call scope and reuses the existing return/journal protocol.
-Native JIT synthetic-close suppression inside called groups and native
-non-atomic assertion fallback are explicitly qualified. Quantifiers,
-NOTEMPTY/K rollback, lookbehind width termination and invalid UTF retain the
-existing byte contract. New reference tests are frozen at successful-build RED;
-whole-matrix GREEN and final review are the readiness gates.
+PR216 adds exact no-argument PRUNE after PR215's successful scope termination.
+The verb saves one bounded frame and cuts earlier choices only when later
+failure reaches it. Active call/negative/conditional assertion boundaries catch;
+standalone positive assertions propagate. Successful atomic scopes remove their
+interior verbs. Native JIT selected pre-verb callee values on forced failure
+are pinned separately from ordinary right-side rollback. Scope walks/discards
+share work/cancellation and all frames share the existing1024 limit.
 
-Remaining syntax includes named ACCEPT/MARK, other control verbs/directives,
-callouts and UTF code-unit escape. General optimizer/resource conformance,
-UTF16/API, realistic consumer performance and release gates remain open. Grep
-stays last; GNU/BRE/ERE and frozen35/frozen214 stay intact.
+New reference tests remain fixed after successful-build RED648; complete native
+CI and author review are readiness gates. Named verbs/MARK, other control verbs,
+directives, callouts, UTF code-unit escape, broader optimizer/resource
+conformance, UTF16/API and realistic consumer performance/release remain open.
+Grep stays last; GNU/BRE/ERE and frozen35/frozen214 stay intact.

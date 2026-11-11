@@ -2852,3 +2852,33 @@ those two oracle cases explicitly characterize native ordinary matching.
 Named ACCEPT/MARK and other verbs/directives, callouts, UTF C, general optimizer/
 resource conformance, UTF16/API and full consumer/release gates remain separate.
 GNU/BRE/ERE, frozen35/frozen214 and Grep ownership remain unchanged.
+
+## PR216: scope-aware PRUNE
+
+Exact no-argument PRUNE saves one frame in the existing1024-frame stack. On
+trigger, active negative/conditional assertion or call guards intercept; root
+cuts resume normal bumpalong. Positive standalone/non-atomic assertions do not
+intercept; successful atomic scopes discard interior verbs. Boundary selection
+uses active IDs/depths so retained inactive siblings cannot catch a later verb.
+Scope walks, journal filtering and frame discards charge shared work/cancellation.
+No separate unwind stack, native runtime fallback, public API or dependency.
+
+Native JIT selected callee values completed before the verb can survive forced
+call failure, including caller assertion/branch fallback. Only selected value
+entries in the aborted callee interval are omitted from rollback, after ordinary
+right-of-verb restoration. Starts, marks and unselected values still restore;
+retained caller checkpoints precede the compacted interval. Native interpreter
+behavior differs here and is not used for these JIT-sensitive fixtures. PRUNE
+has zero consumed width without terminating behind scans. Direct repeats reject.
+
+RED648 cleanly compiled46357 cases per framework:83 expected new failures,
+46274 passes,0 skips. All91 new cases remain fixed at reference blob
+`49bc810efdb1830b7bd49e52e6392f76b1c0bebd`. Independent JIT probes qualify75
+focused cases (74 also byte mode), plus exact1024/1025 saved-frame subjects.
+Tests cover scopes/recursion/return lists, atomic/repeat/script-run interactions,
+K/ACCEPT/NOTEMPTY, captures/options/quotes, selected invalid-UTF/CRLF byte offsets,
+width/grammar errors, compile expansion and work/cancellation.
+
+Named PRUNE/MARK and other verbs/directives, callouts, UTF C, wider optimizer/
+resource conformance, UTF16/API, consumer performance and release remain open.
+Grep stays last; GNU/BRE/ERE and frozen35/frozen214 unchanged.
