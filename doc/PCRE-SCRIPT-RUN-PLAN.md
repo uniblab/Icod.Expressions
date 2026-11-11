@@ -27,3 +27,12 @@ invalid fragments and resource cancellation. Existing optimizer gaps stay102.
    five Unicode regenerators, workload/package/API/extraction/corpus/glibc,
    build scripts and all applicable full compatibility gates. Record evidence,
    mark ready; keep worktree/branch for user merge.
+
+## Execution evidence
+
+Tests-onlyd977efb / RED642 run42941044977, Linux ARM64 job130262663198:
+all frameworks compile with0warnings/errors; 46192 cases,64 expected new
+unsupported-script-run failures,46128 passes including46127 baseline cases and
+one already-supported quoted-literal case,0skips. Fixed test blob
+fa5bd8561a423f957e39be39df31478993c2f10b; mask fixture
+6cb0cbfa000ef8e7642305ea141e5f7fbd093cd1. Both remain unchanged after RED.
