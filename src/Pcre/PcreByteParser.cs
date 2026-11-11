@@ -50,6 +50,7 @@ internal sealed partial class PcreByteParser {
 	}
 
 	internal int GroupCount => groupCount;
+	internal bool HasThen { get; private set; }
 
 	private bool HasAsciiRestriction( AsciiRestriction restriction ) =>
 		( asciiRestrictions & restriction ) != AsciiRestriction.None;

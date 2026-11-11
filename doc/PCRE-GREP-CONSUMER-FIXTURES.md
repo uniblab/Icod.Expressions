@@ -2794,3 +2794,41 @@ PCRE-COMMIT-VERB-PLAN.md.
 Named verbs/MARK, THEN, remaining directives/callouts, UTF C, general optimizer/
 resource conformance, UTF16/API and realistic consumer performance/release stay
 open. Grep stays last; GNU/BRE/ERE, frozen35 and frozen214/120 remain intact.
+
+## PR219: lexical THEN alternatives and scoped cuts
+
+Exact no-argument THEN saves a delayed cut to its nearest lexical alternation.
+It discards choices inside the current branch, then retains just the next-
+branch frame; a last branch instead retains the group's entry depth and permits
+earlier outer retries. Single-branch wrappers and conditional yes/no arms do
+not create targets. All assertions, including standalone positive/non-atomic
+ones, catch THEN; separately compiled callees cannot target caller alternatives.
+With no owner/catch it behaves as root PRUNE. Atomic success and later cuts
+can discard THEN; capture/K rollback and selected callee transactions stay shared.
+
+In a program containing exact THEN, each compiled alternation receives one
+journaled stack-depth checkpoint; ordinary programs retain their bytecode and
+resource use. Compiler ownership carries a mark slot and has-next flag, resets
+for assertions/callees and restores before conditional yes/no arms. The VM
+captures an absolute live-frame boundary clamped to active scope guards. The
+checkpoint reuses StateKind.Mark rollback and callee restore, with no new arena
+or extra saved guard. Checkpoints share the256 marks with script/progress state;
+all four cuts/ordinary choices share1024 frames and4096 compiled expansion.
+Every checkpoint, marker, scope walk and discarded frame charges shared work/
+cancellation. Direct quantifiers reject; behind width is zero without hiding
+its tail. The bounded COMMIT first-unit proof also crosses leading THEN.
+
+RED656 run43031808664/LinuxARM64 built net8/9/10 with zero warnings/errors:
+46814 cases each,159 expected missing-THEN failures,46655 passes,0 skips.
+No earlier fixture or native literal oracle failed. All167 new cases remain
+fixed at blob`c60d5da76744c4de93d54ffb6be8103c96538052`. Independent native
+exports pin149 literal cases (146 byte/UTF,3 UTF-only), plus plain1024/1025 and
+mixed1024/1028 frame subjects and shared mark boundary subjects. All selected
+malformed-UTF/CRLF byte offsets, resource/cancel paths, roots/nesting/last branches,
+outer retries, conditionals, lookarounds/behind, recursion/selected returns,
+atomic/repeat/script/grapheme, mixed verbs, K/ACCEPT/options/quotes are covered.
+See PCRE-THEN-VERB-DESIGN.md and PCRE-THEN-VERB-PLAN.md.
+
+Named verbs/MARK, remaining directives/callouts, UTF C, wider optimizer/resource
+conformance (issue102), UTF16/API and realistic consumer performance/release
+remain open. Grep stays last; GNU/BRE/ERE and frozen35/frozen214/120 stay intact.

@@ -236,6 +236,7 @@ internal static partial class PcreByteMatcher {
 							pruneLiteralEnd = Math.Max( pruneLiteralEnd, position );
 							pc++;
 							break;
+						case PcreByteOpcode.Then:
 						case PcreByteOpcode.Commit:
 						case PcreByteOpcode.Skip:
 						case PcreByteOpcode.Prune:
@@ -247,17 +248,24 @@ internal static partial class PcreByteMatcher {
 								Step();
 								var catchingScope = assertionScopes![pruneScope];
 								if ( catchingScope.Boundary + 1 <= pruneBoundary ) { break; }
-								if ( catchingScope.Kind is FrameKind.NegativeAssertion or FrameKind.ConditionalAssertion ) {
+								if ( instruction.Opcode == PcreByteOpcode.Then
+									|| catchingScope.Kind is FrameKind.NegativeAssertion or FrameKind.ConditionalAssertion ) {
 									pruneBoundary = catchingScope.Boundary + 1;
 									break;
 								}
 								pruneScope = catchingScope.Parent;
 							}
+							if ( instruction.Opcode == PcreByteOpcode.Then && instruction.First >= 0 ) {
+								// Keep just the owning group's next-branch frame. Last branches
+								// retain only the entry depth, permitting earlier outer retries.
+								pruneBoundary = Math.Max( pruneBoundary, marks[instruction.First] + instruction.Second );
+							}
 							// Pc stores a live saved-frame boundary, not an instruction target.
 							// Only active scopes catch: older retained siblings are ordinary paths.
 							backtrack.Push( new Frame( pruneBoundary, position, changes.Count, atomicDepths.Count,
 								activeScope, instruction.Opcode switch {
-									PcreByteOpcode.Commit => FrameKind.Commit, PcreByteOpcode.Skip => FrameKind.Skip, _ => FrameKind.Prune
+									PcreByteOpcode.Then => FrameKind.Then, PcreByteOpcode.Commit => FrameKind.Commit,
+									PcreByteOpcode.Skip => FrameKind.Skip, _ => FrameKind.Prune
 								}, CallScope: activeCall ) );
 							pc++;
 							break;
@@ -732,11 +740,12 @@ internal static partial class PcreByteMatcher {
 						case PcreByteOpcode.Jump:
 							pc = instruction.First;
 							break;
+						case PcreByteOpcode.ThenMark:
 						case PcreByteOpcode.Mark:
 							if ( backtrack.Count > 0 ) {
 								changes.Add( new( StateKind.Mark, instruction.First, marks[instruction.First], null ) );
 							}
-							marks[instruction.First] = position;
+							marks[instruction.First] = instruction.Opcode == PcreByteOpcode.ThenMark ? backtrack.Count : position;
 							pc++;
 							break;
 						case PcreByteOpcode.ScriptRunCheck:
@@ -820,7 +829,7 @@ internal static partial class PcreByteMatcher {
 						activeCall = frame.CallScope;
 						pc = frame.Pc;
 						position = frame.Position;
-						if ( frame.Kind is FrameKind.Prune or FrameKind.Skip or FrameKind.Commit ) {
+						if ( frame.Kind is FrameKind.Prune or FrameKind.Skip or FrameKind.Commit or FrameKind.Then ) {
 							if ( activeCall >= 0 && frame.Pc == callScopes![activeCall].Boundary ) {
 								var cutCall = callScopes[activeCall];
 								var selected = program.Instructions[cutCall.ReturnPc - 1].CaptureNumbers;
@@ -970,7 +979,7 @@ internal static partial class PcreByteMatcher {
 		StateKind Kind, int Index, int PriorValue, PcreByteCapture? PriorCapture
 	);
 
-	private enum FrameKind : byte { Branch, PositiveAssertion, NegativeAssertion, ReverseRetry, NonAtomicAssertion, ConditionalAssertion, Call, Prune, Skip, Commit }
+	private enum FrameKind : byte { Branch, PositiveAssertion, NegativeAssertion, ReverseRetry, NonAtomicAssertion, ConditionalAssertion, Call, Prune, Skip, Commit, Then }
 
 	private readonly record struct CallScope( int ReturnPc, int Parent, int ChangeCount, int Number, int AssertionScope, int Boundary );
 
