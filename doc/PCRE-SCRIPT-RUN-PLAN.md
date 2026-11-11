@@ -36,3 +36,13 @@ unsupported-script-run failures,46128 passes including46127 baseline cases and
 one already-supported quoted-literal case,0skips. Fixed test blob
 fa5bd8561a423f957e39be39df31478993c2f10b; mask fixture
 6cb0cbfa000ef8e7642305ea141e5f7fbd093cd1. Both remain unchanged after RED.
+
+Implementation66a1477 / RED643 run42942079010, Linux x64 job130266030513:
+all frameworks46192 cases/2failures/46190passes/0skips, clean compilation.
+All65 new script-run cases pass. Two older pending-syntax rows in
+PcreGroupAliasReferenceTests still expect sr/asr to be unsupported; retarget
+those unfrozen pending rows to native-valid COMMIT/THEN verbs. This is test
+inventory maintenance for newly implemented syntax, not a behavioral fixture
+change. The new fixed test/data blobs and all frozen cases remain unchanged;
+no production correction is needed. Re-run complete qualification including
+script data regeneration and all three source-pinned compatibility jobs.

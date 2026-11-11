@@ -2787,3 +2787,41 @@ directives/verbs/callouts, general optimizer/resource conformance (issue102),
 UTF16/public API, realistic performance and release/consumer gates remain open.
 No new package, production fallback, GNU behavior or frozen35/frozen214 change.
 Grep stays last; the user owns publication/migration.
+
+
+## Script-run groups (PR214)
+
+The internal byte/UTF8 engine supports `(*script_run:...)`/`(*sr:...)` and
+`(*atomic_script_run:...)`/`(*asr:...)`. Validation checks the consumed span
+after the body. Empty/single-scalar spans accept Unknown; longer spans reject
+it, intersect neutral-free primary/extension maps, preserve native directional
+Han transitions and require decimal digits from one ten-character family.
+Validation uses actual subject properties, independently of i/r/UCP/ASCII flags.
+ASR commits an atomic body before validation, as `(*sr:(?>...))` does.
+
+The wrapper is transparent to parser tree rewrites and behind widths. Entry
+marks use the existing rollback/call journal; failure retries ordinary body
+choices, and recursive returns restore outer starts. The scanner has no scan
+allocations and charges scalar decode/classification to shared work and
+cancellation. Script marks share the256 compiled-state budget and4096 compile
+budget. Empty-fragment and explicit-newline metadata traverse the wrapper;
+other start-optimizer proofs remain conservative.
+
+GeneratePcreUnicodeScripts now derives301 run descriptors and1892 start ranges
+from its existing source hashes and native full-scalar fingerprint. Three ulong
+words hold each script map. Pinned category ranges identify all77 decimal
+families, including adjacent families and non-hex-aligned starts. Exact C#
+regeneration and independent native masks qualify the added data paths.
+
+PcreScriptRunReferenceTests cover301 descriptor pairs,5111 boundaries in both
+orders against20 contexts,77x77 decimal-set pairs at zero/nine endpoints,
+20-cubed context triples and all256x256 byte pairs. Focused tests pin aliases,
+rollback, recursion, ASR placement, captures/behind, invalid UTF, original spans
+and limits. RED642 keeps46127 baseline passes;64 new cases fail as expected
+and one quoted-literal case already passes. Tests/data remain fixed after RED.
+See PCRE-SCRIPT-RUN-DESIGN.md and PCRE-SCRIPT-RUN-PLAN.md for details.
+
+UTF code-unit escape, remaining directives/verbs/callouts, general optimizer/
+resource conformance (issue102), UTF16/API, realistic performance and release/
+consumer qualification remain open. Frozen35/frozen214, GNU and public API are
+unchanged; no new package or production fallback. Grep stays last.

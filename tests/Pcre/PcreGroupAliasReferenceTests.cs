@@ -108,8 +108,8 @@ public sealed class PcreGroupAliasReferenceTests {
 	}
 
 	[Theory]
-	[InlineData( "(*sr:a)" )]
-	[InlineData( "(*asr:a)" )]
+	[InlineData( "(*COMMIT)a" )]
+	[InlineData( "(*THEN)a" )]
 	[InlineData( "(*ACCEPT)" )]
 	public void OtherValidNativeGroupsAndVerbsAreNeverReinterpretedAsAtomicAliases( string pattern ) {
 		Reference( pattern );
