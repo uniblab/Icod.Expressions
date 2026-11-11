@@ -40,7 +40,8 @@ internal enum PcreByteOpcode {
 	Accept,
 	Fail,
 	Grapheme,
-	ScriptRunCheck
+	ScriptRunCheck,
+	EarlyAccept
 }
 
 internal sealed record PcreByteInstruction(
@@ -94,6 +95,10 @@ internal sealed class PcreByteProgramCompiler {
 	private bool skipUtfCrLfLeadingRepeat;
 	private bool utfCrLfJoinedNullablePrefix;
 	private readonly List<(int Instruction, int Number)> calls = new();
+	private readonly List<int> openCaptures = new();
+	private List<int>? assertionAccepts;
+	private int assertionCaptureStart;
+	private bool hasEarlyAccept;
 
 	internal PcreByteProgramCompiler( CancellationToken cancellationToken, bool utf8, bool matchInvalidUtf,
 		PcreByteNewline newline, bool bsrAnyCrLf, bool notEmpty, bool notEmptyAtStart, bool ucp ) {
@@ -142,7 +147,7 @@ internal sealed class PcreByteProgramCompiler {
 		foreach ( var call in calls ) { Patch( call.Instruction, entries[call.Number], call.Number ); }
 		var bytePrefix = utf8 ? default : FindByteCrLfPrefix( root );
 		return new( instructions.ToArray(), markCount, hasCaselessComparisons, utf8, matchInvalidUtf,
-			FindRequiredLiteralSuffix( root ), newline, HasExplicitNewline( root ), CanMatchEmptyAtAnyOffset( root ),
+			FindRequiredLiteralSuffix( root ), newline, HasExplicitNewline( root ), hasEarlyAccept || CanMatchEmptyAtAnyOffset( root ),
 			bytePrefix.Unconditional, utfCrLfStartClass, notEmpty, notEmptyAtStart,
 			matchInvalidUtf && newline == PcreByteNewline.Any && HasLineStartSearch( root ), ucp, bytePrefix.Literal ) { ScalarExpressionStackDepth = scalarExpressionStackDepth };
 	}
@@ -1403,6 +1408,9 @@ internal sealed class PcreByteProgramCompiler {
 		cancellationToken.ThrowIfCancellationRequested();
 		if ( ++compileVisits > MaximumInstructions ) { throw RepeatExpansionLimit(); }
 		switch ( node ) {
+			case PcreByteAccept:
+				CompileAccept();
+				break;
 			case PcreByteFailure:
 				Emit( PcreByteOpcode.Fail );
 				break;
@@ -1482,7 +1490,11 @@ internal sealed class PcreByteProgramCompiler {
 				break;
 			case PcreByteGroup group:
 				Emit( PcreByteOpcode.CaptureStart, group.Number );
-				compileWork.Push( () => Emit( PcreByteOpcode.CaptureEnd, group.Number ) );
+				openCaptures.Add( group.Number );
+				compileWork.Push( () => {
+					Emit( PcreByteOpcode.CaptureEnd, group.Number );
+					openCaptures.RemoveAt( openCaptures.Count - 1 );
+				} );
 				CompileAlternatives( group.Body );
 				break;
 			case PcreByteNoncapturingGroup noncapturing:
@@ -1520,6 +1532,28 @@ internal sealed class PcreByteProgramCompiler {
 			default:
 				throw new InvalidOperationException( "Parser produced an unknown PCRE byte node." );
 		}
+	}
+
+	private void CompileAccept() {
+		var count = openCaptures.Count - assertionCaptureStart;
+		// Synthetic closes have bounded compilation cost even though one opcode
+		// carries their immutable operands. Callee JIT semantics skip the closes.
+		if ( count > MaximumInstructions - compileVisits ) { throw RepeatExpansionLimit(); }
+		compileVisits += count;
+		var captures = new int[count];
+		for ( var index = 0; index < count; index++ ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			captures[index] = openCaptures[openCaptures.Count - index - 1];
+		}
+		var instruction = Emit( PcreByteOpcode.EarlyAccept, first: -1, captureNumbers: captures );
+		assertionAccepts?.Add( instruction );
+		hasEarlyAccept = true;
+	}
+
+	private void FinishAssertionAccepts( int exit, List<int>? priorAccepts, int priorCaptureStart ) {
+		foreach ( var instruction in assertionAccepts! ) { Patch( instruction, exit ); }
+		assertionAccepts = priorAccepts;
+		assertionCaptureStart = priorCaptureStart;
 	}
 
 	private void CompileConditional( PcreByteAlternatives body, PcreByteOpcode opcode, ReadOnlyMemory<int> targets ) {
@@ -1563,8 +1597,13 @@ internal sealed class PcreByteProgramCompiler {
 		};
 		var flags = ( positive ? 1 : 0 ) | ( minimum >= 0 ? 2 : 0 ) | 8;
 		var enter = Emit( PcreByteOpcode.AssertionEnter, second: flags );
+		var priorAccepts = assertionAccepts;
+		var priorCaptureStart = assertionCaptureStart;
+		assertionAccepts = new();
+		assertionCaptureStart = openCaptures.Count;
 		compileWork.Push( () => {
 			var exit = Emit( PcreByteOpcode.AssertionExit, second: 8 );
+			FinishAssertionAccepts( exit, priorAccepts, priorCaptureStart );
 			var yes = instructions.Count;
 			compileWork.Push( () => {
 				var endJump = Emit( PcreByteOpcode.Jump );
@@ -1602,8 +1641,13 @@ internal sealed class PcreByteProgramCompiler {
 		ReadOnlyMemory<int> reverseLengths = default, int reverseMinimum = -1, bool nonAtomic = false ) {
 		var flags = ( positive ? 1 : 0 ) | ( reverseMinimum >= 0 ? 2 : 0 ) | ( nonAtomic ? 4 : 0 );
 		var enter = Emit( PcreByteOpcode.AssertionEnter, second: flags );
+		var priorAccepts = assertionAccepts;
+		var priorCaptureStart = assertionCaptureStart;
+		assertionAccepts = new();
+		assertionCaptureStart = openCaptures.Count;
 		compileWork.Push( () => {
-			Emit( PcreByteOpcode.AssertionExit, second: nonAtomic ? 4 : 0 );
+			var exit = Emit( PcreByteOpcode.AssertionExit, second: nonAtomic ? 4 : 0 );
+			FinishAssertionAccepts( exit, priorAccepts, priorCaptureStart );
 			Patch( enter, instructions.Count, flags );
 		} );
 		CompileAlternatives( body, reverseLengths, reverseMinimum );

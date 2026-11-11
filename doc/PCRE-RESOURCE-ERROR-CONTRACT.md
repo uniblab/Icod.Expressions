@@ -2825,3 +2825,30 @@ UTF code-unit escape, remaining directives/verbs/callouts, general optimizer/
 resource conformance (issue102), UTF16/API, realistic performance and release/
 consumer qualification remain open. Frozen35/frozen214, GNU and public API are
 unchanged; no new package or production fallback. Grep stays last.
+
+## PR215: immediate successful ACCEPT
+
+Exact no-argument ACCEPT uses one leaf/instruction and existing scope guards,
+returns and capture/mark journals. Same-assertion-level open captures close
+synthetically outside called groups; native JIT suppresses those closes inside
+callees, while already completed selected captures return normally. Accepted
+assertions/calls prune interior choices and restore atomic nesting. NOTEMPTY
+root rejection remains retryable. Script-run checks and lookbehind end checks
+in the skipped suffix do not execute. Direct ACCEPT terminates consumed width
+analysis; lexical validation still checks global errors in the tail.
+
+All synthetic capture operands charge the shared4096 compile budget; runtime
+closes and scope pruning charge work/cancellation. No new saved state category,
+public API, runtime dependency or independent matcher. Existing1024 saved-frame
+and256 parser/state bounds remain. Nullable malformed-UTF candidates preserve
+scalar barriers. The new reference blob is fixed after successful-build RED645
+(64e372d660775c84e81e1bb4a503bbaa5d155a44). Literal native spans cover byte/UTF,
+quantifiers, K/NOTEMPTY, captures/options/branch reset, assertions/conditions/
+behind, calls/recursion/return lists and atomic/script-run bypass. Selected
+CRLF/invalid-UTF subjects test every byte offset; resource/cancellation controls
+use the same VM. PCRE2 declines JIT for non-atomic assertions containing ACCEPT;
+those two oracle cases explicitly characterize native ordinary matching.
+
+Named ACCEPT/MARK and other verbs/directives, callouts, UTF C, general optimizer/
+resource conformance, UTF16/API and full consumer/release gates remain separate.
+GNU/BRE/ERE, frozen35/frozen214 and Grep ownership remain unchanged.

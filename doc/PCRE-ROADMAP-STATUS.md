@@ -1,6 +1,6 @@
 # PCRE roadmap status
 
-Reviewed after PR213, with PR214 in progress, 2026-11-10. Issue7 remains the delivery roadmap; the
+Reviewed after PR214, with PR215 in progress, 2026-11-11. Issue7 remains the delivery roadmap; the
 [syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md),
 [resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) and
 [Grep fixture inventory](PCRE-GREP-CONSUMER-FIXTURES.md) define the detailed gates.
@@ -26,7 +26,8 @@ retaining each framework's complete suite and frozen-result qualification.
    keep native optimizer differences and unsafe native cases explicitly tracked.
 2. **Expand deliberate syntax coverage.** Script/script-extension properties are
    implemented in PR209; PR210 completes the native binary/Bidi catalogue and
-   PR211 adds atomic grapheme clusters. PR212 adds Perl class algebra; PR213 adds UTS#18 activation, and PR214 adds script-run groups. UTF code-unit escape,
+   PR211 adds atomic grapheme clusters. PR212 adds Perl class algebra; PR213 adds
+   UTS#18 activation, PR214 adds script-run groups and PR215 adds scoped ACCEPT. UTF code-unit escape,
    remaining directives/verbs/callouts and other matrix gaps require their own
    pinned reference fixtures. Decide any intentional exclusions before release;
    successful compilation must never imply an unsupported construct works.
@@ -43,16 +44,16 @@ retaining each framework's complete suite and frozen-result qualification.
 
 ## Current increment and next syntax work
 
-PR214 adds the four script-run aliases after PR213 completed opt-in UTS#18
-classes. Native script-extension intersections, directional Han handling and
-decimal-family identity are pinned. Journaled starts, validation after body
-execution and atomic body placement preserve captures/recursion/backtracking.
-The existing script generator now supplies compressed run maps, and pinned
-category intervals identify all77 decimal sets.
+PR215 adds exact no-argument ACCEPT after PR214's four script-run aliases.
+The new verb closes open captures at the current assertion level, commits the
+accepted assertion/call scope and reuses the existing return/journal protocol.
+Native JIT synthetic-close suppression inside called groups and native
+non-atomic assertion fallback are explicitly qualified. Quantifiers,
+NOTEMPTY/K rollback, lookbehind width termination and invalid UTF retain the
+existing byte contract. New reference tests are frozen at successful-build RED;
+whole-matrix GREEN and final review are the readiness gates.
 
-Remaining syntax includes UTF code-unit escape, directives/verbs/callouts and
-other matrix gaps. General optimizer/resource conformance, UTF16/API, realistic
-consumer performance and release gates remain open. The next increment will
-review these gaps against the intended byte/UTF contract before choosing the
-next supported family. Grep stays last; GNU/BRE/ERE and frozen35/frozen214 stay
-intact.
+Remaining syntax includes named ACCEPT/MARK, other control verbs/directives,
+callouts and UTF code-unit escape. General optimizer/resource conformance,
+UTF16/API, realistic consumer performance and release gates remain open. Grep
+stays last; GNU/BRE/ERE and frozen35/frozen214 stay intact.

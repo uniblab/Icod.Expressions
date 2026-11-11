@@ -44,7 +44,7 @@ internal sealed partial class PcreByteParser {
 	}
 
 	private HashSet<int> SuppressedWidthBehinds( PcreByteAlternatives root ) {
-		// Width mode skips DEFINE and the rest of a branch after failure,
+		// Width mode skips DEFINE and the rest of a branch after failure/acceptance,
 		// including lookahead descendants there. Global mode still scans them.
 		var suppressed = new HashSet<int>();
 		var pending = new Stack<(PcreByteNode Node, bool Width, bool Suppressed)>();
@@ -55,7 +55,7 @@ internal sealed partial class PcreByteParser {
 				foreach ( var node in branch ) {
 					cancellationToken.ThrowIfCancellationRequested();
 					pending.Push( (node, width, skip || terminated) );
-					if ( width && node is PcreByteFailure ) { terminated = true; }
+					if ( width && node is ( PcreByteFailure or PcreByteAccept ) ) { terminated = true; }
 				}
 			}
 		}

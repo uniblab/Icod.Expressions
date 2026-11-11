@@ -110,7 +110,7 @@ public sealed class PcreGroupAliasReferenceTests {
 	[Theory]
 	[InlineData( "(*COMMIT)a" )]
 	[InlineData( "(*THEN)a" )]
-	[InlineData( "(*ACCEPT)" )]
+	[InlineData( "(*MARK:x)" )]
 	public void OtherValidNativeGroupsAndVerbsAreNeverReinterpretedAsAtomicAliases( string pattern ) {
 		Reference( pattern );
 		Diagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax, 0 );

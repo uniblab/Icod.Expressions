@@ -8,7 +8,7 @@ namespace Icod.Expressions.Tests.Pcre;
 /// <summary>Representative valid PCRE2 families deliberately outside the internal subset.</summary>
 public sealed class PcreSyntaxAcceptanceTests {
 	[Theory]
-	[InlineData( "(*ACCEPT)", 0, false )]
+	[InlineData( "(*MARK:x)", 0, false )]
 	[InlineData( "(*SKIP)(*FAIL)", 0, false )]
 	[InlineData( "(*LIMIT_DEPTH=10)a", 0, false )]
 	[InlineData( "(*LIMIT_MATCH=10)a", 0, false )]

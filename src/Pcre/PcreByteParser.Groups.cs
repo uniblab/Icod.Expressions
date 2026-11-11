@@ -259,6 +259,7 @@ internal sealed partial class PcreByteParser {
 			&& ( TryConsumeGroupAlias( "*FAIL)"u8 ) || TryConsumeGroupAlias( "*F)"u8 ) ) ) {
 			return new PcreByteFailure();
 		}
+		if ( TryConsumeGroupAlias( "*ACCEPT)"u8 ) ) { return new PcreByteAccept(); }
 		var scriptRun = TryConsumeGroupAlias( "*script_run:"u8 ) || TryConsumeGroupAlias( "*sr:"u8 );
 		if ( !scriptRun && ( TryConsumeGroupAlias( "*atomic_script_run:"u8 ) || TryConsumeGroupAlias( "*asr:"u8 ) ) ) {
 			scriptRun = true; atomic = true;

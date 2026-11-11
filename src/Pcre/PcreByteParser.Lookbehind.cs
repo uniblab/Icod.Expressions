@@ -18,7 +18,7 @@ internal sealed partial class PcreByteParser {
 				var count = nodes.Count;
 				for ( var index = 0; index < nodes.Count; index++ ) {
 					cancellationToken.ThrowIfCancellationRequested();
-					if ( nodes[index] is PcreByteFailure ) { count = index + 1; break; }
+					if ( nodes[index] is PcreByteFailure or PcreByteAccept ) { count = index + 1; break; }
 				}
 				for ( var index = count - 1; index >= 0; index-- ) {
 					cancellationToken.ThrowIfCancellationRequested();
@@ -55,7 +55,7 @@ internal sealed partial class PcreByteParser {
 			var width = new LookbehindWidth( 0, 0 );
 			foreach ( var node in nodes ) {
 				cancellationToken.ThrowIfCancellationRequested();
-				if ( node is PcreByteFailure ) { break; }
+				if ( node is PcreByteFailure or PcreByteAccept ) { break; }
 				var child = widths[node];
 				width = CheckedWidth( (long)width.Minimum + child.Minimum, (long)width.Maximum + child.Maximum, opening );
 			}
@@ -137,7 +137,7 @@ internal sealed partial class PcreByteParser {
 				PcreByteLiteral or PcreByteAny or PcreByteClass or PcreByteScalarClass or PcreByteScalarSet or PcreByteScalarExpression => new( 1, 1 ),
 				PcreByteNewlineSequence => new( 1, 2 ),
 				PcreByteAnchor or PcreByteSearchStart or PcreByteMatchStartReset or PcreByteLineAnchor or PcreByteEndBeforeFinalLf
-					or PcreByteWordBoundary or PcreByteLiteralAssertion or PcreByteLookahead or PcreByteFailure => new( 0, 0 ),
+					or PcreByteWordBoundary or PcreByteLiteralAssertion or PcreByteLookahead or PcreByteFailure or PcreByteAccept => new( 0, 0 ),
 				PcreByteLookbehind assertion => ValidateNestedBehind( assertion ),
 				PcreByteGroup group => GroupWidth( group.Body, item.Opening ),
 				PcreByteBackreference reference => widths[ReferenceTarget( reference, item.Opening )],

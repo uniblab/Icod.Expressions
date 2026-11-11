@@ -17,6 +17,8 @@ internal sealed record PcreByteGrapheme : PcreByteNode;
 
 internal sealed record PcreByteFailure : PcreByteNode;
 
+internal sealed record PcreByteAccept : PcreByteNode;
+
 internal enum PcreByteScalarClassKind {
 	Letter, DecimalDigit, AsciiDigit, AsciiWord, UnicodeWord, AsciiSpace, UnicodeSpace,
 	Ascii, AsciiAlnum, AsciiAlpha, AsciiBlank, AsciiControl, AsciiGraph,
