@@ -27,6 +27,8 @@ internal sealed record PcreByteCommit : PcreByteNode;
 
 internal sealed record PcreByteThen : PcreByteNode;
 
+internal sealed record PcreBytePathMark( ReadOnlyMemory<byte> Name ) : PcreByteNode;
+
 internal enum PcreByteScalarClassKind {
 	Letter, DecimalDigit, AsciiDigit, AsciiWord, UnicodeWord, AsciiSpace, UnicodeSpace,
 	Ascii, AsciiAlnum, AsciiAlpha, AsciiBlank, AsciiControl, AsciiGraph,

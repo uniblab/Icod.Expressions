@@ -137,7 +137,7 @@ internal sealed partial class PcreByteParser {
 				PcreByteLiteral or PcreByteAny or PcreByteClass or PcreByteScalarClass or PcreByteScalarSet or PcreByteScalarExpression => new( 1, 1 ),
 				PcreByteNewlineSequence => new( 1, 2 ),
 				PcreByteAnchor or PcreByteSearchStart or PcreByteMatchStartReset or PcreByteLineAnchor or PcreByteEndBeforeFinalLf
-					or PcreByteWordBoundary or PcreByteLiteralAssertion or PcreByteLookahead or PcreByteFailure or PcreByteAccept or PcreBytePrune or PcreByteSkip or PcreByteCommit or PcreByteThen => new( 0, 0 ),
+					or PcreByteWordBoundary or PcreByteLiteralAssertion or PcreByteLookahead or PcreByteFailure or PcreByteAccept or PcreBytePrune or PcreByteSkip or PcreByteCommit or PcreByteThen or PcreBytePathMark => new( 0, 0 ),
 				PcreByteLookbehind assertion => ValidateNestedBehind( assertion ),
 				PcreByteGroup group => GroupWidth( group.Body, item.Opening ),
 				PcreByteBackreference reference => widths[ReferenceTarget( reference, item.Opening )],

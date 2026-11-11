@@ -24,7 +24,7 @@ internal MarkName metadata; PCRE.NET Mark spans and native get_mark qualify it.
 
 - [x] Export161 literal native cases and add all-offset, name grammar, raw byte,
 resource/work/cancel and immutable ownership cases (196 new cases total).
-- [ ] Publish draft tests/design/plan; require clean-build RED, then freeze all
+- [x] Publish draft tests/design/plan; require clean-build RED, then freeze all
 new references before production changes.
 
 ## Task 2: implement
@@ -34,12 +34,12 @@ Matcher; Result. Interfaces: PcreBytePathMark(Name), PathMark opcode,
 PcreByteProgram.PathMarkSlot (-1 when absent), internal PcreByteMatch.MarkName
 (ReadOnlyMemory<byte>, empty when no visible label).
 
-- [ ] Parse both raw-name headers with 1..255 byte validation, original errors,
+- [x] Parse both raw-name headers with 1..255 byte validation, original errors,
 direct-repeat rejection and zero-width/nonterminating metadata.
-- [ ] Allocate one shared mark slot lazily; emit immutable NUL-trimmed name bytes.
-- [ ] Journal latest instruction+1, keep path slot across successful Return,
+- [x] Allocate one shared mark slot lazily; emit immutable NUL-trimmed name bytes.
+- [x] Journal latest instruction+1, keep path slot across successful Return,
 restore on ordinary/cut failure; attach memory at Accept without another stack.
-- [ ] Cross MARK in the existing bounded COMMIT entry proof; add no wider optimizer.
+- [x] Cross MARK in the existing bounded COMMIT entry proof; add no wider optimizer.
 - [ ] Run unchanged references and full applicable native CI to GREEN.
 
 ## Task 3: review and ready
@@ -48,3 +48,12 @@ Files: syntax/resource/fixture inventories, roadmap status and issue7 footer.
 
 - [ ] Review six focus areas, fixed blobs and proposed merge tree.
 - [ ] Record RED/GREEN evidence and remaining gates; ready PR after full checks.
+
+## Tests-first checkpoint
+
+RED660 run43040885686/macOSARM64 job130592034392 built net8/9/10 with zero
+warnings/errors. Each reported47018 cases:189 expected missing-MARK/label
+failures,46829 passes,0 skips. No earlier fixture or native literal oracle failed.
+All196 new cases freeze at blob`8e88c233d62ba6ecc51c05bb438b45e0d322b5cc`
+before production changes. Independent native probes also qualify1025 label
+writes,255/256 nullable-progress boundaries, work subject and raw-name grammar.

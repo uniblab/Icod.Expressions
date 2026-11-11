@@ -2848,3 +2848,50 @@ LinuxARM64 job130566254506):46822 total,6 failures,46816 passes,0 skips and zero
 warnings/errors on net8/9/10. Original blob c60d5da76744c4de93d54ffb6be8103c96538052
 stays fixed; the eight regressions freeze at4bdcbd6448fb873e29f3ad5dfdfe3679187074f4.
 All175 new cases are now fixed before the production capture correction.
+
+## PR220: MARK successful-path byte labels
+
+MARK:NAME and its :NAME shorthand retain the last label on a successful path
+in the internal match's ReadOnlyMemory<byte> MarkName metadata. Both raw headers
+require1..255 bytes; UTF counts encoded bytes and byte mode accepts raw octets.
+Backslashes/extended trivia are literal without ALT_VERBNAMES. The visible label
+uses native NUL termination, even for an embedded NUL. Grammar/byte diagnostics,
+direct-repeat rejection, grouped repetition and zero-width/nonterminating behind
+analysis follow native fixtures. Failed-attempt/partial labels stay an API/start-
+optimizer gate, as do named SKIP and other verb arguments; prior fixed rejection
+fixtures remain untouched.
+
+A PathMark opcode writes its instruction+1 to one lazily allocated shared mark
+slot, zero meaning none. Immutable visible name operands retain the compiler-
+owned source snapshot. Existing mark transactions restore branch/assertion/
+repeat/ordinary or forced callee failure; successful positive and conditional
+bodies retain labels with captures (including the pinned negative-condition
+outcome). Successful callee Return skips only this global path-label slot while
+restoring positional marks. Typed cuts may preserve selected capture values
+without preserving failed-callee labels. Accept attaches the immutable memory
+without another label stack or saved backtrack frame. Bounded COMMIT first-unit
+study crosses MARK; general optimizer parity remains issue102.
+
+The one label slot shares256 marks with script/nullable-progress/THEN state.
+Emission shares4096 compilation limits. Marker writes, journal/return rollback
+and candidate transitions retain shared work/cancellation.1025 label writes
+without saved-choice frames qualify the bounded metadata approach. Returned
+labels survive caller source mutation and later matches without mutable output
+storage or Span lifetime exposure. No exported API/dependency/fallback change.
+
+RED660 run43040885686/macOSARM64 job130592034392 built net8/9/10 with zero
+warnings/errors:47018 total each,189 missing-MARK/metadata failures,46829 passes,
+0 skips and no prior fixture/native oracle failure. All196 new cases freeze at
+blob`8e88c233d62ba6ecc51c05bb438b45e0d322b5cc`.161 native literal fixtures
+(154 byte/UTF,7 UTF-only), selected all-offset malformed-UTF/CRLF cases, raw/NUL/
+length/grammar, conditional/returned/recursive/selected-capture controls, atomic/
+repeat/script/grapheme, ACCEPT/K/mixed cuts and resource/ownership gates qualify
+scope. Four obsolete unfrozen pending-MARK inventory cases retarget to still-
+pending named forms. The test-only metadata reflection bridge permits clean
+RED before adding the internal property; it compares actual result bytes.
+See PCRE-PATH-MARK-DESIGN.md and PCRE-PATH-MARK-PLAN.md.
+
+Named verbs/SKIP, failed-attempt labels, remaining directives/callouts, UTF C,
+wider optimizer/resource conformance, UTF16/exported API, realistic consumer
+performance and release stay open. Grep stays last; GNU/frozen35/frozen214/120
+and all earlier fixed reference blobs remain intact.
