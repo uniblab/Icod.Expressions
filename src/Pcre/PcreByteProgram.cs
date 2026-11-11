@@ -39,7 +39,8 @@ internal enum PcreByteOpcode {
 	AtomicExit,
 	Accept,
 	Fail,
-	Grapheme
+	Grapheme,
+	ScriptRunCheck
 }
 
 internal sealed record PcreByteInstruction(
@@ -1274,6 +1275,7 @@ internal sealed class PcreByteProgramCompiler {
 			|| CanMatchEmptyAtAnyOffset( conditional.Body ),
 		PcreByteStaticConditional conditional => !conditional.Value && conditional.Body.Branches.Count == 1
 			|| CanMatchEmptyAtAnyOffset( conditional.Body.Branches[conditional.Value ? 0 : 1] ),
+		PcreByteScriptRun run => CanMatchEmptyAtAnyOffset( run.Child ),
 		PcreByteAtomic atomic => CanMatchEmptyAtAnyOffset( atomic.Child ),
 		PcreByteRepeat repeat => repeat.Minimum == 0 || CanMatchEmptyAtAnyOffset( repeat.Child ),
 		_ => false
@@ -1304,6 +1306,7 @@ internal sealed class PcreByteProgramCompiler {
 		PcreByteStaticConditional conditional => HasExplicitNewline( conditional.Body ),
 		PcreByteAssertionConditional conditional => HasExplicitNewline( conditional.Assertion )
 			|| HasExplicitNewline( conditional.Body ),
+		PcreByteScriptRun run => HasExplicitNewline( run.Child ),
 		PcreByteAtomic atomic => HasExplicitNewline( atomic.Child ),
 		PcreByteRepeat repeat => HasExplicitNewline( repeat.Child ),
 		_ => false
@@ -1496,6 +1499,15 @@ internal sealed class PcreByteProgramCompiler {
 				break;
 			case PcreByteStaticConditional conditional:
 				CompileStaticConditional( conditional );
+				break;
+			case PcreByteScriptRun run:
+				if ( markCount >= MaximumMarks ) {
+					throw new PcreByteParseException( new( PcreByteDiagnosticCode.PatternRepeatLimitExceeded, run.OpeningOffset, "compiled script-run state limit exceeded" ) );
+				}
+				var runMark = AllocateMark();
+				Emit( PcreByteOpcode.Mark, runMark );
+				compileWork.Push( () => Emit( PcreByteOpcode.ScriptRunCheck, runMark ) );
+				ScheduleNode( run.Child );
 				break;
 			case PcreByteAtomic atomic:
 				Emit( PcreByteOpcode.AtomicEnter );

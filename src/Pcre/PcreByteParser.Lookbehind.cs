@@ -126,6 +126,7 @@ internal sealed partial class PcreByteParser {
 						break;
 					case PcreByteLookbehind assertion: ScheduleBody( assertion.Body, assertion.OpeningOffset ); break;
 					case PcreByteLookahead assertion: ScheduleNestedBehinds( assertion.Body ); break;
+					case PcreByteScriptRun run: pending.Push( (run.Child, false, item.Opening) ); break;
 					case PcreByteAtomic atomic: pending.Push( (atomic.Child, false, item.Opening) ); break;
 					// Erased children still validate before applying their zero count.
 					case PcreByteRepeat repeat: pending.Push( (repeat.Child, false, item.Opening) ); break;
@@ -148,6 +149,7 @@ internal sealed partial class PcreByteParser {
 				PcreByteStaticConditional { IsDefinition: true } => new( 0, 0 ),
 				PcreByteStaticConditional conditional => GroupWidth( conditional.Body, item.Opening ),
 				PcreByteAssertionConditional conditional => GroupWidth( conditional.Body, item.Opening ),
+				PcreByteScriptRun run => widths[run.Child],
 				PcreByteAtomic atomic => widths[atomic.Child],
 				PcreByteRepeat repeat => RepeatWidth( repeat, item.Opening ),
 				_ => throw Unsupported( item.Opening )

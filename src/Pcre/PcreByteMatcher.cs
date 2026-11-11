@@ -671,6 +671,11 @@ internal static partial class PcreByteMatcher {
 							marks[instruction.First] = position;
 							pc++;
 							break;
+						case PcreByteOpcode.ScriptRunCheck:
+							if ( IsScriptRun( input, marks[instruction.First], position, program.Utf8,
+								ref work, matchWorkLimit, workObserver, cancellationToken ) ) { pc++; }
+							else { failed = true; }
+							break;
 						case PcreByteOpcode.Progress:
 							if ( position == marks[instruction.First] ) { pc = instruction.Second; }
 							else { pc++; }

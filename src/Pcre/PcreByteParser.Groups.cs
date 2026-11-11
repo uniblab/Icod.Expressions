@@ -12,11 +12,12 @@ internal sealed partial class PcreByteParser {
 	private sealed class GroupFrame( int openingOffset, int depth, int number, bool atomic,
 		bool branchReset, GroupOptions entryOptions, int entryGroupCount,
 		int assertionKind, int assertionOpeningContext, bool nonAtomic = false, CaptureCondition? condition = null,
-		bool assertionConditional = false, StaticCondition? staticCondition = null ) {
+		bool assertionConditional = false, StaticCondition? staticCondition = null, bool scriptRun = false ) {
 		internal int OpeningOffset { get; } = openingOffset;
 		internal int Depth { get; } = depth;
 		internal int Number { get; } = number;
 		internal bool Atomic { get; } = atomic;
+		internal bool ScriptRun { get; } = scriptRun;
 		internal bool BranchReset { get; } = branchReset;
 		internal int AssertionKind { get; } = assertionKind;
 		internal int AssertionOpeningContext { get; } = assertionOpeningContext;
@@ -93,6 +94,9 @@ internal sealed partial class PcreByteParser {
 						: current.AssertionConditional ? new PcreByteAssertionConditional( current.ConditionAssertion!, body )
 						: current.AssertionKind != 0 ? FinishAssertion( current, body )
 						: current.Number > 0 ? new PcreByteGroup( current.Number, body )
+						: current.ScriptRun ? new PcreByteScriptRun( current.Atomic
+							? new PcreByteAtomic( new PcreByteNoncapturingGroup( body ) )
+							: new PcreByteNoncapturingGroup( body ), current.OpeningOffset )
 						: current.Atomic ? new PcreByteAtomic( new PcreByteNoncapturingGroup( body ) )
 						: new PcreByteNoncapturingGroup( body );
 					var groupCaseless = current.EntryOptions.Caseless;
@@ -255,7 +259,12 @@ internal sealed partial class PcreByteParser {
 			&& ( TryConsumeGroupAlias( "*FAIL)"u8 ) || TryConsumeGroupAlias( "*F)"u8 ) ) ) {
 			return new PcreByteFailure();
 		}
-		if ( TryParseGroupAlias( out atomic, out assertionKind, out nonAtomic ) ) {
+		var scriptRun = TryConsumeGroupAlias( "*script_run:"u8 ) || TryConsumeGroupAlias( "*sr:"u8 );
+		if ( !scriptRun && ( TryConsumeGroupAlias( "*atomic_script_run:"u8 ) || TryConsumeGroupAlias( "*asr:"u8 ) ) ) {
+			scriptRun = true; atomic = true;
+		}
+		if ( scriptRun ) { capturing = false; }
+		else if ( TryParseGroupAlias( out atomic, out assertionKind, out nonAtomic ) ) {
 			capturing = false;
 			if ( assertionKind != 0 && assertionOpeningContext < 0 ) { assertionOpeningContext = offset; }
 		} else if ( index < source.Length && source[index] == (byte)'*'
@@ -350,7 +359,7 @@ internal sealed partial class PcreByteParser {
 		}
 		if ( name is not null ) { RegisterCaptureName( name, number, offset ); }
 		group = new GroupFrame( offset, depth + 1, number, atomic, branchReset, entryOptions, groupCount,
-			assertionKind, assertionOpeningContext, nonAtomic, condition, assertionConditional, staticCondition );
+			assertionKind, assertionOpeningContext, nonAtomic, condition, assertionConditional, staticCondition, scriptRun );
 		return null;
 	}
 }

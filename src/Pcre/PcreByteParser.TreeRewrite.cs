@@ -25,6 +25,7 @@ internal sealed partial class PcreByteParser {
 				break;
 			case PcreByteLookahead assertion: PushTreeBody( pending, assertion.Body ); break;
 			case PcreByteLookbehind assertion: PushTreeBody( pending, assertion.Body ); break;
+			case PcreByteScriptRun run: pending.Push( (run.Child, false) ); break;
 			case PcreByteAtomic atomic: pending.Push( (atomic.Child, false) ); break;
 			case PcreByteRepeat repeat: pending.Push( (repeat.Child, false) ); break;
 		}
@@ -69,6 +70,7 @@ internal sealed partial class PcreByteParser {
 				},
 				PcreByteLookahead assertion => assertion with { Body = RewriteTreeBody( assertion.Body, rewritten ) },
 				PcreByteLookbehind assertion => assertion with { Body = RewriteTreeBody( assertion.Body, rewritten ) },
+				PcreByteScriptRun run => run with { Child = rewritten[run.Child] },
 				PcreByteAtomic atomic => atomic with { Child = rewritten[atomic.Child] },
 				PcreByteRepeat repeat => repeat with { Child = rewritten[repeat.Child] },
 				_ => item.Node

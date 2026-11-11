@@ -120,6 +120,61 @@ void EmitRanges( string prefix, List<(int Start, int End)>[] lists ) {
 }
 EmitRanges( "Primary", basic );
 EmitRanges( "Extended", extended );
+// The existing full-scalar fingerprint supplies primary-or-extension maps.
+// Clear neutral primary bits for the run validator, retaining primary IDs for
+// native Han transitions and Unknown's length-one exception.
+var runDescriptors = new List<(byte Primary, ulong A, ulong B, ulong C)>();
+var runIds = new Dictionary<(byte Primary, ulong A, ulong B, ulong C), ushort>();
+var runRanges = new List<ulong>();
+var previousRunId = -1;
+var neutralScripts = new[] { shortIds["Zyyy"], shortIds["Zinh"] };
+for ( var scalar = 0; scalar < primary.Length; scalar++ ) {
+	ulong a = 0, b = 0, c = 0;
+	if ( scalar is >= 0xD800 and <= 0xDFFF ) {
+		var id = primary[scalar];
+		if ( id < 64 ) { a = 1UL << id; }
+		else if ( id < 128 ) { b = 1UL << ( id - 64 ); }
+		else { c = 1UL << ( id - 128 ); }
+	} else {
+		var at = ( scalar - ( scalar > 0xDFFF ? 0x800 : 0 ) ) * recordWidth + 1;
+		a = System.Buffers.Binary.BinaryPrimitives.ReadUInt64LittleEndian( fingerprint.AsSpan( at, 8 ) );
+		b = System.Buffers.Binary.BinaryPrimitives.ReadUInt64LittleEndian( fingerprint.AsSpan( at + 8, 8 ) );
+		for ( var i = 16; i < recordWidth - 1; i++ ) { c |= (ulong)fingerprint[at + i] << ( ( i - 16 ) * 8 ); }
+	}
+	foreach ( var neutral in neutralScripts ) {
+		if ( neutral < 64 ) { a &= ~( 1UL << neutral ); }
+		else if ( neutral < 128 ) { b &= ~( 1UL << ( neutral - 64 ) ); }
+		else { c &= ~( 1UL << ( neutral - 128 ) ); }
+	}
+	if ( extensionAssigned[scalar] && ( a | b | c ) == 0 ) { throw new InvalidDataException( "Empty significant script-extension map." ); }
+	var descriptor = (primary[scalar], a, b, c);
+	if ( !runIds.TryGetValue( descriptor, out var runId ) ) {
+		runId = checked((ushort)runDescriptors.Count);
+		runIds.Add( descriptor, runId ); runDescriptors.Add( descriptor );
+	}
+	if ( runId != previousRunId ) { runRanges.Add( ( (ulong)scalar << 16 ) | runId ); previousRunId = runId; }
+}
+if ( runDescriptors.Count != 301 || runRanges.Count != 1892 ) { throw new InvalidDataException( "Unexpected script-run compression." ); }
+Line();
+Line( "\t// Primary script and neutral-free script maps for native script-run validation." );
+foreach ( var pair in new[] { ("Common", "Zyyy"), ("Inherited", "Zinh"), ("Unknown", "Zzzz"),
+	("Han", "Hani"), ("Hiragana", "Hira"), ("Katakana", "Kana"), ("Bopomofo", "Bopo"), ("Hangul", "Hang") } ) {
+	Line( "\tinternal const int Run" + pair.Item1 + " = " + shortIds[pair.Item2].ToString( CultureInfo.InvariantCulture ) + ";" );
+}
+var runPrimary = runDescriptors.Select( value => value.Primary.ToString( CultureInfo.InvariantCulture ) ).ToArray();
+Line( "\tprivate static ReadOnlySpan<byte> RunPrimary => [" );
+for ( var first = 0; first < runPrimary.Length; first += 16 ) { Line( "\t\t" + string.Join( ", ", runPrimary.Skip( first ).Take( 16 ) ) + "," ); }
+Line( "\t];" );
+void EmitRunWords( string name, IEnumerable<ulong> runValues ) {
+	var words = runValues.Select( value => "0x" + value.ToString( "X16", CultureInfo.InvariantCulture ) + "UL" ).ToArray();
+	Line( "\tprivate static ReadOnlySpan<ulong> " + name + " => [" );
+	for ( var first = 0; first < words.Length; first += 4 ) { Line( "\t\t" + string.Join( ", ", words.Skip( first ).Take( 4 ) ) + "," ); }
+	Line( "\t];" );
+}
+EmitRunWords( "RunA", runDescriptors.Select( value => value.A ) );
+EmitRunWords( "RunB", runDescriptors.Select( value => value.B ) );
+EmitRunWords( "RunC", runDescriptors.Select( value => value.C ) );
+EmitRunWords( "RunRanges", runRanges );
 Line( "}" );
 var generated = new UTF8Encoding( false ).GetBytes( output.ToString() );
 if ( verify ) {
