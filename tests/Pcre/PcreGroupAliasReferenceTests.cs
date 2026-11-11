@@ -108,7 +108,7 @@ public sealed class PcreGroupAliasReferenceTests {
 	}
 
 	[Theory]
-	[InlineData( "(*COMMIT)a" )]
+	[InlineData( "(*SKIP:pending)a" )]
 	[InlineData( "(*THEN)a" )]
 	[InlineData( "(*MARK:x)" )]
 	public void OtherValidNativeGroupsAndVerbsAreNeverReinterpretedAsAtomicAliases( string pattern ) {
