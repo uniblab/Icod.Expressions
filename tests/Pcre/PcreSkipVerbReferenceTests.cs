@@ -175,11 +175,11 @@ public sealed class PcreSkipVerbReferenceTests {
 	}
 
 	[Theory]
-	[InlineData( "(*SKIP:a)" )]
-	[InlineData( "(*SKIP:)" )]
+	[InlineData( "(*SKIP :a)" )]
+	[InlineData( "(*SKIPX:a)" )]
 	[InlineData( "(*skip)" )]
 	[InlineData( "(*SKIPx)" )]
-	public void NamedAndNonExactHeadersRemainExplicitlyUnsupported( string pattern ) {
+	public void NonExactHeadersRemainExplicitlyUnsupported( string pattern ) {
 		var result = PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( pattern ) );
 		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
 		Assert.Equal( 0, result.Diagnostic?.ByteOffset );

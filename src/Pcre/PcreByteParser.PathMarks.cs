@@ -9,6 +9,22 @@ internal sealed partial class PcreByteParser {
 			throw Invalid( index - 1, "MARK requires a name" );
 		}
 		if ( !TryConsumeGroupAlias( "*MARK:"u8 ) && !TryConsumeGroupAlias( "*:"u8 ) ) { return null; }
+		return new( ReadControlVerbName( "MARK", requireName: true ) );
+	}
+
+	private PcreByteNode? TryParseNamedSkip() {
+		if ( source.AsSpan( index ).SequenceEqual( "*SKIP"u8 ) ) {
+			throw Invalid( source.Length, "unterminated SKIP header" );
+		}
+		if ( !TryConsumeGroupAlias( "*SKIP:"u8 ) ) { return null; }
+		var name = ReadControlVerbName( "SKIP", requireName: false );
+		if ( name.IsEmpty ) { return new PcreByteSkip(); }
+		// A nonempty raw argument beginning with NUL is still named SKIP.
+		HasNamedSkip = true;
+		return new PcreByteNamedSkip( name );
+	}
+
+	private ReadOnlyMemory<byte> ReadControlVerbName( string verb, bool requireName ) {
 		var start = index;
 		// Without ALT_VERBNAMES, backslashes and extended-mode trivia are raw
 		// name bytes. Only the first closing parenthesis terminates this token.
@@ -16,11 +32,13 @@ internal sealed partial class PcreByteParser {
 			cancellationToken.ThrowIfCancellationRequested();
 			index++;
 		}
-		if ( index == source.Length ) { throw Invalid( index, "unterminated MARK name" ); }
+		if ( index == source.Length ) { throw Invalid( index, String.Concat( "unterminated ", verb, " name" ) ); }
 		var length = index - start;
-		if ( length is 0 or > 255 ) { throw Invalid( index, "MARK name must contain 1 to 255 bytes" ); }
+		if ( length > 255 || requireName && length == 0 ) {
+			throw Invalid( index, String.Concat( verb, requireName ? " name must contain 1 to 255 bytes" : " name must contain at most 255 bytes" ) );
+		}
 		var name = source.AsMemory( start, length );
 		index++;
-		return new( name );
+		return name;
 	}
 }

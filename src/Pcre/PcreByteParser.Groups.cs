@@ -198,7 +198,7 @@ internal sealed partial class PcreByteParser {
 			var bounds = counted ? ParseCountedBounds( quantifierOffset )
 				: (quantifier == (byte)'+' ? 1 : 0,
 					quantifier == (byte)'?' ? 1 : int.MaxValue);
-			if ( atom is PcreByteFailure or PcreBytePrune or PcreByteSkip or PcreByteCommit or PcreByteThen or PcreBytePathMark ) {
+			if ( atom is PcreByteFailure or PcreBytePrune or PcreByteSkip or PcreByteNamedSkip or PcreByteCommit or PcreByteThen or PcreBytePathMark ) {
 				throw Invalid( quantifierOffset, "this control verb cannot be repeated" );
 			}
 			if ( atom is PcreByteMatchStartReset ) {
@@ -262,6 +262,7 @@ internal sealed partial class PcreByteParser {
 		if ( TryConsumeGroupAlias( "*ACCEPT)"u8 ) ) { return new PcreByteAccept(); }
 		if ( TryConsumeGroupAlias( "*PRUNE)"u8 ) ) { return new PcreBytePrune(); }
 		if ( TryConsumeGroupAlias( "*SKIP)"u8 ) ) { return new PcreByteSkip(); }
+		if ( TryParseNamedSkip() is { } namedSkip ) { return namedSkip; }
 		if ( TryConsumeGroupAlias( "*COMMIT)"u8 ) ) { return new PcreByteCommit(); }
 		if ( TryConsumeGroupAlias( "*THEN)"u8 ) ) { HasThen = true; return new PcreByteThen(); }
 		if ( TryParsePathMark() is { } pathMark ) { return pathMark; }

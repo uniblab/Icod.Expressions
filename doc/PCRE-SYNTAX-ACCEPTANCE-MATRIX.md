@@ -61,10 +61,11 @@ the matcher returns spans, leaving framing, status and output to Grep.
 | ANY newline directive | Exact byte0 last-wins ANY; fixed vertical scalar list, UTF-aware anchors/comments, NUL ordinary and BSR independent; native consumed-CR midpoint anchors under ANY/ANYCRLF | `PcreAnyNewlineReferenceTests`; see `PCRE-ANY-NEWLINE-DESIGN.md`; continuation-byte controls, byte/UTF membership, spans/fragments/limits |
 | Start directives `(*UTF)`, `(*UTF8)`, `(*UCP)` | Enable existing UTF/UCP modes in the shared uninterrupted prefix before whole-source UTF validation; caller defaults retained; byte UCP now uses the byte domain | `PcreUtfStartDirectiveReferenceTests`; see `PCRE-UTF-START-DIRECTIVES-DESIGN.md`; original-byte errors, strict/tolerant subjects, global modes and work/offset protocols |
 | Start directives `(*NOTEMPTY)`, `(*NOTEMPTY_ATSTART)` | Global accumulating flags in the shared byte0 prefix; final acceptance rejects empty reported spans everywhere or only at the original caller offset, including K semantics; shared rollback/nullable fragment candidates | `PcreNotEmptyDirectiveReferenceTests`; see `PCRE-NOTEMPTY-DIRECTIVES-DESIGN.md`; same-candidate fallback, atomic/inner-success controls, UTF/CRLF offsets and resource gates |
-| `(*MARK:NAME)` / `(*:NAME)` | Successful-path raw byte label on internal match metadata;1..255-byte names, native NUL view, branch/assertion/callee rollback and positive/callee success retention | `PcrePathMarkReferenceTests`;161 independent literals plus all-offset UTF/CRLF, grammar, lifetime and shared256 marks/4096 expansion/work/cancellation; named SKIP/other arguments and failed-attempt labels remain gated |
+| `(*MARK:NAME)` / `(*:NAME)` | Successful-path raw byte label on internal match metadata;1..255-byte names, native NUL view, branch/assertion/callee rollback and positive/callee success retention | `PcrePathMarkReferenceTests`;161 independent literals plus all-offset UTF/CRLF, grammar, lifetime and shared256 marks/4096 expansion/work/cancellation; other verb arguments and failed-attempt labels remain gated |
 | No-argument `(*THEN)` | Delayed cut retries the nearest lexical alternative; last branch permits outer retries; all assertions/callees bound ownership; conditionals and one-branch wrappers inherit their exterior owner | `PcreThenVerbReferenceTests`;149 native literal cases, selected UTF/CRLF offsets, mixed cuts/returned captures, shared1024 frames/256 marks and work/cancellation; named forms pending |
 | No-argument `(*COMMIT)` | Delayed saved cut terminates the root search; shared call/negative/conditional assertion catches and selected callee values; bounded first-code-unit entry before leading COMMIT | `PcreCommitVerbReferenceTests`; native literal spans, rightmost mixed cuts, UTF malformed lead bytes/all selected offsets, shared frame/work/cancellation limits; named arguments pending |
-| No-argument `(*SKIP)` | Shared PRUNE scope catches; strictly forward root restart at the verb byte position, equal/backward normal bumpalong; native direct LF/EOF candidate entry | `PcreSkipVerbReferenceTests`; literal JIT spans, UTF fragments, K/assertions/behind/calls, mixed cuts and shared1024 frames/work/cancellation; named arguments pending |
+| `(*SKIP)` / `(*SKIP:)` | Shared PRUNE scope catches; strictly forward root restart at the verb byte position, equal/backward normal bumpalong; native direct LF/EOF candidate entry | `PcreSkipVerbReferenceTests`; literal JIT spans, UTF fragments, K/assertions/behind/calls, mixed cuts and shared1024 frames/work/cancellation; named form below |
+| `(*SKIP:NAME)` | Newest matching visible MARK supplies root restart; missing root names ignored; local assertion/callee JIT quits; empty argument is unnamed SKIP | `PcreNamedSkipReferenceTests`;231 cases, raw/NUL names, atomic/returned history visibility, UTF/CRLF offsets, shared1024 history/cut frames,256 slots, compilation/work/cancellation |
 | No-argument `(*PRUNE)` | Saves a bounded backtracking cut; root resumes candidate search, calls/negative/conditional assertions catch, standalone positive assertions propagate; atomic success discards interior cuts | `PcrePruneVerbReferenceTests`; native selected pre-verb returned-capture edge, recursion/repeats/behind, UTF/CRLF offsets, 1024 saved-frame boundary and shared work/cancellation; named arguments pending |
 | No-argument `(*ACCEPT)` | Immediate successful root/assertion/call termination, same-level capture closes, committed scope choices, ordinary greedy/lazy/possessive repeats; callee synthetic closes follow pinned native JIT behavior | `PcreAcceptVerbReferenceTests`; K/NOTEMPTY rollback, nested/conditional/non-atomic assertions, width tails, recursive/returned calls, script/atomic bypass, UTF fragments and shared limits; named arguments remain pending |
 | No-argument `(*FAIL)` / `(*F)` | Unconditional zero-consumption failure through shared rollback; nonrepeatable directly, grouped repeats ordinary; direct failure ends consumed-width branch and suppresses nested behinds in its width tail, while global validation/full lexical metadata remain | `PcreFailureVerbReferenceTests`; see `PCRE-FAILURE-VERBS-DESIGN.md`; captures/scopes/widths, malformed offsets, fragments and resource bounds; arguments/other verbs pending |
@@ -2801,3 +2802,48 @@ Named verbs/SKIP, failed-attempt labels, remaining directives/callouts, UTF C,
 wider optimizer/resource conformance, UTF16/exported API, realistic consumer
 performance and release stay open. Grep stays last; GNU/frozen35/frozen214/120
 and all earlier fixed reference blobs remain intact.
+
+## PR221: named SKIP and bounded visible MARK history
+
+Named SKIP resolves the newest matching MARK still visible to backtracking.
+Missing root names leave ordinary retries intact; an empty colon argument is
+unnamed SKIP. Default raw verb names have255-byte limits, ordinal/NUL-prefix
+comparison, original-byte diagnostics and immutable source ownership.
+
+Only programs containing a nonempty named SKIP save MARK history. They reuse
+existing1024 bounded frames and the shared label journal; no per-name slots or
+unbounded history arena are added. Atomic success and successful atomic
+assertions discard their history. Non-atomic assertion history stays visible;
+returned callees preserve successful label metadata but hide their history from
+caller lookup. Each inspected frame charges work and polls cancellation.
+
+Pinned PCRE2 10.48 JIT takes local call/negative/conditional assertion quits before
+name lookup, including missing names; standalone positive scopes propagate.
+Existing selected pre-verb captures, rightmost cuts, forward-only restart,
+CRLF/UTF fragment entry and zero-width metadata remain shared. The bounded
+one-root-branch COMMIT first-byte proof additionally crosses SKIP/named SKIP/
+PRUNE prefixes; issue102's general optimizer gate stays open.
+
+RED662 run43118592400/LinuxARM64 job130852925927 built net8/9/10 with zero
+warnings/errors. Each framework reported47249 cases:217 expected new failures,
+47032 passes,0 skips. No earlier fixture or literal native oracle failed.
+All231 new cases freeze at blob8195d32daba2843a230e8b353b707a39dd3c5d28,
+including199 literal/profile fixtures independently checked in380 native runs.
+All-offset UTF/CRLF, scope/capture, byte/NUL/grammar/lifetime, mixed history/cut
+quota, shared mark/expansion, charged lookup and cancellation controls qualify
+scope. Native-only NO_JIT on large all-success resource controls avoids the
+native default JIT-stack ceiling; production patterns contain no such directive.
+
+Two obsolete managed SKIP header-rejection inventory rows now test nonexact
+headers; every native matching/capture expectation in that source is unchanged.
+One unfrozen group-alias pending row advances to named PRUNE. Revised inventories
+freeze after RED (SKIP2f404af02d0d1ca248194c25a48417757a72c317 and
+GroupAliasefdfdc98233636c26201f01d22cbf7edd6e03612). Historical GNU/BRE/ERE,
+frozen35 production blobs, frozen214 outcomes/120 methods, earlier native
+expectations, exported API and dependencies remain fixed. See
+PCRE-NAMED-SKIP-DESIGN.md and PCRE-NAMED-SKIP-PLAN.md.
+
+Full applicable native CI and author review remain readiness gates. Other verb
+arguments, failed-attempt labels, directives/callouts, UTF C, wider optimizer/
+resource conformance, UTF16/exported API, realistic consumer performance and
+release remain open. Grep stays last.
