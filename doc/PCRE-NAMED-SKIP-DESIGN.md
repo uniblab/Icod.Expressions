@@ -16,6 +16,11 @@ checkpoint and scopes; popping it restores state and continues failure.
 Atomic groups and successful atomic assertions discard their history. Returned
 callees retain their successful label, but their saved history is invisible to
 caller lookup. Successful non-atomic positive assertions retain visible history.
+An atomic assertion whose lexical body contains MARK/THEN clears its inherited
+history on entry, including controls in erased/DEFINE/nested bodies; a read-only
+assertion inherits the outer history. A cancellation-aware heap walk uses the
+existing4096 compilation bound, without following called bodies. Assertion
+metadata carries that boundary; successful label metadata remains independent.
 
 Reuse the SKIP cut frame and existing scope/capture unwinding. The pinned JIT
 performs a local quit in called and negative/conditional assertion scopes before

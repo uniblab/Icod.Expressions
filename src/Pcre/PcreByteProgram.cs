@@ -1760,7 +1760,7 @@ internal sealed class PcreByteProgramCompiler {
 			PcreByteLookbehind assertion => (assertion.Body, assertion.IsPositive, assertion.BranchLengths, assertion.Minimum),
 			_ => throw new InvalidOperationException( "A condition requires a general atomic assertion." )
 		};
-		var flags = ( positive ? 1 : 0 ) | ( minimum >= 0 ? 2 : 0 ) | 8;
+		var flags = ( positive ? 1 : 0 ) | ( minimum >= 0 ? 2 : 0 ) | 8 | ( IsolatesPathMarkHistory( body ) ? 16 : 0 );
 		var enter = Emit( PcreByteOpcode.AssertionEnter, second: flags );
 		var priorAccepts = assertionAccepts;
 		var priorCaptureStart = assertionCaptureStart;
@@ -1807,7 +1807,8 @@ internal sealed class PcreByteProgramCompiler {
 
 	private void CompileAssertion( PcreByteAlternatives body, bool positive,
 		ReadOnlyMemory<int> reverseLengths = default, int reverseMinimum = -1, bool nonAtomic = false ) {
-		var flags = ( positive ? 1 : 0 ) | ( reverseMinimum >= 0 ? 2 : 0 ) | ( nonAtomic ? 4 : 0 );
+		var flags = ( positive ? 1 : 0 ) | ( reverseMinimum >= 0 ? 2 : 0 ) | ( nonAtomic ? 4 : 0 )
+			| ( !nonAtomic && IsolatesPathMarkHistory( body ) ? 16 : 0 );
 		var enter = Emit( PcreByteOpcode.AssertionEnter, second: flags );
 		var priorAccepts = assertionAccepts;
 		var priorCaptureStart = assertionCaptureStart;
@@ -1822,6 +1823,45 @@ internal sealed class PcreByteProgramCompiler {
 			Patch( enter, instructions.Count, flags );
 		} );
 		CompileAlternatives( body, reverseLengths, reverseMinimum );
+	}
+
+	private bool IsolatesPathMarkHistory( PcreByteAlternatives body ) {
+		if ( !hasNamedSkip ) { return false; }
+		// Native atomic assertions save/clear their control head only when their
+		// lexical bytecode contains MARK/THEN. Read-only assertions inherit it.
+		// Include erased/DEFINE bodies and nested assertions, but not called bodies.
+		var pending = new Stack<PcreByteNode>();
+		var visited = new HashSet<PcreByteNode>( ReferenceEqualityComparer.Instance );
+		AddBody( body );
+		while ( pending.TryPop( out var node ) ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( !visited.Add( node ) ) { continue; }
+			if ( visited.Count > MaximumInstructions ) { throw RepeatExpansionLimit(); }
+			switch ( node ) {
+				case PcreBytePathMark or PcreByteThen: return true;
+				case PcreByteGroup group: AddBody( group.Body ); break;
+				case PcreByteNoncapturingGroup group: AddBody( group.Body ); break;
+				case PcreByteLookahead assertion: AddBody( assertion.Body ); break;
+				case PcreByteLookbehind assertion: AddBody( assertion.Body ); break;
+				case PcreByteCaptureConditional conditional: AddBody( conditional.Body ); break;
+				case PcreByteRecursionConditional conditional: AddBody( conditional.Body ); break;
+				case PcreByteStaticConditional conditional: AddBody( conditional.Body ); break;
+				case PcreByteAssertionConditional conditional:
+					AddBody( conditional.Body ); pending.Push( conditional.Assertion ); break;
+				case PcreByteAtomic atomic: pending.Push( atomic.Child ); break;
+				case PcreByteScriptRun run: pending.Push( run.Child ); break;
+				case PcreByteRepeat repeat: pending.Push( repeat.Child ); break;
+			}
+		}
+		return false;
+
+		void AddBody( PcreByteAlternatives alternatives ) {
+			foreach ( var branch in alternatives.Branches ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				if ( branch.Count > MaximumInstructions - visited.Count - pending.Count ) { throw RepeatExpansionLimit(); }
+				foreach ( var node in branch ) { pending.Push( node ); }
+			}
+		}
 	}
 
 	private void CompileRepeat( PcreByteRepeat repeat ) {

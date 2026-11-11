@@ -48,3 +48,13 @@ Revised SKIP inventory: `2f404af02d0d1ca248194c25a48417757a72c317`;
 revised group-alias inventory: `efdfdc98233636c26201f01d22cbf7edd6e03612`.
 All three freeze before production changes. Old SKIP native expectations remain
 byte-identical outside the explicitly reclassified header inventory block.
+
+## Production review correction
+
+CI663 compiled cleanly;47248/47249 passed per LinuxARM framework. The sole
+failure was the frozen outer-MARK/atomic-assertion-body-MARK fixture. Native
+get_framesize/compile_assert_matchingpath clears inherited control history only
+when the lexical assertion body contains MARK/THEN; read-only assertions inherit
+it, and non-atomic assertions retain it.17 focused native probes confirmed the
+distinction, including nested/erased/DEFINE controls. Production adds bounded
+lexical metadata and a lookup boundary. Frozen reference hashes stay unchanged.

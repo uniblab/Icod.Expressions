@@ -245,10 +245,14 @@ internal static partial class PcreByteMatcher {
 								throw new MatchLimitException( PcreByteDiagnosticCode.MatchDepthLimitExceeded, "backtrack stack limit exceeded" );
 							}
 							var pruneBoundary = activeCall >= 0 ? callScopes![activeCall].Boundary : 0;
+							var historyBoundary = 0;
 							for ( var pruneScope = activeScope; pruneScope >= 0; ) {
 								Step();
 								var catchingScope = assertionScopes![pruneScope];
 								if ( catchingScope.Boundary + 1 <= pruneBoundary ) { break; }
+								if ( catchingScope.IsolatePathMarks ) {
+									historyBoundary = Math.Max( historyBoundary, catchingScope.Boundary + 1 );
+								}
 								// Native JIT uses the call-local quit for an unowned THEN
 								// inside an atomic positive assertion; other assertions catch.
 								var thenCatches = instruction.Opcode == PcreByteOpcode.Then
@@ -271,7 +275,9 @@ internal static partial class PcreByteMatcher {
 								// successful returned callees keep labels, but hide their history.
 								if ( pruneBoundary == 0 ) {
 									skipPosition = -1;
+									var historyDepth = backtrack.Count;
 									foreach ( var history in backtrack ) {
+										if ( historyDepth-- <= historyBoundary ) { break; }
 										Step();
 										if ( history.Kind == FrameKind.PathMark && history.CallScope == activeCall
 											&& program.Instructions[history.Pc].Bytes.Span.SequenceEqual( instruction.Bytes.Span ) ) {
@@ -820,7 +826,7 @@ internal static partial class PcreByteMatcher {
 									: ( instruction.Second & 1 ) != 0 ? FrameKind.PositiveAssertion : FrameKind.NegativeAssertion, CallScope: activeCall );
 							var scopeId = assertionScopes.Count;
 							assertionScopes.Add( new( backtrack.Count, ( instruction.Second & 2 ) != 0 ? position : endLimit,
-								activeScope, instruction.First, position, guard.Kind ) );
+								activeScope, instruction.First, position, guard.Kind, ( instruction.Second & 16 ) != 0 ) );
 							activeScope = scopeId;
 							backtrack.Push( guard ); // Forces body mutations into the shared journal.
 							pc++;
@@ -1028,7 +1034,7 @@ internal static partial class PcreByteMatcher {
 
 	private readonly record struct CallScope( int ReturnPc, int Parent, int ChangeCount, int Number, int AssertionScope, int Boundary );
 
-	private readonly record struct AssertionScope( int Boundary, int LimitEnd, int Parent, int ReturnPc, int Position, FrameKind Kind );
+	private readonly record struct AssertionScope( int Boundary, int LimitEnd, int Parent, int ReturnPc, int Position, FrameKind Kind, bool IsolatePathMarks );
 
 	private readonly record struct Frame(
 		int Pc, int Position, int ChangeCount, int AtomicDepth, int AssertionScope,
