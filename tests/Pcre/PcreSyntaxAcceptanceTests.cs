@@ -17,7 +17,7 @@ public sealed class PcreSyntaxAcceptanceTests {
 	[InlineData( "(*NO_START_OPT)a", 0, true )]
 	[InlineData( "a(*SKIP)", 1, false )]
 	[InlineData( "(?i)(*COMMIT)", 4, false )]
-	[InlineData( "(*PRUNE)", 0, false )]
+	[InlineData( "(*SKIP)", 0, false )]
 	[InlineData( "(?C1)a", 0, false )]
 	[InlineData( @"\C", 0, true )]
 	[InlineData( "(*THEN)a", 0, true )]
