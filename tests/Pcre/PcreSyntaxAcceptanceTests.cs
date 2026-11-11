@@ -8,8 +8,8 @@ namespace Icod.Expressions.Tests.Pcre;
 /// <summary>Representative valid PCRE2 families deliberately outside the internal subset.</summary>
 public sealed class PcreSyntaxAcceptanceTests {
 	[Theory]
-	[InlineData( "(*MARK:x)", 0, false )]
-	[InlineData( "(*MARK:pending)(*FAIL)", 0, false )]
+	[InlineData( "(*PRUNE:pending)", 0, false )]
+	[InlineData( "(*ACCEPT:pending)(*FAIL)", 0, false )]
 	[InlineData( "(*LIMIT_DEPTH=10)a", 0, false )]
 	[InlineData( "(*LIMIT_MATCH=10)a", 0, false )]
 	[InlineData( "(*LIMIT_HEAP=10)a", 0, false )]
@@ -32,7 +32,7 @@ public sealed class PcreSyntaxAcceptanceTests {
 
 	[Fact]
 	public void PinnedReferenceAcceptsBacktrackingVerbWhichInternalCompilerRejects() {
-		const string pattern = "(*MARK:x)a";
+		const string pattern = "(*PRUNE:pending)a";
 		var bytes = Encoding.ASCII.GetBytes( pattern );
 		var reference = new PcreRegex8Bit( bytes, Encoding.Latin1, new PcreRegexSettings {
 			Options = PcreOptions.Compiled

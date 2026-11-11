@@ -110,7 +110,7 @@ public sealed class PcreGroupAliasReferenceTests {
 	[Theory]
 	[InlineData( "(*SKIP:pending)a" )]
 	[InlineData( "(*THEN:pending)a" )]
-	[InlineData( "(*MARK:x)" )]
+	[InlineData( "(*COMMIT:pending)" )]
 	public void OtherValidNativeGroupsAndVerbsAreNeverReinterpretedAsAtomicAliases( string pattern ) {
 		Reference( pattern );
 		Diagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax, 0 );
