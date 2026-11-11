@@ -2720,3 +2720,36 @@ width/grammar errors, compile expansion and work/cancellation.
 Named PRUNE/MARK and other verbs/directives, callouts, UTF C, wider optimizer/
 resource conformance, UTF16/API, consumer performance and release remain open.
 Grep stays last; GNU/BRE/ERE and frozen35/frozen214 unchanged.
+
+## PR217: no-argument SKIP restart
+
+SKIP shares PRUNE's bounded saved cuts, active call/negative/conditional catches,
+atomic pruning, selected pre-verb callee values and journal rollback. Only root
+changes candidate advancement: strictly forward verb positions retry directly,
+bypassing native JIT ordinary CRLF/repeat recovery. Equal/backward targets use
+normal bumpalong. Comparison uses candidate start, independent of reported K
+start. Consumed UTF scalar targets stay within existing valid fragments; EOF
+and fragment-end nullable candidates remain eligible.
+
+Frames share the existing1024 limit, including mixed SKIP/PRUNE patterns. Width
+is zero without terminating behind scans; direct quantifiers reject. Scope
+walks/filtering/discards and memo/restart transitions share work/cancellation.
+No public API, dependency, extra unwind stack or production fallback.
+
+RED650 compiled46497 cases per framework with0 warnings/errors:129 new failures,
+46368 passes,0 skips.128 failures are missing SKIP; one frozen PRUNE comparison
+exposes native JIT leading-repeat caching. Its bounded proof permits two root
+branches: direct case-sensitive unbounded greedy literal PLUS/PRUNE/one literal
+or failure suffix, then the same literal (optionally captured). Two memo
+instructions retain the consumed end per Match and reject repeat entry inside
+the cached run, before the cut. No new saved frames or rescans. General class/
+call/group/option/counted-repeat or optimizer coverage remains outside the proof.
+
+All140 new cases stay fixed at blob`092823b6c667859899f16ea07f0dd52e1a499b6b`.
+Native JIT qualifies123 literal cases:110 both byte/UTF,8 UTF-only,5 byte-only,
+plus1024/1025 and mixed512/513 frame subjects. Every selected malformed-UTF/
+CRLF byte offset and shared expansion/work/cancellation paths are covered.
+
+Named SKIP/MARK and other verbs/directives, callouts, UTF C, wider optimizer/
+resource conformance, UTF16/API and consumer/release qualification stay open.
+Grep stays last; GNU/BRE/ERE and frozen35/frozen214 unchanged.

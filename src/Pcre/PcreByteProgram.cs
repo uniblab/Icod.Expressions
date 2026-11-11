@@ -42,7 +42,10 @@ internal enum PcreByteOpcode {
 	Grapheme,
 	ScriptRunCheck,
 	EarlyAccept,
-	Prune
+	Prune,
+	Skip,
+	PruneRepeatStart,
+	PruneRepeatEnd
 }
 
 internal sealed record PcreByteInstruction(
@@ -100,6 +103,7 @@ internal sealed class PcreByteProgramCompiler {
 	private List<int>? assertionAccepts;
 	private int assertionCaptureStart;
 	private bool hasEarlyAccept;
+	private PcreByteRepeat? pruneLiteralCacheRepeat;
 
 	internal PcreByteProgramCompiler( CancellationToken cancellationToken, bool utf8, bool matchInvalidUtf,
 		PcreByteNewline newline, bool bsrAnyCrLf, bool notEmpty, bool notEmptyAtStart, bool ucp ) {
@@ -128,6 +132,7 @@ internal sealed class PcreByteProgramCompiler {
 			utfCrLfLeadingStarAtom = null;
 			skipUtfCrLfLeadingStar = false;
 		}
+		pruneLiteralCacheRepeat = FindPruneLiteralCache( root );
 		CompileAlternatives( root );
 		while ( compileWork.TryPop( out var next ) ) {
 			cancellationToken.ThrowIfCancellationRequested();
@@ -1263,7 +1268,7 @@ internal sealed class PcreByteProgramCompiler {
 	}
 
 	private static bool CanMatchEmptyAtAnyOffset( PcreByteNode node ) => node switch {
-		PcreByteSearchStart or PcreByteMatchStartReset or PcreBytePrune => true,
+		PcreByteSearchStart or PcreByteMatchStartReset or PcreBytePrune or PcreByteSkip => true,
 		// A participating capture may be empty. The VM still checks participation
 		// and forbids nonempty consumption across the synthetic fragment boundary.
 		PcreByteBackreference or PcreByteSubroutineCall => true,
@@ -1409,6 +1414,9 @@ internal sealed class PcreByteProgramCompiler {
 		cancellationToken.ThrowIfCancellationRequested();
 		if ( ++compileVisits > MaximumInstructions ) { throw RepeatExpansionLimit(); }
 		switch ( node ) {
+			case PcreByteSkip:
+				Emit( PcreByteOpcode.Skip );
+				break;
 			case PcreBytePrune:
 				Emit( PcreByteOpcode.Prune );
 				break;
@@ -1531,11 +1539,33 @@ internal sealed class PcreByteProgramCompiler {
 				ScheduleNode( atomic.Child );
 				break;
 			case PcreByteRepeat repeat:
+				if ( ReferenceEquals( repeat, pruneLiteralCacheRepeat ) ) {
+					Emit( PcreByteOpcode.PruneRepeatStart );
+					compileWork.Push( () => Emit( PcreByteOpcode.PruneRepeatEnd ) );
+				}
 				CompileRepeat( repeat );
 				break;
 			default:
 				throw new InvalidOperationException( "Parser produced an unknown PCRE byte node." );
 		}
+	}
+
+	private PcreByteRepeat? FindPruneLiteralCache( PcreByteAlternatives root ) {
+		cancellationToken.ThrowIfCancellationRequested();
+		// Native detect_early_fail reuses this leading literal-PLUS scan after
+		// a PRUNE cut. Bound the proof to two root branches and a single suffix
+		// and same-literal fallback; no calls, options, nested choices or classes.
+		if ( root.Branches.Count != 2 || root.Branches[0].Count != 3
+			|| root.Branches[0][0] is not PcreByteRepeat { Minimum: 1, Maximum: int.MaxValue,
+				Greedy: true, Offset: -1, Child: PcreByteLiteral { Caseless: false } literal } repeat
+			|| root.Branches[0][1] is not PcreBytePrune
+			|| root.Branches[0][2] is not ( PcreByteFailure or PcreByteLiteral { Caseless: false } )
+			|| root.Branches[1].Count != 1 ) { return null; }
+		var fallback = root.Branches[1][0];
+		if ( fallback is PcreByteGroup { Body.Branches.Count: 1 } group && group.Body.Branches[0].Count == 1 ) {
+			fallback = group.Body.Branches[0][0];
+		}
+		return fallback is PcreByteLiteral { Caseless: false } other && other.Value == literal.Value ? repeat : null;
 	}
 
 	private void CompileAccept() {

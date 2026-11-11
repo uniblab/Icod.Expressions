@@ -61,6 +61,7 @@ the matcher returns spans, leaving framing, status and output to Grep.
 | ANY newline directive | Exact byte0 last-wins ANY; fixed vertical scalar list, UTF-aware anchors/comments, NUL ordinary and BSR independent; native consumed-CR midpoint anchors under ANY/ANYCRLF | `PcreAnyNewlineReferenceTests`; see `PCRE-ANY-NEWLINE-DESIGN.md`; continuation-byte controls, byte/UTF membership, spans/fragments/limits |
 | Start directives `(*UTF)`, `(*UTF8)`, `(*UCP)` | Enable existing UTF/UCP modes in the shared uninterrupted prefix before whole-source UTF validation; caller defaults retained; byte UCP now uses the byte domain | `PcreUtfStartDirectiveReferenceTests`; see `PCRE-UTF-START-DIRECTIVES-DESIGN.md`; original-byte errors, strict/tolerant subjects, global modes and work/offset protocols |
 | Start directives `(*NOTEMPTY)`, `(*NOTEMPTY_ATSTART)` | Global accumulating flags in the shared byte0 prefix; final acceptance rejects empty reported spans everywhere or only at the original caller offset, including K semantics; shared rollback/nullable fragment candidates | `PcreNotEmptyDirectiveReferenceTests`; see `PCRE-NOTEMPTY-DIRECTIVES-DESIGN.md`; same-candidate fallback, atomic/inner-success controls, UTF/CRLF offsets and resource gates |
+| No-argument `(*SKIP)` | Shared PRUNE scope catches; strictly forward root restart at the verb byte position, equal/backward normal bumpalong; native direct LF/EOF candidate entry | `PcreSkipVerbReferenceTests`; literal JIT spans, UTF fragments, K/assertions/behind/calls, mixed cuts and shared1024 frames/work/cancellation; named arguments pending |
 | No-argument `(*PRUNE)` | Saves a bounded backtracking cut; root resumes candidate search, calls/negative/conditional assertions catch, standalone positive assertions propagate; atomic success discards interior cuts | `PcrePruneVerbReferenceTests`; native selected pre-verb returned-capture edge, recursion/repeats/behind, UTF/CRLF offsets, 1024 saved-frame boundary and shared work/cancellation; named arguments pending |
 | No-argument `(*ACCEPT)` | Immediate successful root/assertion/call termination, same-level capture closes, committed scope choices, ordinary greedy/lazy/possessive repeats; callee synthetic closes follow pinned native JIT behavior | `PcreAcceptVerbReferenceTests`; K/NOTEMPTY rollback, nested/conditional/non-atomic assertions, width tails, recursive/returned calls, script/atomic bypass, UTF fragments and shared limits; named arguments remain pending |
 | No-argument `(*FAIL)` / `(*F)` | Unconditional zero-consumption failure through shared rollback; nonrepeatable directly, grouped repeats ordinary; direct failure ends consumed-width branch and suppresses nested behinds in its width tail, while global validation/full lexical metadata remain | `PcreFailureVerbReferenceTests`; see `PCRE-FAILURE-VERBS-DESIGN.md`; captures/scopes/widths, malformed offsets, fragments and resource bounds; arguments/other verbs pending |
@@ -2645,3 +2646,13 @@ failure; right-side values roll back first. Zero-width behind scans continue
 past PRUNE. Direct repeats are invalid; grouped repeats are ordinary. Named
 forms stay pending. See [design](PCRE-PRUNE-VERB-DESIGN.md) and
 `PcrePruneVerbReferenceTests`.
+
+## SKIP restart and PRUNE comparison control
+
+PR217 adds exact no-argument SKIP using shared cut guards and a root restart
+integer. Strictly forward targets retry directly, including CRLF midpoint and
+fragment end/EOF; equal/backward targets retain normal advancement. The frozen
+PRUNE comparison additionally qualifies a bounded two-root-branch literal PLUS
+cache and same-literal fallback, without widening general optimizer claims.
+See [design](PCRE-SKIP-VERB-DESIGN.md) and
+`PcreSkipVerbReferenceTests`. Named forms/MARK remain pending.
