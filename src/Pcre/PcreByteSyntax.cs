@@ -23,6 +23,8 @@ internal sealed record PcreBytePrune : PcreByteNode;
 
 internal sealed record PcreByteSkip : PcreByteNode;
 
+internal sealed record PcreByteCommit : PcreByteNode;
+
 internal enum PcreByteScalarClassKind {
 	Letter, DecimalDigit, AsciiDigit, AsciiWord, UnicodeWord, AsciiSpace, UnicodeSpace,
 	Ascii, AsciiAlnum, AsciiAlpha, AsciiBlank, AsciiControl, AsciiGraph,

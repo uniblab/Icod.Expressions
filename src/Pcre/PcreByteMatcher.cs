@@ -200,6 +200,10 @@ internal static partial class PcreByteMatcher {
 						SkipFailedLiteralCandidates( next );
 						start += next;
 					}
+					if ( program.CommitStartBytes is { } commitBytes ) {
+						Step(); // Native first-code-unit entry precedes a leading COMMIT.
+						if ( start == input.Length || !commitBytes.Contains( input.Span[start] ) ) { continue; }
+					}
 					Step(); // Candidate start.
 					var position = start;
 					var utfRepeatEnd = start;
@@ -232,6 +236,7 @@ internal static partial class PcreByteMatcher {
 							pruneLiteralEnd = Math.Max( pruneLiteralEnd, position );
 							pc++;
 							break;
+						case PcreByteOpcode.Commit:
 						case PcreByteOpcode.Skip:
 						case PcreByteOpcode.Prune:
 							if ( backtrack.Count >= MaximumBacktrackFrames ) {
@@ -251,7 +256,9 @@ internal static partial class PcreByteMatcher {
 							// Pc stores a live saved-frame boundary, not an instruction target.
 							// Only active scopes catch: older retained siblings are ordinary paths.
 							backtrack.Push( new Frame( pruneBoundary, position, changes.Count, atomicDepths.Count,
-								activeScope, instruction.Opcode == PcreByteOpcode.Skip ? FrameKind.Skip : FrameKind.Prune, CallScope: activeCall ) );
+								activeScope, instruction.Opcode switch {
+									PcreByteOpcode.Commit => FrameKind.Commit, PcreByteOpcode.Skip => FrameKind.Skip, _ => FrameKind.Prune
+								}, CallScope: activeCall ) );
 							pc++;
 							break;
 						case PcreByteOpcode.Fail:
@@ -813,7 +820,7 @@ internal static partial class PcreByteMatcher {
 						activeCall = frame.CallScope;
 						pc = frame.Pc;
 						position = frame.Position;
-						if ( frame.Kind is FrameKind.Prune or FrameKind.Skip ) {
+						if ( frame.Kind is FrameKind.Prune or FrameKind.Skip or FrameKind.Commit ) {
 							if ( activeCall >= 0 && frame.Pc == callScopes![activeCall].Boundary ) {
 								var cutCall = callScopes[activeCall];
 								var selected = program.Instructions[cutCall.ReturnPc - 1].CaptureNumbers;
@@ -835,6 +842,9 @@ internal static partial class PcreByteMatcher {
 								skipRestart = frame.Position;
 							}
 							while ( backtrack.Count > frame.Pc ) { Step(); PopFrame( backtrack, assertionScopes, callScopes ); }
+							// Delay root termination until this cut is actually reached. A later
+							// PRUNE/SKIP or a successful atomic scope may discard COMMIT first.
+							if ( frame.Kind == FrameKind.Commit && frame.Pc == 0 ) { return new( null, null ); }
 							failed = true;
 							continue; // Resolve the retained catch guard, or fail this candidate.
 						}
@@ -960,7 +970,7 @@ internal static partial class PcreByteMatcher {
 		StateKind Kind, int Index, int PriorValue, PcreByteCapture? PriorCapture
 	);
 
-	private enum FrameKind : byte { Branch, PositiveAssertion, NegativeAssertion, ReverseRetry, NonAtomicAssertion, ConditionalAssertion, Call, Prune, Skip }
+	private enum FrameKind : byte { Branch, PositiveAssertion, NegativeAssertion, ReverseRetry, NonAtomicAssertion, ConditionalAssertion, Call, Prune, Skip, Commit }
 
 	private readonly record struct CallScope( int ReturnPc, int Parent, int ChangeCount, int Number, int AssertionScope, int Boundary );
 

@@ -2753,3 +2753,43 @@ CRLF byte offset and shared expansion/work/cancellation paths are covered.
 Named SKIP/MARK and other verbs/directives, callouts, UTF C, wider optimizer/
 resource conformance, UTF16/API and consumer/release qualification stay open.
 Grep stays last; GNU/BRE/ERE and frozen35/frozen214 unchanged.
+
+## PR218: no-argument COMMIT and first-code-unit entry
+
+Exact COMMIT shares the existing delayed PRUNE/SKIP cut path and local call,
+negative/conditional assertion catches. At root, reaching its frame ends the
+entire search with normal no-match. Later verbs and successful atomic scopes
+can discard it before it triggers. Selected pre-verb callee captures and
+right-side rollback retain the pinned JIT behavior. Direct quantifiers reject;
+behind width is zero without hiding unbounded tails. All three cuts share the
+1024 saved-frame budget, compilation expansion and work/cancellation accounting.
+
+Native first-code-unit entry can skip candidates before a leading COMMIT.
+The bounded proof permits one root branch, four group levels and 1000 visits
+through ordinary groups, atomic wrappers, required literal repeats, positive
+lookahead, empty groups and K. It stops at alternatives, optional repeats,
+classes, calls, anchors and other assertions. Case-sensitive encoded first
+bytes and simple ASCII caseless pairs qualify; Unicode K/S complex casesets
+without r and other non-ASCII caseless heads do not. Wider optimizer parity
+remains issue102. Every prefix check charges shared work/cancellation.
+
+UTF uses the encoded first byte, so COMMIT/é can trigger at ê or a malformed C3
+lead byte. The existing synthetic/gap fragment protocol admits these candidates
+without allowing invalid-byte consumption. Root termination is global across
+fragments. The existing literal-PLUS/PRUNE/single suffix/same-literal fallback
+cache proof also permits one directly preceding COMMIT, discarded by PRUNE.
+
+The first tests-only attempt652 found three duplicate InlineData rows; only
+those redundant rows were removed before the clean checkpoint. RED653
+run43025191022/LinuxARM64 compiled net8/9/10 with zero warnings/errors and
+46647 cases each:142 expected missing-COMMIT failures,46505 passes,0 skips.
+No prior fixture or native literal oracle failed. All150 unique new tests freeze
+at blob`fba19c8e0627f89056b16302538e3c7da3639b9d`. Independent native exports
+pin132 unique literal/profile cases; selected malformed-UTF/CRLF subjects test
+every byte offset. Exact1024/1025 and mixed1023/1026 saved-frame cases, expansion,
+work limits and cancellation are covered. See PCRE-COMMIT-VERB-DESIGN.md and
+PCRE-COMMIT-VERB-PLAN.md.
+
+Named verbs/MARK, THEN, remaining directives/callouts, UTF C, general optimizer/
+resource conformance, UTF16/API and realistic consumer performance/release stay
+open. Grep stays last; GNU/BRE/ERE, frozen35 and frozen214/120 remain intact.

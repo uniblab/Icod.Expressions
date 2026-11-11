@@ -24,10 +24,10 @@ consumption remains barred by the existing fragment protocol.
 
 Add optional immutable first-byte metadata only for programs containing COMMIT.
 Prove a single root branch through bounded one-branch capture/noncapture groups,
-required repeats, atomic wrappers, positive lookahead, empty groups and K, with
+required literal repeats, atomic wrappers, positive lookahead, empty groups and K, with
 a preceding COMMIT. Stop on alternatives, optional repeats, classes, calls,
 anchors, negative/conditional/behind assertions and unknown nodes. Bound both
-visits and group descent; poll compile cancellation. Case-sensitive literals
+visits (1000) and group descent (four levels); poll compile cancellation. Case-sensitive literals
 supply one first byte. ASCII caseless pairs qualify except Unicode K/S complex
 casesets without r. General non-ASCII caseless/start optimization stays issue102.
 Charge every runtime prefix check and inspect input length, not fragment end.

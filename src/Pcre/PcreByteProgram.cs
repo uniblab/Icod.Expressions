@@ -44,6 +44,7 @@ internal enum PcreByteOpcode {
 	EarlyAccept,
 	Prune,
 	Skip,
+	Commit,
 	PruneRepeatStart,
 	PruneRepeatEnd
 }
@@ -65,6 +66,7 @@ internal sealed record PcreByteProgram(
 	bool LineStartSearch, bool Ucp, PcreBytePrefixLiteral? ByteCrLfPrefixLiteral
 ) {
 	internal int ScalarExpressionStackDepth { get; init; }
+	internal PcreByteSet? CommitStartBytes { get; init; }
 	internal bool AnyCrLfNewline => Newline == PcreByteNewline.AnyCrLf;
 	internal byte NewlineCharacter => Newline.Character();
 }
@@ -103,6 +105,7 @@ internal sealed class PcreByteProgramCompiler {
 	private List<int>? assertionAccepts;
 	private int assertionCaptureStart;
 	private bool hasEarlyAccept;
+	private bool hasCommit;
 	private PcreByteRepeat? pruneLiteralCacheRepeat;
 
 	internal PcreByteProgramCompiler( CancellationToken cancellationToken, bool utf8, bool matchInvalidUtf,
@@ -152,10 +155,15 @@ internal sealed class PcreByteProgramCompiler {
 		}
 		foreach ( var call in calls ) { Patch( call.Instruction, entries[call.Number], call.Number ); }
 		var bytePrefix = utf8 ? default : FindByteCrLfPrefix( root );
+		// A first-byte cut may trigger on a malformed lead: admit a zero-width
+		// synthetic candidate, while the fragment still forbids consumption.
+		var commitBytes = hasCommit ? FindCommitStartBytes( root ) : null;
 		return new( instructions.ToArray(), markCount, hasCaselessComparisons, utf8, matchInvalidUtf,
-			FindRequiredLiteralSuffix( root ), newline, HasExplicitNewline( root ), hasEarlyAccept || CanMatchEmptyAtAnyOffset( root ),
+			FindRequiredLiteralSuffix( root ), newline, HasExplicitNewline( root ), hasEarlyAccept || commitBytes.HasValue || CanMatchEmptyAtAnyOffset( root ),
 			bytePrefix.Unconditional, utfCrLfStartClass, notEmpty, notEmptyAtStart,
-			matchInvalidUtf && newline == PcreByteNewline.Any && HasLineStartSearch( root ), ucp, bytePrefix.Literal ) { ScalarExpressionStackDepth = scalarExpressionStackDepth };
+			matchInvalidUtf && newline == PcreByteNewline.Any && HasLineStartSearch( root ), ucp, bytePrefix.Literal ) {
+			ScalarExpressionStackDepth = scalarExpressionStackDepth, CommitStartBytes = commitBytes
+		};
 	}
 
 	private bool HasLineStartSearch( PcreByteAlternatives root ) {
@@ -1268,7 +1276,7 @@ internal sealed class PcreByteProgramCompiler {
 	}
 
 	private static bool CanMatchEmptyAtAnyOffset( PcreByteNode node ) => node switch {
-		PcreByteSearchStart or PcreByteMatchStartReset or PcreBytePrune or PcreByteSkip => true,
+		PcreByteSearchStart or PcreByteMatchStartReset or PcreBytePrune or PcreByteSkip or PcreByteCommit => true,
 		// A participating capture may be empty. The VM still checks participation
 		// and forbids nonempty consumption across the synthetic fragment boundary.
 		PcreByteBackreference or PcreByteSubroutineCall => true,
@@ -1414,6 +1422,10 @@ internal sealed class PcreByteProgramCompiler {
 		cancellationToken.ThrowIfCancellationRequested();
 		if ( ++compileVisits > MaximumInstructions ) { throw RepeatExpansionLimit(); }
 		switch ( node ) {
+			case PcreByteCommit:
+				Emit( PcreByteOpcode.Commit );
+				hasCommit = true;
+				break;
 			case PcreByteSkip:
 				Emit( PcreByteOpcode.Skip );
 				break;
@@ -1550,16 +1562,84 @@ internal sealed class PcreByteProgramCompiler {
 		}
 	}
 
+	private PcreByteSet? FindCommitStartBytes( PcreByteAlternatives root ) {
+		// Native may scan the first encoded code unit before entering COMMIT.
+		// This proof deliberately stops before alternatives, classes and nullable
+		// repeats. It neither searches a whole scalar nor generalizes issue102.
+		var pending = new Stack<(PcreByteNode Node, int Depth)>();
+		var visits = 0;
+		var seenCommit = false;
+		if ( !AddSequence( root, 0 ) ) { return null; }
+		Span<byte> encoded = stackalloc byte[4];
+		while ( pending.TryPop( out var item ) ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( ++visits > MaximumStartClassVisits ) { return null; }
+			switch ( item.Node ) {
+				case PcreByteCommit: seenCommit = true; break;
+				case PcreByteMatchStartReset: break;
+				case PcreByteGroup group:
+					if ( !AddSequence( group.Body, item.Depth + 1 ) ) { return null; }
+					break;
+				case PcreByteNoncapturingGroup group:
+					if ( !AddSequence( group.Body, item.Depth + 1 ) ) { return null; }
+					break;
+				case PcreByteAtomic atomic:
+					pending.Push( (atomic.Child, item.Depth) ); break;
+				case PcreByteRepeat { Minimum: > 0, Child: PcreByteLiteral literal }:
+					pending.Push( (literal, item.Depth) ); break;
+				case PcreByteLookahead { IsPositive: true, NonAtomic: false } assertion:
+					if ( !AddSequence( assertion.Body, item.Depth + 1 ) ) { return null; }
+					break;
+				case PcreByteLiteralAssertion { IsPositive: true, IsBehind: false } assertion:
+					if ( assertion.Bytes.IsEmpty ) { break; }
+					return seenCommit ? FirstBytes( assertion.Bytes.Span[0], assertion.Caseless, assertion.CaselessRestricted ) : null;
+				case PcreByteLiteral literal:
+					if ( !seenCommit ) { return null; }
+					var first = (byte)literal.Value;
+					if ( utf8 ) { new Rune( literal.Value ).EncodeToUtf8( encoded ); first = encoded[0]; }
+					return FirstBytes( first, literal.Caseless, literal.CaselessRestricted );
+				default: return null;
+			}
+		}
+		return null;
+
+		bool AddSequence( PcreByteAlternatives body, int depth ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( depth > 4 || body.Branches.Count != 1
+				|| body.Branches[0].Count > MaximumStartClassVisits - visits - pending.Count ) { return false; }
+			var branch = body.Branches[0];
+			for ( var index = branch.Count - 1; index >= 0; index-- ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				pending.Push( (branch[index], depth) );
+			}
+			return true;
+		}
+
+		PcreByteSet? FirstBytes( byte first, bool caseless, bool restricted ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( caseless && ( utf8 || ucp ) ) {
+				// Native complex Unicode casesets do not produce this first-byte
+				// optimization. Restrict proof to simple ASCII pairs (r excludes
+				// the Kelvin sign and long-s crossings for K/S).
+				if ( first >= 128 || !restricted && first is (byte)'K' or (byte)'k' or (byte)'S' or (byte)'s' ) { return null; }
+			}
+			var bytes = PcreByteSet.Singleton( first );
+			return caseless ? bytes.AsciiCaseClosure() : bytes;
+		}
+	}
+
 	private PcreByteRepeat? FindPruneLiteralCache( PcreByteAlternatives root ) {
 		cancellationToken.ThrowIfCancellationRequested();
 		// Native detect_early_fail reuses this leading literal-PLUS scan after
 		// a PRUNE cut. Bound the proof to two root branches and a single suffix
-		// and same-literal fallback; no calls, options, nested choices or classes.
-		if ( root.Branches.Count != 2 || root.Branches[0].Count != 3
+		// and same-literal fallback; an immediately preceding COMMIT is discarded
+		// by that PRUNE. No calls, options, nested choices or classes.
+		if ( root.Branches.Count != 2 || root.Branches[0].Count is not ( 3 or 4 )
 			|| root.Branches[0][0] is not PcreByteRepeat { Minimum: 1, Maximum: int.MaxValue,
 				Greedy: true, Offset: -1, Child: PcreByteLiteral { Caseless: false } literal } repeat
-			|| root.Branches[0][1] is not PcreBytePrune
-			|| root.Branches[0][2] is not ( PcreByteFailure or PcreByteLiteral { Caseless: false } )
+			|| root.Branches[0].Count == 4 && root.Branches[0][1] is not PcreByteCommit
+			|| root.Branches[0][root.Branches[0].Count - 2] is not PcreBytePrune
+			|| root.Branches[0][root.Branches[0].Count - 1] is not ( PcreByteFailure or PcreByteLiteral { Caseless: false } )
 			|| root.Branches[1].Count != 1 ) { return null; }
 		var fallback = root.Branches[1][0];
 		if ( fallback is PcreByteGroup { Body.Branches.Count: 1 } group && group.Body.Branches[0].Count == 1 ) {
