@@ -108,9 +108,9 @@ public sealed class PcreGroupAliasReferenceTests {
 	}
 
 	[Theory]
-	[InlineData( "(*PRUNE:pending)a" )]
-	[InlineData( "(*THEN:pending)a" )]
-	[InlineData( "(*COMMIT:pending)" )]
+	[InlineData( "(*ACCEPT:pending)a" )]
+	[InlineData( "(*ACCEPT:other)a" )]
+	[InlineData( "(*ACCEPT:pending)" )]
 	public void OtherValidNativeGroupsAndVerbsAreNeverReinterpretedAsAtomicAliases( string pattern ) {
 		Reference( pattern );
 		Diagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax, 0 );

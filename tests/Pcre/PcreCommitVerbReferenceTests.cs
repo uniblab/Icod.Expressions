@@ -184,11 +184,11 @@ public sealed class PcreCommitVerbReferenceTests {
 	}
 
 	[Theory]
-	[InlineData( "(*COMMIT:a)" )]
-	[InlineData( "(*COMMIT:)" )]
+	[InlineData( "(*COMMIT :a)" )]
+	[InlineData( "(*COMMITX:a)" )]
 	[InlineData( "(*skip)" )]
 	[InlineData( "(*COMMITx)" )]
-	public void NamedAndNonExactHeadersRemainExplicitlyUnsupported( string pattern ) {
+	public void NonExactHeadersRemainExplicitlyUnsupported( string pattern ) {
 		var result = PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( pattern ) );
 		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
 		Assert.Equal( 0, result.Diagnostic?.ByteOffset );
