@@ -25,9 +25,9 @@ no Python, SDK/PowerShell installation or subagents. User owns merge/tag/publish
 pending PRUNE row in `PcreSyntaxAcceptanceTests` to still-unsupported SKIP.
 **Interface:** existing compiler/options/match/capture results and PCRE.NET.
 
-- [ ] Pin native literal spans, byte/UTF profiles and callee returned-value edges.
-- [ ] Add offset, grammar, saved-frame, compile/work/cancellation cases.
-- [ ] Publish draft tests/design/plan; observe successful-build RED caused only
+- [x] Pin native literal spans, byte/UTF profiles and callee returned-value edges.
+- [x] Add offset, grammar, saved-frame, compile/work/cancellation cases.
+- [x] Publish draft tests/design/plan; observe successful-build RED caused only
 by missing PRUNE support. Freeze the new test blob.
 
 ### Task 2: implement and verify
@@ -48,3 +48,10 @@ retain native selected callee values, then use existing guard rollback/failure.
 - [ ] Review all five focus paths against native source and final diff.
 - [ ] Document exact RED/GREEN source/tree, native limitations and remaining gates.
 - [ ] Verify exact proposed merge tree; mark PR ready after all applicable checks.
+
+## Tests-first checkpoint
+
+RED648 run43010950288 compiled net8/9/10 without warnings/errors. Linuxx64
+job130490125587 reported46357 total per framework:83 expected new PRUNE failures,
+46274 passes and0 skips; no unrelated or native-oracle failures. All91 additions
+freeze at test blob`49bc810efdb1830b7bd49e52e6392f76b1c0bebd`.

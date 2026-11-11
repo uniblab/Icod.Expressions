@@ -222,6 +222,27 @@ internal static partial class PcreByteMatcher {
 						var absoluteEnd = endLimit >= 0 ? endLimit : input.Length;
 						var failed = false;
 						switch ( instruction.Opcode ) {
+						case PcreByteOpcode.Prune:
+							if ( backtrack.Count >= MaximumBacktrackFrames ) {
+								throw new MatchLimitException( PcreByteDiagnosticCode.MatchDepthLimitExceeded, "backtrack stack limit exceeded" );
+							}
+							var pruneBoundary = activeCall >= 0 ? callScopes![activeCall].Boundary : 0;
+							for ( var pruneScope = activeScope; pruneScope >= 0; ) {
+								Step();
+								var catchingScope = assertionScopes![pruneScope];
+								if ( catchingScope.Boundary + 1 <= pruneBoundary ) { break; }
+								if ( catchingScope.Kind is FrameKind.NegativeAssertion or FrameKind.ConditionalAssertion ) {
+									pruneBoundary = catchingScope.Boundary + 1;
+									break;
+								}
+								pruneScope = catchingScope.Parent;
+							}
+							// Pc stores a live saved-frame boundary, not an instruction target.
+							// Only active scopes catch: older retained siblings are ordinary paths.
+							backtrack.Push( new Frame( pruneBoundary, position, changes.Count, atomicDepths.Count,
+								activeScope, FrameKind.Prune, CallScope: activeCall ) );
+							pc++;
+							break;
 						case PcreByteOpcode.Fail:
 							failed = true;
 							break;
@@ -731,7 +752,7 @@ internal static partial class PcreByteMatcher {
 									: ( instruction.Second & 1 ) != 0 ? FrameKind.PositiveAssertion : FrameKind.NegativeAssertion, CallScope: activeCall );
 							var scopeId = assertionScopes.Count;
 							assertionScopes.Add( new( backtrack.Count, ( instruction.Second & 2 ) != 0 ? position : endLimit,
-								activeScope, instruction.First, position ) );
+								activeScope, instruction.First, position, guard.Kind ) );
 							activeScope = scopeId;
 							backtrack.Push( guard ); // Forces body mutations into the shared journal.
 							pc++;
@@ -781,6 +802,28 @@ internal static partial class PcreByteMatcher {
 						activeCall = frame.CallScope;
 						pc = frame.Pc;
 						position = frame.Position;
+						if ( frame.Kind == FrameKind.Prune ) {
+							if ( activeCall >= 0 && frame.Pc == callScopes![activeCall].Boundary ) {
+								var cutCall = callScopes[activeCall];
+								var selected = program.Instructions[cutCall.ReturnPc - 1].CaptureNumbers;
+								if ( !selected.IsEmpty ) {
+									// Native JIT keeps selected values completed before PRUNE
+									// on forced callee failure. Right-side changes already rolled
+									// back. Retained caller checkpoints precede this interval.
+									var kept = cutCall.ChangeCount;
+									for ( var entry = kept; entry < changes.Count; entry++ ) {
+										Step();
+										var change = changes[entry];
+										if ( change.Kind == StateKind.Capture && selected.Span.BinarySearch( change.Index ) >= 0 ) { continue; }
+										changes[kept++] = change;
+									}
+									changes.RemoveRange( kept, changes.Count - kept );
+								}
+							}
+							while ( backtrack.Count > frame.Pc ) { Step(); PopFrame( backtrack, assertionScopes, callScopes ); }
+							failed = true;
+							continue; // Resolve the retained catch guard, or fail this candidate.
+						}
 						if ( frame.Kind == FrameKind.ReverseRetry && frame.ReverseRemaining > 0 ) {
 							// The popped retry frees its slot; keep only one pending next start.
 							backtrack.Push( frame with {
@@ -896,11 +939,11 @@ internal static partial class PcreByteMatcher {
 		StateKind Kind, int Index, int PriorValue, PcreByteCapture? PriorCapture
 	);
 
-	private enum FrameKind : byte { Branch, PositiveAssertion, NegativeAssertion, ReverseRetry, NonAtomicAssertion, ConditionalAssertion, Call }
+	private enum FrameKind : byte { Branch, PositiveAssertion, NegativeAssertion, ReverseRetry, NonAtomicAssertion, ConditionalAssertion, Call, Prune }
 
 	private readonly record struct CallScope( int ReturnPc, int Parent, int ChangeCount, int Number, int AssertionScope, int Boundary );
 
-	private readonly record struct AssertionScope( int Boundary, int LimitEnd, int Parent, int ReturnPc, int Position );
+	private readonly record struct AssertionScope( int Boundary, int LimitEnd, int Parent, int ReturnPc, int Position, FrameKind Kind );
 
 	private readonly record struct Frame(
 		int Pc, int Position, int ChangeCount, int AtomicDepth, int AssertionScope,

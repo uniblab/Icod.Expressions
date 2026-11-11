@@ -61,6 +61,7 @@ the matcher returns spans, leaving framing, status and output to Grep.
 | ANY newline directive | Exact byte0 last-wins ANY; fixed vertical scalar list, UTF-aware anchors/comments, NUL ordinary and BSR independent; native consumed-CR midpoint anchors under ANY/ANYCRLF | `PcreAnyNewlineReferenceTests`; see `PCRE-ANY-NEWLINE-DESIGN.md`; continuation-byte controls, byte/UTF membership, spans/fragments/limits |
 | Start directives `(*UTF)`, `(*UTF8)`, `(*UCP)` | Enable existing UTF/UCP modes in the shared uninterrupted prefix before whole-source UTF validation; caller defaults retained; byte UCP now uses the byte domain | `PcreUtfStartDirectiveReferenceTests`; see `PCRE-UTF-START-DIRECTIVES-DESIGN.md`; original-byte errors, strict/tolerant subjects, global modes and work/offset protocols |
 | Start directives `(*NOTEMPTY)`, `(*NOTEMPTY_ATSTART)` | Global accumulating flags in the shared byte0 prefix; final acceptance rejects empty reported spans everywhere or only at the original caller offset, including K semantics; shared rollback/nullable fragment candidates | `PcreNotEmptyDirectiveReferenceTests`; see `PCRE-NOTEMPTY-DIRECTIVES-DESIGN.md`; same-candidate fallback, atomic/inner-success controls, UTF/CRLF offsets and resource gates |
+| No-argument `(*PRUNE)` | Saves a bounded backtracking cut; root resumes candidate search, calls/negative/conditional assertions catch, standalone positive assertions propagate; atomic success discards interior cuts | `PcrePruneVerbReferenceTests`; native selected pre-verb returned-capture edge, recursion/repeats/behind, UTF/CRLF offsets, 1024 saved-frame boundary and shared work/cancellation; named arguments pending |
 | No-argument `(*ACCEPT)` | Immediate successful root/assertion/call termination, same-level capture closes, committed scope choices, ordinary greedy/lazy/possessive repeats; callee synthetic closes follow pinned native JIT behavior | `PcreAcceptVerbReferenceTests`; K/NOTEMPTY rollback, nested/conditional/non-atomic assertions, width tails, recursive/returned calls, script/atomic bypass, UTF fragments and shared limits; named arguments remain pending |
 | No-argument `(*FAIL)` / `(*F)` | Unconditional zero-consumption failure through shared rollback; nonrepeatable directly, grouped repeats ordinary; direct failure ends consumed-width branch and suppresses nested behinds in its width tail, while global validation/full lexical metadata remain | `PcreFailureVerbReferenceTests`; see `PCRE-FAILURE-VERBS-DESIGN.md`; captures/scopes/widths, malformed offsets, fragments and resource bounds; arguments/other verbs pending |
 | Ordinary bracket `\g`/`\k` | Literal g/k only; following names, delimiters and digits remain class source; outside reference/call grammar unchanged | `PcreBracketReferenceEscapeTests`; see `PCRE-BRACKET-REFERENCE-ESCAPES-DESIGN.md`; ranges/folding/quotes/widths/captures and original-byte/resource protocols |
@@ -2634,3 +2635,13 @@ Direct ACCEPT terminates consumed width scans; global errors still validate.
 Native JIT ignores synthetic closes inside calls; native non-atomic assertions
 with ACCEPT use interpreter fallback. Named ACCEPT stays pending. See
 [design](PCRE-ACCEPT-VERB-DESIGN.md) and `PcreAcceptVerbReferenceTests`.
+
+## Scope-aware PRUNE cuts
+
+PR216 supports exact no-argument PRUNE. It cuts only when failure backtracks
+to its saved frame, using active scope boundaries and existing guard failure.
+Native JIT selected callee values completed before PRUNE survive forced call
+failure; right-side values roll back first. Zero-width behind scans continue
+past PRUNE. Direct repeats are invalid; grouped repeats are ordinary. Named
+forms stay pending. See [design](PCRE-PRUNE-VERB-DESIGN.md) and
+`PcrePruneVerbReferenceTests`.

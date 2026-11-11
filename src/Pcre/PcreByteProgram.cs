@@ -41,7 +41,8 @@ internal enum PcreByteOpcode {
 	Fail,
 	Grapheme,
 	ScriptRunCheck,
-	EarlyAccept
+	EarlyAccept,
+	Prune
 }
 
 internal sealed record PcreByteInstruction(
@@ -1262,7 +1263,7 @@ internal sealed class PcreByteProgramCompiler {
 	}
 
 	private static bool CanMatchEmptyAtAnyOffset( PcreByteNode node ) => node switch {
-		PcreByteSearchStart or PcreByteMatchStartReset => true,
+		PcreByteSearchStart or PcreByteMatchStartReset or PcreBytePrune => true,
 		// A participating capture may be empty. The VM still checks participation
 		// and forbids nonempty consumption across the synthetic fragment boundary.
 		PcreByteBackreference or PcreByteSubroutineCall => true,
@@ -1408,6 +1409,9 @@ internal sealed class PcreByteProgramCompiler {
 		cancellationToken.ThrowIfCancellationRequested();
 		if ( ++compileVisits > MaximumInstructions ) { throw RepeatExpansionLimit(); }
 		switch ( node ) {
+			case PcreBytePrune:
+				Emit( PcreByteOpcode.Prune );
+				break;
 			case PcreByteAccept:
 				CompileAccept();
 				break;
