@@ -619,10 +619,39 @@ internal static partial class PcreByteMatcher {
 							backtrack.Push( new Frame( pc + 1, position, changes.Count, atomicDepths.Count,
 								activeScope, FrameKind.Call, CallScope: activeCall ) );
 							var callId = callScopes.Count;
-							callScopes.Add( new( pc + 1, activeCall, changes.Count, instruction.Second ) );
+							callScopes.Add( new( pc + 1, activeCall, changes.Count, instruction.Second, activeScope, backtrack.Count ) );
 							activeCall = callId;
 							pc = instruction.First;
 							break;
+						case PcreByteOpcode.EarlyAccept:
+							// Native JIT synthetic closes apply outside called groups only.
+							// Ordinary completed/selected captures still use Return's journal.
+							if ( activeCall < 0 ) {
+								foreach ( var number in instruction.CaptureNumbers.Span ) {
+									Step();
+									if ( backtrack.Count > 0 ) { changes.Add( new( StateKind.Capture, number, 0, captures[number] ) ); }
+									captures[number] = new( captureStarts[number], position - captureStarts[number] );
+								}
+							}
+							if ( activeCall >= 0 && callScopes![activeCall].AssertionScope == activeScope ) {
+								// Commit this invocation, retaining its guard to restore caller
+								// state if a later caller instruction fails. Inner arenas pop LIFO.
+								var acceptedCallBoundary = callScopes[activeCall].Boundary;
+								while ( backtrack.Count > acceptedCallBoundary ) { Step(); PopFrame( backtrack, assertionScopes, callScopes ); }
+								var acceptedCallDepth = backtrack.Peek().AtomicDepth;
+								atomicDepths.RemoveRange( acceptedCallDepth, atomicDepths.Count - acceptedCallDepth );
+								goto case PcreByteOpcode.Return;
+							}
+							if ( activeScope >= 0 ) {
+								var acceptedScopeBoundary = assertionScopes![activeScope].Boundary + 1;
+								while ( backtrack.Count > acceptedScopeBoundary ) { Step(); PopFrame( backtrack, assertionScopes, callScopes ); }
+								var acceptedScopeDepth = backtrack.Peek().AtomicDepth;
+								atomicDepths.RemoveRange( acceptedScopeDepth, atomicDepths.Count - acceptedScopeDepth );
+								pc = instruction.First; // Bypass ReverseEnd/script-run/body suffixes.
+								break;
+							}
+							// Root NOTEMPTY rejection is retryable, including synthetic closes.
+							goto case PcreByteOpcode.Accept;
 						case PcreByteOpcode.Return:
 							var caller = callScopes![activeCall];
 							var returnedCaptures = program.Instructions[caller.ReturnPc - 1].CaptureNumbers;
@@ -869,7 +898,7 @@ internal static partial class PcreByteMatcher {
 
 	private enum FrameKind : byte { Branch, PositiveAssertion, NegativeAssertion, ReverseRetry, NonAtomicAssertion, ConditionalAssertion, Call }
 
-	private readonly record struct CallScope( int ReturnPc, int Parent, int ChangeCount, int Number );
+	private readonly record struct CallScope( int ReturnPc, int Parent, int ChangeCount, int Number, int AssertionScope, int Boundary );
 
 	private readonly record struct AssertionScope( int Boundary, int LimitEnd, int Parent, int ReturnPc, int Position );
 
