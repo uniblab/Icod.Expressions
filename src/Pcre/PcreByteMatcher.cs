@@ -716,6 +716,9 @@ internal static partial class PcreByteMatcher {
 								Step();
 								var change = changes[entry];
 								if ( change.Kind != StateKind.Mark && change.Index == 0 ) { continue; } // Keep K/G0.
+								// A successful callee contributes its winning path label; positional
+								// marks still restore. Original entries remain for failed-call rollback.
+								if ( change.Kind == StateKind.Mark && change.Index == program.PathMarkSlot ) { continue; }
 								// Keep only selected values, not their temporary starts. Original
 								// journal entries still restore values on callee/caller retry.
 								if ( change.Kind == StateKind.Capture && returnedCaptures.Span.BinarySearch( change.Index ) >= 0 ) { continue; }
@@ -744,12 +747,15 @@ internal static partial class PcreByteMatcher {
 						case PcreByteOpcode.Jump:
 							pc = instruction.First;
 							break;
+						case PcreByteOpcode.PathMark:
 						case PcreByteOpcode.ThenMark:
 						case PcreByteOpcode.Mark:
 							if ( backtrack.Count > 0 ) {
 								changes.Add( new( StateKind.Mark, instruction.First, marks[instruction.First], null ) );
 							}
-							marks[instruction.First] = instruction.Opcode == PcreByteOpcode.ThenMark ? backtrack.Count : position;
+							marks[instruction.First] = instruction.Opcode switch {
+								PcreByteOpcode.PathMark => pc + 1, PcreByteOpcode.ThenMark => backtrack.Count, _ => position
+							};
 							pc++;
 							break;
 						case PcreByteOpcode.ScriptRunCheck:
@@ -820,7 +826,10 @@ internal static partial class PcreByteMatcher {
 								break;
 							}
 							captures[0] = new( reportedStart, position - reportedStart );
-							return new( new PcreByteMatch( reportedStart, position - reportedStart, Array.AsReadOnly( captures ) ), null );
+							var labelInstruction = program.PathMarkSlot >= 0 ? marks[program.PathMarkSlot] - 1 : -1;
+							return new( new PcreByteMatch( reportedStart, position - reportedStart, Array.AsReadOnly( captures ) ) {
+								MarkName = labelInstruction >= 0 ? program.Instructions[labelInstruction].Bytes : default
+							}, null );
 						default:
 							throw new InvalidOperationException( "Compiler produced an unknown PCRE byte instruction." );
 					}

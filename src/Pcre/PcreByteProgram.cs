@@ -47,6 +47,7 @@ internal enum PcreByteOpcode {
 	Commit,
 	Then,
 	ThenMark,
+	PathMark,
 	PruneRepeatStart,
 	PruneRepeatEnd
 }
@@ -69,6 +70,7 @@ internal sealed record PcreByteProgram(
 ) {
 	internal int ScalarExpressionStackDepth { get; init; }
 	internal PcreByteSet? CommitStartBytes { get; init; }
+	internal int PathMarkSlot { get; init; } = -1;
 	internal bool AnyCrLfNewline => Newline == PcreByteNewline.AnyCrLf;
 	internal byte NewlineCharacter => Newline.Character();
 }
@@ -108,6 +110,7 @@ internal sealed class PcreByteProgramCompiler {
 	private int assertionCaptureStart;
 	private bool hasEarlyAccept;
 	private bool hasCommit;
+	private int pathMarkSlot = -1;
 	private readonly bool hasThen;
 	private ThenTarget? thenTarget;
 	private readonly record struct ThenTarget( int Mark, bool HasNext );
@@ -169,7 +172,7 @@ internal sealed class PcreByteProgramCompiler {
 			FindRequiredLiteralSuffix( root ), newline, HasExplicitNewline( root ), hasEarlyAccept || commitBytes.HasValue || CanMatchEmptyAtAnyOffset( root ),
 			bytePrefix.Unconditional, utfCrLfStartClass, notEmpty, notEmptyAtStart,
 			matchInvalidUtf && newline == PcreByteNewline.Any && HasLineStartSearch( root ), ucp, bytePrefix.Literal ) {
-			ScalarExpressionStackDepth = scalarExpressionStackDepth, CommitStartBytes = commitBytes
+			ScalarExpressionStackDepth = scalarExpressionStackDepth, CommitStartBytes = commitBytes, PathMarkSlot = pathMarkSlot
 		};
 	}
 
@@ -1283,7 +1286,7 @@ internal sealed class PcreByteProgramCompiler {
 	}
 
 	private static bool CanMatchEmptyAtAnyOffset( PcreByteNode node ) => node switch {
-		PcreByteSearchStart or PcreByteMatchStartReset or PcreBytePrune or PcreByteSkip or PcreByteCommit or PcreByteThen => true,
+		PcreByteSearchStart or PcreByteMatchStartReset or PcreBytePrune or PcreByteSkip or PcreByteCommit or PcreByteThen or PcreBytePathMark => true,
 		// A participating capture may be empty. The VM still checks participation
 		// and forbids nonempty consumption across the synthetic fragment boundary.
 		PcreByteBackreference or PcreByteSubroutineCall => true,
@@ -1439,6 +1442,9 @@ internal sealed class PcreByteProgramCompiler {
 		cancellationToken.ThrowIfCancellationRequested();
 		if ( ++compileVisits > MaximumInstructions ) { throw RepeatExpansionLimit(); }
 		switch ( node ) {
+			case PcreBytePathMark mark:
+				CompilePathMark( mark );
+				break;
 			case PcreByteThen:
 				Emit( PcreByteOpcode.Then, thenTarget?.Mark ?? -1, thenTarget?.HasNext == true ? 1 : 0 );
 				break;
@@ -1582,6 +1588,16 @@ internal sealed class PcreByteProgramCompiler {
 		}
 	}
 
+	private void CompilePathMark( PcreBytePathMark mark ) {
+		if ( pathMarkSlot < 0 ) { pathMarkSlot = AllocateMark(); }
+		// Native get_mark exposes a NUL-terminated view, even when the raw
+		// name contains more bytes. Both slices retain the owned source snapshot.
+		var visible = mark.Name;
+		var terminator = visible.Span.IndexOf( (byte)0 );
+		if ( terminator >= 0 ) { visible = visible.Slice( 0, terminator ); }
+		Emit( PcreByteOpcode.PathMark, pathMarkSlot, bytes: visible );
+	}
+
 	private PcreByteSet? FindCommitStartBytes( PcreByteAlternatives root ) {
 		// Native may scan the first encoded code unit before entering COMMIT.
 		// This proof deliberately stops before alternatives, classes and nullable
@@ -1596,7 +1612,7 @@ internal sealed class PcreByteProgramCompiler {
 			if ( ++visits > MaximumStartClassVisits ) { return null; }
 			switch ( item.Node ) {
 				case PcreByteCommit: needsEntryFilter = true; break;
-				case PcreByteMatchStartReset or PcreByteThen: break;
+				case PcreByteMatchStartReset or PcreByteThen or PcreBytePathMark: break;
 				case PcreByteGroup group:
 					if ( !AddSequence( group.Body, item.Depth + 1 ) ) { return null; }
 					break;
