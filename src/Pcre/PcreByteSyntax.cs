@@ -23,6 +23,8 @@ internal sealed record PcreBytePrune : PcreByteNode;
 
 internal sealed record PcreByteSkip : PcreByteNode;
 
+internal sealed record PcreByteNamedSkip( ReadOnlyMemory<byte> Name ) : PcreByteNode;
+
 internal sealed record PcreByteCommit : PcreByteNode;
 
 internal sealed record PcreByteThen : PcreByteNode;

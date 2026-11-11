@@ -1,6 +1,6 @@
 # PCRE roadmap status
 
-Reviewed after PR219, with PR220 in progress, 2026-11-11. Issue7 remains the delivery roadmap; the
+Reviewed after merged PR220, with PR221 in progress, 2026-11-11. Issue7 remains the delivery roadmap; the
 [syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md),
 [resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) and
 [Grep fixture inventory](PCRE-GREP-CONSUMER-FIXTURES.md) define the detailed gates.
@@ -32,7 +32,8 @@ retaining each framework's complete suite and frozen-result qualification.
    PRUNE repeat-cache parity proof. PR218 adds scoped COMMIT root termination
    with bounded native first-code-unit entry. PR219 adds no-argument THEN with
    lexical alternation retry and assertion/callee catches. PR220 adds MARK and
-   its shorthand with successful-path byte labels on the internal result.
+   its shorthand with successful-path byte labels on the internal result. PR221
+   adds named SKIP using bounded visible MARK history and shared scoped cuts.
    UTF code-unit escape,
    remaining directives/verbs/callouts and other matrix gaps require their own
    pinned reference fixtures. Decide any intentional exclusions before release;
@@ -50,18 +51,19 @@ retaining each framework's complete suite and frozen-result qualification.
 
 ## Current increment and next syntax work
 
-PR219 is merged and its main checks are green. PR220 adds MARK:NAME/:NAME
-successful-path byte labels on the internal result. One lazy journaled mark
-slot and immutable opcode name operands preserve branch/assertion/atomic/repeat
-transactions, successful callee labels and ordinary/forced failure rollback.
-Raw byte/UTF names,255-byte limits/NUL views and source/result lifetime are
-qualified; no exported API change. COMMIT's bounded first-unit proof crosses
-MARK, with wider optimizer parity still issue102.
+PR220 is merged; main43112441065 and scripts43112441109 are green. PR221
+adds named SKIP with raw byte names, newest visible MARK lookup and existing
+scoped cuts. MARK history shares the1024 saved-frame budget only in programs
+containing named SKIP. Atomic/returned-callee visibility and pinned JIT local
+quits, including missing-name local quits, follow native references.
 
-All196 new cases freeze after clean RED660: net8/9/10 compile with zero
-warnings/errors,189 missing-feature/metadata failures and46829 passes each,
-for47018 total. Full native CI and author review are readiness gates. Named
-SKIP/other verb arguments (with existing frozen rejection fixtures intact),
-failed-attempt/partial labels, remaining directives/callouts, UTF C, wider
-optimizer/resources, UTF16/exported API and realistic consumer performance/
-release stay open. Grep stays last; GNU/frozen35/frozen214 remain intact.
+All231 new cases freeze after clean RED662: net8/9/10 compile with zero warnings/
+errors,217 expected new failures and47032 passes each,47249 total. The two old
+SKIP rejection rows are obsolete managed capability inventory; native matching/
+capture fixtures remain unchanged. Revised inventories and new references freeze
+before implementation. Full18-result native CI and author review gate readiness.
+
+Other verb arguments, failed-attempt labels, directives/callouts, UTF C, wider
+optimizer/resources (issue102), UTF16/exported API and realistic consumer
+performance/release stay open. Grep stays last; GNU/frozen35/frozen214/120 remain
+fixed. See PCRE-NAMED-SKIP-DESIGN.md and PCRE-NAMED-SKIP-PLAN.md.

@@ -239,8 +239,9 @@ internal static partial class PcreByteMatcher {
 						case PcreByteOpcode.Then:
 						case PcreByteOpcode.Commit:
 						case PcreByteOpcode.Skip:
+						case PcreByteOpcode.SkipNamed:
 						case PcreByteOpcode.Prune:
-							if ( backtrack.Count >= MaximumBacktrackFrames ) {
+							if ( instruction.Opcode != PcreByteOpcode.SkipNamed && backtrack.Count >= MaximumBacktrackFrames ) {
 								throw new MatchLimitException( PcreByteDiagnosticCode.MatchDepthLimitExceeded, "backtrack stack limit exceeded" );
 							}
 							var pruneBoundary = activeCall >= 0 ? callScopes![activeCall].Boundary : 0;
@@ -263,13 +264,34 @@ internal static partial class PcreByteMatcher {
 								// retain only the entry depth, permitting earlier outer retries.
 								pruneBoundary = Math.Max( pruneBoundary, marks[instruction.First] + instruction.Second );
 							}
+							var skipPosition = position;
+							if ( instruction.Opcode == PcreByteOpcode.SkipNamed ) {
+								// Native JIT takes a local assertion/callee quit before lookup.
+								// Root lookup sees only history still visible to backtracking;
+								// successful returned callees keep labels, but hide their history.
+								if ( pruneBoundary == 0 ) {
+									skipPosition = -1;
+									foreach ( var history in backtrack ) {
+										Step();
+										if ( history.Kind == FrameKind.PathMark && history.CallScope == activeCall
+											&& program.Instructions[history.Pc].Bytes.Span.SequenceEqual( instruction.Bytes.Span ) ) {
+											skipPosition = history.Position;
+											break;
+										}
+									}
+									if ( skipPosition < 0 ) { pc++; break; } // An ignored name needs no cut frame.
+								}
+								if ( backtrack.Count >= MaximumBacktrackFrames ) {
+									throw new MatchLimitException( PcreByteDiagnosticCode.MatchDepthLimitExceeded, "backtrack stack limit exceeded" );
+								}
+							}
 							// Pc stores a live saved-frame boundary, not an instruction target.
 							// Only active scopes catch: older retained siblings are ordinary paths.
-							backtrack.Push( new Frame( pruneBoundary, position, changes.Count, atomicDepths.Count,
+							backtrack.Push( new Frame( pruneBoundary, skipPosition, changes.Count, atomicDepths.Count,
 								activeScope, instruction.Opcode switch {
 									PcreByteOpcode.Then => instruction.First >= 0 ? FrameKind.ThenAlternative : FrameKind.Then,
 									PcreByteOpcode.Commit => FrameKind.Commit,
-									PcreByteOpcode.Skip => FrameKind.Skip, _ => FrameKind.Prune
+									PcreByteOpcode.Skip or PcreByteOpcode.SkipNamed => FrameKind.Skip, _ => FrameKind.Prune
 								}, CallScope: activeCall ) );
 							pc++;
 							break;
@@ -750,6 +772,15 @@ internal static partial class PcreByteMatcher {
 						case PcreByteOpcode.PathMark:
 						case PcreByteOpcode.ThenMark:
 						case PcreByteOpcode.Mark:
+							if ( instruction.Opcode == PcreByteOpcode.PathMark && program.TrackPathMarks ) {
+								if ( backtrack.Count >= MaximumBacktrackFrames ) {
+									throw new MatchLimitException( PcreByteDiagnosticCode.MatchDepthLimitExceeded, "backtrack stack limit exceeded" );
+								}
+								// Checkpoint before this label write so ordinary failure restores
+								// the preceding label as well as discarding its lookup history.
+								backtrack.Push( new Frame( pc, position, changes.Count, atomicDepths.Count,
+									activeScope, FrameKind.PathMark, CallScope: activeCall ) );
+							}
 							if ( backtrack.Count > 0 ) {
 								changes.Add( new( StateKind.Mark, instruction.First, marks[instruction.First], null ) );
 							}
@@ -842,6 +873,7 @@ internal static partial class PcreByteMatcher {
 						activeCall = frame.CallScope;
 						pc = frame.Pc;
 						position = frame.Position;
+						if ( frame.Kind == FrameKind.PathMark ) { continue; } // History has no retry edge.
 						if ( frame.Kind is FrameKind.Prune or FrameKind.Skip or FrameKind.Commit or FrameKind.Then or FrameKind.ThenAlternative ) {
 							if ( activeCall >= 0 && frame.Pc == callScopes![activeCall].Boundary && frame.Kind != FrameKind.ThenAlternative ) {
 								var cutCall = callScopes[activeCall];
@@ -992,7 +1024,7 @@ internal static partial class PcreByteMatcher {
 		StateKind Kind, int Index, int PriorValue, PcreByteCapture? PriorCapture
 	);
 
-	private enum FrameKind : byte { Branch, PositiveAssertion, NegativeAssertion, ReverseRetry, NonAtomicAssertion, ConditionalAssertion, Call, Prune, Skip, Commit, Then, ThenAlternative }
+	private enum FrameKind : byte { Branch, PositiveAssertion, NegativeAssertion, ReverseRetry, NonAtomicAssertion, ConditionalAssertion, Call, Prune, Skip, Commit, Then, ThenAlternative, PathMark }
 
 	private readonly record struct CallScope( int ReturnPc, int Parent, int ChangeCount, int Number, int AssertionScope, int Boundary );
 

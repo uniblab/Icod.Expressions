@@ -2895,3 +2895,48 @@ Named verbs/SKIP, failed-attempt labels, remaining directives/callouts, UTF C,
 wider optimizer/resource conformance, UTF16/exported API, realistic consumer
 performance and release stay open. Grep stays last; GNU/frozen35/frozen214/120
 and all earlier fixed reference blobs remain intact.
+
+## PR221: named SKIP and bounded visible MARK history
+
+Named SKIP resolves the newest matching MARK still visible to backtracking.
+Missing root names leave ordinary retries intact; an empty colon argument is
+unnamed SKIP. Default raw verb names have255-byte limits, ordinal/NUL-prefix
+comparison, original-byte diagnostics and immutable source ownership.
+
+Only programs containing a nonempty named SKIP save MARK history. They reuse
+existing1024 bounded frames and the shared label journal; no per-name slots or
+unbounded history arena are added. Atomic success and successful atomic
+assertions discard their history. Non-atomic assertion history stays visible;
+returned callees preserve successful label metadata but hide their history from
+caller lookup. Each inspected frame charges work and polls cancellation.
+
+Pinned PCRE2 10.48 JIT takes local call/negative/conditional assertion quits before
+name lookup, including missing names; standalone positive scopes propagate.
+Existing selected pre-verb captures, rightmost cuts, forward-only restart,
+CRLF/UTF fragment entry and zero-width metadata remain shared. The bounded
+one-root-branch COMMIT first-byte proof additionally crosses SKIP/named SKIP/
+PRUNE prefixes; issue102's general optimizer gate stays open.
+
+RED662 run43118592400/LinuxARM64 job130852925927 built net8/9/10 with zero
+warnings/errors. Each framework reported47249 cases:217 expected new failures,
+47032 passes,0 skips. No earlier fixture or literal native oracle failed.
+All231 new cases freeze at blob8195d32daba2843a230e8b353b707a39dd3c5d28,
+including199 literal/profile fixtures independently checked in380 native runs.
+All-offset UTF/CRLF, scope/capture, byte/NUL/grammar/lifetime, mixed history/cut
+quota, shared mark/expansion, charged lookup and cancellation controls qualify
+scope. Native-only NO_JIT on large all-success resource controls avoids the
+native default JIT-stack ceiling; production patterns contain no such directive.
+
+Two obsolete managed SKIP header-rejection inventory rows now test nonexact
+headers; every native matching/capture expectation in that source is unchanged.
+One unfrozen group-alias pending row advances to named PRUNE. Revised inventories
+freeze after RED (SKIP2f404af02d0d1ca248194c25a48417757a72c317 and
+GroupAliasefdfdc98233636c26201f01d22cbf7edd6e03612). Historical GNU/BRE/ERE,
+frozen35 production blobs, frozen214 outcomes/120 methods, earlier native
+expectations, exported API and dependencies remain fixed. See
+PCRE-NAMED-SKIP-DESIGN.md and PCRE-NAMED-SKIP-PLAN.md.
+
+Full applicable native CI and author review remain readiness gates. Other verb
+arguments, failed-attempt labels, directives/callouts, UTF C, wider optimizer/
+resource conformance, UTF16/exported API, realistic consumer performance and
+release remain open. Grep stays last.
