@@ -1568,14 +1568,14 @@ internal sealed class PcreByteProgramCompiler {
 		// repeats. It neither searches a whole scalar nor generalizes issue102.
 		var pending = new Stack<(PcreByteNode Node, int Depth)>();
 		var visits = 0;
-		var seenCommit = false;
+		var needsEntryFilter = false;
 		if ( !AddSequence( root, 0 ) ) { return null; }
 		Span<byte> encoded = stackalloc byte[4];
 		while ( pending.TryPop( out var item ) ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			if ( ++visits > MaximumStartClassVisits ) { return null; }
 			switch ( item.Node ) {
-				case PcreByteCommit: seenCommit = true; break;
+				case PcreByteCommit: needsEntryFilter = true; break;
 				case PcreByteMatchStartReset: break;
 				case PcreByteGroup group:
 					if ( !AddSequence( group.Body, item.Depth + 1 ) ) { return null; }
@@ -1590,11 +1590,15 @@ internal sealed class PcreByteProgramCompiler {
 				case PcreByteLookahead { IsPositive: true, NonAtomic: false } assertion:
 					if ( !AddSequence( assertion.Body, item.Depth + 1 ) ) { return null; }
 					break;
+				case PcreByteLookbehind { IsPositive: true, NonAtomic: false }:
+					// Native first-unit study skips the assertion body. In a COMMIT
+					// program it must not cut at candidates before the outer literal.
+					needsEntryFilter = true; break;
 				case PcreByteLiteralAssertion { IsPositive: true, IsBehind: false } assertion:
 					if ( assertion.Bytes.IsEmpty ) { break; }
-					return seenCommit ? FirstBytes( assertion.Bytes.Span[0], assertion.Caseless, assertion.CaselessRestricted ) : null;
+					return needsEntryFilter ? FirstBytes( assertion.Bytes.Span[0], assertion.Caseless, assertion.CaselessRestricted ) : null;
 				case PcreByteLiteral literal:
-					if ( !seenCommit ) { return null; }
+					if ( !needsEntryFilter ) { return null; }
 					var first = (byte)literal.Value;
 					if ( utf8 ) { new Rune( literal.Value ).EncodeToUtf8( encoded ); first = encoded[0]; }
 					return FirstBytes( first, literal.Caseless, literal.CaselessRestricted );

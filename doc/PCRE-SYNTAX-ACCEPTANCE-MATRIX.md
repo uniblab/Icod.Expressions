@@ -2671,8 +2671,9 @@ behind width is zero without hiding unbounded tails. All three cuts share the
 Native first-code-unit entry can skip candidates before a leading COMMIT.
 The bounded proof permits one root branch, four group levels and 1000 visits
 through ordinary groups, atomic wrappers, required literal repeats, positive
-lookahead, empty groups and K. It stops at alternatives, optional repeats,
-classes, calls, anchors and other assertions. Case-sensitive encoded first
+lookahead, empty groups and K; native first-unit study skips leading positive
+lookbehind bodies before the required outer literal. It stops at alternatives,
+optional repeats, classes, calls, anchors and other assertions. Case-sensitive encoded first
 bytes and simple ASCII caseless pairs qualify; Unicode K/S complex casesets
 without r and other non-ASCII caseless heads do not. Wider optimizer parity
 remains issue102. Every prefix check charges shared work/cancellation.

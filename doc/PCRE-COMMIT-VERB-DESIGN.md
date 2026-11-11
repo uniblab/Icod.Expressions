@@ -26,7 +26,9 @@ Add optional immutable first-byte metadata only for programs containing COMMIT.
 Prove a single root branch through bounded one-branch capture/noncapture groups,
 required literal repeats, atomic wrappers, positive lookahead, empty groups and K, with
 a preceding COMMIT. Stop on alternatives, optional repeats, classes, calls,
-anchors, negative/conditional/behind assertions and unknown nodes. Bound both
+anchors, negative/conditional/non-atomic assertions and unknown nodes. Skip
+leading positive lookbehind as native first-unit study does, so an interior
+COMMIT cannot fire at candidates preceding the required outer literal. Bound both
 visits (1000) and group descent (four levels); poll compile cancellation. Case-sensitive literals
 supply one first byte. ASCII caseless pairs qualify except Unicode K/S complex
 casesets without r. General non-ASCII caseless/start optimization stays issue102.

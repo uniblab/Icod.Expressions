@@ -49,3 +49,9 @@ then compiled all frameworks with zero warnings/errors. Each reported46647
 cases:142 missing-COMMIT failures,46505 passes,0 skips. No prior fixture or
 native literal oracle failure. All150 unique new cases freeze at blob
 `fba19c8e0627f89056b16302538e3c7da3639b9d` before production changes.
+
+CI654 compiled cleanly and narrowed the implementation to one failing fixed
+case: (?<=(a{1,2}(*COMMIT)b))c on aabc. Native first_significant_code skips
+lookbehind before finding the outer c, so entry is byte3; NO_START_OPT instead
+fails. The bounded proof now skips leading positive lookbehind bodies before
+the required outer literal. All150 tests remain unchanged.
