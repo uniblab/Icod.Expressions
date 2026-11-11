@@ -198,7 +198,7 @@ internal sealed partial class PcreByteParser {
 			var bounds = counted ? ParseCountedBounds( quantifierOffset )
 				: (quantifier == (byte)'+' ? 1 : 0,
 					quantifier == (byte)'?' ? 1 : int.MaxValue);
-			if ( atom is PcreByteFailure or PcreBytePrune ) {
+			if ( atom is PcreByteFailure or PcreBytePrune or PcreByteSkip ) {
 				throw Invalid( quantifierOffset, "this control verb cannot be repeated" );
 			}
 			if ( atom is PcreByteMatchStartReset ) {
@@ -261,6 +261,7 @@ internal sealed partial class PcreByteParser {
 		}
 		if ( TryConsumeGroupAlias( "*ACCEPT)"u8 ) ) { return new PcreByteAccept(); }
 		if ( TryConsumeGroupAlias( "*PRUNE)"u8 ) ) { return new PcreBytePrune(); }
+		if ( TryConsumeGroupAlias( "*SKIP)"u8 ) ) { return new PcreByteSkip(); }
 		var scriptRun = TryConsumeGroupAlias( "*script_run:"u8 ) || TryConsumeGroupAlias( "*sr:"u8 );
 		if ( !scriptRun && ( TryConsumeGroupAlias( "*atomic_script_run:"u8 ) || TryConsumeGroupAlias( "*asr:"u8 ) ) ) {
 			scriptRun = true; atomic = true;

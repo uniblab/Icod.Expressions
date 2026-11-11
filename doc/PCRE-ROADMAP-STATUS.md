@@ -1,6 +1,6 @@
 # PCRE roadmap status
 
-Reviewed after PR215, with PR216 in progress, 2026-11-11. Issue7 remains the delivery roadmap; the
+Reviewed after PR216, with PR217 in progress, 2026-11-11. Issue7 remains the delivery roadmap; the
 [syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md),
 [resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) and
 [Grep fixture inventory](PCRE-GREP-CONSUMER-FIXTURES.md) define the detailed gates.
@@ -28,7 +28,8 @@ retaining each framework's complete suite and frozen-result qualification.
    implemented in PR209; PR210 completes the native binary/Bidi catalogue and
    PR211 adds atomic grapheme clusters. PR212 adds Perl class algebra; PR213 adds
    UTS#18 activation, PR214 adds script-run groups, PR215 adds scoped ACCEPT and
-   PR216 adds no-argument PRUNE. UTF code-unit escape,
+   PR216 adds no-argument PRUNE; PR217 adds SKIP candidate restart and one bounded
+   PRUNE repeat-cache parity proof. UTF code-unit escape,
    remaining directives/verbs/callouts and other matrix gaps require their own
    pinned reference fixtures. Decide any intentional exclusions before release;
    successful compilation must never imply an unsupported construct works.
@@ -45,16 +46,16 @@ retaining each framework's complete suite and frozen-result qualification.
 
 ## Current increment and next syntax work
 
-PR216 adds exact no-argument PRUNE after PR215's successful scope termination.
-The verb saves one bounded frame and cuts earlier choices only when later
-failure reaches it. Active call/negative/conditional assertion boundaries catch;
-standalone positive assertions propagate. Successful atomic scopes remove their
-interior verbs. Native JIT selected pre-verb callee values on forced failure
-are pinned separately from ordinary right-side rollback. Scope walks/discards
-share work/cancellation and all frames share the existing1024 limit.
+PR217 adds exact no-argument SKIP after PR216's scoped PRUNE cuts. The two verbs
+share guard catches, journal transactions and the1024 saved-frame budget. A
+strictly forward root SKIP retries at its byte position, bypassing ordinary
+CRLF/repeat bumpalong; equal/backward targets advance normally. Native spans
+pin EOF/UTF fragments, lookarounds, K, mixed cuts and selected callee captures.
+The new PRUNE comparison control also requires a bounded two-root-branch
+literal-PLUS cache proof; wider optimizer equivalence remains issue102.
 
-New reference tests remain fixed after successful-build RED648; complete native
-CI and author review are readiness gates. Named verbs/MARK, other control verbs,
+New reference tests stay fixed after successful-build RED650. Full native CI
+and author review are readiness gates. Named verbs/MARK, other control verbs,
 directives, callouts, UTF code-unit escape, broader optimizer/resource
 conformance, UTF16/API and realistic consumer performance/release remain open.
 Grep stays last; GNU/BRE/ERE and frozen35/frozen214 stay intact.

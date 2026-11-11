@@ -27,9 +27,9 @@ or subagents. User owns merge/tag/publication.
 pending-SKIP rows in `PcreSyntaxAcceptanceTests` to native-valid COMMIT forms.
 **Interface:** existing compiler/options/match results and PCRE.NET.
 
-- [ ] Export independent native literal spans, including PRUNE comparison controls.
-- [ ] Add all-offset, exact grammar, mixed/shared frame and resource cases.
-- [ ] Publish tests/design/plan draft; observe successful-build RED for missing
+- [x] Export independent native literal spans, including PRUNE comparison controls.
+- [x] Add all-offset, exact grammar, mixed/shared frame and resource cases.
+- [x] Publish tests/design/plan draft; observe successful-build RED for missing
 SKIP only and freeze the new reference test blob.
 
 ### Task 2: implement and verify
@@ -41,6 +41,9 @@ SKIP only and freeze the new reference test blob.
 - [ ] Reuse scope target selection, journal/filtering and frame discard semantics.
 - [ ] At root only, resume strictly forward targets directly at candidate entry;
 use existing normal advancement otherwise. Preserve scalar/fragment barriers.
+- [ ] Add the bounded root literal-PLUS/PRUNE/single suffix and same-literal
+fallback memo proof required by the frozen PRUNE comparison control; use two
+constant-time memo instructions without saved frames.
 - [ ] Run unchanged reference tests and full applicable native CI to GREEN.
 
 ### Task 3: review and report
@@ -50,3 +53,12 @@ use existing normal advancement otherwise. Preserve scalar/fragment barriers.
 - [ ] Review all five focus paths, bounds, offsets and native backend distinctions.
 - [ ] Record exact RED/GREEN evidence and remaining gates; verify proposed merge
 source tree and mark PR ready after checks. User merges/tags/publishes.
+
+## Tests-first checkpoint
+
+RED650 run43016405038 LinuxARM64 job130508489235 compiled all frameworks with
+zero warnings/errors. Each reported46497 total:129 new failures,46368 passes
+and0 skips.128 failures are missing SKIP; one new PRUNE comparison control
+exposes native JIT repeat-cache parity (native NO_START_OPT probe removes that
+result, confirming its optimizer origin). No prior test or native oracle failed.
+All140 new cases freeze at blob`092823b6c667859899f16ea07f0dd52e1a499b6b`.

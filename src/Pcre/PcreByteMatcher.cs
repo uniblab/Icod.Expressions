@@ -172,6 +172,7 @@ internal static partial class PcreByteMatcher {
 			int[]? restoredFields = null;
 			var returnGeneration = 0;
 			var regionalRun = new RegionalRun( -1, -1 );
+			var pruneLiteralEnd = -1;
 			// Keep the observed and cancellable path byte-for-byte accountable to Step().
 			var nullableInvalidCandidates = program.MatchInvalidUtf && program.CanMatchEmptyAtAnyOffset;
 			var previousFragmentEnd = -1;
@@ -202,6 +203,7 @@ internal static partial class PcreByteMatcher {
 					Step(); // Candidate start.
 					var position = start;
 					var utfRepeatEnd = start;
+					var skipRestart = -1;
 					var pc = 0;
 					Array.Clear( captures );
 					Array.Clear( captureStarts );
@@ -222,6 +224,15 @@ internal static partial class PcreByteMatcher {
 						var absoluteEnd = endLimit >= 0 ? endLimit : input.Length;
 						var failed = false;
 						switch ( instruction.Opcode ) {
+						case PcreByteOpcode.PruneRepeatStart:
+							if ( position < pruneLiteralEnd ) { failed = true; }
+							else { pc++; }
+							break;
+						case PcreByteOpcode.PruneRepeatEnd:
+							pruneLiteralEnd = Math.Max( pruneLiteralEnd, position );
+							pc++;
+							break;
+						case PcreByteOpcode.Skip:
 						case PcreByteOpcode.Prune:
 							if ( backtrack.Count >= MaximumBacktrackFrames ) {
 								throw new MatchLimitException( PcreByteDiagnosticCode.MatchDepthLimitExceeded, "backtrack stack limit exceeded" );
@@ -240,7 +251,7 @@ internal static partial class PcreByteMatcher {
 							// Pc stores a live saved-frame boundary, not an instruction target.
 							// Only active scopes catch: older retained siblings are ordinary paths.
 							backtrack.Push( new Frame( pruneBoundary, position, changes.Count, atomicDepths.Count,
-								activeScope, FrameKind.Prune, CallScope: activeCall ) );
+								activeScope, instruction.Opcode == PcreByteOpcode.Skip ? FrameKind.Skip : FrameKind.Prune, CallScope: activeCall ) );
 							pc++;
 							break;
 						case PcreByteOpcode.Fail:
@@ -802,12 +813,12 @@ internal static partial class PcreByteMatcher {
 						activeCall = frame.CallScope;
 						pc = frame.Pc;
 						position = frame.Position;
-						if ( frame.Kind == FrameKind.Prune ) {
+						if ( frame.Kind is FrameKind.Prune or FrameKind.Skip ) {
 							if ( activeCall >= 0 && frame.Pc == callScopes![activeCall].Boundary ) {
 								var cutCall = callScopes[activeCall];
 								var selected = program.Instructions[cutCall.ReturnPc - 1].CaptureNumbers;
 								if ( !selected.IsEmpty ) {
-									// Native JIT keeps selected values completed before PRUNE
+									// Native JIT keeps selected values completed before the cut
 									// on forced callee failure. Right-side changes already rolled
 									// back. Retained caller checkpoints precede this interval.
 									var kept = cutCall.ChangeCount;
@@ -819,6 +830,9 @@ internal static partial class PcreByteMatcher {
 									}
 									changes.RemoveRange( kept, changes.Count - kept );
 								}
+							}
+							if ( frame.Kind == FrameKind.Skip && frame.Pc == 0 && frame.Position > start ) {
+								skipRestart = frame.Position;
 							}
 							while ( backtrack.Count > frame.Pc ) { Step(); PopFrame( backtrack, assertionScopes, callScopes ); }
 							failed = true;
@@ -837,6 +851,13 @@ internal static partial class PcreByteMatcher {
 						if ( backtrack.Count == 0 ) { changes.Clear(); }
 					}
 					if ( failed ) { break; }
+				}
+				if ( skipRestart > start ) {
+					// Native JIT forward SKIP goes directly to candidate entry,
+					// including LF after CR and fragment end/EOF. The for-loop
+					// increment supplies the final byte; scalar targets were consumed.
+					start = skipRestart - 1;
+					continue;
 				}
 				if ( program.UtfCrLfStartClass && !program.ExplicitNewline
 					&& ( program.Newline is PcreByteNewline.AnyCrLf or PcreByteNewline.CrLf or PcreByteNewline.Any )
@@ -939,7 +960,7 @@ internal static partial class PcreByteMatcher {
 		StateKind Kind, int Index, int PriorValue, PcreByteCapture? PriorCapture
 	);
 
-	private enum FrameKind : byte { Branch, PositiveAssertion, NegativeAssertion, ReverseRetry, NonAtomicAssertion, ConditionalAssertion, Call, Prune }
+	private enum FrameKind : byte { Branch, PositiveAssertion, NegativeAssertion, ReverseRetry, NonAtomicAssertion, ConditionalAssertion, Call, Prune, Skip }
 
 	private readonly record struct CallScope( int ReturnPc, int Parent, int ChangeCount, int Number, int AssertionScope, int Boundary );
 

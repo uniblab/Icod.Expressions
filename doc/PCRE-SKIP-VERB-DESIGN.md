@@ -31,7 +31,15 @@ standing authorization to continue the roadmap inline.
 Exact parsing, nonrepeatable direct verbs, grouped repetition, zero consumed
 width and nonterminating behind width scans follow PRUNE. Named SKIP (including
 empty colon), MARK, other verbs and directives remain unsupported. Existing
-optimizer proofs remain conservative; no general optimization expansion.
+optimizer proofs remain conservative. The frozen comparison control exposed one
+existing PRUNE JIT cache gap: `a+(*PRUNE)(*FAIL)|(a)` returns the fallback at
+byte1 after its first greedy scan. A bounded proof recognizes two root branches:
+first is direct case-sensitive unbounded greedy literal PLUS, PRUNE and one
+failure/literal suffix; second is the same literal, optionally in one capture.
+Two memo instructions reuse the consumed end across candidates; an entry inside
+the cached run fails before reaching PRUNE, preserving native fallback choice.
+No classes, calls, nested alternatives, case folding, counted repeats or wider
+optimizer coverage are inferred. Issue102 stays open.
 
 ## Evidence and gates
 
