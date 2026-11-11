@@ -27,10 +27,10 @@ reference tests. Preserve 35 production blobs and 214 frozen results/120 methods
 pending rows in `PcreSyntaxAcceptanceTests`/`PcreGroupAliasReferenceTests` to MARK.
 **Interface:** existing compiler/options/result and PCRE.NET reference.
 
-- [ ] Qualify independent native capture-span literals and malformed cases.
-- [ ] Add tests for the design/review-focus paths and shared resource limits.
-- [ ] Publish tests/design/plan to a draft PR; require successful compilation and
-expected unsupported-ACCEPT failures in Linux CI. Record and freeze test blob.
+- [x] Qualify independent native capture-span literals and malformed cases.
+- [x] Add tests for the design/review-focus paths and shared resource limits.
+- [x] Publish tests/design/plan to a draft PR; require successful compilation and
+expected unsupported-ACCEPT failures in Linux/macOS CI. Record and freeze test blob.
 
 ### Task 2: lower ACCEPT and execute scope success
 
@@ -38,10 +38,10 @@ expected unsupported-ACCEPT failures in Linux CI. Record and freeze test blob.
 **Interface:** `PcreByteAccept` leaf; `EarlyAccept` instruction with immutable
 capture numbers and patched assertion exit; call-entry scope/boundary/depth.
 
-- [ ] Parse exact ACCEPT and preserve ordinary quantifier validation/lowering.
-- [ ] Close lexical captures and patch assertion-local exit targets during heap
+- [x] Parse exact ACCEPT and preserve ordinary quantifier validation/lowering.
+- [x] Close lexical captures and patch assertion-local exit targets during heap
 compilation. Admit direct ACCEPT in width termination and nullable metadata.
-- [ ] At runtime charge closes/pruning; select current assertion/call/root;
+- [x] At runtime charge closes/pruning; select current assertion/call/root;
 commit accepted scope choices, trim atomic nesting, reuse existing exit paths.
 - [ ] Run the unchanged frozen tests and whole native/framework CI; correct only
 production code for behavioral mismatches. Require all applicable checks green.
@@ -54,3 +54,13 @@ production code for behavioral mismatches. Require all applicable checks green.
 new syntax boundaries, offsets and conservative optimizer behavior.
 - [ ] Record RED/GREEN evidence and remaining gates. Verify exact proposed-merge
 source tree and mark PR ready; user owns merge/tags/publication.
+
+## Tests-first checkpoint
+
+RED645 (run43004006751) compiled all three frameworks with zero warnings/errors
+on Linux ARM64 and macOS ARM64. Each framework reported46266 total:67 expected
+new ACCEPT failures,46199 passes,0 skipped. The74 additions include two
+already-supported quoted/bracket controls, four unsupported-header controls and
+one earlier-unbounded-width rejection. The test blob
+`64e372d660775c84e81e1bb4a503bbaa5d155a44` is immutable after that RED.
+Implementation proceeds against the same native expectations.
