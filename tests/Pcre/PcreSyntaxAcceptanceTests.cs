@@ -9,18 +9,18 @@ namespace Icod.Expressions.Tests.Pcre;
 public sealed class PcreSyntaxAcceptanceTests {
 	[Theory]
 	[InlineData( "(*MARK:x)", 0, false )]
-	[InlineData( "(*THEN)(*FAIL)", 0, false )]
+	[InlineData( "(*MARK:pending)(*FAIL)", 0, false )]
 	[InlineData( "(*LIMIT_DEPTH=10)a", 0, false )]
 	[InlineData( "(*LIMIT_MATCH=10)a", 0, false )]
 	[InlineData( "(*LIMIT_HEAP=10)a", 0, false )]
 	[InlineData( "(*NO_JIT)a", 0, false )]
 	[InlineData( "(*NO_START_OPT)a", 0, true )]
-	[InlineData( "a(*THEN)", 1, false )]
-	[InlineData( "(?i)(*THEN)", 4, false )]
+	[InlineData( "a(*THEN:pending)", 1, false )]
+	[InlineData( "(?i)(*THEN:pending)", 4, false )]
 	[InlineData( "(*COMMIT:pending)", 0, false )]
 	[InlineData( "(?C1)a", 0, false )]
 	[InlineData( @"\C", 0, true )]
-	[InlineData( "(*THEN)a", 0, true )]
+	[InlineData( "(*THEN:pending)a", 0, true )]
 	public void PendingConstructHasExplicitOpeningByteDiagnostic( string pattern, int expectedOffset, bool utf8 ) {
 		var result = PcreByteCompiler.Compile( Encoding.UTF8.GetBytes( pattern ), new PcreByteOptions {
 			Utf8 = utf8, Ucp = utf8, AsciiBsD = utf8, MatchInvalidUtf = utf8
