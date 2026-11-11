@@ -45,6 +45,8 @@ internal enum PcreByteOpcode {
 	Prune,
 	Skip,
 	Commit,
+	Then,
+	ThenMark,
 	PruneRepeatStart,
 	PruneRepeatEnd
 }
@@ -106,13 +108,17 @@ internal sealed class PcreByteProgramCompiler {
 	private int assertionCaptureStart;
 	private bool hasEarlyAccept;
 	private bool hasCommit;
+	private readonly bool hasThen;
+	private ThenTarget? thenTarget;
+	private readonly record struct ThenTarget( int Mark, bool HasNext );
 	private PcreByteRepeat? pruneLiteralCacheRepeat;
 
 	internal PcreByteProgramCompiler( CancellationToken cancellationToken, bool utf8, bool matchInvalidUtf,
-		PcreByteNewline newline, bool bsrAnyCrLf, bool notEmpty, bool notEmptyAtStart, bool ucp ) {
+		PcreByteNewline newline, bool bsrAnyCrLf, bool notEmpty, bool notEmptyAtStart, bool ucp, bool hasThen = false ) {
 		this.cancellationToken = cancellationToken;
 		this.utf8 = utf8;
 		this.ucp = ucp;
+		this.hasThen = hasThen;
 		this.matchInvalidUtf = matchInvalidUtf;
 		this.newline = newline;
 		this.bsrAnyCrLf = bsrAnyCrLf;
@@ -146,6 +152,7 @@ internal sealed class PcreByteProgramCompiler {
 		foreach ( var target in targets ) {
 			entries.Add( target.Key, instructions.Count );
 			// A subroutine calls the body, bypassing its root capture and exterior repeat.
+			thenTarget = null; // A callee cannot target the caller's lexical alternation.
 			CompileAlternatives( target.Value.Body );
 			while ( compileWork.TryPop( out var next ) ) {
 				cancellationToken.ThrowIfCancellationRequested();
@@ -1276,7 +1283,7 @@ internal sealed class PcreByteProgramCompiler {
 	}
 
 	private static bool CanMatchEmptyAtAnyOffset( PcreByteNode node ) => node switch {
-		PcreByteSearchStart or PcreByteMatchStartReset or PcreBytePrune or PcreByteSkip or PcreByteCommit => true,
+		PcreByteSearchStart or PcreByteMatchStartReset or PcreBytePrune or PcreByteSkip or PcreByteCommit or PcreByteThen => true,
 		// A participating capture may be empty. The VM still checks participation
 		// and forbids nonempty consumption across the synthetic fragment boundary.
 		PcreByteBackreference or PcreByteSubroutineCall => true,
@@ -1375,11 +1382,21 @@ internal sealed class PcreByteProgramCompiler {
 
 	private void CompileAlternatives( PcreByteAlternatives alternatives, ReadOnlyMemory<int> reverseLengths = default, int reverseMinimum = -1 ) {
 		var endJumps = new List<int>();
-		compileWork.Push( () => CompileBranch( alternatives, 0, endJumps, reverseLengths, reverseMinimum ) );
+		var thenMark = -1;
+		if ( hasThen && alternatives.Branches.Count > 1 ) {
+			thenMark = AllocateMark();
+			Emit( PcreByteOpcode.ThenMark, thenMark );
+			var priorTarget = thenTarget;
+			compileWork.Push( () => thenTarget = priorTarget );
+		}
+		compileWork.Push( () => CompileBranch( alternatives, 0, endJumps, reverseLengths, reverseMinimum, thenMark ) );
 	}
 
 	private void CompileBranch( PcreByteAlternatives alternatives, int index, List<int> endJumps,
-		ReadOnlyMemory<int> reverseLengths, int reverseMinimum ) {
+		ReadOnlyMemory<int> reverseLengths, int reverseMinimum, int thenMark ) {
+		// Only actual alternative branches own a target. Repeat Splits and
+		// conditional yes/no sequences keep their exterior lexical owner.
+		if ( thenMark >= 0 ) { thenTarget = new( thenMark, index + 1 < alternatives.Branches.Count ); }
 		var split = index + 1 < alternatives.Branches.Count ? Emit( PcreByteOpcode.Split ) : -1;
 		var first = instructions.Count;
 		var ranged = !reverseLengths.IsEmpty && reverseMinimum >= 0 && reverseLengths.Span[index] > reverseMinimum;
@@ -1390,7 +1407,7 @@ internal sealed class PcreByteProgramCompiler {
 				Patch( split, first, instructions.Count );
 			}
 			if ( index + 1 < alternatives.Branches.Count ) {
-				CompileBranch( alternatives, index + 1, endJumps, reverseLengths, reverseMinimum );
+				CompileBranch( alternatives, index + 1, endJumps, reverseLengths, reverseMinimum, thenMark );
 			} else {
 				foreach ( var jump in endJumps ) { Patch( jump, instructions.Count ); }
 			}
@@ -1422,6 +1439,9 @@ internal sealed class PcreByteProgramCompiler {
 		cancellationToken.ThrowIfCancellationRequested();
 		if ( ++compileVisits > MaximumInstructions ) { throw RepeatExpansionLimit(); }
 		switch ( node ) {
+			case PcreByteThen:
+				Emit( PcreByteOpcode.Then, thenTarget?.Mark ?? -1, thenTarget?.HasNext == true ? 1 : 0 );
+				break;
 			case PcreByteCommit:
 				Emit( PcreByteOpcode.Commit );
 				hasCommit = true;
@@ -1576,7 +1596,7 @@ internal sealed class PcreByteProgramCompiler {
 			if ( ++visits > MaximumStartClassVisits ) { return null; }
 			switch ( item.Node ) {
 				case PcreByteCommit: needsEntryFilter = true; break;
-				case PcreByteMatchStartReset: break;
+				case PcreByteMatchStartReset or PcreByteThen: break;
 				case PcreByteGroup group:
 					if ( !AddSequence( group.Body, item.Depth + 1 ) ) { return null; }
 					break;
@@ -1717,11 +1737,14 @@ internal sealed class PcreByteProgramCompiler {
 		var enter = Emit( PcreByteOpcode.AssertionEnter, second: flags );
 		var priorAccepts = assertionAccepts;
 		var priorCaptureStart = assertionCaptureStart;
+		var priorThenTarget = thenTarget;
+		thenTarget = null;
 		assertionAccepts = new();
 		assertionCaptureStart = openCaptures.Count;
 		compileWork.Push( () => {
 			var exit = Emit( PcreByteOpcode.AssertionExit, second: 8 );
 			FinishAssertionAccepts( exit, priorAccepts, priorCaptureStart );
+			thenTarget = priorThenTarget;
 			var yes = instructions.Count;
 			compileWork.Push( () => {
 				var endJump = Emit( PcreByteOpcode.Jump );
@@ -1761,11 +1784,14 @@ internal sealed class PcreByteProgramCompiler {
 		var enter = Emit( PcreByteOpcode.AssertionEnter, second: flags );
 		var priorAccepts = assertionAccepts;
 		var priorCaptureStart = assertionCaptureStart;
+		var priorThenTarget = thenTarget;
+		thenTarget = null;
 		assertionAccepts = new();
 		assertionCaptureStart = openCaptures.Count;
 		compileWork.Push( () => {
 			var exit = Emit( PcreByteOpcode.AssertionExit, second: nonAtomic ? 4 : 0 );
 			FinishAssertionAccepts( exit, priorAccepts, priorCaptureStart );
+			thenTarget = priorThenTarget;
 			Patch( enter, instructions.Count, flags );
 		} );
 		CompileAlternatives( body, reverseLengths, reverseMinimum );

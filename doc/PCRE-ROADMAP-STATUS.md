@@ -1,6 +1,6 @@
 # PCRE roadmap status
 
-Reviewed after PR217, with PR218 in progress, 2026-11-11. Issue7 remains the delivery roadmap; the
+Reviewed after PR218, with PR219 in progress, 2026-11-11. Issue7 remains the delivery roadmap; the
 [syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md),
 [resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) and
 [Grep fixture inventory](PCRE-GREP-CONSUMER-FIXTURES.md) define the detailed gates.
@@ -30,7 +30,8 @@ retaining each framework's complete suite and frozen-result qualification.
    UTS#18 activation, PR214 adds script-run groups, PR215 adds scoped ACCEPT and
    PR216 adds no-argument PRUNE; PR217 adds SKIP candidate restart and one bounded
    PRUNE repeat-cache parity proof. PR218 adds scoped COMMIT root termination
-   with bounded native first-code-unit entry. UTF code-unit escape,
+   with bounded native first-code-unit entry. PR219 adds no-argument THEN with
+   lexical alternation retry and assertion/callee catches. UTF code-unit escape,
    remaining directives/verbs/callouts and other matrix gaps require their own
    pinned reference fixtures. Decide any intentional exclusions before release;
    successful compilation must never imply an unsupported construct works.
@@ -47,18 +48,21 @@ retaining each framework's complete suite and frozen-result qualification.
 
 ## Current increment and next syntax work
 
-PR217 is merged and its main checks are green. PR218 adds exact no-argument
-COMMIT: shared delayed cuts/catches, root search termination, rightmost verb
-precedence, selected callee captures and the shared1024-frame budget. A bounded
-first-code-unit proof preserves native leading-COMMIT entry (including malformed
-UTF lead bytes); one direct preceding COMMIT also qualifies in the existing
-literal-PLUS/PRUNE cache proof. General optimizer parity stays issue102.
+PR218 is merged and its main checks are green. PR219 adds exact no-argument
+THEN: retry the nearest lexical sibling, or on the last branch permit earlier
+outer retries. One-branch wrappers and conditional arms inherit ownership;
+assertions/callees bound it, with the pinned JIT positive-assertion/local-call
+exception. Owned-trap rollback stays distinct from forced selected-value call
+quit. Journaled stack-depth checkpoints reuse mark/capture
+transactions, with shared256 marks/1024 frames/4096 compilation/work limits.
+COMMIT's bounded first-unit entry also crosses leading THEN; wider optimizer
+parity remains issue102.
 
-All150 new reference cases freeze after clean RED653: net8/9/10 compile with
-zero warnings/errors,142 missing-feature failures and46505 passes each. The
-three redundant InlineData rows caught in attempt652 were removed before that
-checkpoint, without changing any unique expectation. Full native CI and author
-review remain readiness gates. Named verbs/MARK, THEN, remaining directives/
-callouts, UTF code-unit escape, broader optimizer/resource conformance, UTF16/API
-and realistic consumer performance/release remain open. Grep stays last;
-GNU/BRE/ERE and frozen35/frozen214 stay intact.
+The original167 cases freeze after clean RED656: net8/9/10 compile with zero
+warnings/errors,159 missing-feature failures and46655 passes each. Eight added
+regression cases freeze after RED658:46822 total,6 capture failures,46816 passes,
+0 skips and zero warnings/errors. All175 new cases remain fixed for the
+production-only capture correction. Full native CI and author review are readiness gates. Named verbs/
+MARK, remaining directives/callouts, UTF code-unit escape, wider optimizer/
+resource conformance, UTF16/API and realistic consumer performance/release stay
+open. Grep stays last; GNU/BRE/ERE and frozen35/frozen214 stay intact.
