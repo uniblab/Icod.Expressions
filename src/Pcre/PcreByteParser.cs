@@ -18,6 +18,7 @@ internal sealed partial class PcreByteParser {
 	private readonly CancellationToken cancellationToken;
 	private readonly bool utf8;
 	private readonly bool ucp;
+	private readonly bool altExtendedClass;
 	private readonly PcreByteNewline newline;
 	private readonly List<(int Number, int Offset)> backreferences = new();
 	private int index;
@@ -36,9 +37,10 @@ internal sealed partial class PcreByteParser {
 	private ExtendedMode extended;
 
 	internal PcreByteParser( byte[] source, bool caseless, bool asciiBsD,
-		PcreByteStartSettings settings, CancellationToken cancellationToken ) {
+		PcreByteStartSettings settings, CancellationToken cancellationToken, bool altExtendedClass = false ) {
 		this.source = source;
 		this.caseless = caseless;
+		this.altExtendedClass = altExtendedClass;
 		utf8 = settings.Utf8;
 		ucp = settings.Ucp;
 		asciiRestrictions = asciiBsD ? AsciiRestriction.BackslashD : AsciiRestriction.None;
@@ -208,6 +210,7 @@ internal sealed partial class PcreByteParser {
 			return CreateAnyCharacter( dotAll );
 		}
 		if ( value == (byte)'[' ) {
+			if ( altExtendedClass ) { return ParseUtsClass( offset ); }
 			if ( utf8 ) { return ParseUtf8Bracket( offset ); }
 			return ParseBracket( offset );
 		}

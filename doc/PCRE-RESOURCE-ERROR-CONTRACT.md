@@ -2755,3 +2755,35 @@ General start-optimizer equivalence (issue102), script-run groups, UTF code-unit
 escape, directives/verbs/callouts, UTF16/API, realistic performance and release/
 consumer gates remain open. GNU/BRE/ERE, frozen35/frozen214 and public API stay
 intact. Grep stays last; no publication/migration change.
+
+
+## Opt-in UTS#18 class syntax (PR213)
+
+PcreByteOptions.AltExtendedClass defaults to false. When enabled, brackets
+outside Perl `(?[...])` accept nested brackets, implicit union and doubled
+`||`, `&&`, `--`, `~~` operators. Implicit union binds first. Explicit
+operators at one level must have one kind and associate leftward; nested levels
+can choose other operators. Leading ^ complements the whole class. Space/tab
+handling follows x/xx scope, quotes remain literal, and Perl leaves keep their
+ordinary bracket grammar. The option is internal; public API is unchanged.
+
+A bounded heap-frame frontend emits the existing postfix algebra, preserving
+contiguous raw item runs for native byte Any/property behavior. Ordinary
+classes without algebra return through the original readers to retain source/
+optimizer metadata. Native nesting15, shared compilation4096 and charged UTF
+term/range/predicate work/cancellation use the existing contracts and evaluator;
+byte expressions remain precomputed bitmaps. Captures/repeats/width-one behind
+and malformed-UTF fragments reuse the existing engine.
+
+PcreUtsClassAlgebraReferenceTests and fixed native masks qualify235 expressions
+×8 profiles ×256 values plus12 expressions ×4 profiles ×7592 Unicode boundary
+scalars. Focused cases pin activation, implicit precedence, operator mixing,
+ranges/quotes/POSIX, Perl isolation, original byte diagnostics and limits.
+Successful-build RED639 retains46069 baseline passes with58 expected failures.
+See PCRE-UTS-CLASS-ALGEBRA-DESIGN.md and PCRE-UTS-CLASS-ALGEBRA-PLAN.md.
+
+Script-run groups are the next syntax increment. UTF code-unit escape, remaining
+directives/verbs/callouts, general optimizer/resource conformance (issue102),
+UTF16/public API, realistic performance and release/consumer gates remain open.
+No new package, production fallback, GNU behavior or frozen35/frozen214 change.
+Grep stays last; the user owns publication/migration.
