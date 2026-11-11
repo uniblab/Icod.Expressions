@@ -150,7 +150,9 @@ public sealed class PcreUtsClassAlgebraReferenceTests {
 			Assert.Equal( PcreByteDiagnosticCode.PatternDepthLimitExceeded, depth.Diagnostic?.Code );
 			Assert.Equal( 2, depth.Diagnostic?.ByteOffset );
 			var flat = "ab[" + String.Join( "||", Enumerable.Repeat( "[a]", 2050 ) ) + "]";
-			Assert.True( Reference( flat, utf8 ).Match( "aba"u8.ToArray() ).Success );
+			// Native LINK_SIZE=2 also rejects this pattern by compiled size;
+			// the managed term budget and its opening offset are independent.
+			Assert.Throws<PcrePatternException>( () => Reference( flat, utf8 ) );
 			var terms = CompileResult( flat, new() { Utf8 = utf8 } );
 			Assert.Equal( PcreByteDiagnosticCode.PatternRepeatLimitExceeded, terms.Diagnostic?.Code );
 			Assert.Equal( 2, terms.Diagnostic?.ByteOffset );

@@ -36,3 +36,14 @@ all frameworks compile with0warnings/errors; 46127 cases,58 expected failures
 from the absent AltExtendedClass option,46069 baseline passes,0skips.
 Fixed test blob997476f58dc8e310a42c9a39d0e1107df87d6060;
 fixture1f9af6684d32ecd7c9ad518e890cf58ed1073ea5. Both remain unchanged.
+
+Implementationf106756 / RED640 run42927657393, Linux x64 job130218153326:
+all frameworks46127 cases/1failure/46126passes/0skips,0compilerwarnings/errors.
+The sole failure is an invalid native-oracle assumption in the new flat-budget
+test: 2050 bracket operands exceed PCRE2 LINK_SIZE=2 compiled-size limits
+(ERR120), independently confirmed for byte/UTF native builds. Under the explicit
+oracle-correction exception, change only the native acceptance assertion to
+expect PcrePatternException. Keep all managed depth/term/shared-budget and
+original-offset assertions unchanged; no production correction. The fixed
+mask fixture and all previous PR tests/data remain untouched. Requalify the
+corrected test in full CI and fix its revised blob thereafter.
