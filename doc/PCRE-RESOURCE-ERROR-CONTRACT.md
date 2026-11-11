@@ -2994,3 +2994,19 @@ See PCRE-THEN-VERB-DESIGN.md and PCRE-THEN-VERB-PLAN.md.
 Named verbs/MARK, remaining directives/callouts, UTF C, wider optimizer/resource
 conformance (issue102), UTF16/API and realistic consumer performance/release
 remain open. Grep stays last; GNU/BRE/ERE and frozen35/frozen214/120 stay intact.
+
+The final capture qualification distinguishes lexical traps from forced call
+quit even when their numeric target depths coincide: owned THEN uses ordinary
+rollback; unowned call cuts retain selected pre-verb values. Native JIT also
+uses call-local quit for unowned THEN inside a callee atomic positive assertion.
+Outside calls and in negative/conditional/non-atomic assertions, catches remain
+local. NO_JIT probes show the interpreter distinction. The saved-frame kind
+records ownership without another arena or saved frame.
+
+CI657 narrowed the original167 cases to one selected-capture mismatch. A
+separate eight-row PcreThenReturnedCaptureReferenceTests file then exposed five
+additional owned-trap rollback failures in clean RED658 (run43033445743,
+LinuxARM64 job130566254506):46822 total,6 failures,46816 passes,0 skips and zero
+warnings/errors on net8/9/10. Original blob c60d5da76744c4de93d54ffb6be8103c96538052
+stays fixed; the eight regressions freeze at4bdcbd6448fb873e29f3ad5dfdfe3679187074f4.
+All175 new cases are now fixed before the production capture correction.

@@ -51,14 +51,18 @@ retaining each framework's complete suite and frozen-result qualification.
 PR218 is merged and its main checks are green. PR219 adds exact no-argument
 THEN: retry the nearest lexical sibling, or on the last branch permit earlier
 outer retries. One-branch wrappers and conditional arms inherit ownership;
-assertions/callees bound it. Journaled stack-depth checkpoints reuse mark/capture
+assertions/callees bound it, with the pinned JIT positive-assertion/local-call
+exception. Owned-trap rollback stays distinct from forced selected-value call
+quit. Journaled stack-depth checkpoints reuse mark/capture
 transactions, with shared256 marks/1024 frames/4096 compilation/work limits.
 COMMIT's bounded first-unit entry also crosses leading THEN; wider optimizer
 parity remains issue102.
 
-All167 new reference cases freeze after clean RED656: net8/9/10 compile with
-zero warnings/errors,159 missing-feature failures and46655 passes each, for
-46814 total. Full native CI and author review are readiness gates. Named verbs/
+The original167 cases freeze after clean RED656: net8/9/10 compile with zero
+warnings/errors,159 missing-feature failures and46655 passes each. Eight added
+regression cases freeze after RED658:46822 total,6 capture failures,46816 passes,
+0 skips and zero warnings/errors. All175 new cases remain fixed for the
+production-only capture correction. Full native CI and author review are readiness gates. Named verbs/
 MARK, remaining directives/callouts, UTF code-unit escape, wider optimizer/
 resource conformance, UTF16/API and realistic consumer performance/release stay
 open. Grep stays last; GNU/BRE/ERE and frozen35/frozen214 stay intact.

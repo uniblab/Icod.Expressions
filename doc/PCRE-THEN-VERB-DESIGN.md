@@ -4,8 +4,8 @@ PR219 follows merged PR218. Exact `(*THEN)` saves a delayed cut. On failure it
 abandons choices within its lexical alternative and retries that group's next
 branch; on its last branch it fails the group and permits earlier outer retries.
 Groups without | and conditional yes/no arms do not own alternations. With no
-owning alternation, THEN behaves as PRUNE. Every assertion, including positive
-and non-atomic assertions, catches THEN; subroutines cannot target caller groups.
+owning alternation, THEN behaves as PRUNE. Assertions catch THEN and subroutines cannot target caller groups, subject to
+the pinned JIT local-call exception described below.
 Rightmost cuts, atomic success, captures/K and native selected callee returns
 retain the existing transactional behavior. Named THEN/MARK remain pending.
 
@@ -56,3 +56,21 @@ fixtures, GNU/BRE/ERE, frozen35/frozen214/120, public API, dependencies or runti
 fallback. C#13/net8/9/10; no Python, installs or subagents. Named verbs/MARK,
 remaining directives/callouts, UTF C, optimizer/resource conformance, UTF16/API,
 consumer performance and release remain gated. Grep stays last; user merges.
+
+## Selected callee captures and native JIT local quit
+
+Lexically owned THEN cuts, including a last branch whose numeric target equals
+the call boundary, perform ordinary group rollback and must not preserve
+selected pre-verb callee values. Their saved-frame kind records lexical ownership;
+numeric boundary equality alone cannot identify a forced call quit. Unowned
+THEN does use the call quit and retains selected values as PRUNE does.
+
+Inside a called group, native JIT also sends unowned THEN in an atomic positive
+assertion to its local call quit, abandoning callee alternatives and retaining
+selected pre-verb values. Standalone positives outside calls and negative,
+conditional and non-atomic assertions keep their normal catches. NO_JIT probes
+confirm that the interpreter differs here; pinned JIT behavior is the oracle.
+CI657 exposed the original positive-assertion fixture mismatch. Author review
+added eight separate native regression rows without editing the original167
+fixtures; RED658 pins five owned-cut capture failures plus the existing fixture
+before the production-only correction.
