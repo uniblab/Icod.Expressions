@@ -61,14 +61,14 @@ the matcher returns spans, leaving framing, status and output to Grep.
 | ANY newline directive | Exact byte0 last-wins ANY; fixed vertical scalar list, UTF-aware anchors/comments, NUL ordinary and BSR independent; native consumed-CR midpoint anchors under ANY/ANYCRLF | `PcreAnyNewlineReferenceTests`; see `PCRE-ANY-NEWLINE-DESIGN.md`; continuation-byte controls, byte/UTF membership, spans/fragments/limits |
 | Start directives `(*UTF)`, `(*UTF8)`, `(*UCP)` | Enable existing UTF/UCP modes in the shared uninterrupted prefix before whole-source UTF validation; caller defaults retained; byte UCP now uses the byte domain | `PcreUtfStartDirectiveReferenceTests`; see `PCRE-UTF-START-DIRECTIVES-DESIGN.md`; original-byte errors, strict/tolerant subjects, global modes and work/offset protocols |
 | Start directives `(*NOTEMPTY)`, `(*NOTEMPTY_ATSTART)` | Global accumulating flags in the shared byte0 prefix; final acceptance rejects empty reported spans everywhere or only at the original caller offset, including K semantics; shared rollback/nullable fragment candidates | `PcreNotEmptyDirectiveReferenceTests`; see `PCRE-NOTEMPTY-DIRECTIVES-DESIGN.md`; same-candidate fallback, atomic/inner-success controls, UTF/CRLF offsets and resource gates |
-| `(*MARK:NAME)` / `(*:NAME)` | Successful-path raw byte label on internal match metadata;1..255-byte names, native NUL view, branch/assertion/callee rollback and positive/callee success retention | `PcrePathMarkReferenceTests`;161 independent literals plus all-offset UTF/CRLF, grammar, lifetime and shared256 marks/4096 expansion/work/cancellation; other verb arguments and failed-attempt labels remain gated |
+| `(*MARK:NAME)` / `(*:NAME)` | Successful-path raw byte label on internal match metadata;1..255-byte names, native NUL view, branch/assertion/callee rollback and positive/callee success retention | `PcrePathMarkReferenceTests`;161 independent literals plus all-offset UTF/CRLF, grammar, lifetime and shared256 marks/4096 expansion/work/cancellation; failed-attempt labels remain gated |
 | `(*THEN)` / `(*THEN:NAME)` | Delayed cut retries the nearest lexical alternative; last branch permits outer retries; all assertions/callees bound ownership; conditionals and one-branch wrappers inherit their exterior owner | `PcreThenVerbReferenceTests`;149 native literal cases, selected UTF/CRLF offsets, mixed cuts/returned captures, shared1024 frames/256 marks and work/cancellation; named labels also use PcreNamedCutReferenceTests |
 | `(*COMMIT)` / `(*COMMIT:NAME)` | Delayed saved cut terminates the root search; shared call/negative/conditional assertion catches and selected callee values; bounded first-code-unit entry before leading COMMIT | `PcreCommitVerbReferenceTests`; native literal spans, rightmost mixed cuts, UTF malformed lead bytes/all selected offsets, shared frame/work/cancellation limits; named labels also use PcreNamedCutReferenceTests |
 | `(*SKIP)` / `(*SKIP:)` | Shared PRUNE scope catches; strictly forward root restart at the verb byte position, equal/backward normal bumpalong; native direct LF/EOF candidate entry | `PcreSkipVerbReferenceTests`; literal JIT spans, UTF fragments, K/assertions/behind/calls, mixed cuts and shared1024 frames/work/cancellation; named form below |
 | `(*SKIP:NAME)` | Newest matching visible MARK supplies root restart; missing root names ignored; local assertion/callee JIT quits; empty argument is unnamed SKIP | `PcreNamedSkipReferenceTests`;231 cases, raw/NUL names, atomic/returned history visibility, UTF/CRLF offsets, shared1024 history/cut frames,256 slots, compilation/work/cancellation |
 | `(*PRUNE)` / `(*PRUNE:NAME)` | Saves a bounded backtracking cut; root resumes candidate search, calls/negative/conditional assertions catch, standalone positive assertions propagate; atomic success discards interior cuts | `PcrePruneVerbReferenceTests`; native selected pre-verb returned-capture edge, recursion/repeats/behind, UTF/CRLF offsets, 1024 saved-frame boundary and shared work/cancellation; named labels also use PcreNamedCutReferenceTests |
-| No-argument `(*ACCEPT)` | Immediate successful root/assertion/call termination, same-level capture closes, committed scope choices, ordinary greedy/lazy/possessive repeats; callee synthetic closes follow pinned native JIT behavior | `PcreAcceptVerbReferenceTests`; K/NOTEMPTY rollback, nested/conditional/non-atomic assertions, width tails, recursive/returned calls, script/atomic bypass, UTF fragments and shared limits; named arguments remain pending |
-| No-argument `(*FAIL)` / `(*F)` | Unconditional zero-consumption failure through shared rollback; nonrepeatable directly, grouped repeats ordinary; direct failure ends consumed-width branch and suppresses nested behinds in its width tail, while global validation/full lexical metadata remain | `PcreFailureVerbReferenceTests`; see `PCRE-FAILURE-VERBS-DESIGN.md`; captures/scopes/widths, malformed offsets, fragments and resource bounds; arguments/other verbs pending |
+| `(*ACCEPT)` / `(*ACCEPT:NAME)` | Immediate successful root/assertion/call termination, same-level capture closes, committed scope choices, ordinary greedy/lazy/possessive repeats; callee synthetic closes follow pinned native JIT behavior | `PcreAcceptVerbReferenceTests`; K/NOTEMPTY rollback, nested/conditional/non-atomic assertions, width tails, recursive/returned calls, script/atomic bypass, UTF fragments and shared limits; named implicit MARK also uses PcreNamedImmediateVerbReferenceTests |
+| `(*FAIL)` / `(*F)` and named forms | Unconditional zero-consumption failure through shared rollback; nonrepeatable directly, grouped repeats ordinary; direct failure ends consumed-width branch and suppresses nested behinds in its width tail, while global validation/full lexical metadata remain | `PcreFailureVerbReferenceTests`; see `PCRE-FAILURE-VERBS-DESIGN.md`; captures/scopes/widths, malformed offsets, fragments and resource bounds; named implicit MARK also uses PcreNamedImmediateVerbReferenceTests |
 | Ordinary bracket `\g`/`\k` | Literal g/k only; following names, delimiters and digits remain class source; outside reference/call grammar unchanged | `PcreBracketReferenceEscapeTests`; see `PCRE-BRACKET-REFERENCE-ESCAPES-DESIGN.md`; ranges/folding/quotes/widths/captures and original-byte/resource protocols |
 | `\cX` control escapes | Printable ASCII operand20..7E, a..z uppercase then XOR40; byte/UTF literals, classes/ranges, assertions and widths share existing paths; source delimiters and x/xx trivia are consumed as operands | `PcreControlEscapeReferenceTests`; see `PCRE-CONTROL-ESCAPES-DESIGN.md`; original byte diagnostics, CR/LF metadata, quotes, folding, offsets and work/cancellation |
 | Byte `\C` | Any one byte including NUL/newlines/high bytes; existing ALLANY lowering, width1 and byte prefix proof. Invalid in brackets; UTF C remains explicitly pending | `PcreByteCodeUnitReferenceTests`; see `PCRE-BYTE-CODE-UNIT-DESIGN.md`; offsets, captures, behind, modes and resource gates |
@@ -2896,3 +2896,63 @@ Full applicable native CI and author review gate readiness. Named ACCEPT/FAIL,
 failed/partial labels, directives/callouts, UTF C, wider optimizer/resources,
 UTF16/exported API, realistic consumer performance and release remain open.
 Grep stays last.
+
+## PR223: named ACCEPT, FAIL and F implicit MARK
+
+Nonempty ACCEPT/FAIL/F arguments expand to the existing real PathMark opcode
+before EarlyAccept/Fail. They share the lazy successful label slot, journal,
+authentic named-SKIP history and scope/resource guards. This differs from named
+delayed-cut labels. Empty arguments are unnamed; raw names retain255-byte limits,
+NUL views, source ownership and original-byte errors. Bare unfinished F/FAIL
+headers retain byte1 diagnostics. Direct FAIL/F repeats remain invalid.
+
+ACCEPT quantifiers enclose both implicit operations; omitted/zero-count accepts
+write no runtime label or slot. Existing same-level capture closes, caller/
+assertion exits, selected returned values, NOTEMPTY/K, script-run bypass and
+consumed-width termination remain shared. Lexical nonempty names participate in
+bounded atomic-assertion history isolation, including nested/erased/DEFINE bodies.
+Completed acceptance/negative-failure scopes release their implicit history.
+Shared1024 frames,256 marks,4096 compilation and work/cancellation remain fixed;
+existing bounded PRUNE/COMMIT proofs keep their typed-node behavior.
+
+RED667 run43128427985/LinuxARM64 job130886300032 built net8/9/10 with zero
+warnings/errors. Each framework reported48104 cases:298 expected new failures,
+47806 passes,0 skips. No earlier fixture or native literal oracle failed.
+All312 new cases freeze at1d87fd94a6e71f5b92340a518c25ae3689cb0004.
+266 literal/profile fixtures were independently checked in526 native executions.
+Six non-atomic ACCEPT fixtures (12 profiles) report JIT_UNSUPPORTED(-68) and use
+the normal native matcher, as the established compiled PCRE.NET oracle does;
+this finite qualification makes no claim about all unsupported combinations.
+Native-only NO_JIT on large all-success quota controls avoids the native default
+stack ceiling. Production adds no native fallback or alternate engine.
+
+Grammar/length/raw/NUL/UTF, captures/labels, quantified acceptance, all selected
+UTF/CRLF offsets, history composition/reclamation, slot/expansion/work/cancel and
+ownership cases qualify scope. Two obsolete ACCEPT rejection rows retarget to
+nonexact headers; two named-FAIL inventory rows to pending native directives
+that retain their failure outcome. Native source outside those blocks remains
+unchanged. Group-alias/syntax pending entries advance to directives/callouts;
+the native0:1 characterization and opening offset stay fixed. New/revised refs
+freeze before production. Earlier native expectations, frozen35/frozen214/120,
+GNU/BRE/ERE, exported API and dependencies remain fixed. See
+PCRE-NAMED-IMMEDIATE-VERBS-DESIGN.md and PCRE-NAMED-IMMEDIATE-VERBS-PLAN.md.
+
+Full applicable native CI and author review gate readiness. Failed/partial
+labels, remaining directives/callouts, UTF C, wider optimizer/resources,
+UTF16/exported API, realistic consumer performance and release remain open.
+Grep stays last.
+
+The accepted-call regression adds18 controls/36 native profiles, frozen after
+clean RED670 (43131153280, LinuxARM64 job130895492087):48122 cases per
+framework,10 expected label failures,48112 passes,0 skips and zero build
+warnings/errors. Its blob is0f04bd2028ac018faa111de758997b7da999b30e;
+the original312 references remain unchanged. Final qualification now requires
+48122 cases in each of18 native results (330 new cases total).
+
+Accepted callees retain the successful label across their guard unless their
+own lexical body contains PRUNE/SKIP/COMMIT/THEN. Bounded, cached Call metadata
+records that native local-quit distinction; the existing CallScope snapshots one
+entry-label integer. After pruning interior frames, ACCEPT compacts only the
+callee label undo interval and conditionally retains an entry-label undo. Older
+checkpoints, captures, positional marks and ordinary Return stay transactional.
+The journal scan charges work/cancellation; no arena, frame or mark slot is added.

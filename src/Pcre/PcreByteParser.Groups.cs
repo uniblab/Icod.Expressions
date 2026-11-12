@@ -260,6 +260,7 @@ internal sealed partial class PcreByteParser {
 			return new PcreByteFailure();
 		}
 		if ( TryConsumeGroupAlias( "*ACCEPT)"u8 ) ) { return new PcreByteAccept(); }
+		if ( TryParseNamedImmediateVerb() is { } immediate ) { return immediate; }
 		if ( TryConsumeGroupAlias( "*PRUNE)"u8 ) ) { return new PcreBytePrune(); }
 		if ( TryConsumeGroupAlias( "*SKIP)"u8 ) ) { return new PcreByteSkip(); }
 		if ( TryParseNamedSkip() is { } namedSkip ) { return namedSkip; }

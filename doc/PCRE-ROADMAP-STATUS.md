@@ -1,6 +1,6 @@
 # PCRE roadmap status
 
-Reviewed after merged PR221, with PR222 in progress, 2026-11-12. Issue7 remains the delivery roadmap; the
+Reviewed after merged PR222, with PR223 in progress, 2026-11-12. Issue7 remains the delivery roadmap; the
 [syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md),
 [resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) and
 [Grep fixture inventory](PCRE-GREP-CONSUMER-FIXTURES.md) define the detailed gates.
@@ -34,7 +34,8 @@ retaining each framework's complete suite and frozen-result qualification.
    lexical alternation retry and assertion/callee catches. PR220 adds MARK and
    its shorthand with successful-path byte labels on the internal result. PR221
    adds named SKIP using bounded visible MARK history and shared scoped cuts.
-   PR222 adds successful labels for named PRUNE/COMMIT/THEN.
+   PR222 adds successful labels for named PRUNE/COMMIT/THEN. PR223 adds
+   named ACCEPT/FAIL/F using authentic implicit MARK and existing scope exits.
    UTF code-unit escape,
    remaining directives/verbs/callouts and other matrix gaps require their own
    pinned reference fixtures. Decide any intentional exclusions before release;
@@ -52,19 +53,24 @@ retaining each framework's complete suite and frozen-result qualification.
 
 ## Current increment and next syntax work
 
-PR221 is merged; main43121818311 and scripts43121818207 are green. PR222
-adds names to PRUNE/COMMIT/THEN with native successful labels. Their operands
-share the existing lazy label slot/journal, cut opcode and saved frame; only
-actual MARK contributes named-SKIP lookup history. Atomic assertion metadata
-includes lexical named PRUNE/COMMIT while preserving read-only/non-atomic rules.
+PR222 is merged; main43125926626 and scripts43125926861 are green. PR223
+adds named ACCEPT/FAIL/F through actual MARK then existing immediate opcodes.
+ACCEPT quantifiers enclose the implicit mark, while lexical erased names still
+affect atomic history isolation. Capture/label rollback and scope pruning remain
+shared. Failed/partial-attempt result labels remain a separate gate.
 
-All543 new cases freeze after clean RED665: net8/9/10 compile with zero warnings/
-errors,524 expected new failures and47268 passes each,47792 total.502 literal/
-profile fixtures were independently checked in988 native executions. Obsolete
-managed rejection inventories advance while native matching/capture expectations
-remain unchanged. Full18-result native CI and author review gate readiness.
+All312 new cases freeze after clean RED667: net8/9/10 compile with zero warnings/
+errors,298 expected new failures and47806 passes each,48104 total.266 literal/
+profile fixtures were checked in526 native executions. Six non-atomic ACCEPT
+fixtures use the normal native matcher after native JIT_UNSUPPORTED, an explicit
+finite qualification matching the existing oracle. Obsolete managed inventories
+advance while native matching/capture expectations remain fixed. The18 accepted-call regression controls freeze after clean RED670 with10
+expected label failures and no other failures. The correction preserves native
+accepted-call labels using bounded lexical local-quit metadata and the shared
+journal. Final qualification requires48122 cases per framework in18 native
+results (330 new cases), plus author review.
 
-Named ACCEPT/FAIL, failed/partial labels, directives/callouts, UTF C, wider
-optimizer/resources (issue102), UTF16/exported API and realistic consumer
-performance/release stay open. Grep stays last; GNU/frozen35/frozen214/120 remain
-fixed. See PCRE-NAMED-CUTS-DESIGN.md and PCRE-NAMED-CUTS-PLAN.md.
+Failed/partial labels, remaining directives/callouts, UTF C, wider optimizer/
+resources (issue102), UTF16/exported API and realistic consumer performance/
+release stay open. Grep stays last; GNU/frozen35/frozen214/120 remain fixed.
+See PCRE-NAMED-IMMEDIATE-VERBS-DESIGN.md and PCRE-NAMED-IMMEDIATE-VERBS-PLAN.md.

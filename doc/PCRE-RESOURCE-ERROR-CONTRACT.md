@@ -3151,3 +3151,63 @@ Full applicable native CI and author review gate readiness. Named ACCEPT/FAIL,
 failed/partial labels, directives/callouts, UTF C, wider optimizer/resources,
 UTF16/exported API, realistic consumer performance and release remain open.
 Grep stays last.
+
+## PR223: named ACCEPT, FAIL and F implicit MARK
+
+Nonempty ACCEPT/FAIL/F arguments expand to the existing real PathMark opcode
+before EarlyAccept/Fail. They share the lazy successful label slot, journal,
+authentic named-SKIP history and scope/resource guards. This differs from named
+delayed-cut labels. Empty arguments are unnamed; raw names retain255-byte limits,
+NUL views, source ownership and original-byte errors. Bare unfinished F/FAIL
+headers retain byte1 diagnostics. Direct FAIL/F repeats remain invalid.
+
+ACCEPT quantifiers enclose both implicit operations; omitted/zero-count accepts
+write no runtime label or slot. Existing same-level capture closes, caller/
+assertion exits, selected returned values, NOTEMPTY/K, script-run bypass and
+consumed-width termination remain shared. Lexical nonempty names participate in
+bounded atomic-assertion history isolation, including nested/erased/DEFINE bodies.
+Completed acceptance/negative-failure scopes release their implicit history.
+Shared1024 frames,256 marks,4096 compilation and work/cancellation remain fixed;
+existing bounded PRUNE/COMMIT proofs keep their typed-node behavior.
+
+RED667 run43128427985/LinuxARM64 job130886300032 built net8/9/10 with zero
+warnings/errors. Each framework reported48104 cases:298 expected new failures,
+47806 passes,0 skips. No earlier fixture or native literal oracle failed.
+All312 new cases freeze at1d87fd94a6e71f5b92340a518c25ae3689cb0004.
+266 literal/profile fixtures were independently checked in526 native executions.
+Six non-atomic ACCEPT fixtures (12 profiles) report JIT_UNSUPPORTED(-68) and use
+the normal native matcher, as the established compiled PCRE.NET oracle does;
+this finite qualification makes no claim about all unsupported combinations.
+Native-only NO_JIT on large all-success quota controls avoids the native default
+stack ceiling. Production adds no native fallback or alternate engine.
+
+Grammar/length/raw/NUL/UTF, captures/labels, quantified acceptance, all selected
+UTF/CRLF offsets, history composition/reclamation, slot/expansion/work/cancel and
+ownership cases qualify scope. Two obsolete ACCEPT rejection rows retarget to
+nonexact headers; two named-FAIL inventory rows to pending native directives
+that retain their failure outcome. Native source outside those blocks remains
+unchanged. Group-alias/syntax pending entries advance to directives/callouts;
+the native0:1 characterization and opening offset stay fixed. New/revised refs
+freeze before production. Earlier native expectations, frozen35/frozen214/120,
+GNU/BRE/ERE, exported API and dependencies remain fixed. See
+PCRE-NAMED-IMMEDIATE-VERBS-DESIGN.md and PCRE-NAMED-IMMEDIATE-VERBS-PLAN.md.
+
+Full applicable native CI and author review gate readiness. Failed/partial
+labels, remaining directives/callouts, UTF C, wider optimizer/resources,
+UTF16/exported API, realistic consumer performance and release remain open.
+Grep stays last.
+
+The accepted-call regression adds18 controls/36 native profiles, frozen after
+clean RED670 (43131153280, LinuxARM64 job130895492087):48122 cases per
+framework,10 expected label failures,48112 passes,0 skips and zero build
+warnings/errors. Its blob is0f04bd2028ac018faa111de758997b7da999b30e;
+the original312 references remain unchanged. Final qualification now requires
+48122 cases in each of18 native results (330 new cases total).
+
+Accepted callees retain the successful label across their guard unless their
+own lexical body contains PRUNE/SKIP/COMMIT/THEN. Bounded, cached Call metadata
+records that native local-quit distinction; the existing CallScope snapshots one
+entry-label integer. After pruning interior frames, ACCEPT compacts only the
+callee label undo interval and conditionally retains an entry-label undo. Older
+checkpoints, captures, positional marks and ordinary Return stay transactional.
+The journal scan charges work/cancellation; no arena, frame or mark slot is added.

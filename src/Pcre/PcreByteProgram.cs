@@ -167,7 +167,18 @@ internal sealed class PcreByteProgramCompiler {
 			}
 			Emit( PcreByteOpcode.Return );
 		}
-		foreach ( var call in calls ) { Patch( call.Instruction, entries[call.Number], call.Number ); }
+		var acceptedLabelRollbacks = new Dictionary<int, bool>();
+		foreach ( var call in calls ) {
+			Patch( call.Instruction, entries[call.Number], call.Number );
+			if ( pathMarkSlot < 0 ) { continue; }
+			if ( !acceptedLabelRollbacks.TryGetValue( call.Number, out var restoresLabel ) ) {
+				restoresLabel = HasLexicalControl( targets[call.Number].Body, localQuitOnly: true );
+				acceptedLabelRollbacks.Add( call.Number, restoresLabel );
+			}
+			// Native accepted-call failure restores the entry label only when
+			// this callee's own bytecode contains a local-quit control verb.
+			if ( restoresLabel ) { instructions[call.Instruction] = instructions[call.Instruction] with { PropertyValue = 1 }; }
+		}
 		var bytePrefix = utf8 ? default : FindByteCrLfPrefix( root );
 		// A first-byte cut may trigger on a malformed lead: admit a zero-width
 		// synthetic candidate, while the fragment still forbids consumption.
@@ -1466,10 +1477,14 @@ internal sealed class PcreByteProgramCompiler {
 			case PcreBytePrune prune:
 				CompileNamedCut( PcreByteOpcode.Prune, prune.Name );
 				break;
-			case PcreByteAccept:
+			case PcreByteAccept accept:
+				// Native named immediate verbs expand to a real MARK. Keeping the
+				// expansion here places it inside any direct ACCEPT quantifier.
+				if ( !accept.Name.IsEmpty ) { CompilePathMark( new( accept.Name ) ); }
 				CompileAccept();
 				break;
-			case PcreByteFailure:
+			case PcreByteFailure failure:
+				if ( !failure.Name.IsEmpty ) { CompilePathMark( new( failure.Name ) ); }
 				Emit( PcreByteOpcode.Fail );
 				break;
 			case PcreByteLiteral literal:
@@ -1835,10 +1850,12 @@ internal sealed class PcreByteProgramCompiler {
 		CompileAlternatives( body, reverseLengths, reverseMinimum );
 	}
 
-	private bool IsolatesPathMarkHistory( PcreByteAlternatives body ) {
-		if ( !hasNamedSkip ) { return false; }
-		// Native atomic assertions save/clear their control head only when their
-		// lexical bytecode contains MARK/THEN. Read-only assertions inherit it.
+	private bool IsolatesPathMarkHistory( PcreByteAlternatives body ) =>
+		hasNamedSkip && HasLexicalControl( body, localQuitOnly: false );
+
+	private bool HasLexicalControl( PcreByteAlternatives body, bool localQuitOnly ) {
+		// Native atomic assertions isolate lexical label writes/THEN;
+		// accepted calls save their entry label for lexical local-quit verbs.
 		// Include erased/DEFINE bodies and nested assertions, but not called bodies.
 		var pending = new Stack<PcreByteNode>();
 		var visited = new HashSet<PcreByteNode>( ReferenceEqualityComparer.Instance );
@@ -1848,9 +1865,13 @@ internal sealed class PcreByteProgramCompiler {
 			if ( !visited.Add( node ) ) { continue; }
 			if ( visited.Count > MaximumInstructions ) { throw RepeatExpansionLimit(); }
 			switch ( node ) {
-				case PcreBytePathMark or PcreByteThen: return true;
-				case PcreBytePrune prune when !prune.Name.IsEmpty: return true;
-				case PcreByteCommit commit when !commit.Name.IsEmpty: return true;
+				case PcreByteThen: return true;
+				case PcreBytePathMark when !localQuitOnly: return true;
+				case PcreBytePrune prune when localQuitOnly || !prune.Name.IsEmpty: return true;
+				case PcreByteCommit commit when localQuitOnly || !commit.Name.IsEmpty: return true;
+				case PcreByteSkip or PcreByteNamedSkip when localQuitOnly: return true;
+				case PcreByteAccept accept when !localQuitOnly && !accept.Name.IsEmpty: return true;
+				case PcreByteFailure failure when !localQuitOnly && !failure.Name.IsEmpty: return true;
 				case PcreByteGroup group: AddBody( group.Body ); break;
 				case PcreByteNoncapturingGroup group: AddBody( group.Body ); break;
 				case PcreByteLookahead assertion: AddBody( assertion.Body ); break;

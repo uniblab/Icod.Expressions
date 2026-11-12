@@ -108,10 +108,10 @@ public sealed class PcreGroupAliasReferenceTests {
 	}
 
 	[Theory]
-	[InlineData( "(*ACCEPT:pending)a" )]
-	[InlineData( "(*ACCEPT:other)a" )]
-	[InlineData( "(*ACCEPT:pending)" )]
-	public void OtherValidNativeGroupsAndVerbsAreNeverReinterpretedAsAtomicAliases( string pattern ) {
+	[InlineData( "(*NO_JIT)a" )]
+	[InlineData( "(*NO_START_OPT)a" )]
+	[InlineData( "(*LIMIT_MATCH=10)" )]
+	public void OtherValidNativeConstructsAreNeverReinterpretedAsAtomicAliases( string pattern ) {
 		Reference( pattern );
 		Diagnostic( pattern, PcreByteDiagnosticCode.UnsupportedSyntax, 0 );
 	}
