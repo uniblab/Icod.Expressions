@@ -453,7 +453,8 @@ internal static partial class PcreByteMatcher {
 							}
 							// Commit before comparison: failure must not try a later capture.
 							if ( !capture.HasValue ) {
-								failed = true;
+								if ( instruction.Second == 1 ) { pc++; }
+								else { failed = true; }
 								break;
 							}
 							var captured = capture.Value;

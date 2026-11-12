@@ -1,6 +1,6 @@
 # PCRE roadmap status
 
-Reviewed after merged PR231, with PR232 in progress. Issue #7 remains the delivery roadmap; the
+Reviewed after merged PR232, with PR233 in progress. Issue #7 remains the delivery roadmap; the
 [syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md),
 [resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) and
 [Grep fixture inventory](PCRE-GREP-CONSUMER-FIXTURES.md) define the detailed gates.
@@ -45,6 +45,7 @@ retaining each framework's complete suite and frozen-result qualification.
    PR230 adds native word/line compilation through existing typed guards and scopes.
    PR231 completes caller ASCII type restriction initialization through the same mask.
    PR232 adds dollar/circumflex compile options through canonical anchor lowering.
+   PR233 adds optional unset backreferences through the existing capture instruction.
    UTF code-unit escape,
    remaining directives/verbs/callouts and other matrix gaps require their own
    pinned reference fixtures. Decide any intentional exclusions before release;
@@ -62,57 +63,55 @@ retaining each framework's complete suite and frozen-result qualification.
 
 ## Current increment and next syntax work
 
-PR231 is merged at a897e8a5663850f0c3b9fd2da2968321ed0f2989;
-main43219511682 and scripts43219511702 are green. Its 2,088 new controls
-qualified in 18 native results, 57,630 tests/framework, with zero failures,
+PR232 merged at49037aef15cce24e7b6c79df7e6f04a928eced1f;
+main43236233339 and scripts43236233142 are green. Its2,052 new controls
+qualified in18 native results,59,682 tests/framework, with zero failures,
 skips, build warnings or errors.
 
-Internal default-false DollarEndOnly and AltCircumflex implement native flags
-0x10 and 0x200000. DollarEndOnly makes non-multiline dollar require the selected
-subject end, while multiline dollar ignores it and backslash-Z/z stay unchanged.
-Alternate multiline caret can match after a final newline. Local m, unsets and
-reset still choose each source anchor; MatchLine guards use their entry snapshot.
+## PR233: optional unset backreferences
 
-Shared parser helpers lower ordinary and synthetic anchors. DollarEndOnly selects
-the existing absolute-end node. One default-false AllowSubjectEnd property on
-existing LineAnchor lowers into the unused StartLine First operand. First=1 only
-extends the endpoint bound; only physical EOF may bypass the existing partial-
-newline candidate exclusion. Fragment/context, newline and Step checks stay shared. Default operands are unchanged. No new AST node, opcode,
-program-global runtime mode, source rewrite, API, dependency or width rule.
+Internal default-false MatchUnsetBackreference implements PCRE2_MATCH_UNSET_BACKREF
+(0x200). Existing nonparticipating captures match empty without becoming set;
+capture conditions, declaration-ordered duplicate selection and participating
+empty/nonempty comparisons keep their existing semantics. Missing references
+remain errors with the established global validation order and byte diagnostics.
 
-The 2,052 new cases include 1,984 independently pinned PCRE2 10.48/JIT profiles.
-All four selections, initial/local/reset multiline, six newlines, empty lines,
-absolute anchors, fixed/variable lookbehind endpoints, assertions/calls, cuts/
-ACCEPT/K, labels and line wrappers are pinned. Supplemental controls cover 40
-exact diagnostics, every octet, selected malformed-UTF/CRLF/Unicode-newline
-offsets, prior caller policies, UTF validation, owned options/source/raw labels,
-canonical work, cancellation and quotas. All native loop arrays compile before
-managed matching. All 245 earlier test files remain hash-identical.
+One selected heap RewriteTree pass marks canonical Backreference nodes after
+name resolution and before condition/call/width/final-target resolution. The
+default path skips the pass. UnsetMatchesEmpty lowers into unused Backreference
+Second; null lookup advances pc only for Second=1, without source reads or
+capture/journal mutation. The existing instruction still charges work. Selected
+consumed references reject at their owning lookbehind opener, even under zero
+repeats or through calls; existing lookahead/DEFINE/FAIL skips remain shared.
 
-Before freeze, add 72 variable-lookbehind profiles and the same patterns to the
-offset loop; the initial run694 was cancelled. Valid expanded tests-only RED695
-(run43228870315, Linux ARM64 job131219356070), source
-2d166f0ecd5c6f4b8b0047b2007fbd99ccf11d61, retained merged PR231 production.
-net8/9/10 each built with zero warnings/errors and ran 59,682 tests: 245 expected
-option-dependent failures, 59,437 passes and zero skips. The 230 primary failures
-exactly match independent native flag-off research. Defaults, original diagnostics,
-UTF validation, canonical work/cancellation/limits, earlier fixtures and native
-literal/oracle checks passed. Freeze the 2,052-case reference at
-a3e651d589d160f68c574911733e70ad73e4baca before production changes.
-Final qualification requires 59,682 tests in 18 native results and the existing
-frozen, Unicode, parity, resource and packaging gates.
+A bounded pure-instruction empty-path proof extends existing STARTLINE metadata
+for selected nullable references under ANY/MatchInvalidUtf. It uses at most the
+existing 1,000 start-analysis instruction/visit bound, heap storage and cancellation
+polls; the existing root line-anchor proof and matcher exclusion/physical-EOF
+rules remain authoritative. Calls/assertions/conditions/verbs are outside this
+proof. A mandatory leading-B control retains first-character search. Nonnullable
+optional-capture/reference prefixes, including ANY/multiline ^(?:(A)?backref1)B
+after a split Unicode newline, remain a known wider optimizer gap in #102.
 
-CI696 (run43230182090, source11ce5fca1895033920bc694392084202c5ba9173)
-passed 59,678/59,682 per framework and exposed four selected-offset failures.
-The native STARTLINE newline scan retries physical EOF even if a requested byte
-offset splits its final UTF newline; alternate caret can then accept backward
-newline context. Preserve the partial-newline candidate exclusion except for
-StartLine.First=1 at physical input end. Native probes distinguish final LS/PS
-from the same scalar before trailing text. The frozen offset loop already pins
-this regression; no fixture changes. Final qualification must include this fix.
+The 1,740 new cases include 1,652 independently pinned PCRE2 10.48/JIT profiles,
+32 selected width errors and 40 legacy diagnostics. Supplement all octets, UTF
+and malformed-fragment offsets, prior caller policies, owned source/options/raw
+labels, all 256 user captures, exact zero-width work, cancellation and quotas.
+Native loop arrays compile before managed comparisons. All 246 earlier test
+files remain unchanged; GNU/frozen35/214 outcomes/120 methods, API and dependencies
+are preserved. This is internal conformance work; Grep migration remains last.
 
-Other modes/directives/callouts, failed/partial labels, UTF code-unit escapes,
-wider optimizer/resources (#102), UTF16/exported API and realistic consumer/
-release qualification remain open. Grep stays last. See
-[design](PCRE-ANCHOR-COMPILE-OPTIONS-DESIGN.md) and
-[plan](PCRE-ANCHOR-COMPILE-OPTIONS-PLAN.md).
+Expanded tests-only RED699 (run43247650585, Linux x64 job131284532504), source
+d05a98f991131d65045e4d4925d696850608766c, retained merged PR232 production.
+Each net8/9/10 built with zero warnings/errors and ran 61,422 tests: 495 expected
+failures, 60,927 passes, zero skips. The 454 primary differences/framework match
+independent native flag-off research. Default/earlier fixtures, diagnostics, UTF
+validation and native literal/oracle checks passed. Initial RED698 was provisional;
+the expanded fixture was frozen at23ebe126b9e8096f4527e4479fdd89e7a9cb5223
+before production edits. Require all 18 native results at61,422 passes and the
+existing frozen, Unicode, parity/API/corpus, resource, packaging and script gates.
+
+Other syntax/modes/directives/callouts, labels on failed/partial results, wider
+optimizer/resources (#102), UTF16/exported API and realistic consumer/release
+qualification remain open. See [design](PCRE-UNSET-BACKREFERENCES-DESIGN.md) and
+[plan](PCRE-UNSET-BACKREFERENCES-PLAN.md).

@@ -28,6 +28,7 @@ internal sealed partial class PcreByteParser {
 	private readonly bool matchLine;
 	private readonly bool dollarEndOnly;
 	private readonly bool altCircumflex;
+	private readonly bool matchUnsetBackreference;
 	private readonly PcreByteNewline newline;
 	private readonly List<(int Number, int Offset)> backreferences = new();
 	private int index;
@@ -66,6 +67,7 @@ internal sealed partial class PcreByteParser {
 		matchLine = options.MatchLine;
 		dollarEndOnly = options.DollarEndOnly;
 		altCircumflex = options.AltCircumflex;
+		matchUnsetBackreference = options.MatchUnsetBackreference;
 		utf8 = settings.Utf8;
 		ucp = settings.Ucp;
 		turkishCasing = settings.TurkishCasing;
@@ -107,6 +109,7 @@ internal sealed partial class PcreByteParser {
 		}
 		root = WrapWholeMatch( root, entryOptions );
 		if ( hasNamedReferences ) { root = ResolveNamedReferences( root ); }
+		if ( matchUnsetBackreference ) { root = EnableUnsetBackreferences( root ); }
 		if ( hasCaptureConditions ) { root = ResolveCaptureConditions( root ); }
 		if ( hasSubroutines ) { root = ResolveSubroutines( root ); }
 		if ( hasGeneralLookbehinds ) { root = ResolveLookbehindLengths( root ); }

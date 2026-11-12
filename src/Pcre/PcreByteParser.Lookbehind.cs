@@ -39,6 +39,9 @@ internal sealed partial class PcreByteParser {
 			}
 		}
 		PcreByteGroup ReferenceTarget( PcreByteBackreference reference, int opening ) {
+			if ( reference.UnsetMatchesEmpty ) {
+				throw Invalid( opening, "backreference with unset matching has no bounded lookbehind length" );
+			}
 			if ( hasBranchReset || !reference.DuplicateNumbers.IsEmpty
 				|| !context.Captures.TryGetValue( reference.Number, out var capture ) ) {
 				throw Unsupported( opening );
