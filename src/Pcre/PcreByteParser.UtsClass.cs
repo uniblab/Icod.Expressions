@@ -66,7 +66,11 @@ internal sealed partial class PcreByteParser {
 					FlushUtsRun( frame, terms, openingOffset );
 					frame.Extended = true; frame.First = false;
 					index++;
-					frames.Push( new( ParseClassNegation() ) );
+					if ( TryReadEmptyClass( out var negated ) ) {
+						var operand = new PcreByteScalarSet( default, default, negated, false );
+						AddUtsTerm( terms, new( PcreScalarSetOperation.Operand, operand ), openingOffset );
+						JoinUtsSequence( frame, terms, openingOffset );
+					} else { frames.Push( new( ParseClassNegation() ) ); }
 					continue;
 				}
 				var first = frame.Quoting ? ParseQuotedLiteral() : ParseUtf8BracketItem( openingOffset );

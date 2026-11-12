@@ -34,6 +34,7 @@ the matcher returns spans, leaving framing, status and output to Grep.
 | `\N` non-newline, UTF `\N{U+...}` literal | Bare form obeys LF/AnyCRLF and ignores DotAll; counted repetitions supported; Unicode codepoint form shares braced-hex literal/range/fixed-assertion rules | `PcreNonNewlineReferenceTests`; byte/scalar membership, braced-form disambiguation, captures, offsets and diagnostics |
 | Bare and braced octal literals | Default up-to-three-digit octals and `\o{...}` in byte/UTF atoms, brackets/ranges and fixed literal assertions; byte/scalar range checks, brace-edge space/tab | `PcreNumericEscapeReferenceTests`; all 256 byte values, UTF bounds, quoting, offsets and diagnostics; caller PythonOctal/NoBackslashZero modes use PcreNumericEscapeOptionReferenceTests |
 | Caller option `EscapedCrIsLf` | Textual `\r` becomes canonical LF; other CR spellings, quotes, raw labels and newline policies are preserved | `PcreEscapedCrReferenceTests`; byte/UTF/class/range/offset/resource and ownership controls |
+| Caller option `AllowEmptyClass` | Enables empty `[]` and complemented `[^]` in ordinary/UTS classes, including nested UTS operands; Perl algebra and default literal `]` behavior stay fixed | `PcreEmptyClassReferenceTests`; repeat, UTF/CRLF, grammar, diagnostic, resource and ownership controls |
 | Ordinary `[ ]` ranges, negation, shorthand unions, 14 POSIX names | Supported subset in byte and UTF modes; ordinary bracket grammar unchanged, Perl algebra listed separately | Bracket and POSIX tests; Unicode table/version reconciliation |
 | `\p`/`\P` general categories and special properties | Byte/UTF categories plus Any/Xan/Xps/Xsp/Xwd/Xuc; loose names, P/caret complements and property predicates independent of UCP/ASCII/i/r. Category-prefixed aliases remain a library extension for categories only. UTF class source operands/endpoints preserve CR/LF flags before folding, including the native negated-singleton exception. Scripts/scx now have pinned Unicode17 data; binary/Bidi properties now have pinned native data | `PcreBytePropertyReferenceTests`, `PcreSpecialPropertyReferenceTests`, `PcreClassNewlineMetadataReferenceTests`, `PcreUtf8GeneralCategoryTests`; see `PCRE-SPECIAL-PROPERTIES-DESIGN.md`; Unicode17 categories and default simple-case mappings are pinned; byte search-optimization parity remains a gate |
 | Unicode script/scx properties | All175 scripts/344 normalized long, short and legacy aliases; bare names are scx, explicit sc/Script and scx/Script_Extensions, native primary-or-extension membership, byte projection and mixed predicates | `PcreScriptPropertyReferenceTests`, 3508 native boundaries and source-hash/native-fingerprint-checked regeneration; script-run groups remain separate |
@@ -3087,3 +3088,36 @@ Other directives/callouts, failed/partial labels, UTF code-unit escapes, wider
 optimizer/resources (#102), UTF16/public API and realistic consumer/release
 qualification remain open. Grep stays last. See
 [design](PCRE-ESCAPED-CR-DESIGN.md) and [plan](PCRE-ESCAPED-CR-PLAN.md).
+
+## PR228: empty character class caller option
+
+Internal `AllowEmptyClass` defaults to false and selects native
+`PCRE2_ALLOW_EMPTY_CLASS` (0x1). Enabled `[]` never matches; `[^]` matches any
+character, including newlines, and classes retain normal quantifier behavior.
+Default first-position literal `]`, quoted text and raw labels remain fixed.
+Existing class-start negation/trivia rules select emptiness before ordinary/UTF/
+UTS dispatch. A failed empty-class probe restores the index. Empty classes lower
+to the existing empty bitmap or ALLANY node; nested UTS operands reuse bounded
+scalar-set terms. Perl class algebra keeps its grammar and does not admit empty
+bracket operands. Source bytes, UTF validation and legacy diagnostics stay fixed.
+No AST, opcode, matcher state, exported API or dependency change is introduced.
+
+The 941 cases include 818 pinned JIT-valid profiles and 94 unique native compile
+errors, researched across 1,408 PCRE2 10.48 profiles. Nineteen exact legacy byte/
+UTF diagnostic cases, all octets, selected malformed-UTF/CRLF offsets, option
+composition, source/options/raw labels, canonical work equality, cancellation and
+resource ceilings cover the review boundaries. All earlier test files stay fixed.
+
+Tests-only RED 684 (run 43171972153, Linux x64 job 131027191251), source
+`399c334c6caaf166421b5969cfd90d2f16e388b0`, built net8/9/10 with zero warnings
+or errors. Each had 52,889 tests: 640 option-dependent new failures, 52,249 passes
+and zero skips. Default profiles, grammar errors, exact legacy diagnostics, UTF
+validation, earlier fixtures and native literal-oracle checks passed. The new
+reference freezes at `8565080638577ecf293f0d4f24685cead1e1de64` before production
+changes. Final qualification requires all 52,889 tests in 18 native platform/
+framework results and all earlier frozen, Unicode, parity and package gates.
+
+Other modes/directives/callouts, failed/partial labels, UTF code-unit escapes,
+wider optimizer/resources (#102), UTF16/public API and realistic consumer/release
+qualification remain open. Grep stays last. See
+[design](PCRE-EMPTY-CLASSES-DESIGN.md) and [plan](PCRE-EMPTY-CLASSES-PLAN.md).

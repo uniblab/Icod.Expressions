@@ -3339,3 +3339,36 @@ Other directives/callouts, failed/partial labels, UTF code-unit escapes, wider
 optimizer/resources (#102), UTF16/public API and realistic consumer/release
 qualification remain open. Grep stays last. See
 [design](PCRE-ESCAPED-CR-DESIGN.md) and [plan](PCRE-ESCAPED-CR-PLAN.md).
+
+## PR228: empty character class caller option
+
+Internal `AllowEmptyClass` defaults to false and selects native
+`PCRE2_ALLOW_EMPTY_CLASS` (0x1). Enabled `[]` never matches; `[^]` matches any
+character, including newlines, and classes retain normal quantifier behavior.
+Default first-position literal `]`, quoted text and raw labels remain fixed.
+Existing class-start negation/trivia rules select emptiness before ordinary/UTF/
+UTS dispatch. A failed empty-class probe restores the index. Empty classes lower
+to the existing empty bitmap or ALLANY node; nested UTS operands reuse bounded
+scalar-set terms. Perl class algebra keeps its grammar and does not admit empty
+bracket operands. Source bytes, UTF validation and legacy diagnostics stay fixed.
+No AST, opcode, matcher state, exported API or dependency change is introduced.
+
+The 941 cases include 818 pinned JIT-valid profiles and 94 unique native compile
+errors, researched across 1,408 PCRE2 10.48 profiles. Nineteen exact legacy byte/
+UTF diagnostic cases, all octets, selected malformed-UTF/CRLF offsets, option
+composition, source/options/raw labels, canonical work equality, cancellation and
+resource ceilings cover the review boundaries. All earlier test files stay fixed.
+
+Tests-only RED 684 (run 43171972153, Linux x64 job 131027191251), source
+`399c334c6caaf166421b5969cfd90d2f16e388b0`, built net8/9/10 with zero warnings
+or errors. Each had 52,889 tests: 640 option-dependent new failures, 52,249 passes
+and zero skips. Default profiles, grammar errors, exact legacy diagnostics, UTF
+validation, earlier fixtures and native literal-oracle checks passed. The new
+reference freezes at `8565080638577ecf293f0d4f24685cead1e1de64` before production
+changes. Final qualification requires all 52,889 tests in 18 native platform/
+framework results and all earlier frozen, Unicode, parity and package gates.
+
+Other modes/directives/callouts, failed/partial labels, UTF code-unit escapes,
+wider optimizer/resources (#102), UTF16/public API and realistic consumer/release
+qualification remain open. Grep stays last. See
+[design](PCRE-EMPTY-CLASSES-DESIGN.md) and [plan](PCRE-EMPTY-CLASSES-PLAN.md).

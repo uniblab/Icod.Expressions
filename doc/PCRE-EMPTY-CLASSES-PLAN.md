@@ -32,10 +32,10 @@ exact independently read legacy diagnostic controls, all octets, selected UTF/
 CRLF offsets, source/options/labels, option composition and resource controls.
 
 - [x] Independently qualify 1,408 native profiles and deduplicate theory inputs.
-- [ ] Publish the tests-only draft and observe clean net8/9/10 RED.
+- [x] Publish the tests-only draft and observe clean net8/9/10 RED.
   Expected: only option-dependent new failures; every default/native-literal/
   earlier-reference/legacy-diagnostic check passes; zero warnings/errors/skips.
-- [ ] Record and freeze the new blob before production changes. Inspect failure
+- [x] Record and freeze the new blob before production changes. Inspect failure
   identities and assertion sites, not just counts, before declaring valid RED.
 
 ## Task 2: implement and qualify
@@ -50,7 +50,7 @@ Modify `PcreByteParser.UtsClass.cs` nested openings to recognize empty operands,
 using existing scalar operands/AddUtsTerm/JoinUtsSequence. Preserve depth checks.
 Perl class-algebra readers, existing AST/width/VM/runtime remain unchanged.
 
-- [ ] Implement only those interfaces and paths after the valid reference freeze.
+- [x] Implement only those interfaces and paths after the valid reference freeze.
 - [ ] Qualify all 52,889 tests/framework in all 18 native platform/framework results, zero
   failures/skips/build warnings/errors and frozen 214/120 in each.
 - [ ] Verify frozen 35, five Unicode generators, workload/parity/API/corpus,
@@ -69,3 +69,13 @@ PR227 merged at 600d4f9e9f0d6c984ed101c163262cbcc615f3b1.
 Main 43169151838 and scripts 43169151810 are green; 51,948 tests/framework.
 Source ae2ba88e6869b7b13192c95b6ae1bbbb12dfbaf2,
 tree f6660fdcd403e7d2a23d776663376d16e4c30d58.
+
+## Frozen reference receipt
+
+Tests-only source 399c334c6caaf166421b5969cfd90d2f16e388b0,
+tree 7c3c638e9ca7b45882a6f9376311a5b4aecdaed3.
+RED 684/run 43171972153, Linux x64 job 131027191251: net8/9/10 each
+52,889 tests, 640 option-dependent new failures, 52,249 passes and zero skips,
+build warnings or errors. Default profiles, grammar errors, exact diagnostics,
+UTF validation, earlier fixtures and native literal checks passed. Freeze all
+941 cases at 8565080638577ecf293f0d4f24685cead1e1de64 before production edits.
