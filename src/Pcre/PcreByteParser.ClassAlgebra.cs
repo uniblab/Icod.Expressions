@@ -127,7 +127,7 @@ internal sealed partial class PcreByteParser {
 		}
 		var literal = (PcreByteLiteral)node;
 		PcreByteScalarRange[] ranges = [new( literal.Value, literal.Value )];
-		return new( caseless && utf8 ? PcreUtf8CaseFold.CloseRanges( ranges, cancellationToken, caselessRestricted ) : ranges,
+		return new( caseless && utf8 ? PcreUtf8CaseFold.CloseRanges( ranges, cancellationToken, caselessRestricted, turkishCasing ) : ranges,
 			default, false, literal.Value is '\r' or '\n' );
 	}
 }

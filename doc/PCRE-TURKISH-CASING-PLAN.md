@@ -24,9 +24,9 @@ Compile/Match/MarkName, PcreByteOptions and pinned PCRE.NET oracle.
 - [x] Independently check1222 literal/profile fixtures with native JIT.
 - [x] Write1256 new cases and preserve all earlier assertion source outside
   the one pending inventory row. UTS uses existing PcreOptions bit0x08000000.
-- [ ] Publish draft and qualify clean net8/9/10 RED with only expected new
+- [x] Publish draft and qualify clean net8/9/10 RED with only expected new
   failures, no earlier/native literal oracle failures and zero build warnings/errors.
-- [ ] Freeze new and revised reference blobs before production changes.
+- [x] Freeze new and revised reference blobs before production changes.
 
 ## Task2: implement and qualify
 
@@ -45,7 +45,7 @@ Files and interfaces:
   literal, set, reference, literal-assertion and scalar-expression comparisons.
   Byte folding remains unchanged because Turkish requires UTF.
 
-- [ ] Implement those settings, common folding/closure/consumer changes and
+- [x] Implement those settings, common folding/closure/consumer changes and
   the two mode-specific proof exclusions, without new opcodes/AST flags/slots.
 - [ ] Qualify49744 tests/framework in18 native results, zero failures/skips/
   build warnings/errors, frozen214/120 in each; frozen35, Unicode/workloads/
@@ -63,3 +63,12 @@ Files and interfaces:
 PR224 merged2a78fd467d7b3a1adc5e8dfa6c6f8d0171291b49; main43144903778 and
 scripts43144903781 are green. Base tree04d5b49234cacc54a62126eff5cadf6bbfe8b6ad;
 48488 tests/framework before1256 new controls.
+
+## Frozen RED checkpoint
+
+RED674 run43146911924/LinuxARM64 job130946767040 built net8/9/10 with zero
+warnings/errors. Each had49744 cases:1246 expected new failures,48498 passes,
+0 skips, no earlier or native literal oracle failure. New1256-case blob
+4315ded53f161a93b79f95ed4e4982ce237dd226 and revised one-row inventory blob
+1c8075e58fac1b2048152c71eaec5a8c5914820b freeze before production. All prior
+matching/capture assertions remain fixed outside that pending inventory row.

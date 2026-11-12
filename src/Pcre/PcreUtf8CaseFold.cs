@@ -4,11 +4,11 @@ namespace Icod.Expressions.Pcre;
 
 /// <summary>Unicode17 simple-case equivalence shared by UTF-8 and byte-UCP matching.</summary>
 internal static partial class PcreUtf8CaseFold {
-	internal static bool Equals( int left, int right, bool restricted = false ) =>
-		left == right || Fold( left, restricted ) == Fold( right, restricted );
+	internal static bool Equals( int left, int right, bool restricted = false, bool turkish = false ) =>
+		left == right || Fold( left, restricted, turkish ) == Fold( right, restricted, turkish );
 
 	internal static PcreByteScalarRange[] CloseRanges(
-		IReadOnlyList<PcreByteScalarRange> ranges, CancellationToken cancellationToken, bool restricted = false
+		IReadOnlyList<PcreByteScalarRange> ranges, CancellationToken cancellationToken, bool restricted = false, bool turkish = false
 	) {
 		cancellationToken.ThrowIfCancellationRequested();
 		if ( ranges.Count == 0 ) { return Array.Empty<PcreByteScalarRange>(); }
@@ -38,7 +38,7 @@ internal static partial class PcreUtf8CaseFold {
 			for ( var scalar = range.Start; scalar <= range.End; scalar++ ) {
 				if ( ( scalar & 1023 ) == 0 ) { cancellationToken.ThrowIfCancellationRequested(); }
 				if ( !Rune.IsValid( scalar ) ) { continue; } // A range may straddle the surrogate gap.
-				var key = Fold( scalar, restricted );
+				var key = Fold( scalar, restricted, turkish );
 				bitmap[key >> 5] |= 1u << ( key & 31 );
 				minimum = Math.Min( minimum, key );
 				maximum = Math.Max( maximum, key );
@@ -60,7 +60,13 @@ internal static partial class PcreUtf8CaseFold {
 		return intervals.ToArray();
 	}
 
-	internal static int Fold( int scalar, bool restricted = false ) {
+	internal static int Fold( int scalar, bool restricted = false, bool turkish = false ) {
+		// Native lexical r overrides the global Turkish choice. These four
+		// scalars are the only differences from the pinned default table.
+		if ( turkish && !restricted ) {
+			if ( scalar is 'I' or 0x0131 ) { return 0x0131; }
+			if ( scalar is 'i' or 0x0130 ) { return 'i'; }
+		}
 		var key = FoldUnrestricted( scalar );
 		// The pinned default cross-boundary sets each have one non-ASCII member.
 		return restricted && scalar >= 0x80 && key < 0x80 ? scalar : key;

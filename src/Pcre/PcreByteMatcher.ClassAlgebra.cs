@@ -4,13 +4,13 @@ internal static partial class PcreByteMatcher {
 	// Scratch belongs to this Match call, not a candidate, frame or atom. Every
 	// evaluation overwrites its live prefix, so backtracking needs no saved stack.
 	private static bool ContainsScalarExpression( ReadOnlyMemory<PcreScalarSetTerm> terms, int scalar, bool[] stack,
-		ref int work, int matchWorkLimit, Action<int>? observer, CancellationToken cancellationToken ) {
+		ref int work, int matchWorkLimit, Action<int>? observer, bool turkishCasing, CancellationToken cancellationToken ) {
 		var count = 0;
 		foreach ( var term in terms.Span ) {
 			ChargeWork( ref work, matchWorkLimit, observer, cancellationToken );
 			if ( term.Operand is { } operand ) {
 				var contained = false;
-				var folded = operand.Caseless ? PcreUtf8CaseFold.Fold( scalar, operand.CaselessRestricted ) : scalar;
+				var folded = operand.Caseless ? PcreUtf8CaseFold.Fold( scalar, operand.CaselessRestricted, turkishCasing ) : scalar;
 				foreach ( var range in operand.Ranges.Span ) {
 					ChargeWork( ref work, matchWorkLimit, observer, cancellationToken );
 					if ( operand.Caseless && folded < range.Start ) { break; }

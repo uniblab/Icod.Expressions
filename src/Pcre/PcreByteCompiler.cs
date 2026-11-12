@@ -29,12 +29,18 @@ internal static class PcreByteCompiler {
 			}
 		}
 
+		if ( settings.TurkishCasing && ( !settings.Utf8 || settings.CaselessRestricted ) ) {
+			return new( null, new( PcreByteDiagnosticCode.InvalidSyntax, settings.BodyOffset,
+				"Turkish casing requires UTF and cannot combine with global caseless restriction" ) );
+		}
+
 		var parser = new PcreByteParser( source, options.Caseless, options.AsciiBsD, settings, cancellationToken, options.AltExtendedClass );
 		try {
 			var root = parser.Parse();
 			var program = new PcreByteProgramCompiler(
 				cancellationToken, settings.Utf8, options.MatchInvalidUtf, settings.Newline,
-				settings.BsrAnyCrLf, settings.NotEmpty, settings.NotEmptyAtStart, settings.Ucp, parser.HasThen, parser.HasNamedSkip
+				settings.BsrAnyCrLf, settings.NotEmpty, settings.NotEmptyAtStart, settings.Ucp, parser.HasThen, parser.HasNamedSkip,
+				settings.TurkishCasing
 			).Compile( root, parser.SubroutineTargets );
 			return new(
 				new PcreCompiledBytePattern( program, parser.GroupCount, options.MatchWorkLimit, options.WorkObserver ),
