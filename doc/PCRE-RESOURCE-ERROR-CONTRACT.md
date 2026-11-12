@@ -3298,3 +3298,35 @@ qualification requires50453 cases/framework in18 native results and the prior
 gates. Other directives, failed/partial labels, UTF C, wider optimizer/resources
 (#102), UTF16/public API and realistic consumer/release qualification stay open.
 Grep stays last. See PCRE-NUMERIC-ESCAPE-OPTIONS-DESIGN.md and its PLAN.md.
+
+## PR227: escaped CR caller option
+
+Internal `EscapedCrIsLf` defaults to false and selects native
+`PCRE2_EXTRA_ESCAPED_CR_IS_LF` (0x10). It changes only textual `\r` to LF.
+Raw CR, backslash followed by raw CR, hex/octal/control CR, quoted text, raw
+verb names, `\R` and the selected newline convention retain their behavior.
+The readonly parser flag selects the canonical literal before class/range and
+width analysis; source bytes, diagnostics, instructions and matcher state stay
+on their existing paths. No source rewrite or runtime mode is introduced.
+
+The 1,495 distinct cases include 1,474 pinned JIT-valid profiles and six unique
+compile-error cases, independently researched as 1,500 native PCRE2 10.48
+profiles. Further controls cover every byte value, selected malformed-UTF/CRLF
+start offsets, caller-policy composition, captures/calls/assertions, raw labels,
+original byte/UTF diagnostics, source/option ownership, canonical work equality,
+cancellation and existing resource ceilings. All earlier reference files stay
+unchanged.
+
+Initial tests-only CI 679 exposed 20 duplicate diagnostic rows; removed before
+freeze. Corrected RED 680 (run 43164711369, Linux ARM64 job 131003756401) built
+net8/9/10 with zero warnings/errors. Each framework had 51,948 tests: 356 expected
+new-only failures, 51,592 passes and zero skips, with no native literal-oracle
+failure. The new reference blob freezes at
+`d08e6c308f4754152166c97c88a67f64fec8f674` before production changes.
+Final qualification requires all 51,948 tests in 18 native platform/framework
+results and the existing frozen, Unicode, parity, resource and package gates.
+
+Other directives/callouts, failed/partial labels, UTF code-unit escapes, wider
+optimizer/resources (#102), UTF16/public API and realistic consumer/release
+qualification remain open. Grep stays last. See
+[design](PCRE-ESCAPED-CR-DESIGN.md) and [plan](PCRE-ESCAPED-CR-PLAN.md).
