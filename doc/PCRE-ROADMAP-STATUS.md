@@ -1,6 +1,6 @@
 # PCRE roadmap status
 
-Reviewed after merged PR227, with PR228 in progress. Issue #7 remains the delivery roadmap; the
+Reviewed after merged PR228, with PR229 in progress. Issue #7 remains the delivery roadmap; the
 [syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md),
 [resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) and
 [Grep fixture inventory](PCRE-GREP-CONSUMER-FIXTURES.md) define the detailed gates.
@@ -41,6 +41,7 @@ retaining each framework's complete suite and frozen-result qualification.
    PR226 adds caller Python-octal and bare-zero policies to shared numeric parsing.
    PR227 adds caller escaped-CR remapping through canonical literal parsing.
    PR228 adds caller-selected empty classes through canonical nodes and bounded UTS terms.
+   PR229 adds caller s/m/n/U/J/x/xx initialization through the existing scoped state.
    UTF code-unit escape,
    remaining directives/verbs/callouts and other matrix gaps require their own
    pinned reference fixtures. Decide any intentional exclusions before release;
@@ -58,37 +59,34 @@ retaining each framework's complete suite and frozen-result qualification.
 
 ## Current increment and next syntax work
 
-PR227 is merged at `600d4f9e9f0d6c984ed101c163262cbcc615f3b1`;
-main 43169151838 and scripts 43169151810 are green. Its 1,495 new controls
-qualified in 18 native results, 51,948 tests per framework, with zero failures,
+PR228 is merged at `209dd96c3b30eeadec8dfc431f2ca04ca6192354`;
+main 43176216559 and scripts 43176216531 are green. Its 1,005 new controls
+qualified in 18 native results, 52,953 tests/framework, with zero failures,
 skips, build warnings or errors.
 
-PR228 adds internal `AllowEmptyClass`, default false. Enabled `[]` never matches
-and `[^]` matches any character including newlines; classes remain repeatable.
-Ordinary and nested UTS classes use the existing empty bitmap/ALLANY nodes and
-bounded scalar terms. Perl class algebra, original source bytes, default literal
-closing-bracket behavior and all existing matcher paths remain unchanged.
+PR229 initializes existing parser scopes from seven default-false internal
+caller options: DotAll, Multiline, NoAutoCapture, Ungreedy, DuplicateNames,
+Extended and ExtendedMore. Local unsets, restoration, named numbering, duplicate
+resolution and reset behavior remain shared; reset clears m/s/n/x and retains
+U/J. ExtendedMore implies extended parsing. One options record replaces the
+positional boolean constructor list; every old/new primitive is copied and no
+options reference is retained. Prefix/UTF validation and all matching paths stay fixed.
 
-The 1,005 controls include the primary 941-case fixture and 64 width controls,
-researched across 1,472 native profiles (858 JIT-valid, 614 error profiles).
-One compile-time class provenance field distinguishes direct empty source,
-which native rejects in consumed lookbehind, from computed-empty sets and
-unconsumed lookahead/DEFINE/FAIL content. No new node, opcode or VM state.
-
-Valid tests-only RED 686 (run 43173736095, Linux ARM64 job 131032890324),
-source `56e69c751148142a74f52d34e46d5829863a6684`, kept the first implementation
-fixed and had 28 expected lookbehind-rejection failures and 52,925 passes per
-framework, zero skips/build warnings/errors. Every valid/default/diagnostic/
-offset/native-oracle/earlier-reference check passed. The corrected 941-case blob
-`c917a24b7d6d7a9cdaacd8a43a27a01e9058562d` and 64-case blob
-`08edf98ee26f4c3efcd44c2a591ae5b087756567` freeze before the width correction.
-The initial freeze is superseded after CI 685 exposed two invalid positive-loop
-entries, now replaced with valid lookaheads while all rejection controls remain.
-Final qualification requires 52,953 tests in all 18 native results and author
-review. Earlier references, 35 frozen production blobs and 214 frozen outcomes
-in 120 methods stay fixed.
+The 1,046 controls include 988 pinned JIT profiles and 10 distinct compile errors,
+researched across 1,018 native profiles and all 128 flag combinations in byte/UTF.
+Additional controls pin exact diagnostics, all octets, malformed-UTF/CRLF offsets,
+old caller policies, UTF validation, source/options/labels, canonical work,
+cancellation and quotas. Valid tests-only RED 688 (run 43179233033, Linux ARM64
+job 131050872473) had 318 expected caller-option failures, 53,681 passes and zero
+skips/build warnings/errors per framework. Defaults, exact diagnostics, duplicate
+grammar, whole-UTF validation, earlier tests and native literal checks passed.
+Reference `0d04add04dc65e5272e9b7052c5b7727990a6f5d` freezes before production.
+Final qualification requires 53,999 tests in all 18 native results and author
+review. Earlier references, frozen 35 production blobs and 214 frozen outcomes
+in 120 methods remain fixed.
 
 Other modes/directives/callouts, failed/partial labels, UTF code-unit escapes,
 wider optimizer/resources (#102), UTF16/exported API and realistic consumer/
 release qualification remain open. Grep stays last. See
-[design](PCRE-EMPTY-CLASSES-DESIGN.md) and [plan](PCRE-EMPTY-CLASSES-PLAN.md).
+[design](PCRE-CALLER-PATTERN-OPTIONS-DESIGN.md) and
+[plan](PCRE-CALLER-PATTERN-OPTIONS-PLAN.md).
