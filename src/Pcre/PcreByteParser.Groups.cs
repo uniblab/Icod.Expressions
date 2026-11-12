@@ -265,6 +265,7 @@ internal sealed partial class PcreByteParser {
 		if ( TryParseNamedSkip() is { } namedSkip ) { return namedSkip; }
 		if ( TryConsumeGroupAlias( "*COMMIT)"u8 ) ) { return new PcreByteCommit(); }
 		if ( TryConsumeGroupAlias( "*THEN)"u8 ) ) { HasThen = true; return new PcreByteThen(); }
+		if ( TryParseNamedCut() is { } namedCut ) { return namedCut; }
 		if ( TryParsePathMark() is { } pathMark ) { return pathMark; }
 		var scriptRun = TryConsumeGroupAlias( "*script_run:"u8 ) || TryConsumeGroupAlias( "*sr:"u8 );
 		if ( !scriptRun && ( TryConsumeGroupAlias( "*atomic_script_run:"u8 ) || TryConsumeGroupAlias( "*asr:"u8 ) ) ) {

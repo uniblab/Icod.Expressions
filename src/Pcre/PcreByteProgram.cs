@@ -1450,11 +1450,11 @@ internal sealed class PcreByteProgramCompiler {
 			case PcreBytePathMark mark:
 				CompilePathMark( mark );
 				break;
-			case PcreByteThen:
-				Emit( PcreByteOpcode.Then, thenTarget?.Mark ?? -1, thenTarget?.HasNext == true ? 1 : 0 );
+			case PcreByteThen then:
+				CompileNamedCut( PcreByteOpcode.Then, then.Name, thenTarget?.Mark ?? -1, thenTarget?.HasNext == true ? 1 : 0 );
 				break;
-			case PcreByteCommit:
-				Emit( PcreByteOpcode.Commit );
+			case PcreByteCommit commit:
+				CompileNamedCut( PcreByteOpcode.Commit, commit.Name );
 				hasCommit = true;
 				break;
 			case PcreByteSkip:
@@ -1463,8 +1463,8 @@ internal sealed class PcreByteProgramCompiler {
 			case PcreByteNamedSkip skip:
 				Emit( PcreByteOpcode.SkipNamed, bytes: VisibleControlName( skip.Name ) );
 				break;
-			case PcreBytePrune:
-				Emit( PcreByteOpcode.Prune );
+			case PcreBytePrune prune:
+				CompileNamedCut( PcreByteOpcode.Prune, prune.Name );
 				break;
 			case PcreByteAccept:
 				CompileAccept();
@@ -1601,6 +1601,16 @@ internal sealed class PcreByteProgramCompiler {
 		// Native get_mark exposes a NUL-terminated view, even when the raw
 		// name contains more bytes. Both slices retain the owned source snapshot.
 		Emit( PcreByteOpcode.PathMark, pathMarkSlot, bytes: VisibleControlName( mark.Name ) );
+	}
+
+	private void CompileNamedCut( PcreByteOpcode opcode, ReadOnlyMemory<byte> name, int first = 0, int second = 0 ) {
+		var labelSlot = 0;
+		if ( !name.IsEmpty ) {
+			if ( pathMarkSlot < 0 ) { pathMarkSlot = AllocateMark(); }
+			labelSlot = pathMarkSlot + 1; // Zero means unnamed, including an empty colon argument.
+		}
+		// Labels belong to the cut itself, never to searchable MARK history.
+		Emit( opcode, first, second, bytes: VisibleControlName( name ), propertyValue: labelSlot );
 	}
 
 	private static ReadOnlyMemory<byte> VisibleControlName( ReadOnlyMemory<byte> name ) {
@@ -1839,6 +1849,8 @@ internal sealed class PcreByteProgramCompiler {
 			if ( visited.Count > MaximumInstructions ) { throw RepeatExpansionLimit(); }
 			switch ( node ) {
 				case PcreBytePathMark or PcreByteThen: return true;
+				case PcreBytePrune prune when !prune.Name.IsEmpty: return true;
+				case PcreByteCommit commit when !commit.Name.IsEmpty: return true;
 				case PcreByteGroup group: AddBody( group.Body ); break;
 				case PcreByteNoncapturingGroup group: AddBody( group.Body ); break;
 				case PcreByteLookahead assertion: AddBody( assertion.Body ); break;
