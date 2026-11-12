@@ -1,6 +1,6 @@
 # PCRE roadmap status
 
-Reviewed after merged PR229, with PR230 in progress. Issue #7 remains the delivery roadmap; the
+Reviewed after merged PR230, with PR231 in progress. Issue #7 remains the delivery roadmap; the
 [syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md),
 [resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) and
 [Grep fixture inventory](PCRE-GREP-CONSUMER-FIXTURES.md) define the detailed gates.
@@ -43,6 +43,7 @@ retaining each framework's complete suite and frozen-result qualification.
    PR228 adds caller-selected empty classes through canonical nodes and bounded UTS terms.
    PR229 adds caller s/m/n/U/J/x/xx initialization through the existing scoped state.
    PR230 adds native word/line compilation through existing typed guards and scopes.
+   PR231 completes caller ASCII type restriction initialization through the same mask.
    UTF code-unit escape,
    remaining directives/verbs/callouts and other matrix gaps require their own
    pinned reference fixtures. Decide any intentional exclusions before release;
@@ -60,44 +61,47 @@ retaining each framework's complete suite and frozen-result qualification.
 
 ## Current increment and next syntax work
 
-PR229 is merged at `a590294fa81439096ba910a953db4be28331b967`;
-main 43181932890 and scripts 43181932592 are green. Its 1,046 new controls
-qualified in 18 native results, 53,999 tests/framework, with zero failures,
+PR230 is merged at f0d240b9536a722bc370cc8a859f097f148689b6;
+main43212521201 and scripts43212521645 are green. Its1,543 new controls
+qualified in18 native results,55,542 tests/framework, with zero failures,
 skips, build warnings or errors.
 
-Internal default-false MatchWord and MatchLine implement native extra compile
-bits 0x4/0x8. Line wins when both are set. Existing word boundaries or line
-anchors surround one existing noncapturing source group. Guards use entry
-multiline/UCP/ASCII-word policy, before local source options, and line mode keeps
-the selected newline convention and final-newline behavior. Word mode uses word
-boundaries, including punctuation between word characters. All alternatives,
-cuts, ACCEPT, K, raw labels and capture numbering retain native scope.
+Internal default-false AsciiBsS, AsciiBsW, AsciiPosix and AsciiDigit initialize
+the existing five-bit ASCII parser mask beside AsciiBsD. Native extra bits are
+0x200/0x400/0x800/0x1000. Caller Posix seeds only Posix and Digit only PosixDigit;
+source aP still sets both, aT selects Digit and reset preserves the mask.
+Existing local unsets, alternative propagation, group snapshots and restoration
+remain authoritative. No source rewrite, new node, opcode, runtime matching flag,
+exported API, dependency or GNU/BRE/ERE change is introduced.
 
-The parser copies both flags and snapshots entry options before source headers.
-It wraps the typed root after original source diagnostics, before name/call/width
-resolution and final subroutine targets, so whole-pattern recursion includes the
-guards. With both options false it returns the identical root. No source rewrite,
-new AST node, opcode, runtime mode, exported API or dependency is introduced.
-Existing guards, work, cancellation, journals and resource limits own execution.
+Backslash s/S and w/W use canonical ASCII predicates when selected; w also owns
+b/B and MatchWord's entry guards. Posix restricts ordinary POSIX classes, while
+Digit restricts digit/xdigit independently of backslash d. Properties, h/v/R and
+literal/range folding remain independent. Byte/UTF/UCP domains, class algebra,
+lookbehind widths, captures/calls/cuts and all shared resource paths stay fixed.
 
-The 1,543 new cases include 1,480 independently pinned PCRE2 10.48/JIT profiles,
-all four selections, byte/UTF/UCP, initial/local multiline, six newline conventions,
-recursion and scoped exits. Supplemental controls pin 40 exact diagnostics, every
-octet, malformed-UTF/CRLF offsets, old caller policies, UTF validation, owned
-source/options/raw labels, all 256 user captures, canonical work and quotas.
-Supplemental native patterns compile before managed matching; earlier tests stay fixed.
+The 2,088 cases include 1,979 independently pinned PCRE2 10.48/JIT profiles.
+Every one of 32 flag combinations runs in all four UTF/UCP modes. Scoped unsets,
+overlap/reset, captures/references/calls, assertions, algebra/folding, raw labels
+and word/line entry policies are pinned. Supplemental controls cover 60 exact
+diagnostics, every octet, malformed-UTF/CRLF start offsets, all14 POSIX names
+and UTS algebra, prior policies, UTF validation, owned settings/source/labels,
+canonical work, cancellation and quotas. All native loop arrays compile before
+managed comparisons. All244 earlier test files remain hash-identical.
 
-Valid tests-only RED 690 (run 43189811376, Linux ARM64 job 131085966252), source
-`7cabd7ffe56049052bd1c9fac416ce2a39a91cf3`, exactly matched merged PR229
-production. net8/9/10 built with zero warnings/errors; each had 55,542 tests,
-350 expected mode-dependent failures, 55,192 passes and zero skips. Defaults,
-exact diagnostics, UTF validation, full capture capacity, earlier fixtures and
-native literal/oracle checks passed. Freeze the reference at
-`ac93862e45ff345c70dd742e0f9b52128c227cbb` before production changes.
-Final qualification requires all 55,542 tests in 18 native platform/framework
-results and the existing frozen, Unicode, parity, resource and package gates.
+Valid tests-only RED692 (run43215345702, Linux x64 job131173057468), source
+07e4228007c7b870b6d9942e09db09d7dc6b46de, retained merged PR230 production.
+net8/9/10 each built with zero warnings/errors and ran57,630 tests:239 expected
+option-dependent failures,57,391 passes and zero skips. The219 primary failures
+exactly match independently predicted native flag differences. Defaults, original
+diagnostics, UTF validation, canonical work/cancel/limits, earlier fixtures and
+native literal/oracle checks passed. Freeze the2,088-case reference at
+b8fdd8af07f4bb998e56603953ead7dc18d4f111 before production changes.
+Final qualification requires57,630 tests in18 native results and the existing
+frozen, Unicode, parity, resource and packaging gates.
 
 Other modes/directives/callouts, failed/partial labels, UTF code-unit escapes,
 wider optimizer/resources (#102), UTF16/exported API and realistic consumer/
 release qualification remain open. Grep stays last. See
-[design](PCRE-WORD-LINE-MODES-DESIGN.md) and [plan](PCRE-WORD-LINE-MODES-PLAN.md).
+[design](PCRE-CALLER-ASCII-POLICIES-DESIGN.md) and
+[plan](PCRE-CALLER-ASCII-POLICIES-PLAN.md).

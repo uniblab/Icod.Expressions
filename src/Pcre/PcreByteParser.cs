@@ -66,6 +66,10 @@ internal sealed partial class PcreByteParser {
 		ucp = settings.Ucp;
 		turkishCasing = settings.TurkishCasing;
 		asciiRestrictions = options.AsciiBsD ? AsciiRestriction.BackslashD : AsciiRestriction.None;
+		if ( options.AsciiBsS ) { asciiRestrictions |= AsciiRestriction.BackslashS; }
+		if ( options.AsciiBsW ) { asciiRestrictions |= AsciiRestriction.BackslashW; }
+		if ( options.AsciiPosix ) { asciiRestrictions |= AsciiRestriction.Posix; }
+		if ( options.AsciiDigit ) { asciiRestrictions |= AsciiRestriction.PosixDigit; }
 		newline = settings.Newline;
 		index = settings.BodyOffset;
 		this.cancellationToken = cancellationToken;

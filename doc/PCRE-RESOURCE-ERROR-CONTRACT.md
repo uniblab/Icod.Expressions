@@ -3465,3 +3465,45 @@ Other modes/directives/callouts, failed/partial labels, UTF code-unit escapes,
 wider optimizer/resources (#102), UTF16/exported API and realistic consumer/
 release qualification remain open. Grep stays last. See
 [design](PCRE-WORD-LINE-MODES-DESIGN.md) and [plan](PCRE-WORD-LINE-MODES-PLAN.md).
+
+## PR231: caller ASCII character-type policies
+
+Internal default-false AsciiBsS, AsciiBsW, AsciiPosix and AsciiDigit initialize
+the existing five-bit ASCII parser mask beside AsciiBsD. Native extra bits are
+0x200/0x400/0x800/0x1000. Caller Posix seeds only Posix and Digit only PosixDigit;
+source aP still sets both, aT selects Digit and reset preserves the mask.
+Existing local unsets, alternative propagation, group snapshots and restoration
+remain authoritative. No source rewrite, new node, opcode, runtime matching flag,
+exported API, dependency or GNU/BRE/ERE change is introduced.
+
+Backslash s/S and w/W use canonical ASCII predicates when selected; w also owns
+b/B and MatchWord's entry guards. Posix restricts ordinary POSIX classes, while
+Digit restricts digit/xdigit independently of backslash d. Properties, h/v/R and
+literal/range folding remain independent. Byte/UTF/UCP domains, class algebra,
+lookbehind widths, captures/calls/cuts and all shared resource paths stay fixed.
+
+The 2,088 cases include 1,979 independently pinned PCRE2 10.48/JIT profiles.
+Every one of 32 flag combinations runs in all four UTF/UCP modes. Scoped unsets,
+overlap/reset, captures/references/calls, assertions, algebra/folding, raw labels
+and word/line entry policies are pinned. Supplemental controls cover 60 exact
+diagnostics, every octet, malformed-UTF/CRLF start offsets, all14 POSIX names
+and UTS algebra, prior policies, UTF validation, owned settings/source/labels,
+canonical work, cancellation and quotas. All native loop arrays compile before
+managed comparisons. All244 earlier test files remain hash-identical.
+
+Valid tests-only RED692 (run43215345702, Linux x64 job131173057468), source
+07e4228007c7b870b6d9942e09db09d7dc6b46de, retained merged PR230 production.
+net8/9/10 each built with zero warnings/errors and ran57,630 tests:239 expected
+option-dependent failures,57,391 passes and zero skips. The219 primary failures
+exactly match independently predicted native flag differences. Defaults, original
+diagnostics, UTF validation, canonical work/cancel/limits, earlier fixtures and
+native literal/oracle checks passed. Freeze the2,088-case reference at
+b8fdd8af07f4bb998e56603953ead7dc18d4f111 before production changes.
+Final qualification requires57,630 tests in18 native results and the existing
+frozen, Unicode, parity, resource and packaging gates.
+
+Other modes/directives/callouts, failed/partial labels, UTF code-unit escapes,
+wider optimizer/resources (#102), UTF16/exported API and realistic consumer/
+release qualification remain open. Grep stays last. See
+[design](PCRE-CALLER-ASCII-POLICIES-DESIGN.md) and
+[plan](PCRE-CALLER-ASCII-POLICIES-PLAN.md).
