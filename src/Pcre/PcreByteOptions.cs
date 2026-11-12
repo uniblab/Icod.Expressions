@@ -30,6 +30,14 @@ internal sealed record PcreByteOptions {
 	/// <summary>Enable PCRE2 UTS#18 nested brackets and doubled set operators.</summary>
 	public bool AltExtendedClass { get; init; }
 	public bool AsciiBsD { get; init; }
+	/// <summary>Restrict backslash-s whitespace predicates to ASCII.</summary>
+	public bool AsciiBsS { get; init; }
+	/// <summary>Restrict backslash-w and word-boundary predicates to ASCII.</summary>
+	public bool AsciiBsW { get; init; }
+	/// <summary>Restrict ordinary POSIX character classes to ASCII.</summary>
+	public bool AsciiPosix { get; init; }
+	/// <summary>Restrict POSIX digit and xdigit classes to ASCII.</summary>
+	public bool AsciiDigit { get; init; }
 	/// <summary>Use Python's three-digit octal rule instead of preceding-capture disambiguation.</summary>
 	public bool PythonOctal { get; init; }
 	/// <summary>Reject a bare backslash-zero escape while retaining multi-digit and braced octals.</summary>

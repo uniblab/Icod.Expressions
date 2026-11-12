@@ -15,7 +15,7 @@ Existing isolated worktree; user merges/tags/publishes; Grep last.
 
 ## Review focus
 
-1. Native Posix alone differs from aP's combined Posix/PosixDigit seed after unsets.
+1. Caller flags mirror independent native bits; aP/aT overlap and unsets stay native.
 2. MatchWord's outer entry restriction survives contrary body aW settings.
 3. All POSIX/algebra predicates remain independent of literal/property folding.
 4. Byte/UTF/UCP domains, malformed offsets and original diagnostics stay native.
@@ -31,9 +31,9 @@ entry-policy wrappers, all POSIX names/octets/offsets, old policies, ownership,
 exact diagnostics, work/cancellation and quotas. Native loop arrays precompile.
 
 - [x] Research and pin literal native PCRE2 10.48/JIT outcomes.
-- [ ] Publish tests-only draft and observe clean net8/9/10 expected RED.
-- [ ] Inspect identities/assertion sites; default/legacy/native checks must pass.
-- [ ] Freeze the reference hash before production changes.
+- [x] Publish tests-only draft and observe clean net8/9/10 expected RED.
+- [x] Inspect identities/assertion sites; default/legacy/native checks must pass.
+- [x] Freeze the reference hash before production changes.
 
 ## Task 2: initialize and qualify
 
@@ -42,7 +42,7 @@ Modify PcreByteParser.cs constructor: OR BackslashS, BackslashW, Posix and
 PosixDigit independently into the existing mask alongside AsciiBsD. Do not set
 PosixDigit implicitly from AsciiPosix. No compiler/scoped parser/runtime changes.
 
-- [ ] Implement these copies after valid freeze.
+- [x] Implement these copies after valid freeze.
 - [ ] Require all new/old tests in18 native results; zero failures/skips/warnings/errors.
 - [ ] Verify frozen214/120 and35, Unicode generators, workload/parity/API/corpus/
   packaging and package-only smoke; three-OS scripts; existing consumer classifier.
@@ -65,3 +65,14 @@ Task1 reference inventory: 2,088 new cases: 1,979 literal native JIT profiles,
 5 old-policy composition,5 UTF-validation,1 ownership and5 work/cancel/limit cases.
 Expected total57,630/framework. All32 flag combinations in all4 UTF/UCP modes;
 all supplemental native arrays compile before managed comparisons.
+
+## Valid RED and freeze receipt
+
+Tests-only source07e4228007c7b870b6d9942e09db09d7dc6b46de,
+tree90ad8d110ee091a6bf48a53248f177c236789e5f, retained merged PR230 production.
+CI692/run43215345702/Linux x64 job131173057468: each net8/9/10 had57,630 tests,
+239 expected failures,57,391 passes, zero skips and zero build warnings/errors.
+The219 primary differences exactly match native flag-off research. Default0/1,
+exact diagnostics, UTF validation, canonical work/cancellation/limits, earlier
+fixtures and native literal/oracle checks passed. Freeze2,088-case blob
+b8fdd8af07f4bb998e56603953ead7dc18d4f111 before the two production files change.

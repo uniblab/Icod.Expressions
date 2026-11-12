@@ -3,9 +3,8 @@
 Continue after merged PR230 with internal default-false AsciiBsS, AsciiBsW,
 AsciiPosix and AsciiDigit. Native extra bits are 0x200,0x400,0x800,0x1000;
 AsciiBsD already supplies0x100. Initialize the existing five-bit parser mask.
-AsciiPosix sets only Posix; AsciiDigit sets only PosixDigit. Unlike the source
-option aP, the caller Posix bit must not also seed PosixDigit: subsequent source
-unsets expose the difference. Reset keeps all restrictions, and source scopes,
+AsciiPosix sets only Posix; AsciiDigit sets only PosixDigit, mirroring native
+bits directly. Source aP continues to set both. Reset keeps all restrictions, and source scopes,
 alternative propagation, explicit set/unset and restoration remain authoritative.
 
 ## Approach
