@@ -64,8 +64,8 @@ PR231 merged at a897e8a5663850f0c3b9fd2da2968321ed0f2989, tree
 46fc7ff3a5967f3e406710b20ec35aedbaf35920. Main43219511682 and scripts43219511702
 are green;57,630 tests/framework. All245 earlier test files remain fixed.
 
-Task1 inventory:1,980 new cases:1,912 pinned native JIT profiles,40 original
+Task1 inventory:2,052 new cases:1,984 pinned native JIT profiles,40 original
 diagnostics,8 every-octet,8 selected UTF-fragment/offset,3 prior-policy,3 whole-UTF,
-3 ownership and3 canonical work/cancel/quota controls. Expected59,610/framework.
-Independent native flag-off research predicts206 primary feature differences
-and zero default differences. All supplemental native arrays compile first.
+3 ownership and3 canonical work/cancel/quota controls. Expected59,682/framework.
+Additional72 literal profiles and the offset loop pin variable-lookbehind
+reverse endpoint behavior. Native flag-off research is repeated below. All supplemental native arrays compile first.
