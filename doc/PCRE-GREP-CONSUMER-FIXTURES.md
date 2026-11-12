@@ -3136,3 +3136,44 @@ qualification requires50453 cases/framework in18 native results and the prior
 gates. Other directives, failed/partial labels, UTF C, wider optimizer/resources
 (#102), UTF16/public API and realistic consumer/release qualification stay open.
 Grep stays last. See PCRE-NUMERIC-ESCAPE-OPTIONS-DESIGN.md and its PLAN.md.
+
+## PR227: escaped CR caller option
+
+Internal `EscapedCrIsLf` defaults to false and selects native
+`PCRE2_EXTRA_ESCAPED_CR_IS_LF` (0x10). It changes only textual `\r` to LF.
+Raw CR, backslash followed by raw CR, hex/octal/control CR, quoted text, raw
+verb names, `\R` and the selected newline convention retain their behavior.
+The readonly parser flag selects the canonical literal before class/range and
+width analysis; source bytes, diagnostics, instructions and matcher state stay
+on their existing paths. No source rewrite or runtime mode is introduced.
+
+The 1,495 distinct cases include 1,474 pinned JIT-valid profiles and six unique
+compile-error cases, independently researched as 1,500 native PCRE2 10.48
+profiles. Further controls cover every byte value, selected malformed-UTF/CRLF
+start offsets, caller-policy composition, captures/calls/assertions, raw labels,
+original byte/UTF diagnostics, source/option ownership, canonical work equality,
+cancellation and existing resource ceilings. All earlier reference files stay
+unchanged.
+
+Initial tests-only CI 679 exposed 20 duplicate diagnostic rows, removed before
+freeze. CI 681 passed 51,946/51,948 and exposed two mistaken default-byte
+range diagnostic expectations in this new fixture. The old RED 680/freeze
+receipt is invalidated: ordinary byte ranges retain the existing hyphen offset,
+while UTF/algebra retains the opening bracket. Only those two exact expected
+offsets and the method name changed; assertions and native profiles remain.
+
+Production was restored to merged PR226 for valid tests-only RED 682
+(run 43166167501, Linux ARM64 job 131008465287), source
+`f0384874b3a39adb2128db895a7709b5e53abfcc`. net8/9/10 each built with zero
+warnings/errors and had 51,948 tests: 354 option-dependent new failures, 51,594
+passes and zero skips. All default profiles, diagnostic cases, earlier fixtures
+and native literal-oracle checks passed. All new cases freeze at
+`02a1e6f7874e39f406b91ee7496b71fc51ade294` before restoring the same three-file
+parser implementation. Existing diagnostic behavior stays unchanged.
+Final qualification requires 51,948 tests in all 18 native platform/framework
+results and the existing frozen, Unicode, parity, resource and package gates.
+
+Other directives/callouts, failed/partial labels, UTF code-unit escapes, wider
+optimizer/resources (#102), UTF16/public API and realistic consumer/release
+qualification remain open. Grep stays last. See
+[design](PCRE-ESCAPED-CR-DESIGN.md) and [plan](PCRE-ESCAPED-CR-PLAN.md).
