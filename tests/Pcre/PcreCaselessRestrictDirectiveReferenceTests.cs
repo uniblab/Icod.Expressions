@@ -383,7 +383,7 @@ public sealed class PcreCaselessRestrictDirectiveReferenceTests {
 	[InlineData( "(*CASELESS_RESTRICT )", 0 )]
 	[InlineData( "(*CASELESS_RESTRICTX)", 0 )]
 	[InlineData( "(*CASELESS_RESTRICT=1)", 0 )]
-	[InlineData( "(*CASELESS_RESTRICT)(*TURKISH_CASING)", 20 )]
+	[InlineData( "(*CASELESS_RESTRICT)(*TURKISH_CASINGX)", 20 )]
 	[InlineData( "(*CASELESS_RESTRICT)(*NO_JIT)", 20 )]
 	public void MisplacedNonExactAndPendingDirectivesKeepOpeningDiagnostics( string pattern, int offset ) {
 		if ( !pattern.EndsWith( "(*NO_JIT)", StringComparison.Ordinal ) ) { Assert.Throws<PcrePatternException>( () => Reference( pattern, new() ) ); }
