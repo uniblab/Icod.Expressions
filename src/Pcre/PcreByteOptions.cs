@@ -20,6 +20,10 @@ internal sealed record PcreByteOptions {
 	public bool Extended { get; init; }
 	/// <summary>Also ignore unquoted spaces and tabs in character classes; implies extended parsing.</summary>
 	public bool ExtendedMore { get; init; }
+	/// <summary>Require word boundaries around an implicit noncapturing pattern group.</summary>
+	public bool MatchWord { get; init; }
+	/// <summary>Require a complete line; takes precedence over word matching.</summary>
+	public bool MatchLine { get; init; }
 	public bool Utf8 { get; init; }
 	public bool MatchInvalidUtf { get; init; }
 	public bool Ucp { get; init; }
