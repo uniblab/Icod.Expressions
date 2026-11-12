@@ -24,6 +24,13 @@ internal sealed partial class PcreByteParser {
 		return new PcreByteNamedSkip( name );
 	}
 
+	private PcreByteNode? TryParseNamedImmediateVerb() {
+		if ( TryConsumeGroupAlias( "*ACCEPT:"u8 ) ) { return new PcreByteAccept( ReadControlVerbName( "ACCEPT", requireName: false ) ); }
+		if ( TryConsumeGroupAlias( "*FAIL:"u8 ) ) { return new PcreByteFailure( ReadControlVerbName( "FAIL", requireName: false ) ); }
+		if ( TryConsumeGroupAlias( "*F:"u8 ) ) { return new PcreByteFailure( ReadControlVerbName( "F", requireName: false ) ); }
+		return null; // Preserve the existing malformed-group byte for bare unfinished headers.
+	}
+
 	private PcreByteNode? TryParseNamedCut() {
 		if ( TryConsumeGroupAlias( "*PRUNE:"u8 ) ) { return new PcreBytePrune( ReadControlVerbName( "PRUNE", requireName: false ) ); }
 		if ( TryConsumeGroupAlias( "*COMMIT:"u8 ) ) { return new PcreByteCommit( ReadControlVerbName( "COMMIT", requireName: false ) ); }

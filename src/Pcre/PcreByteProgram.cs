@@ -1466,10 +1466,14 @@ internal sealed class PcreByteProgramCompiler {
 			case PcreBytePrune prune:
 				CompileNamedCut( PcreByteOpcode.Prune, prune.Name );
 				break;
-			case PcreByteAccept:
+			case PcreByteAccept accept:
+				// Native named immediate verbs expand to a real MARK. Keeping the
+				// expansion here places it inside any direct ACCEPT quantifier.
+				if ( !accept.Name.IsEmpty ) { CompilePathMark( new( accept.Name ) ); }
 				CompileAccept();
 				break;
-			case PcreByteFailure:
+			case PcreByteFailure failure:
+				if ( !failure.Name.IsEmpty ) { CompilePathMark( new( failure.Name ) ); }
 				Emit( PcreByteOpcode.Fail );
 				break;
 			case PcreByteLiteral literal:
@@ -1837,8 +1841,8 @@ internal sealed class PcreByteProgramCompiler {
 
 	private bool IsolatesPathMarkHistory( PcreByteAlternatives body ) {
 		if ( !hasNamedSkip ) { return false; }
-		// Native atomic assertions save/clear their control head only when their
-		// lexical bytecode contains MARK/THEN. Read-only assertions inherit it.
+		// Native atomic assertions save/clear their control head for lexical
+		// label writes or THEN. Read-only assertions inherit it.
 		// Include erased/DEFINE bodies and nested assertions, but not called bodies.
 		var pending = new Stack<PcreByteNode>();
 		var visited = new HashSet<PcreByteNode>( ReferenceEqualityComparer.Instance );
@@ -1851,6 +1855,8 @@ internal sealed class PcreByteProgramCompiler {
 				case PcreBytePathMark or PcreByteThen: return true;
 				case PcreBytePrune prune when !prune.Name.IsEmpty: return true;
 				case PcreByteCommit commit when !commit.Name.IsEmpty: return true;
+				case PcreByteAccept accept when !accept.Name.IsEmpty: return true;
+				case PcreByteFailure failure when !failure.Name.IsEmpty: return true;
 				case PcreByteGroup group: AddBody( group.Body ); break;
 				case PcreByteNoncapturingGroup group: AddBody( group.Body ); break;
 				case PcreByteLookahead assertion: AddBody( assertion.Body ); break;

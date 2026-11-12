@@ -15,9 +15,9 @@ internal sealed record PcreByteNewlineSequence : PcreByteNode;
 
 internal sealed record PcreByteGrapheme : PcreByteNode;
 
-internal sealed record PcreByteFailure : PcreByteNode;
+internal sealed record PcreByteFailure( ReadOnlyMemory<byte> Name = default ) : PcreByteNode;
 
-internal sealed record PcreByteAccept : PcreByteNode;
+internal sealed record PcreByteAccept( ReadOnlyMemory<byte> Name = default ) : PcreByteNode;
 
 internal sealed record PcreBytePrune( ReadOnlyMemory<byte> Name = default ) : PcreByteNode;
 

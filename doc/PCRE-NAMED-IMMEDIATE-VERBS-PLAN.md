@@ -24,9 +24,9 @@ and PcreSyntaxAcceptanceTests. Interfaces: existing compile/match/MarkName.
 
 - [x] Verify266 literal/profile fixtures in526 native executions; prepare312 cases.
 - [x] Verify native source outside obsolete ACCEPT/FAIL inventories unchanged.
-- [ ] Publish draft; run clean-build RED with expected new-only failures,
+- [x] Publish draft; run clean-build RED with expected new-only failures,
   no native oracle/earlier fixture failures and zero warnings/errors.
-- [ ] Freeze new/revised references before production changes.
+- [x] Freeze new/revised references before production changes.
 
 ## Task2: implement and qualify
 
@@ -34,11 +34,11 @@ Files: Syntax, Parser.PathMarks/Groups, Program. Interfaces:
 PcreByteAccept/Failure(ReadOnlyMemory<byte> Name = default),
 TryParseNamedImmediateVerb, existing CompilePathMark and CompileAccept.
 
-- [ ] Parse exact names with shared lexer; retain bare F/FAIL EOF byte1 and
+- [x] Parse exact names with shared lexer; retain bare F/FAIL EOF byte1 and
   direct repeat/termination/width behavior on the same typed leaves.
-- [ ] Compile nonempty names through PathMark before EarlyAccept/Fail, inside
+- [x] Compile nonempty names through PathMark before EarlyAccept/Fail, inside
   any ACCEPT quantifier. Empty/erased names allocate no runtime label slot.
-- [ ] Extend lexical atomic history metadata to both nonempty immediate names.
+- [x] Extend lexical atomic history metadata to both nonempty immediate names.
 - [ ] Qualify full native CI:48104 cases per framework,18 results, zero
   failures/skips/build warnings/errors and frozen214/120 in every result.
 
@@ -49,3 +49,15 @@ Files: syntax/resource/consumer inventories, roadmap status and issue7 footer.
 - [ ] Review five focus classes, native unsupported-mode limits and fixed blobs.
 - [ ] Confirm all qualifications, exact head/base and proposed merge tree.
 - [ ] Record RED/GREEN evidence, update roadmap/PR, ready PR; clean own ledger.
+
+## Frozen RED checkpoint
+
+RED667 run43128427985/LinuxARM64 job130886300032 built net8/9/10 with zero
+warnings/errors. Each framework reported48104 cases:298 expected new failures,
+47806 passes,0 skips. No earlier fixture or native literal oracle failed.
+New312-case blob1d87fd94a6e71f5b92340a518c25ae3689cb0004 freezes before production.
+Revised inventories also freeze: ACCEPT13ef58775336b310950db8d7fdcb7a183e385cb5;
+FAIL070cf3e9dda7e66494d8a41f5acfaa6f9cda4101;
+group-aliasdfd0b09613d7428529998f89ee20be711315e053;
+syntaxb21c77d2509ad661cf2e6a0ca18509624a7dbf46.
+Native source outside obsolete header inventories and bare FAIL EOF1 stay fixed.
