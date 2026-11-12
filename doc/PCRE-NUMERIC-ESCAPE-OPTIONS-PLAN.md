@@ -68,3 +68,15 @@ warnings/errors. Each had50453 cases:149 expected new failures,50304 passes,
 assertions; no earlier fixture or native literal oracle failed. Freeze709 cases
 atc169f5dfd97ec55a26bfbc2c0e4a538f5109be80 before production. All earlier
 reference files remain unchanged.
+
+## Diagnostic correction after first implementation
+
+CI677 compiled cleanly; its20 remaining failures are frozen numeric error-offset
+controls in Perl/UTS classes. Both class parsers catch every InvalidSyntax and
+replace its original byte with the outer opening. That also masked existing
+default-byte unbraced range errors in the new controls. Preserve a narrow
+IsNumericEscape tag for unbraced-range/bare-zero exceptions through those two
+wrappers; other class grammar errors still report their original outer opening.
+This intentionally improves those numeric diagnostic offsets, including default
+byte-mode oversized octals, without changing matching or earlier references.
+The709-case blob stays fixed. Full50453/18 qualification remains required.

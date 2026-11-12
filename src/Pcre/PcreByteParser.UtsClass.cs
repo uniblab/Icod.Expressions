@@ -95,7 +95,7 @@ internal sealed partial class PcreByteParser {
 				frame.Items++;
 			}
 			throw Invalid( openingOffset, "unclosed extended class" );
-		} catch ( PcreByteParseException error ) when ( error.Diagnostic.Code == PcreByteDiagnosticCode.InvalidSyntax ) {
+		} catch ( PcreByteParseException error ) when ( error.Diagnostic.Code == PcreByteDiagnosticCode.InvalidSyntax && !error.IsNumericEscape ) {
 			throw Invalid( openingOffset, "invalid UTS extended character class" );
 		} finally { classAlgebra = savedAlgebra; }
 	}

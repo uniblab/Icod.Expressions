@@ -54,3 +54,15 @@ frozen35 source blobs, frozen214/120 outcomes, exported API and dependencies.
 No runtime native fallback or SDK installs. User owns merge/tag/publication;
 Grep stays last. Other directives, failed labels, UTF C, wider optimizer/resources,
 UTF16/public API and realistic consumer/release qualification remain open.
+
+## Diagnostic correction after first implementation
+
+CI677 compiled cleanly; its20 remaining failures are frozen numeric error-offset
+controls in Perl/UTS classes. Both class parsers catch every InvalidSyntax and
+replace its original byte with the outer opening. That also masked existing
+default-byte unbraced range errors in the new controls. Preserve a narrow
+IsNumericEscape tag for unbraced-range/bare-zero exceptions through those two
+wrappers; other class grammar errors still report their original outer opening.
+This intentionally improves those numeric diagnostic offsets, including default
+byte-mode oversized octals, without changing matching or earlier references.
+The709-case blob stays fixed. Full50453/18 qualification remains required.

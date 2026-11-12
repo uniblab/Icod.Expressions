@@ -967,4 +967,5 @@ internal sealed partial class PcreByteParser {
 
 internal sealed class PcreByteParseException( PcreByteDiagnostic diagnostic ) : Exception( diagnostic.Message ) {
 	internal PcreByteDiagnostic Diagnostic { get; } = diagnostic;
+	internal bool IsNumericEscape { get; init; }
 }

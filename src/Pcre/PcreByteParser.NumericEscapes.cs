@@ -38,10 +38,16 @@ internal sealed partial class PcreByteParser {
 			cancellationToken.ThrowIfCancellationRequested();
 			value = value * 8 + source[index++] - (byte)'0';
 		}
-		if ( value > 255 && ( !utf8 || pythonOctal ) ) { throw Invalid( offset, "octal escape exceeds the supported character range" ); }
-		if ( noBackslashZero && value == 0 && digits == 1 ) { throw Invalid( offset, "bare backslash-zero escape is disabled" ); }
+		if ( value > 255 && ( !utf8 || pythonOctal ) ) { throw NumericEscapeError( offset, "octal escape exceeds the supported character range" ); }
+		if ( noBackslashZero && value == 0 && digits == 1 ) { throw NumericEscapeError( offset, "bare backslash-zero escape is disabled" ); }
 		return new( value );
 	}
+
+	// Class-algebra grammar errors belong to the outer opening, but these
+	// numeric failures retain the same escape-byte precision as ordinary classes.
+	private static PcreByteParseException NumericEscapeError( int offset, string message ) => new(
+		new( PcreByteDiagnosticCode.InvalidSyntax, offset, message )
+	) { IsNumericEscape = true };
 
 	private PcreByteLiteral ParseBracedOctal( int offset ) {
 		if ( index >= source.Length || source[index] != (byte)'{' ) {

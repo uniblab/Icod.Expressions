@@ -94,7 +94,7 @@ internal sealed partial class PcreByteParser {
 				operators.Push( token ); index++; expectingOperand = true;
 			}
 			throw Invalid( openingOffset, "unclosed extended class" );
-		} catch ( PcreByteParseException error ) when ( error.Diagnostic.Code == PcreByteDiagnosticCode.InvalidSyntax ) {
+		} catch ( PcreByteParseException error ) when ( error.Diagnostic.Code == PcreByteDiagnosticCode.InvalidSyntax && !error.IsNumericEscape ) {
 			throw Invalid( openingOffset, "invalid extended character-class expression" );
 		} finally { extended = savedExtended; classAlgebra = savedAlgebra; }
 	}
