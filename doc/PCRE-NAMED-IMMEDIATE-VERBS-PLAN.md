@@ -66,11 +66,11 @@ Native source outside obsolete header inventories and bare FAIL EOF1 stay fixed.
 
 CI668/LinuxARM64 built cleanly and passed48103/48104 per framework; the only
 failure was the frozen accepted-callee label fixture. Add separate
-PcreAcceptedCallLabelReferenceTests (14 cases,28 native profiles) before the fix.
+PcreAcceptedCallLabelReferenceTests (18 cases,36 native profiles) before the fix.
 
 - [x] Reproduce native normal/accepted returns and lexical quit contrast; read
   JIT accepted-call exit and kept-shared label copy rules.
-- [ ] Qualify separate RED and freeze14 controls; original312 refs unchanged.
+- [ ] Qualify separate RED and freeze18 controls; original312 refs unchanged.
 - [ ] Add bounded per-target lexical-quit Call metadata and charged label-only
   journal compaction at accepted-callee exit; preserve older checkpoints.
-- [ ] Qualify final48118 cases/framework across18 native results.
+- [ ] Qualify final48122 cases/framework across18 native results.

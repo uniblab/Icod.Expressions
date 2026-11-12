@@ -22,6 +22,10 @@ public sealed class PcreAcceptedCallLabelReferenceTests {
 	[InlineData( "(*MARK:M)\\A(?&x)c|abc(?(DEFINE)(?<x>a(*ACCEPT:N)|ab))", "0:3,-", "" )]
 	[InlineData( "\\A(?!(?&x)c)abc(?(DEFINE)(?<x>a(*ACCEPT:N)))", "0:3,-", "4E" )]
 	[InlineData( "\\A(?(?=(?&x)c)X|abc)(?(DEFINE)(?<x>a(*ACCEPT:N)))", "0:3,-", "4E" )]
+	[InlineData( "(*MARK:M)(?:\\A(?&x)c|abc)(?(DEFINE)(?<x>a(?&y)(*ACCEPT)(*PRUNE))(?<y>(*ACCEPT:N)))", "0:3,-,-", "4D" )]
+	[InlineData( "(*MARK:M)(?:\\A(?&x)c|abc)(?(DEFINE)(?<x>a(?&y)(?(DEFINE)(*PRUNE)))(?<y>(*ACCEPT:N)))", "0:3,-,-", "4E" )]
+	[InlineData( "(*MARK:M)(?:\\A(?&x)c|abc)(?(DEFINE)(?<x>a(?&y))(?<y>(*ACCEPT:N)))", "0:3,-,-", "4E" )]
+	[InlineData( "(*MARK:M)(?:\\A(?&x)c|abc)(?(DEFINE)(?<x>a(?&y))(?<y>(*COMMIT:P)(*ACCEPT:N)))", "0:3,-,-", "4D" )]
 	public void AcceptedCallLabelsRespectLexicalQuitAndOlderCallerCheckpoints( string pattern, string spans, string markHex ) {
 		var subject = "abc"u8.ToArray();
 		foreach ( var utf in new[] { false, true } ) {
