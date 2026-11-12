@@ -3387,3 +3387,42 @@ Other modes/directives/callouts, failed/partial labels, UTF code-unit escapes,
 wider optimizer/resources (#102), UTF16/public API and realistic consumer/release
 qualification remain open. Grep stays last. See
 [design](PCRE-EMPTY-CLASSES-DESIGN.md) and [plan](PCRE-EMPTY-CLASSES-PLAN.md).
+
+## PR229: caller pattern option initialization
+
+Internal caller options `DotAll`, `Multiline`, `NoAutoCapture`, `Ungreedy`,
+`DuplicateNames`, `Extended` and `ExtendedMore` now initialize the existing
+s/m/n/U/J/x/xx parser state. All default false; ExtendedMore implies extended
+parsing. Existing scopes, local unsets, group restoration and reset rules stay
+shared. In particular, `(?^)` clears m/s/n/x but retains U/J. Named captures
+retain their numbering under NoAutoCapture, and duplicate references/conditions
+use the existing global name resolution. Source bytes are not rewritten.
+
+The parser accepts the existing options record instead of positional booleans,
+copies every old/new primitive at construction and retains no options reference.
+Prefix settings and whole-pattern UTF validation still precede parsing. Nodes,
+widths, bytecode, matcher state, exported API and dependencies remain unchanged.
+
+The 1,046 new cases include 988 pinned JIT-valid profiles and 10 distinct native
+compile-error cases, researched across 1,018 PCRE2 10.48 profiles. All 128 flag
+combinations run in byte/UTF modes. Additional coverage includes 32 exact legacy
+diagnostics, all octets, malformed-UTF/CRLF offsets, prior caller policies,
+whole-pattern UTF validation before comments, source/options/raw labels,
+canonical work equality, cancellation and existing quotas. Supplemental native
+patterns compile before managed matching. Earlier test files remain fixed.
+
+Valid tests-only RED 688 (run 43179233033, Linux ARM64 job 131050872473), source
+`033deb78a1681994c2c3c8cf1d8c2a9acc600081`, exactly matched merged PR228
+production. net8/9/10 built with zero warnings/errors; each had 53,999 tests,
+318 expected caller-option failures, 53,681 passes and zero skips. Default
+profiles/dot behavior, exact diagnostics, duplicate grammar errors, UTF validation,
+earlier fixtures and native literal-oracle checks passed. Freeze the 1,046-case
+reference at `0d04add04dc65e5272e9b7052c5b7727990a6f5d` before production changes.
+Final qualification requires all 53,999 tests in 18 native platform/framework
+results and the prior frozen, Unicode, parity, resource and package gates.
+
+Other modes/directives/callouts, failed/partial labels, UTF code-unit escapes,
+wider optimizer/resources (#102), UTF16/exported API and realistic consumer/
+release qualification remain open. Grep stays last. See
+[design](PCRE-CALLER-PATTERN-OPTIONS-DESIGN.md) and
+[plan](PCRE-CALLER-PATTERN-OPTIONS-PLAN.md).

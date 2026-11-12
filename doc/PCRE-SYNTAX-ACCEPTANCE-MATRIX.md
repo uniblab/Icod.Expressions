@@ -35,6 +35,7 @@ the matcher returns spans, leaving framing, status and output to Grep.
 | Bare and braced octal literals | Default up-to-three-digit octals and `\o{...}` in byte/UTF atoms, brackets/ranges and fixed literal assertions; byte/scalar range checks, brace-edge space/tab | `PcreNumericEscapeReferenceTests`; all 256 byte values, UTF bounds, quoting, offsets and diagnostics; caller PythonOctal/NoBackslashZero modes use PcreNumericEscapeOptionReferenceTests |
 | Caller option `EscapedCrIsLf` | Textual `\r` becomes canonical LF; other CR spellings, quotes, raw labels and newline policies are preserved | `PcreEscapedCrReferenceTests`; byte/UTF/class/range/offset/resource and ownership controls |
 | Caller option `AllowEmptyClass` | Enables empty `[]` and complemented `[^]` in ordinary/UTS classes, including nested UTS operands; Perl algebra and default literal `]` behavior stay fixed | `PcreEmptyClassReferenceTests`; repeat, UTF/CRLF, grammar, diagnostic, resource and ownership controls |
+| Caller pattern options | DotAll, Multiline, NoAutoCapture, Ungreedy, DuplicateNames, Extended and ExtendedMore initialize existing s/m/n/U/J/x/xx scopes; all default false | `PcreCallerPatternOptionReferenceTests`; 128 combinations, reset/unset/restoration, numbering, lexing, offsets, ownership and quotas |
 | Ordinary `[ ]` ranges, negation, shorthand unions, 14 POSIX names | Supported subset in byte and UTF modes; ordinary bracket grammar unchanged, Perl algebra listed separately | Bracket and POSIX tests; Unicode table/version reconciliation |
 | `\p`/`\P` general categories and special properties | Byte/UTF categories plus Any/Xan/Xps/Xsp/Xwd/Xuc; loose names, P/caret complements and property predicates independent of UCP/ASCII/i/r. Category-prefixed aliases remain a library extension for categories only. UTF class source operands/endpoints preserve CR/LF flags before folding, including the native negated-singleton exception. Scripts/scx now have pinned Unicode17 data; binary/Bidi properties now have pinned native data | `PcreBytePropertyReferenceTests`, `PcreSpecialPropertyReferenceTests`, `PcreClassNewlineMetadataReferenceTests`, `PcreUtf8GeneralCategoryTests`; see `PCRE-SPECIAL-PROPERTIES-DESIGN.md`; Unicode17 categories and default simple-case mappings are pinned; byte search-optimization parity remains a gate |
 | Unicode script/scx properties | All175 scripts/344 normalized long, short and legacy aliases; bare names are scx, explicit sc/Script and scx/Script_Extensions, native primary-or-extension membership, byte projection and mixed predicates | `PcreScriptPropertyReferenceTests`, 3508 native boundaries and source-hash/native-fingerprint-checked regeneration; script-run groups remain separate |
@@ -3136,3 +3137,42 @@ Other modes/directives/callouts, failed/partial labels, UTF code-unit escapes,
 wider optimizer/resources (#102), UTF16/public API and realistic consumer/release
 qualification remain open. Grep stays last. See
 [design](PCRE-EMPTY-CLASSES-DESIGN.md) and [plan](PCRE-EMPTY-CLASSES-PLAN.md).
+
+## PR229: caller pattern option initialization
+
+Internal caller options `DotAll`, `Multiline`, `NoAutoCapture`, `Ungreedy`,
+`DuplicateNames`, `Extended` and `ExtendedMore` now initialize the existing
+s/m/n/U/J/x/xx parser state. All default false; ExtendedMore implies extended
+parsing. Existing scopes, local unsets, group restoration and reset rules stay
+shared. In particular, `(?^)` clears m/s/n/x but retains U/J. Named captures
+retain their numbering under NoAutoCapture, and duplicate references/conditions
+use the existing global name resolution. Source bytes are not rewritten.
+
+The parser accepts the existing options record instead of positional booleans,
+copies every old/new primitive at construction and retains no options reference.
+Prefix settings and whole-pattern UTF validation still precede parsing. Nodes,
+widths, bytecode, matcher state, exported API and dependencies remain unchanged.
+
+The 1,046 new cases include 988 pinned JIT-valid profiles and 10 distinct native
+compile-error cases, researched across 1,018 PCRE2 10.48 profiles. All 128 flag
+combinations run in byte/UTF modes. Additional coverage includes 32 exact legacy
+diagnostics, all octets, malformed-UTF/CRLF offsets, prior caller policies,
+whole-pattern UTF validation before comments, source/options/raw labels,
+canonical work equality, cancellation and existing quotas. Supplemental native
+patterns compile before managed matching. Earlier test files remain fixed.
+
+Valid tests-only RED 688 (run 43179233033, Linux ARM64 job 131050872473), source
+`033deb78a1681994c2c3c8cf1d8c2a9acc600081`, exactly matched merged PR228
+production. net8/9/10 built with zero warnings/errors; each had 53,999 tests,
+318 expected caller-option failures, 53,681 passes and zero skips. Default
+profiles/dot behavior, exact diagnostics, duplicate grammar errors, UTF validation,
+earlier fixtures and native literal-oracle checks passed. Freeze the 1,046-case
+reference at `0d04add04dc65e5272e9b7052c5b7727990a6f5d` before production changes.
+Final qualification requires all 53,999 tests in 18 native platform/framework
+results and the prior frozen, Unicode, parity, resource and package gates.
+
+Other modes/directives/callouts, failed/partial labels, UTF code-unit escapes,
+wider optimizer/resources (#102), UTF16/exported API and realistic consumer/
+release qualification remain open. Grep stays last. See
+[design](PCRE-CALLER-PATTERN-OPTIONS-DESIGN.md) and
+[plan](PCRE-CALLER-PATTERN-OPTIONS-PLAN.md).

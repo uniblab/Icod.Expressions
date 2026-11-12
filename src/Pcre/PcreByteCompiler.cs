@@ -34,9 +34,7 @@ internal static class PcreByteCompiler {
 				"Turkish casing requires UTF and cannot combine with global caseless restriction" ) );
 		}
 
-		var parser = new PcreByteParser( source, options.Caseless, options.AsciiBsD, settings, cancellationToken,
-			options.AltExtendedClass, options.PythonOctal, options.NoBackslashZero, options.EscapedCrIsLf,
-			options.AllowEmptyClass );
+		var parser = new PcreByteParser( source, options, settings, cancellationToken );
 		try {
 			var root = parser.Parse();
 			var program = new PcreByteProgramCompiler(

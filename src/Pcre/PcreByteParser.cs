@@ -41,22 +41,27 @@ internal sealed partial class PcreByteParser {
 	private bool hasGeneralLookbehinds;
 	private ExtendedMode extended;
 
-	internal PcreByteParser( byte[] source, bool caseless, bool asciiBsD,
-		PcreByteStartSettings settings, CancellationToken cancellationToken, bool altExtendedClass = false,
-		bool pythonOctal = false, bool noBackslashZero = false, bool escapedCrIsLf = false,
-		bool allowEmptyClass = false ) {
+	internal PcreByteParser( byte[] source, PcreByteOptions options,
+		PcreByteStartSettings settings, CancellationToken cancellationToken ) {
 		this.source = source;
-		this.caseless = caseless;
+		caseless = options.Caseless;
+		dotAll = options.DotAll;
+		multiline = options.Multiline;
+		noAutoCapture = options.NoAutoCapture;
+		ungreedy = options.Ungreedy;
+		duplicateNames = options.DuplicateNames;
+		extended = options.ExtendedMore ? ExtendedMode.More
+			: options.Extended ? ExtendedMode.Extended : ExtendedMode.None;
 		caselessRestricted = settings.CaselessRestricted;
-		this.altExtendedClass = altExtendedClass;
-		this.pythonOctal = pythonOctal;
-		this.noBackslashZero = noBackslashZero;
-		this.escapedCrIsLf = escapedCrIsLf;
-		this.allowEmptyClass = allowEmptyClass;
+		altExtendedClass = options.AltExtendedClass;
+		pythonOctal = options.PythonOctal;
+		noBackslashZero = options.NoBackslashZero;
+		escapedCrIsLf = options.EscapedCrIsLf;
+		allowEmptyClass = options.AllowEmptyClass;
 		utf8 = settings.Utf8;
 		ucp = settings.Ucp;
 		turkishCasing = settings.TurkishCasing;
-		asciiRestrictions = asciiBsD ? AsciiRestriction.BackslashD : AsciiRestriction.None;
+		asciiRestrictions = options.AsciiBsD ? AsciiRestriction.BackslashD : AsciiRestriction.None;
 		newline = settings.Newline;
 		index = settings.BodyOffset;
 		this.cancellationToken = cancellationToken;

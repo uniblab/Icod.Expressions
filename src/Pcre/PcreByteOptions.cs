@@ -6,6 +6,20 @@ internal sealed record PcreByteOptions {
 
 	public int MatchWorkLimit { get; init; } = DefaultMatchWorkLimit;
 	public bool Caseless { get; init; }
+	/// <summary>Let dot match newline characters.</summary>
+	public bool DotAll { get; init; }
+	/// <summary>Let line anchors recognize internal newlines.</summary>
+	public bool Multiline { get; init; }
+	/// <summary>Capture only named groups unless a local option restores unnamed captures.</summary>
+	public bool NoAutoCapture { get; init; }
+	/// <summary>Invert the default greedy or lazy preference of repeat quantifiers.</summary>
+	public bool Ungreedy { get; init; }
+	/// <summary>Permit multiple capture groups to share a name.</summary>
+	public bool DuplicateNames { get; init; }
+	/// <summary>Ignore pattern whitespace and comments outside character classes.</summary>
+	public bool Extended { get; init; }
+	/// <summary>Also ignore unquoted spaces and tabs in character classes; implies extended parsing.</summary>
+	public bool ExtendedMore { get; init; }
 	public bool Utf8 { get; init; }
 	public bool MatchInvalidUtf { get; init; }
 	public bool Ucp { get; init; }

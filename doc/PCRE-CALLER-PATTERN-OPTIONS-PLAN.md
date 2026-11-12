@@ -35,10 +35,10 @@ whole-pattern UTF validation, ownership, work/cancellation and resource checks.
 Precompile every native pattern in supplemental loops before managed matching.
 
 - [x] Independently qualify 1,018 native profiles and deduplicate rows.
-- [ ] Publish draft tests-only source and observe clean net8/9/10 RED.
+- [x] Publish draft tests-only source and observe clean net8/9/10 RED.
   Expected: only missing-caller-option failures; zero warnings/errors/skips;
   default profiles, native literals, exact diagnostics and all earlier tests pass.
-- [ ] Freeze the reference hash after checking failure identities and sites.
+- [x] Freeze the reference hash after checking failure identities and sites.
 
 ## Task 2: initialize and qualify
 
@@ -53,7 +53,7 @@ Retain prefix-derived settings and cancellation. No options reference is stored.
 Modify PcreByteCompiler.cs, the sole constructor caller, to pass options once.
 No changes to scope/reset/group parsing, bytecode or matcher behavior.
 
-- [ ] Implement only the option/plumbing/state initialization after valid freeze.
+- [x] Implement only the option/plumbing/state initialization after valid freeze.
 - [ ] Qualify all 53,999 tests/framework in 18 native platform/framework results with zero
   failures/skips/build warnings/errors and frozen 214/120 in each.
 - [ ] Verify frozen 35, Unicode generators, workload/parity/API/corpus/pack,
@@ -72,3 +72,14 @@ PR228 merged at 209dd96c3b30eeadec8dfc431f2ca04ca6192354.
 Main 43176216559 and scripts 43176216531 are green; 52,953 tests/framework.
 Source 44365071cd96b64a54a266db47fa03b198b9bdb0,
 tree 66e3913d5e03b500ded7b08cb3a2e506b271133a.
+
+## Frozen reference receipt
+
+Tests-only source 033deb78a1681994c2c3c8cf1d8c2a9acc600081,
+tree 8b869ce6dd99cd427425b86268a9b8b57f3fcc12; production equals merged PR228.
+RED 688/run 43179233033, Linux ARM64 job 131050872473: net8/9/10 each
+53,999 tests, 318 expected caller-option failures, 53,681 passes and zero skips,
+build warnings or errors. Default profiles/dot behavior, exact diagnostics,
+duplicate grammar, UTF validation, earlier fixtures and native literals pass.
+Freeze all 1,046 cases at 0d04add04dc65e5272e9b7052c5b7727990a6f5d before
+the three production files change.
