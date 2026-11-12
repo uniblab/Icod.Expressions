@@ -104,7 +104,7 @@ internal sealed partial class PcreByteParser {
 		if ( frame.Items == 0 ) { return; }
 		var sole = frame.Items == 1 && frame.SoleLiteral;
 		var operand = new PcreByteScalarSet(
-			caseless && utf8 ? PcreUtf8CaseFold.CloseRanges( frame.Ranges, cancellationToken, caselessRestricted ) : frame.Ranges.ToArray(),
+		caseless && utf8 ? PcreUtf8CaseFold.CloseRanges( frame.Ranges, cancellationToken, caselessRestricted, turkishCasing ) : frame.Ranges.ToArray(),
 			frame.Predicates.ToArray(), negated, frame.ExplicitNewline && !( negated && sole )
 		) { Caseless = caseless, CaselessRestricted = caselessRestricted };
 		AddUtsTerm( terms, new( PcreScalarSetOperation.Operand, operand ), offset );

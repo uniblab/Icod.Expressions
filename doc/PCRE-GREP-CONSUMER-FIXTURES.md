@@ -3076,3 +3076,34 @@ changes. Earlier reference files remain unchanged. Final qualification requires
 Other directives, failed/partial labels, wider optimizer/resources (issue102),
 UTF16/public API and realistic consumer performance/release remain open; Grep
 stays last. See PCRE-CASELESS-RESTRICT-DIRECTIVE-DESIGN.md and its PLAN.md.
+
+## PR225: UTF Turkish casing
+
+Exact leading (*TURKISH_CASING) now selects I/ı and i/İ equivalence for caseless
+UTF matching. It does not enable caseless itself. Local (?r) overrides Turkish
+with the existing default restricted policy; unset/reset exposes Turkish again.
+The8-bit native mode requires UTF and rejects global CASELESS_RESTRICT. Whole-
+source UTF validation precedes that global-conflict check; diagnostics use the
+consumed prefix end. Ordinary/scoped/definition options remain lexical.
+
+A global immutable program bool flows through shared scalar folding, parser
+class closure, literal/set/algebra/reference/assertion comparisons. Four scalar
+keys override the pinned default table; all other mappings remain unchanged.
+Existing optional-literal CRLF bitmap and COMMIT first-byte proofs exclude
+Turkish I property casesets when local r is false, preserving other proofs and
+visit bounds. There is no new matcher, AST mode flag, opcode, slot or journal
+field; byte-UCP folding remains unchanged because Turkish requires UTF.
+
+1256 new cases include1222 literal/profile fixtures independently checked with
+pinned native PCRE2 10.48/JIT. RED674 (run43146911924, LinuxARM64
+job130946767040) built net8/9/10 with zero warnings/errors. Each had49744
+cases:1246 expected new failures,48498 passes,0 skips; no earlier/native literal
+oracle failure. All new controls freeze at4315ded53f161a93b79f95ed4e4982ce237dd226.
+One obsolete pending-Turkish inventory row in the prior CASELESS_RESTRICT file
+retargets to nonexact TURKISH_CASINGX, preserving rejection/opening20 and all
+assertion source outside that row; revised blob1c8075e58fac1b2048152c71eaec5a8c5914820b
+is frozen too. Final qualification requires49744 cases/framework in18 native
+results plus all previous gates. Wider optimizer/resources (#102), other
+directives/callouts, failed/partial labels, UTF C, UTF16/exported API and realistic
+consumer performance/release stay open. Grep stays last. See
+PCRE-TURKISH-CASING-DESIGN.md and PCRE-TURKISH-CASING-PLAN.md.

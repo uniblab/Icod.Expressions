@@ -18,6 +18,7 @@ internal sealed partial class PcreByteParser {
 	private readonly CancellationToken cancellationToken;
 	private readonly bool utf8;
 	private readonly bool ucp;
+	private readonly bool turkishCasing;
 	private readonly bool altExtendedClass;
 	private readonly PcreByteNewline newline;
 	private readonly List<(int Number, int Offset)> backreferences = new();
@@ -44,6 +45,7 @@ internal sealed partial class PcreByteParser {
 		this.altExtendedClass = altExtendedClass;
 		utf8 = settings.Utf8;
 		ucp = settings.Ucp;
+		turkishCasing = settings.TurkishCasing;
 		asciiRestrictions = asciiBsD ? AsciiRestriction.BackslashD : AsciiRestriction.None;
 		newline = settings.Newline;
 		index = settings.BodyOffset;
@@ -268,7 +270,7 @@ internal sealed partial class PcreByteParser {
 				var sourceKind = sourceTermCount == 1 && soleLiteral
 					? PcreByteScalarSetSource.Literal : PcreByteScalarSetSource.Class;
 				var sourceLiteral = sourceKind == PcreByteScalarSetSource.Literal ? ranges[0].Start : -1;
-				return new( caseless && utf8 ? PcreUtf8CaseFold.CloseRanges( ranges, cancellationToken, caselessRestricted )
+				return new( caseless && utf8 ? PcreUtf8CaseFold.CloseRanges( ranges, cancellationToken, caselessRestricted, turkishCasing )
 					: ranges.ToArray(), predicates.ToArray(), negated,
 					explicitNewline && !( negated && sourceTermCount == 1 && soleLiteral ) ) {
 					Source = sourceKind, SourceLiteral = sourceLiteral

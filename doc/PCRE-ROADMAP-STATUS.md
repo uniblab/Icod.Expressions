@@ -1,6 +1,6 @@
 # PCRE roadmap status
 
-Reviewed after merged PR223, with PR224 in progress. Issue7 remains the delivery roadmap; the
+Reviewed after merged PR224, with PR225 in progress. Issue7 remains the delivery roadmap; the
 [syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md),
 [resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) and
 [Grep fixture inventory](PCRE-GREP-CONSUMER-FIXTURES.md) define the detailed gates.
@@ -37,6 +37,7 @@ retaining each framework's complete suite and frozen-result qualification.
    PR222 adds successful labels for named PRUNE/COMMIT/THEN. PR223 adds
    named ACCEPT/FAIL/F using authentic implicit MARK and existing scope exits.
    PR224 adds the CASELESS_RESTRICT prefix through the existing (?r) policy.
+   PR225 adds UTF Turkish casing through the shared scalar folding policy.
    UTF code-unit escape,
    remaining directives/verbs/callouts and other matrix gaps require their own
    pinned reference fixtures. Decide any intentional exclusions before release;
@@ -54,21 +55,26 @@ retaining each framework's complete suite and frozen-result qualification.
 
 ## Current increment and next syntax work
 
-PR223 is merged; main43138710909 and scripts43138710837 are green. Its330 new
-cases are qualified in18 native results,48122 tests/framework, zero failures/
-skips/build warnings/errors; accepted-call labels follow native local-quit rules.
+PR224 is merged; main43144903778 and scripts43144903781 are green. Its366 new
+cases are qualified across18 native results,48488 tests/framework, with zero
+failures/skips/build warnings/errors.
 
-PR224 adds exact leading (*CASELESS_RESTRICT) through existing (?r) state. It
-preserves caller/inline caseless, reset/unset/scoped modes, all comparison
-consumers, source-byte offsets and whole-pattern UTF validation. Prefix scanning
-adds no VM work or capture/mark slots. The333 native JIT fixtures plus offset,
-diagnostic, resource and ownership controls total366 cases. They freeze after
-clean RED672 at5c8ddc61bd74186ed85e1a4e40c82a418a2e934c:351 expected new
-failures and48137 passes per framework, no earlier/native-oracle failures.
-Final qualification requires48488 cases per framework in18 native results and
-author review. Earlier reference files and frozen35/214/120 remain fixed.
+PR225 adds UTF Turkish casing with native I/ı and i/İ pairs. Local (?r) still
+selects the default restricted policy, while unset/reset exposes Turkish. The
+single shared fold/closure/runtime consumers use one immutable global flag.
+Whole-source UTF validation and prefix-end global-conflict diagnostics are
+explicit. Two existing start proofs exclude Turkish I property casesets; wider
+optimizer parity remains issue102.
 
-Failed/partial labels, remaining directives/callouts, UTF C, wider optimizer/
-resources (issue102), UTF16/exported API and realistic consumer performance/
-release stay open. Grep stays last.
-See PCRE-CASELESS-RESTRICT-DIRECTIVE-DESIGN.md and its PLAN.md.
+The1256 controls include1222 independently checked native JIT literal/profile
+fixtures plus UTS, all-offset malformed UTF/CRLF, diagnostics, quotas/work/cancel
+and ownership. They freeze after clean RED674:1246 expected new failures and
+48498 passes/framework; no earlier/native-oracle failures. Only one obsolete
+pending-Turkish capability row advances to a nonexact header; prior assertions
+outside that inventory row, GNU/frozen35/214/120 and default Unicode data stay
+fixed. Final qualification requires49744 tests/framework in18 native results
+and author review.
+
+Other directives/callouts, failed/partial labels, UTF C, wider optimizer/resources,
+UTF16/exported API and realistic consumer performance/release remain open.
+Grep stays last. See PCRE-TURKISH-CASING-DESIGN.md and its PLAN.md.

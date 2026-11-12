@@ -70,6 +70,7 @@ internal sealed record PcreByteProgram(
 	bool LineStartSearch, bool Ucp, PcreBytePrefixLiteral? ByteCrLfPrefixLiteral
 ) {
 	internal int ScalarExpressionStackDepth { get; init; }
+	internal bool TurkishCasing { get; init; }
 	internal PcreByteSet? CommitStartBytes { get; init; }
 	internal int PathMarkSlot { get; init; } = -1;
 	internal bool TrackPathMarks { get; init; }
@@ -91,6 +92,7 @@ internal sealed class PcreByteProgramCompiler {
 	private bool hasCaselessComparisons;
 	private readonly bool utf8;
 	private readonly bool ucp;
+	private readonly bool turkishCasing;
 	private readonly bool matchInvalidUtf;
 	private readonly PcreByteNewline newline;
 	private readonly bool bsrAnyCrLf;
@@ -120,10 +122,12 @@ internal sealed class PcreByteProgramCompiler {
 	private PcreByteRepeat? pruneLiteralCacheRepeat;
 
 	internal PcreByteProgramCompiler( CancellationToken cancellationToken, bool utf8, bool matchInvalidUtf,
-		PcreByteNewline newline, bool bsrAnyCrLf, bool notEmpty, bool notEmptyAtStart, bool ucp, bool hasThen = false, bool hasNamedSkip = false ) {
+		PcreByteNewline newline, bool bsrAnyCrLf, bool notEmpty, bool notEmptyAtStart, bool ucp, bool hasThen = false, bool hasNamedSkip = false,
+		bool turkishCasing = false ) {
 		this.cancellationToken = cancellationToken;
 		this.utf8 = utf8;
 		this.ucp = ucp;
+		this.turkishCasing = turkishCasing;
 		this.hasThen = hasThen;
 		this.hasNamedSkip = hasNamedSkip;
 		this.matchInvalidUtf = matchInvalidUtf;
@@ -187,7 +191,7 @@ internal sealed class PcreByteProgramCompiler {
 			FindRequiredLiteralSuffix( root ), newline, HasExplicitNewline( root ), hasEarlyAccept || commitBytes.HasValue || CanMatchEmptyAtAnyOffset( root ),
 			bytePrefix.Unconditional, utfCrLfStartClass, notEmpty, notEmptyAtStart,
 			matchInvalidUtf && newline == PcreByteNewline.Any && HasLineStartSearch( root ), ucp, bytePrefix.Literal ) {
-			ScalarExpressionStackDepth = scalarExpressionStackDepth, CommitStartBytes = commitBytes,
+			ScalarExpressionStackDepth = scalarExpressionStackDepth, CommitStartBytes = commitBytes, TurkishCasing = turkishCasing,
 			PathMarkSlot = pathMarkSlot, TrackPathMarks = hasNamedSkip
 		};
 	}
@@ -1012,9 +1016,11 @@ internal sealed class PcreByteProgramCompiler {
 		return true;
 	}
 
-	private static bool HasUtfCrLfLiteralBitmap( int scalar, bool caseless, bool restricted ) {
+	private bool HasUtfCrLfLiteralBitmap( int scalar, bool caseless, bool restricted ) {
 		if ( scalar < 0 || scalar > 0x10FFFF || scalar == '\r' ) { return false; }
 		if ( !caseless ) { return true; }
+		// Turkish I pairs are property casesets, not simple literal bitmaps.
+		if ( turkishCasing && !restricted && scalar is 'I' or 'i' or 0x0130 or 0x0131 ) { return false; }
 		// PCRE2 10.48 default UCD_CASESET opcode classification, not membership.
 		// Restricted casing suppresses the two ASCII-crossing property casesets.
 		if ( restricted && scalar is 0x004B or 0x006B or 0x212A or 0x0053 or 0x0073 or 0x017F ) { return true; }
@@ -1694,6 +1700,7 @@ internal sealed class PcreByteProgramCompiler {
 		PcreByteSet? FirstBytes( byte first, bool caseless, bool restricted ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			if ( caseless && ( utf8 || ucp ) ) {
+				if ( turkishCasing && !restricted && first is (byte)'I' or (byte)'i' ) { return null; }
 				// Native complex Unicode casesets do not produce this first-byte
 				// optimization. Restrict proof to simple ASCII pairs (r excludes
 				// the Kelvin sign and long-s crossings for K/S).

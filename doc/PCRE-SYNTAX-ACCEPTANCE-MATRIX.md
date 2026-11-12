@@ -60,6 +60,7 @@ the matcher returns spans, leaving framing, status and output to Grep.
 | CRLF-only newline directive | Exact byte0 CRLF, last-wins with other conventions; complete-pair dot/N/anchors/comments, native fixed/variable behind ends, byte-only bounded Any+literal prefix proof | `PcreCrLfNewlineReferenceTests`; see `PCRE-CRLF-NEWLINE-DESIGN.md`; lone/pair/caller offsets, all captures/widths, fragments and resource gates |
 | ANY newline directive | Exact byte0 last-wins ANY; fixed vertical scalar list, UTF-aware anchors/comments, NUL ordinary and BSR independent; native consumed-CR midpoint anchors under ANY/ANYCRLF | `PcreAnyNewlineReferenceTests`; see `PCRE-ANY-NEWLINE-DESIGN.md`; continuation-byte controls, byte/UTF membership, spans/fragments/limits |
 | Start directives `(*UTF)`, `(*UTF8)`, `(*UCP)` | Enable existing UTF/UCP modes in the shared uninterrupted prefix before whole-source UTF validation; caller defaults retained; byte UCP now uses the byte domain | `PcreUtfStartDirectiveReferenceTests`; see `PCRE-UTF-START-DIRECTIVES-DESIGN.md`; original-byte errors, strict/tolerant subjects, global modes and work/offset protocols |
+| Start directive `(*TURKISH_CASING)` | UTF-only global I/ı and i/İ casing; local r overrides with default restricted policy; global CASELESS_RESTRICT conflicts; UTF validation precedes prefix-end conflict diagnostics | `PcreTurkishCasingReferenceTests`; 1256 cases including 1222 native JIT fixtures, all comparison consumers, mode-specific start proofs, offsets and shared resource/ownership gates |
 | Start directive `(*CASELESS_RESTRICT)` | Exact uninterrupted prefix initializes the existing `(?r)` comparison policy; ordinary i/r/reset scopes remain authoritative; no VM instruction or source rewrite | `PcreCaselessRestrictDirectiveReferenceTests`; 366 controls, including 333 pinned native JIT fixtures, original-byte/UTF/offset/ownership/resource checks |
 | Start directives `(*NOTEMPTY)`, `(*NOTEMPTY_ATSTART)` | Global accumulating flags in the shared byte0 prefix; final acceptance rejects empty reported spans everywhere or only at the original caller offset, including K semantics; shared rollback/nullable fragment candidates | `PcreNotEmptyDirectiveReferenceTests`; see `PCRE-NOTEMPTY-DIRECTIVES-DESIGN.md`; same-candidate fallback, atomic/inner-success controls, UTF/CRLF offsets and resource gates |
 | `(*MARK:NAME)` / `(*:NAME)` | Successful-path raw byte label on internal match metadata;1..255-byte names, native NUL view, branch/assertion/callee rollback and positive/callee success retention | `PcrePathMarkReferenceTests`;161 independent literals plus all-offset UTF/CRLF, grammar, lifetime and shared256 marks/4096 expansion/work/cancellation; failed-attempt labels remain gated |
@@ -2984,3 +2985,34 @@ changes. Earlier reference files remain unchanged. Final qualification requires
 Other directives, failed/partial labels, wider optimizer/resources (issue102),
 UTF16/public API and realistic consumer performance/release remain open; Grep
 stays last. See PCRE-CASELESS-RESTRICT-DIRECTIVE-DESIGN.md and its PLAN.md.
+
+## PR225: UTF Turkish casing
+
+Exact leading (*TURKISH_CASING) now selects I/ı and i/İ equivalence for caseless
+UTF matching. It does not enable caseless itself. Local (?r) overrides Turkish
+with the existing default restricted policy; unset/reset exposes Turkish again.
+The8-bit native mode requires UTF and rejects global CASELESS_RESTRICT. Whole-
+source UTF validation precedes that global-conflict check; diagnostics use the
+consumed prefix end. Ordinary/scoped/definition options remain lexical.
+
+A global immutable program bool flows through shared scalar folding, parser
+class closure, literal/set/algebra/reference/assertion comparisons. Four scalar
+keys override the pinned default table; all other mappings remain unchanged.
+Existing optional-literal CRLF bitmap and COMMIT first-byte proofs exclude
+Turkish I property casesets when local r is false, preserving other proofs and
+visit bounds. There is no new matcher, AST mode flag, opcode, slot or journal
+field; byte-UCP folding remains unchanged because Turkish requires UTF.
+
+1256 new cases include1222 literal/profile fixtures independently checked with
+pinned native PCRE2 10.48/JIT. RED674 (run43146911924, LinuxARM64
+job130946767040) built net8/9/10 with zero warnings/errors. Each had49744
+cases:1246 expected new failures,48498 passes,0 skips; no earlier/native literal
+oracle failure. All new controls freeze at4315ded53f161a93b79f95ed4e4982ce237dd226.
+One obsolete pending-Turkish inventory row in the prior CASELESS_RESTRICT file
+retargets to nonexact TURKISH_CASINGX, preserving rejection/opening20 and all
+assertion source outside that row; revised blob1c8075e58fac1b2048152c71eaec5a8c5914820b
+is frozen too. Final qualification requires49744 cases/framework in18 native
+results plus all previous gates. Wider optimizer/resources (#102), other
+directives/callouts, failed/partial labels, UTF C, UTF16/exported API and realistic
+consumer performance/release stay open. Grep stays last. See
+PCRE-TURKISH-CASING-DESIGN.md and PCRE-TURKISH-CASING-PLAN.md.
