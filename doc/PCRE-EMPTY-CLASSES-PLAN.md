@@ -79,3 +79,22 @@ RED 684/run 43171972153, Linux x64 job 131027191251: net8/9/10 each
 build warnings or errors. Default profiles, grammar errors, exact diagnostics,
 UTF validation, earlier fixtures and native literal checks passed. Freeze all
 941 cases at 8565080638577ecf293f0d4f24685cead1e1de64 before production edits.
+
+## Lookbehind boundary correction
+
+CI 685 passed 52,883/52,889 per framework and exposed native empty-class
+source width: direct `[]` in consumed lookbehind is invalid even under `{0}`
+or through capture/reference/call dependencies. Computed-empty ordinary/UTS sets
+remain width one. Native width scanning skips ordinary lookahead, DEFINE and
+content after FAIL. Add one default-false compile-time provenance property to
+the existing bitmap node and reject that source at the containing lookbehind
+opening during shared width analysis; no new node, opcode or runtime behavior.
+
+The old freeze receipt is invalidated: two positive-offset-loop entries were
+native-invalid empty lookbehinds. Replace them strictly with valid positive/
+negative empty lookaheads, retaining every original rejection control and all
+assertions. Precompile all offset-loop native patterns before managed matching
+so such errors cannot hide behind a missing feature. Add 64 independently
+checked width profiles (24 errors, 40 JIT-valid); total 1,005 new cases, 52,953
+overall. Observe a fresh tests-only RED against the existing implementation and
+freeze both corrected files before the provenance/width production change.

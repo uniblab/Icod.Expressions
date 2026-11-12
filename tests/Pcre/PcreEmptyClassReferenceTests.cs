@@ -991,10 +991,12 @@ public sealed class PcreEmptyClassReferenceTests {
 	public void EverySelectedOffsetRetainsUtfFragmentsCrLfAndScopedState( bool uts ) {
 		foreach ( var anyCrLf in new[] { false, true } ) {
 			var options = Options( uts ? 7 : 3 ) with { MatchInvalidUtf = true, AnyCrLfNewline = anyCrLf };
-			var patterns = new List<string> { "[]", "[^]", "[]*A", "[^]+", "[]]", "[^]]", "(?<=[])A", "(?<![])A", "(?<=[^])A", @"(?<x>[^])\k<x>", "[^](*SKIP)|A", "[^](*COMMIT)A" };
+			var patterns = new List<string> { "[]", "[^]", "[]*A", "[^]+", "[]]", "[^]]", "(?=[])A", "(?![])A", "(?<=[^])A", @"(?<x>[^])\k<x>", "[^](*SKIP)|A", "[^](*COMMIT)A" };
 			if ( uts ) { patterns.AddRange( new[] { "[[]||[A]]", "[[^]--[A]]", "[^[^]]" } ); }
-			foreach ( var pattern in patterns ) {
-				var reference = Reference( pattern, options );
+			var references = patterns.Select( pattern => Reference( pattern, options ) ).ToArray();
+			for ( var patternIndex = 0; patternIndex < patterns.Count; patternIndex++ ) {
+				var pattern = patterns[patternIndex];
+				var reference = references[patternIndex];
 				var compiled = Compile( pattern, options );
 				foreach ( var hex in new[] { "", "0D0A41", "FF0D0A41", "0AFF0D41", "C3A90D0A41", "F09F98800D0A41", "0D0A0D0A" } ) {
 					var subject = Convert.FromHexString( hex );
