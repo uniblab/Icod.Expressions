@@ -20,6 +20,8 @@ internal sealed record PcreByteOptions {
 	public bool Ungreedy { get; init; }
 	/// <summary>Permit multiple capture groups to share a name.</summary>
 	public bool DuplicateNames { get; init; }
+	/// <summary>Let references to existing unset captures match empty without changing participation.</summary>
+	public bool MatchUnsetBackreference { get; init; }
 	/// <summary>Ignore pattern whitespace and comments outside character classes.</summary>
 	public bool Extended { get; init; }
 	/// <summary>Also ignore unquoted spaces and tabs in character classes; implies extended parsing.</summary>

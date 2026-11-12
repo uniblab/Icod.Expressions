@@ -33,9 +33,9 @@ capture capacity, ownership, diagnostics and shared resource controls. Precompil
 supplemental native arrays before managed comparisons.
 
 - [x] Qualify native JIT profiles and exact width errors.
-- [ ] Publish tests-only draft and observe clean net8/9/10 expected RED.
-- [ ] Default, prior fixtures, exact legacy diagnostics and native oracles must pass.
-- [ ] Freeze all new reference hashes before production changes.
+- [x] Publish tests-only draft and observe clean net8/9/10 expected RED.
+- [x] Default, prior fixtures, exact legacy diagnostics and native oracles must pass.
+- [x] Freeze all new reference hashes before production changes.
 
 ## Task 2: annotate and execute through existing paths
 
@@ -58,7 +58,7 @@ only for Second=1, otherwise fails. No capture mutation, source read or new path
 for participating captures. Lookbehind.cs ReferenceTarget rejects selected nodes
 with InvalidSyntax at opening before ordinary dependency checks, reusing all skips.
 
-- [ ] Implement after valid freeze.
+- [x] Implement after valid freeze.
 - [ ] Qualify every test in18 native results at zero failures/skips/warnings/errors.
 - [ ] Verify frozen35/214/120, Unicode generators, workload/parity/API/corpus,
   packaging/package-only smoke and three-OS scripts; note consumer classifier.
@@ -92,3 +92,10 @@ Scope: the nullable selected-reference proof is bounded and deliberately does
 not generalize nonnullable optional-capture/reference prefix search. The native example
 ANY/multiline ^(?:(A)?backref1)B after a split Unicode newline remains in the
 wider #102 optimizer work; the leading-B control pins priority of a mandatory first unit.
+
+Valid RED699: run43247650585/Linuxx64 job131284532504 at source
+d05a98f991131d65045e4d4925d696850608766c. Each net8/9/10 built0warnings/errors;
+61,422 total =495 expected failures +60,927 passes,0skips. All454 primary
+differences/framework match independent research; defaults, earlier fixtures,
+diagnostics/UTF and native oracle checks pass. Freeze fixture
+23ebe126b9e8096f4527e4479fdd89e7a9cb5223 before implementation.

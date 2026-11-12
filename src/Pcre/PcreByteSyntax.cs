@@ -86,7 +86,9 @@ internal sealed record PcreByteClass(
 
 internal sealed record PcreByteBackreference(
 	int Number, ReadOnlyMemory<int> DuplicateNumbers = default
-) : PcreByteNode;
+) : PcreByteNode {
+	internal bool UnsetMatchesEmpty { get; init; }
+}
 
 internal sealed record PcreByteSubroutineCall( int Number, int Offset, ReadOnlyMemory<int> ReturnedCaptures ) : PcreByteNode;
 

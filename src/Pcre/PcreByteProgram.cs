@@ -204,7 +204,10 @@ internal sealed class PcreByteProgramCompiler {
 			if ( instruction.Opcode is not ( PcreByteOpcode.CaptureStart or PcreByteOpcode.CaptureEnd
 				or PcreByteOpcode.StartLine or PcreByteOpcode.EndLine or PcreByteOpcode.EndBeforeFinalLf or PcreByteOpcode.End
 				or PcreByteOpcode.Split or PcreByteOpcode.Jump or PcreByteOpcode.AtomicEnter or PcreByteOpcode.AtomicExit
-				or PcreByteOpcode.Accept ) ) { return false; }
+				or PcreByteOpcode.Accept ) ) {
+				if ( !HasNullableUnsetBackreferencePath() ) { return false; }
+				break;
+			}
 		}
 		var pending = new Stack<PcreByteNode>();
 		if ( !AddBranches( root ) ) { return false; }
@@ -233,6 +236,56 @@ internal sealed class PcreByteProgramCompiler {
 			}
 			return true;
 		}
+	}
+
+	private bool HasNullableUnsetBackreferencePath() {
+		if ( instructions.Count > MaximumStartClassVisits ) { return false; }
+		var hasSelectedReference = false;
+		foreach ( var instruction in instructions ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( instruction.Opcode == PcreByteOpcode.Backreference ) {
+				if ( instruction.Second != 1 ) { return false; }
+				hasSelectedReference = true;
+			} else if ( instruction.Opcode is not ( PcreByteOpcode.Literal or PcreByteOpcode.Any
+				or PcreByteOpcode.Class or PcreByteOpcode.ScalarClass or PcreByteOpcode.ScalarSet or PcreByteOpcode.ScalarExpression
+				or PcreByteOpcode.CaptureStart or PcreByteOpcode.CaptureEnd or PcreByteOpcode.Start or PcreByteOpcode.SearchStart
+				or PcreByteOpcode.StartLine or PcreByteOpcode.EndLine or PcreByteOpcode.EndBeforeFinalLf or PcreByteOpcode.End
+				or PcreByteOpcode.Split or PcreByteOpcode.Jump or PcreByteOpcode.Mark or PcreByteOpcode.Progress
+				or PcreByteOpcode.AtomicEnter or PcreByteOpcode.AtomicExit or PcreByteOpcode.Accept ) ) { return false; }
+		}
+		if ( !hasSelectedReference ) { return false; }
+		// A selected unset reference can be empty, while a mandatory leading literal
+		// retains native first-character search. Prove an empty accepting
+		// path before enabling STARTLINE; keep the existing root-anchor proof.
+		var visited = new bool[instructions.Count];
+		var pending = new Stack<int>();
+		pending.Push( 0 );
+		var visits = 0;
+		while ( pending.TryPop( out var pc ) ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( (uint)pc >= (uint)instructions.Count ) { return false; }
+			if ( visited[pc] ) { continue; }
+			if ( ++visits > MaximumStartClassVisits ) { return false; }
+			visited[pc] = true;
+			var instruction = instructions[pc];
+			switch ( instruction.Opcode ) {
+				case PcreByteOpcode.Accept: return true;
+				case PcreByteOpcode.Literal:
+				case PcreByteOpcode.Any:
+				case PcreByteOpcode.Class:
+				case PcreByteOpcode.ScalarClass:
+				case PcreByteOpcode.ScalarSet:
+				case PcreByteOpcode.ScalarExpression: break;
+				case PcreByteOpcode.Split:
+					pending.Push( instruction.First );
+					pending.Push( instruction.Second );
+					break;
+				case PcreByteOpcode.Jump: pending.Push( instruction.First ); break;
+				case PcreByteOpcode.Progress: pending.Push( instruction.Second ); break;
+				default: pending.Push( pc + 1 ); break;
+			}
+		}
+		return false;
 	}
 
 	private (PcreByteNode? Atom, bool Skip) FindUtfCrLfRootStarAtom( PcreByteAlternatives root ) {
@@ -1532,7 +1585,7 @@ internal sealed class PcreByteProgramCompiler {
 				Emit( PcreByteOpcode.Class, set: characterClass.Set, caseless: characterClass.Caseless, caselessRestricted: characterClass.CaselessRestricted );
 				break;
 			case PcreByteBackreference reference:
-				Emit( PcreByteOpcode.Backreference, reference.Number, caseless: reference.Caseless,
+				Emit( PcreByteOpcode.Backreference, reference.Number, reference.UnsetMatchesEmpty ? 1 : 0, caseless: reference.Caseless,
 					caselessRestricted: reference.CaselessRestricted, captureNumbers: reference.DuplicateNumbers );
 				break;
 			case PcreByteSubroutineCall call:

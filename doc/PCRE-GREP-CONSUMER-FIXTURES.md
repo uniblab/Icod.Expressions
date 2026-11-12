@@ -3397,3 +3397,51 @@ wider optimizer/resources (#102), UTF16/exported API and realistic consumer/
 release qualification remain open. Grep stays last. See
 [design](PCRE-ANCHOR-COMPILE-OPTIONS-DESIGN.md) and
 [plan](PCRE-ANCHOR-COMPILE-OPTIONS-PLAN.md).
+
+## PR233: optional unset backreferences
+
+Internal default-false MatchUnsetBackreference implements PCRE2_MATCH_UNSET_BACKREF
+(0x200). Existing nonparticipating captures match empty without becoming set;
+capture conditions, declaration-ordered duplicate selection and participating
+empty/nonempty comparisons keep their existing semantics. Missing references
+remain errors with the established global validation order and byte diagnostics.
+
+One selected heap RewriteTree pass marks canonical Backreference nodes after
+name resolution and before condition/call/width/final-target resolution. The
+default path skips the pass. UnsetMatchesEmpty lowers into unused Backreference
+Second; null lookup advances pc only for Second=1, without source reads or
+capture/journal mutation. The existing instruction still charges work. Selected
+consumed references reject at their owning lookbehind opener, even under zero
+repeats or through calls; existing lookahead/DEFINE/FAIL skips remain shared.
+
+A bounded pure-instruction empty-path proof extends existing STARTLINE metadata
+for selected nullable references under ANY/MatchInvalidUtf. It uses at most the
+existing 1,000 start-analysis instruction/visit bound, heap storage and cancellation
+polls; the existing root line-anchor proof and matcher exclusion/physical-EOF
+rules remain authoritative. Calls/assertions/conditions/verbs are outside this
+proof. A mandatory leading-B control retains first-character search. Nonnullable
+optional-capture/reference prefixes, including ANY/multiline ^(?:(A)?backref1)B
+after a split Unicode newline, remain a known wider optimizer gap in #102.
+
+The 1,740 new cases include 1,652 independently pinned PCRE2 10.48/JIT profiles,
+32 selected width errors and 40 legacy diagnostics. Supplement all octets, UTF
+and malformed-fragment offsets, prior caller policies, owned source/options/raw
+labels, all 256 user captures, exact zero-width work, cancellation and quotas.
+Native loop arrays compile before managed comparisons. All 246 earlier test
+files remain unchanged; GNU/frozen35/214 outcomes/120 methods, API and dependencies
+are preserved. This is internal conformance work; Grep migration remains last.
+
+Expanded tests-only RED699 (run43247650585, Linux x64 job131284532504), source
+d05a98f991131d65045e4d4925d696850608766c, retained merged PR232 production.
+Each net8/9/10 built with zero warnings/errors and ran 61,422 tests: 495 expected
+failures, 60,927 passes, zero skips. The 454 primary differences/framework match
+independent native flag-off research. Default/earlier fixtures, diagnostics, UTF
+validation and native literal/oracle checks passed. Initial RED698 was provisional;
+the expanded fixture was frozen at23ebe126b9e8096f4527e4479fdd89e7a9cb5223
+before production edits. Require all 18 native results at61,422 passes and the
+existing frozen, Unicode, parity/API/corpus, resource, packaging and script gates.
+
+Other syntax/modes/directives/callouts, labels on failed/partial results, wider
+optimizer/resources (#102), UTF16/exported API and realistic consumer/release
+qualification remain open. See [design](PCRE-UNSET-BACKREFERENCES-DESIGN.md) and
+[plan](PCRE-UNSET-BACKREFERENCES-PLAN.md).
