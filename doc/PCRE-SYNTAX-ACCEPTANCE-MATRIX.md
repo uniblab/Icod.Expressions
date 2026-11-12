@@ -60,6 +60,7 @@ the matcher returns spans, leaving framing, status and output to Grep.
 | CRLF-only newline directive | Exact byte0 CRLF, last-wins with other conventions; complete-pair dot/N/anchors/comments, native fixed/variable behind ends, byte-only bounded Any+literal prefix proof | `PcreCrLfNewlineReferenceTests`; see `PCRE-CRLF-NEWLINE-DESIGN.md`; lone/pair/caller offsets, all captures/widths, fragments and resource gates |
 | ANY newline directive | Exact byte0 last-wins ANY; fixed vertical scalar list, UTF-aware anchors/comments, NUL ordinary and BSR independent; native consumed-CR midpoint anchors under ANY/ANYCRLF | `PcreAnyNewlineReferenceTests`; see `PCRE-ANY-NEWLINE-DESIGN.md`; continuation-byte controls, byte/UTF membership, spans/fragments/limits |
 | Start directives `(*UTF)`, `(*UTF8)`, `(*UCP)` | Enable existing UTF/UCP modes in the shared uninterrupted prefix before whole-source UTF validation; caller defaults retained; byte UCP now uses the byte domain | `PcreUtfStartDirectiveReferenceTests`; see `PCRE-UTF-START-DIRECTIVES-DESIGN.md`; original-byte errors, strict/tolerant subjects, global modes and work/offset protocols |
+| Start directive `(*CASELESS_RESTRICT)` | Exact uninterrupted prefix initializes the existing `(?r)` comparison policy; ordinary i/r/reset scopes remain authoritative; no VM instruction or source rewrite | `PcreCaselessRestrictDirectiveReferenceTests`; 366 controls, including 333 pinned native JIT fixtures, original-byte/UTF/offset/ownership/resource checks |
 | Start directives `(*NOTEMPTY)`, `(*NOTEMPTY_ATSTART)` | Global accumulating flags in the shared byte0 prefix; final acceptance rejects empty reported spans everywhere or only at the original caller offset, including K semantics; shared rollback/nullable fragment candidates | `PcreNotEmptyDirectiveReferenceTests`; see `PCRE-NOTEMPTY-DIRECTIVES-DESIGN.md`; same-candidate fallback, atomic/inner-success controls, UTF/CRLF offsets and resource gates |
 | `(*MARK:NAME)` / `(*:NAME)` | Successful-path raw byte label on internal match metadata;1..255-byte names, native NUL view, branch/assertion/callee rollback and positive/callee success retention | `PcrePathMarkReferenceTests`;161 independent literals plus all-offset UTF/CRLF, grammar, lifetime and shared256 marks/4096 expansion/work/cancellation; failed-attempt labels remain gated |
 | `(*THEN)` / `(*THEN:NAME)` | Delayed cut retries the nearest lexical alternative; last branch permits outer retries; all assertions/callees bound ownership; conditionals and one-branch wrappers inherit their exterior owner | `PcreThenVerbReferenceTests`;149 native literal cases, selected UTF/CRLF offsets, mixed cuts/returned captures, shared1024 frames/256 marks and work/cancellation; named labels also use PcreNamedCutReferenceTests |
@@ -2956,3 +2957,30 @@ entry-label integer. After pruning interior frames, ACCEPT compacts only the
 callee label undo interval and conditionally retains an entry-label undo. Older
 checkpoints, captures, positional marks and ordinary Return stay transactional.
 The journal scan charges work/cancellation; no arena, frame or mark slot is added.
+
+## PR224: CASELESS_RESTRICT start directive
+
+Exact leading (*CASELESS_RESTRICT) now initializes the existing (?r) policy.
+It does not enable caseless matching; caller Caseless, (?i), scoped/unset r and
+(?^) retain their native behavior. The uninterrupted prefix can repeat or mix
+with existing start directives. Original source bytes and UTF validation order
+remain authoritative. Quoted/bracket text stays literal; misplaced or nonexact
+headers retain opening-byte diagnostics.
+
+366 new controls include333 literal/profile fixtures independently checked with
+pinned native PCRE2 10.48/JIT. They cover six caller profiles, comparison forms,
+captures/calls/assertions/labels, prefix order/reset, all-offset malformed UTF/
+CRLF, work/cancellation, 256 capture/mark limits and owned source. RED672
+(run43142893767, LinuxARM64 job130933841433) built net8/9/10 with zero warnings/
+errors; each had48488 cases,351 expected new failures,48137 passes and0 skips.
+No earlier fixture or native literal oracle failed. All366 references freeze at
+5c8ddc61bd74186ed85e1a4e40c82a418a2e934c before production changes.
+
+Implementation adds one start-settings bool and initializes the existing parser
+field. It emits no VM instructions and consumes no capture/mark slots or match
+work. No matcher, Unicode table, exported API, dependency or native fallback
+changes. Earlier reference files remain unchanged. Final qualification requires
+48488 cases/framework in18 native results plus all existing qualification gates.
+Other directives, failed/partial labels, wider optimizer/resources (issue102),
+UTF16/public API and realistic consumer performance/release remain open; Grep
+stays last. See PCRE-CASELESS-RESTRICT-DIRECTIVE-DESIGN.md and its PLAN.md.

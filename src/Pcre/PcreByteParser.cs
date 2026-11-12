@@ -40,6 +40,7 @@ internal sealed partial class PcreByteParser {
 		PcreByteStartSettings settings, CancellationToken cancellationToken, bool altExtendedClass = false ) {
 		this.source = source;
 		this.caseless = caseless;
+		caselessRestricted = settings.CaselessRestricted;
 		this.altExtendedClass = altExtendedClass;
 		utf8 = settings.Utf8;
 		ucp = settings.Ucp;
