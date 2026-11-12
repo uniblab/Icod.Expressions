@@ -26,6 +26,8 @@ internal sealed partial class PcreByteParser {
 	private readonly bool allowEmptyClass;
 	private readonly bool matchWord;
 	private readonly bool matchLine;
+	private readonly bool dollarEndOnly;
+	private readonly bool altCircumflex;
 	private readonly PcreByteNewline newline;
 	private readonly List<(int Number, int Offset)> backreferences = new();
 	private int index;
@@ -62,6 +64,8 @@ internal sealed partial class PcreByteParser {
 		allowEmptyClass = options.AllowEmptyClass;
 		matchWord = options.MatchWord;
 		matchLine = options.MatchLine;
+		dollarEndOnly = options.DollarEndOnly;
+		altCircumflex = options.AltCircumflex;
 		utf8 = settings.Utf8;
 		ucp = settings.Ucp;
 		turkishCasing = settings.TurkishCasing;
@@ -231,10 +235,10 @@ internal sealed partial class PcreByteParser {
 		var value = source[index++];
 		if ( value == (byte)'(' ) { return ParseGroupOpening( offset, depth, assertionOpeningContext, out group ); }
 		if ( value == (byte)'^' ) {
-			return multiline ? new PcreByteLineAnchor( true ) : new PcreByteAnchor( true );
+			return CreateStartAnchor( multiline );
 		}
 		if ( value == (byte)'$' ) {
-			return multiline ? new PcreByteLineAnchor( false ) : new PcreByteEndBeforeFinalLf();
+			return CreateEndAnchor( multiline );
 		}
 		if ( value == (byte)'.' ) {
 			return CreateAnyCharacter( dotAll );

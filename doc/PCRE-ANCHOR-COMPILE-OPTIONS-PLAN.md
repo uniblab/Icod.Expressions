@@ -31,9 +31,9 @@ selected UTF/CRLF offsets, diagnostics, prior policies, ownership and resource
 controls. Supplemental native arrays precompile before managed comparisons.
 
 - [x] Research and pin native PCRE2 10.48/JIT profiles.
-- [ ] Publish tests-only draft and inspect clean net8/9/10 expected RED.
-- [ ] Defaults, legacy fixtures, source diagnostics and native oracles must pass.
-- [ ] Freeze the new reference before production edits.
+- [x] Publish tests-only draft and inspect clean net8/9/10 expected RED.
+- [x] Defaults, legacy fixtures, source diagnostics and native oracles must pass.
+- [x] Freeze the new reference before production edits.
 
 ## Task 2: lower canonical anchors and qualify
 
@@ -46,7 +46,7 @@ PcreByteProgram.cs emits First=1 only for selected multiline start anchors.
 PcreByteMatcher.cs StartLine retains all checks and permits the selected subject
 endpoint when First=1. No new runtime flag/opcode, source rewrite or width rules.
 
-- [ ] Implement after valid freeze.
+- [x] Implement after valid freeze.
 - [ ] Qualify all tests in18 native results with zero failures/skips/warnings/errors.
 - [ ] Verify frozen214/120 and35, Unicode generators, workload/parity/API/corpus,
   packaging/package-only smoke and three-OS scripts; note consumer classifier.
@@ -69,3 +69,15 @@ diagnostics,8 every-octet,8 selected UTF-fragment/offset,3 prior-policy,3 whole-
 3 ownership and3 canonical work/cancel/quota controls. Expected59,682/framework.
 Additional72 literal profiles and the offset loop pin variable-lookbehind
 reverse endpoint behavior. Native flag-off research is repeated below. All supplemental native arrays compile first.
+
+## Valid RED and freeze receipt
+
+Expanded tests-only source2d166f0ecd5c6f4b8b0047b2007fbd99ccf11d61,
+tree80aa5beb49ef09951cf212b484967e35e349cccf, retained merged PR231 production.
+CI695/run43228870315/Linux ARM64 job131219356070: each net8/9/10 had59,682 tests,
+245 expected option failures,59,437 passes, zero skips and zero warnings/errors.
+Primary230 exactly match native flag-off research. Defaults, original diagnostics,
+UTF validation, canonical work/cancel/limits, earlier fixtures and native oracles
+passed. Freeze2,052-case blob a3e651d589d160f68c574911733e70ad73e4baca
+before production. Initial694 was cancelled before freeze to add72 variable-
+lookbehind profiles and three offset-loop patterns. No fixture edits after freeze.

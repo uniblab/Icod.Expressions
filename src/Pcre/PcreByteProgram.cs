@@ -1562,7 +1562,8 @@ internal sealed class PcreByteProgramCompiler {
 				Emit( PcreByteOpcode.CaptureStart, 0 );
 				break;
 			case PcreByteLineAnchor lineAnchor:
-				Emit( lineAnchor.IsStart ? PcreByteOpcode.StartLine : PcreByteOpcode.EndLine );
+				Emit( lineAnchor.IsStart ? PcreByteOpcode.StartLine : PcreByteOpcode.EndLine,
+					lineAnchor.IsStart && lineAnchor.AllowSubjectEnd ? 1 : 0 );
 				break;
 			case PcreByteEndBeforeFinalLf end:
 				Emit( PcreByteOpcode.EndBeforeFinalLf, end.FragmentEnd ? 1 : 0 );

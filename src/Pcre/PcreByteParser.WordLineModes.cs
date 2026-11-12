@@ -6,8 +6,8 @@ internal sealed partial class PcreByteParser {
 		PcreByteNode start;
 		PcreByteNode end;
 		if ( matchLine ) {
-			start = entry.Multiline ? new PcreByteLineAnchor( true ) : new PcreByteAnchor( true );
-			end = entry.Multiline ? new PcreByteLineAnchor( false ) : new PcreByteEndBeforeFinalLf();
+			start = CreateStartAnchor( entry.Multiline );
+			end = CreateEndAnchor( entry.Multiline );
 		} else {
 			var unicode = ucp && ( entry.AsciiRestrictions & AsciiRestriction.BackslashW ) == AsciiRestriction.None;
 			start = new PcreByteWordBoundary( true, unicode );

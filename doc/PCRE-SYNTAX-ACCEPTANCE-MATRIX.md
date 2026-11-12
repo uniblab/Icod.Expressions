@@ -38,6 +38,7 @@ the matcher returns spans, leaving framing, status and output to Grep.
 | Caller pattern options | DotAll, Multiline, NoAutoCapture, Ungreedy, DuplicateNames, Extended and ExtendedMore initialize existing s/m/n/U/J/x/xx scopes; all default false | `PcreCallerPatternOptionReferenceTests`; 128 combinations, reset/unset/restoration, numbering, lexing, offsets, ownership and quotas |
 | Caller word/line modes | MatchWord adds outer word boundaries; MatchLine adds entry-policy line anchors and takes precedence; implicit noncapturing scope preserves source bytes/captures | `PcreWordLineModeReferenceTests`; all selections, local options, six newlines, recursion/cuts, offsets, diagnostics, ownership and quotas |
 | Caller ASCII type policies | AsciiBsS, AsciiBsW, AsciiPosix and AsciiDigit initialize independent existing mask bits beside AsciiBsD; source scopes/unsets/reset stay native | PcreCallerAsciiPolicyReferenceTests; all32 combinations/modes, POSIX/algebra, outer word policy, offsets, ownership and quotas |
+| Caller anchor options | DollarEndOnly restricts non-multiline dollar to end; AltCircumflex permits multiline caret after a final newline; local m and line-wrapper entry scopes stay native | PcreAnchorCompileOptionReferenceTests; six newlines, fixed/variable assertion ends, UTF offsets, labels, ownership and quotas |
 | Ordinary `[ ]` ranges, negation, shorthand unions, 14 POSIX names | Supported subset in byte and UTF modes; ordinary bracket grammar unchanged, Perl algebra listed separately | Bracket and POSIX tests; Unicode table/version reconciliation |
 | `\p`/`\P` general categories and special properties | Byte/UTF categories plus Any/Xan/Xps/Xsp/Xwd/Xuc; loose names, P/caret complements and property predicates independent of UCP/ASCII/i/r. Category-prefixed aliases remain a library extension for categories only. UTF class source operands/endpoints preserve CR/LF flags before folding, including the native negated-singleton exception. Scripts/scx now have pinned Unicode17 data; binary/Bidi properties now have pinned native data | `PcreBytePropertyReferenceTests`, `PcreSpecialPropertyReferenceTests`, `PcreClassNewlineMetadataReferenceTests`, `PcreUtf8GeneralCategoryTests`; see `PCRE-SPECIAL-PROPERTIES-DESIGN.md`; Unicode17 categories and default simple-case mappings are pinned; byte search-optimization parity remains a gate |
 | Unicode script/scx properties | All175 scripts/344 normalized long, short and legacy aliases; bare names are scx, explicit sc/Script and scx/Script_Extensions, native primary-or-extension membership, byte projection and mixed predicates | `PcreScriptPropertyReferenceTests`, 3508 native boundaries and source-hash/native-fingerprint-checked regeneration; script-run groups remain separate |
@@ -3259,3 +3260,46 @@ wider optimizer/resources (#102), UTF16/exported API and realistic consumer/
 release qualification remain open. Grep stays last. See
 [design](PCRE-CALLER-ASCII-POLICIES-DESIGN.md) and
 [plan](PCRE-CALLER-ASCII-POLICIES-PLAN.md).
+
+## PR232: dollar and circumflex compile options
+
+Internal default-false DollarEndOnly and AltCircumflex implement native flags
+0x10 and 0x200000. DollarEndOnly makes non-multiline dollar require the selected
+subject end, while multiline dollar ignores it and backslash-Z/z stay unchanged.
+Alternate multiline caret can match after a final newline. Local m, unsets and
+reset still choose each source anchor; MatchLine guards use their entry snapshot.
+
+Shared parser helpers lower ordinary and synthetic anchors. DollarEndOnly selects
+the existing absolute-end node. One default-false AllowSubjectEnd property on
+existing LineAnchor lowers into the unused StartLine First operand. First=1 only
+extends the endpoint bound; fragment/context, excluded candidate, newline and
+Step checks stay shared. Default operands are unchanged. No new AST node, opcode,
+program-global runtime mode, source rewrite, API, dependency or width rule.
+
+The 2,052 new cases include 1,984 independently pinned PCRE2 10.48/JIT profiles.
+All four selections, initial/local/reset multiline, six newlines, empty lines,
+absolute anchors, fixed/variable lookbehind endpoints, assertions/calls, cuts/
+ACCEPT/K, labels and line wrappers are pinned. Supplemental controls cover 40
+exact diagnostics, every octet, selected malformed-UTF/CRLF/Unicode-newline
+offsets, prior caller policies, UTF validation, owned options/source/raw labels,
+canonical work, cancellation and quotas. All native loop arrays compile before
+managed matching. All 245 earlier test files remain hash-identical.
+
+Before freeze, add 72 variable-lookbehind profiles and the same patterns to the
+offset loop; the initial run694 was cancelled. Valid expanded tests-only RED695
+(run43228870315, Linux ARM64 job131219356070), source
+2d166f0ecd5c6f4b8b0047b2007fbd99ccf11d61, retained merged PR231 production.
+net8/9/10 each built with zero warnings/errors and ran 59,682 tests: 245 expected
+option-dependent failures, 59,437 passes and zero skips. The 230 primary failures
+exactly match independent native flag-off research. Defaults, original diagnostics,
+UTF validation, canonical work/cancellation/limits, earlier fixtures and native
+literal/oracle checks passed. Freeze the 2,052-case reference at
+a3e651d589d160f68c574911733e70ad73e4baca before production changes.
+Final qualification requires 59,682 tests in 18 native results and the existing
+frozen, Unicode, parity, resource and packaging gates.
+
+Other modes/directives/callouts, failed/partial labels, UTF code-unit escapes,
+wider optimizer/resources (#102), UTF16/exported API and realistic consumer/
+release qualification remain open. Grep stays last. See
+[design](PCRE-ANCHOR-COMPILE-OPTIONS-DESIGN.md) and
+[plan](PCRE-ANCHOR-COMPILE-OPTIONS-PLAN.md).

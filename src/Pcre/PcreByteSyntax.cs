@@ -96,7 +96,9 @@ internal sealed record PcreByteSearchStart : PcreByteNode;
 
 internal sealed record PcreByteMatchStartReset : PcreByteNode;
 
-internal sealed record PcreByteLineAnchor( bool IsStart ) : PcreByteNode;
+internal sealed record PcreByteLineAnchor( bool IsStart ) : PcreByteNode {
+	internal bool AllowSubjectEnd { get; init; }
+}
 
 internal sealed record PcreByteEndBeforeFinalLf( bool FragmentEnd = false ) : PcreByteNode;
 
