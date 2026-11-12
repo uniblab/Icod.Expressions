@@ -16,7 +16,10 @@ serve ordinary source and implicit line wrappers. DollarEndOnly selects the
 existing absolute-end node outside multiline. Existing LineAnchor gains only a
 default-false AllowSubjectEnd init property, lowered into the unused First operand
 of StartLine. The matcher extends the existing end bound for First=1, preserving
-newline recognition, fragment start/context, excluded candidate and Step charging.
+newline recognition, fragment start/context and Step charging. At physical EOF
+only, alternate caret bypasses the partial-newline candidate exclusion: native
+newline search still retries EOF before the backward anchor check. Nonterminal
+excluded candidates and defaults stay fixed.
 No new AST node, opcode or program-global runtime mode is needed.
 
 A separate opcode would duplicate the canonical guard; filtering completed

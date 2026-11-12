@@ -3272,8 +3272,8 @@ reset still choose each source anchor; MatchLine guards use their entry snapshot
 Shared parser helpers lower ordinary and synthetic anchors. DollarEndOnly selects
 the existing absolute-end node. One default-false AllowSubjectEnd property on
 existing LineAnchor lowers into the unused StartLine First operand. First=1 only
-extends the endpoint bound; fragment/context, excluded candidate, newline and
-Step checks stay shared. Default operands are unchanged. No new AST node, opcode,
+extends the endpoint bound; only physical EOF may bypass the existing partial-
+newline candidate exclusion. Fragment/context, newline and Step checks stay shared. Default operands are unchanged. No new AST node, opcode,
 program-global runtime mode, source rewrite, API, dependency or width rule.
 
 The 2,052 new cases include 1,984 independently pinned PCRE2 10.48/JIT profiles.
@@ -3297,6 +3297,15 @@ literal/oracle checks passed. Freeze the 2,052-case reference at
 a3e651d589d160f68c574911733e70ad73e4baca before production changes.
 Final qualification requires 59,682 tests in 18 native results and the existing
 frozen, Unicode, parity, resource and packaging gates.
+
+CI696 (run43230182090, source11ce5fca1895033920bc694392084202c5ba9173)
+passed 59,678/59,682 per framework and exposed four selected-offset failures.
+The native STARTLINE newline scan retries physical EOF even if a requested byte
+offset splits its final UTF newline; alternate caret can then accept backward
+newline context. Preserve the partial-newline candidate exclusion except for
+StartLine.First=1 at physical input end. Native probes distinguish final LS/PS
+from the same scalar before trailing text. The frozen offset loop already pins
+this regression; no fixture changes. Final qualification must include this fix.
 
 Other modes/directives/callouts, failed/partial labels, UTF code-unit escapes,
 wider optimizer/resources (#102), UTF16/exported API and realistic consumer/

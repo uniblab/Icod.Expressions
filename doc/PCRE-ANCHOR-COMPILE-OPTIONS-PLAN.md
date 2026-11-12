@@ -44,7 +44,9 @@ PcreByteParser.WordLineModes.cs to reuse these helpers with entry.Multiline.
 PcreByteSyntax.cs adds default-false AllowSubjectEnd to existing LineAnchor.
 PcreByteProgram.cs emits First=1 only for selected multiline start anchors.
 PcreByteMatcher.cs StartLine retains all checks and permits the selected subject
-endpoint when First=1. No new runtime flag/opcode, source rewrite or width rules.
+endpoint when First=1, including native physical-EOF retry after a split Unicode
+newline. Keep nonterminal/default partial-newline candidate exclusions. No new
+runtime flag/opcode, source rewrite or width rules.
 
 - [x] Implement after valid freeze.
 - [ ] Qualify all tests in18 native results with zero failures/skips/warnings/errors.
@@ -81,3 +83,14 @@ UTF validation, canonical work/cancel/limits, earlier fixtures and native oracle
 passed. Freeze2,052-case blob a3e651d589d160f68c574911733e70ad73e4baca
 before production. Initial694 was cancelled before freeze to add72 variable-
 lookbehind profiles and three offset-loop patterns. No fixture edits after freeze.
+
+## Runtime endpoint correction
+
+CI696/source11ce5fca1895033920bc694392084202c5ba9173 built cleanly and passed
+59,678/59,682 per framework. Four frozen offset-loop cases expose native physical-
+EOF retry after starting inside final LS/PS. Native fast_forward_newline lastchar
+jumps to an EOF candidate; alternate OP_CIRCM may accept backward context there.
+Allow only StartLine.First=1 at input.Length to bypass excludedLineStart, retaining
+all nonterminal/default exclusions and other checks. Existing CI696 failures are
+RED for this correction; frozen reference a3e651d589d160f68c574911733e70ad73e4baca
+is unchanged. Final full-suite qualification must include the correction.

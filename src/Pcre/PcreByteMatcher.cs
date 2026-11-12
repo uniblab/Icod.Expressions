@@ -633,7 +633,11 @@ internal static partial class PcreByteMatcher {
 							if ( position == absoluteEnd ) { pc++; } else { failed = true; }
 							break;
 						case PcreByteOpcode.StartLine:
-							if ( position == excludedLineStart ) { failed = true; break; }
+							// Native newline search still retries physical EOF when the
+							// requested offset splits the alternate caret's final newline.
+							if ( position == excludedLineStart && ( instruction.First != 1 || position != input.Length ) ) {
+								failed = true; break;
+							}
 							if ( position == 0 || ( position > fragment.Start
 							&& ( position < subjectEnd || position == subjectEnd && ( position < absoluteEnd || instruction.First == 1 ) )
 								&& ( program.Newline == PcreByteNewline.Any
