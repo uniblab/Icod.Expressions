@@ -2,7 +2,8 @@ namespace Icod.Expressions.Pcre;
 
 /// <summary>Global prefix choices resolved once before whole-pattern validation.</summary>
 internal readonly record struct PcreByteStartSettings(
-	bool Utf8, bool Ucp, PcreByteNewline Newline, bool BsrAnyCrLf, bool NotEmpty, bool NotEmptyAtStart, int BodyOffset
+	bool Utf8, bool Ucp, PcreByteNewline Newline, bool BsrAnyCrLf, bool NotEmpty, bool NotEmptyAtStart, int BodyOffset,
+	bool CaselessRestricted
 ) {
 	internal static PcreByteStartSettings Parse( ReadOnlySpan<byte> source, PcreByteOptions options,
 		CancellationToken cancellationToken ) {
@@ -12,6 +13,7 @@ internal readonly record struct PcreByteStartSettings(
 		var bsrAnyCrLf = options.BsrAnyCrLf;
 		var notEmpty = false;
 		var notEmptyAtStart = false;
+		var caselessRestricted = false;
 		var offset = 0;
 		// PCRE processes an uninterrupted prefix before ordinary options/trivia.
 		// Keep the original source and body index for validation and diagnostics.
@@ -20,6 +22,7 @@ internal readonly record struct PcreByteStartSettings(
 			if ( TryConsume( source, ref offset, "(*UTF)"u8 )
 				|| TryConsume( source, ref offset, "(*UTF8)"u8 ) ) { utf8 = true; }
 			else if ( TryConsume( source, ref offset, "(*UCP)"u8 ) ) { ucp = true; }
+			else if ( TryConsume( source, ref offset, "(*CASELESS_RESTRICT)"u8 ) ) { caselessRestricted = true; }
 			else if ( TryConsume( source, ref offset, "(*LF)"u8 ) ) { newline = PcreByteNewline.Lf; }
 			else if ( TryConsume( source, ref offset, "(*ANYCRLF)"u8 ) ) { newline = PcreByteNewline.AnyCrLf; }
 			else if ( TryConsume( source, ref offset, "(*CR)"u8 ) ) { newline = PcreByteNewline.Cr; }
@@ -32,7 +35,7 @@ internal readonly record struct PcreByteStartSettings(
 			else if ( TryConsume( source, ref offset, "(*NOTEMPTY_ATSTART)"u8 ) ) { notEmptyAtStart = true; }
 			else { break; }
 		}
-		return new( utf8, ucp, newline, bsrAnyCrLf, notEmpty, notEmptyAtStart, offset );
+		return new( utf8, ucp, newline, bsrAnyCrLf, notEmpty, notEmptyAtStart, offset, caselessRestricted );
 	}
 
 	private static bool TryConsume( ReadOnlySpan<byte> source, ref int offset, ReadOnlySpan<byte> directive ) {

@@ -3049,3 +3049,30 @@ entry-label integer. After pruning interior frames, ACCEPT compacts only the
 callee label undo interval and conditionally retains an entry-label undo. Older
 checkpoints, captures, positional marks and ordinary Return stay transactional.
 The journal scan charges work/cancellation; no arena, frame or mark slot is added.
+
+## PR224: CASELESS_RESTRICT start directive
+
+Exact leading (*CASELESS_RESTRICT) now initializes the existing (?r) policy.
+It does not enable caseless matching; caller Caseless, (?i), scoped/unset r and
+(?^) retain their native behavior. The uninterrupted prefix can repeat or mix
+with existing start directives. Original source bytes and UTF validation order
+remain authoritative. Quoted/bracket text stays literal; misplaced or nonexact
+headers retain opening-byte diagnostics.
+
+366 new controls include333 literal/profile fixtures independently checked with
+pinned native PCRE2 10.48/JIT. They cover six caller profiles, comparison forms,
+captures/calls/assertions/labels, prefix order/reset, all-offset malformed UTF/
+CRLF, work/cancellation, 256 capture/mark limits and owned source. RED672
+(run43142893767, LinuxARM64 job130933841433) built net8/9/10 with zero warnings/
+errors; each had48488 cases,351 expected new failures,48137 passes and0 skips.
+No earlier fixture or native literal oracle failed. All366 references freeze at
+5c8ddc61bd74186ed85e1a4e40c82a418a2e934c before production changes.
+
+Implementation adds one start-settings bool and initializes the existing parser
+field. It emits no VM instructions and consumes no capture/mark slots or match
+work. No matcher, Unicode table, exported API, dependency or native fallback
+changes. Earlier reference files remain unchanged. Final qualification requires
+48488 cases/framework in18 native results plus all existing qualification gates.
+Other directives, failed/partial labels, wider optimizer/resources (issue102),
+UTF16/public API and realistic consumer performance/release remain open; Grep
+stays last. See PCRE-CASELESS-RESTRICT-DIRECTIVE-DESIGN.md and its PLAN.md.
