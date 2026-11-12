@@ -128,11 +128,11 @@ public sealed class PcrePruneVerbReferenceTests {
 	}
 
 	[Theory]
-	[InlineData( "(*PRUNE:a)" )]
-	[InlineData( "(*PRUNE:)" )]
+	[InlineData( "(*PRUNE :a)" )]
+	[InlineData( "(*PRUNEX:a)" )]
 	[InlineData( "(*prune)" )]
 	[InlineData( "(*PRUNEx)" )]
-	public void NamedAndNonExactHeadersRemainExplicitlyUnsupported( string pattern ) {
+	public void NonExactHeadersRemainExplicitlyUnsupported( string pattern ) {
 		var result = PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( pattern ) );
 		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
 		Assert.Equal( 0, result.Diagnostic?.ByteOffset );

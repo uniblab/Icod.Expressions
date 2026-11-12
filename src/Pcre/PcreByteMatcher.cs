@@ -299,6 +299,13 @@ internal static partial class PcreByteMatcher {
 									PcreByteOpcode.Commit => FrameKind.Commit,
 									PcreByteOpcode.Skip or PcreByteOpcode.SkipNamed => FrameKind.Skip, _ => FrameKind.Prune
 								}, CallScope: activeCall ) );
+							if ( instruction.PropertyValue > 0 ) {
+								// Named PRUNE/COMMIT/THEN share the label journal and their
+								// cut checkpoint. They do not create named-SKIP history.
+								var cutLabelSlot = instruction.PropertyValue - 1;
+								changes.Add( new( StateKind.Mark, cutLabelSlot, marks[cutLabelSlot], null ) );
+								marks[cutLabelSlot] = pc + 1;
+							}
 							pc++;
 							break;
 						case PcreByteOpcode.Fail:

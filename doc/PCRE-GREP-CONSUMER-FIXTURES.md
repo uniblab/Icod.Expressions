@@ -2940,3 +2940,52 @@ Full applicable native CI and author review remain readiness gates. Other verb
 arguments, failed-attempt labels, directives/callouts, UTF C, wider optimizer/
 resource conformance, UTF16/exported API, realistic consumer performance and
 release remain open. Grep stays last.
+
+## PR222: named PRUNE, COMMIT and THEN labels
+
+Named PRUNE/COMMIT/THEN report the latest successful-path label while retaining
+existing delayed cut semantics, lexical THEN ownership and selected returned
+captures. Their names never become named-SKIP targets. Default raw-byte names
+have255-byte limits and NUL-terminated views; empty arguments are unnamed and
+keep the previous label. Names retain compiler-owned memory and original-byte
+validation, direct-repeat rejection and zero-width metadata.
+
+Optional raw-name operands on the existing three nodes lower to one cut opcode
+and one saved frame. PropertyValue stores label-slot-plus-one, zero for unnamed;
+immutable Bytes stores the visible name. Save the cut checkpoint, then journal
+its instruction+1 in the shared lazy label slot. Accept/Return and ordinary/
+assertion/atomic/callee rollback reuse existing label transactions. Only actual
+MARK opcodes create lookup history. The existing bounded atomic-assertion
+metadata walk additionally recognizes nonempty named PRUNE/COMMIT, including
+nested/erased/DEFINE bodies; read-only and non-atomic rules remain unchanged.
+
+Shared1024 frames,256 marks,4096 compilation and work/cancellation bounds stay
+fixed. Quota cases verify names add neither lookup frames nor a second label
+slot; equivalent root cuts preserve charged instruction transitions. COMMIT
+entry and PRUNE literal-cache proofs retain their bounded typed-node behavior;
+issue102 remains open. Exported API, dependencies and GNU/BRE/ERE are unchanged.
+
+RED665 run43123733053/LinuxARM64 job130870437646 built net8/9/10 with zero
+warnings/errors. Each framework reported47792 cases:524 expected new failures,
+47268 passes,0 skips. No earlier fixture or native literal oracle failed.
+All543 new cases freeze at5abcbcb335d641e9a7e454c0b58f341f9a0a3f5b.
+502 literal/profile fixtures were independently checked in988 native executions;
+offset/UTF/CRLF, labels/captures/mixed cuts, grammar/raw/NUL/length, shared quotas,
+expansion/work/cancellation and ownership controls qualify the increment.
+Native-only NO_JIT on large all-success resource controls avoids the default
+native JIT-stack ceiling. Scoped cuts use the pinned PCRE2 10.48 JIT oracle;
+failed-attempt label reporting remains a separate gate.
+
+Six obsolete managed header-rejection inventory rows retarget to nonexact
+headers; all native matching/capture source in the three old cut files remains
+unchanged outside those blocks. Pending group-alias/syntax inventories advance
+to named ACCEPT; the native characterization still asserts0:1, and its managed
+opening-byte inventory follows the new input. New and revised references remain
+fixed after RED. Historical GNU/frozen35/frozen214/120, earlier native matching/
+capture expectations, MARK and named-SKIP reference blobs remain intact. See
+PCRE-NAMED-CUTS-DESIGN.md and PCRE-NAMED-CUTS-PLAN.md.
+
+Full applicable native CI and author review gate readiness. Named ACCEPT/FAIL,
+failed/partial labels, directives/callouts, UTF C, wider optimizer/resources,
+UTF16/exported API, realistic consumer performance and release remain open.
+Grep stays last.

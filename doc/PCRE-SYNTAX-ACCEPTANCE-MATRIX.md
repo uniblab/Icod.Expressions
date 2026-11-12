@@ -62,11 +62,11 @@ the matcher returns spans, leaving framing, status and output to Grep.
 | Start directives `(*UTF)`, `(*UTF8)`, `(*UCP)` | Enable existing UTF/UCP modes in the shared uninterrupted prefix before whole-source UTF validation; caller defaults retained; byte UCP now uses the byte domain | `PcreUtfStartDirectiveReferenceTests`; see `PCRE-UTF-START-DIRECTIVES-DESIGN.md`; original-byte errors, strict/tolerant subjects, global modes and work/offset protocols |
 | Start directives `(*NOTEMPTY)`, `(*NOTEMPTY_ATSTART)` | Global accumulating flags in the shared byte0 prefix; final acceptance rejects empty reported spans everywhere or only at the original caller offset, including K semantics; shared rollback/nullable fragment candidates | `PcreNotEmptyDirectiveReferenceTests`; see `PCRE-NOTEMPTY-DIRECTIVES-DESIGN.md`; same-candidate fallback, atomic/inner-success controls, UTF/CRLF offsets and resource gates |
 | `(*MARK:NAME)` / `(*:NAME)` | Successful-path raw byte label on internal match metadata;1..255-byte names, native NUL view, branch/assertion/callee rollback and positive/callee success retention | `PcrePathMarkReferenceTests`;161 independent literals plus all-offset UTF/CRLF, grammar, lifetime and shared256 marks/4096 expansion/work/cancellation; other verb arguments and failed-attempt labels remain gated |
-| No-argument `(*THEN)` | Delayed cut retries the nearest lexical alternative; last branch permits outer retries; all assertions/callees bound ownership; conditionals and one-branch wrappers inherit their exterior owner | `PcreThenVerbReferenceTests`;149 native literal cases, selected UTF/CRLF offsets, mixed cuts/returned captures, shared1024 frames/256 marks and work/cancellation; named forms pending |
-| No-argument `(*COMMIT)` | Delayed saved cut terminates the root search; shared call/negative/conditional assertion catches and selected callee values; bounded first-code-unit entry before leading COMMIT | `PcreCommitVerbReferenceTests`; native literal spans, rightmost mixed cuts, UTF malformed lead bytes/all selected offsets, shared frame/work/cancellation limits; named arguments pending |
+| `(*THEN)` / `(*THEN:NAME)` | Delayed cut retries the nearest lexical alternative; last branch permits outer retries; all assertions/callees bound ownership; conditionals and one-branch wrappers inherit their exterior owner | `PcreThenVerbReferenceTests`;149 native literal cases, selected UTF/CRLF offsets, mixed cuts/returned captures, shared1024 frames/256 marks and work/cancellation; named labels also use PcreNamedCutReferenceTests |
+| `(*COMMIT)` / `(*COMMIT:NAME)` | Delayed saved cut terminates the root search; shared call/negative/conditional assertion catches and selected callee values; bounded first-code-unit entry before leading COMMIT | `PcreCommitVerbReferenceTests`; native literal spans, rightmost mixed cuts, UTF malformed lead bytes/all selected offsets, shared frame/work/cancellation limits; named labels also use PcreNamedCutReferenceTests |
 | `(*SKIP)` / `(*SKIP:)` | Shared PRUNE scope catches; strictly forward root restart at the verb byte position, equal/backward normal bumpalong; native direct LF/EOF candidate entry | `PcreSkipVerbReferenceTests`; literal JIT spans, UTF fragments, K/assertions/behind/calls, mixed cuts and shared1024 frames/work/cancellation; named form below |
 | `(*SKIP:NAME)` | Newest matching visible MARK supplies root restart; missing root names ignored; local assertion/callee JIT quits; empty argument is unnamed SKIP | `PcreNamedSkipReferenceTests`;231 cases, raw/NUL names, atomic/returned history visibility, UTF/CRLF offsets, shared1024 history/cut frames,256 slots, compilation/work/cancellation |
-| No-argument `(*PRUNE)` | Saves a bounded backtracking cut; root resumes candidate search, calls/negative/conditional assertions catch, standalone positive assertions propagate; atomic success discards interior cuts | `PcrePruneVerbReferenceTests`; native selected pre-verb returned-capture edge, recursion/repeats/behind, UTF/CRLF offsets, 1024 saved-frame boundary and shared work/cancellation; named arguments pending |
+| `(*PRUNE)` / `(*PRUNE:NAME)` | Saves a bounded backtracking cut; root resumes candidate search, calls/negative/conditional assertions catch, standalone positive assertions propagate; atomic success discards interior cuts | `PcrePruneVerbReferenceTests`; native selected pre-verb returned-capture edge, recursion/repeats/behind, UTF/CRLF offsets, 1024 saved-frame boundary and shared work/cancellation; named labels also use PcreNamedCutReferenceTests |
 | No-argument `(*ACCEPT)` | Immediate successful root/assertion/call termination, same-level capture closes, committed scope choices, ordinary greedy/lazy/possessive repeats; callee synthetic closes follow pinned native JIT behavior | `PcreAcceptVerbReferenceTests`; K/NOTEMPTY rollback, nested/conditional/non-atomic assertions, width tails, recursive/returned calls, script/atomic bypass, UTF fragments and shared limits; named arguments remain pending |
 | No-argument `(*FAIL)` / `(*F)` | Unconditional zero-consumption failure through shared rollback; nonrepeatable directly, grouped repeats ordinary; direct failure ends consumed-width branch and suppresses nested behinds in its width tail, while global validation/full lexical metadata remain | `PcreFailureVerbReferenceTests`; see `PCRE-FAILURE-VERBS-DESIGN.md`; captures/scopes/widths, malformed offsets, fragments and resource bounds; arguments/other verbs pending |
 | Ordinary bracket `\g`/`\k` | Literal g/k only; following names, delimiters and digits remain class source; outside reference/call grammar unchanged | `PcreBracketReferenceEscapeTests`; see `PCRE-BRACKET-REFERENCE-ESCAPES-DESIGN.md`; ranges/folding/quotes/widths/captures and original-byte/resource protocols |
@@ -2847,3 +2847,52 @@ Full applicable native CI and author review remain readiness gates. Other verb
 arguments, failed-attempt labels, directives/callouts, UTF C, wider optimizer/
 resource conformance, UTF16/exported API, realistic consumer performance and
 release remain open. Grep stays last.
+
+## PR222: named PRUNE, COMMIT and THEN labels
+
+Named PRUNE/COMMIT/THEN report the latest successful-path label while retaining
+existing delayed cut semantics, lexical THEN ownership and selected returned
+captures. Their names never become named-SKIP targets. Default raw-byte names
+have255-byte limits and NUL-terminated views; empty arguments are unnamed and
+keep the previous label. Names retain compiler-owned memory and original-byte
+validation, direct-repeat rejection and zero-width metadata.
+
+Optional raw-name operands on the existing three nodes lower to one cut opcode
+and one saved frame. PropertyValue stores label-slot-plus-one, zero for unnamed;
+immutable Bytes stores the visible name. Save the cut checkpoint, then journal
+its instruction+1 in the shared lazy label slot. Accept/Return and ordinary/
+assertion/atomic/callee rollback reuse existing label transactions. Only actual
+MARK opcodes create lookup history. The existing bounded atomic-assertion
+metadata walk additionally recognizes nonempty named PRUNE/COMMIT, including
+nested/erased/DEFINE bodies; read-only and non-atomic rules remain unchanged.
+
+Shared1024 frames,256 marks,4096 compilation and work/cancellation bounds stay
+fixed. Quota cases verify names add neither lookup frames nor a second label
+slot; equivalent root cuts preserve charged instruction transitions. COMMIT
+entry and PRUNE literal-cache proofs retain their bounded typed-node behavior;
+issue102 remains open. Exported API, dependencies and GNU/BRE/ERE are unchanged.
+
+RED665 run43123733053/LinuxARM64 job130870437646 built net8/9/10 with zero
+warnings/errors. Each framework reported47792 cases:524 expected new failures,
+47268 passes,0 skips. No earlier fixture or native literal oracle failed.
+All543 new cases freeze at5abcbcb335d641e9a7e454c0b58f341f9a0a3f5b.
+502 literal/profile fixtures were independently checked in988 native executions;
+offset/UTF/CRLF, labels/captures/mixed cuts, grammar/raw/NUL/length, shared quotas,
+expansion/work/cancellation and ownership controls qualify the increment.
+Native-only NO_JIT on large all-success resource controls avoids the default
+native JIT-stack ceiling. Scoped cuts use the pinned PCRE2 10.48 JIT oracle;
+failed-attempt label reporting remains a separate gate.
+
+Six obsolete managed header-rejection inventory rows retarget to nonexact
+headers; all native matching/capture source in the three old cut files remains
+unchanged outside those blocks. Pending group-alias/syntax inventories advance
+to named ACCEPT; the native characterization still asserts0:1, and its managed
+opening-byte inventory follows the new input. New and revised references remain
+fixed after RED. Historical GNU/frozen35/frozen214/120, earlier native matching/
+capture expectations, MARK and named-SKIP reference blobs remain intact. See
+PCRE-NAMED-CUTS-DESIGN.md and PCRE-NAMED-CUTS-PLAN.md.
+
+Full applicable native CI and author review gate readiness. Named ACCEPT/FAIL,
+failed/partial labels, directives/callouts, UTF C, wider optimizer/resources,
+UTF16/exported API, realistic consumer performance and release remain open.
+Grep stays last.

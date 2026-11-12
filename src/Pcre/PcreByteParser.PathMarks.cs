@@ -24,6 +24,20 @@ internal sealed partial class PcreByteParser {
 		return new PcreByteNamedSkip( name );
 	}
 
+	private PcreByteNode? TryParseNamedCut() {
+		if ( TryConsumeGroupAlias( "*PRUNE:"u8 ) ) { return new PcreBytePrune( ReadControlVerbName( "PRUNE", requireName: false ) ); }
+		if ( TryConsumeGroupAlias( "*COMMIT:"u8 ) ) { return new PcreByteCommit( ReadControlVerbName( "COMMIT", requireName: false ) ); }
+		if ( TryConsumeGroupAlias( "*THEN:"u8 ) ) {
+			HasThen = true;
+			return new PcreByteThen( ReadControlVerbName( "THEN", requireName: false ) );
+		}
+		var remainder = source.AsSpan( index );
+		if ( remainder.SequenceEqual( "*PRUNE"u8 ) || remainder.SequenceEqual( "*COMMIT"u8 ) || remainder.SequenceEqual( "*THEN"u8 ) ) {
+			throw Invalid( source.Length, "unterminated control verb header" );
+		}
+		return null;
+	}
+
 	private ReadOnlyMemory<byte> ReadControlVerbName( string verb, bool requireName ) {
 		var start = index;
 		// Without ALT_VERBNAMES, backslashes and extended-mode trivia are raw

@@ -201,11 +201,11 @@ public sealed class PcreThenVerbReferenceTests {
 	}
 
 	[Theory]
-	[InlineData( "(*THEN:a)" )]
-	[InlineData( "(*THEN:)" )]
+	[InlineData( "(*THEN :a)" )]
+	[InlineData( "(*THENX:a)" )]
 	[InlineData( "(*then)" )]
 	[InlineData( "(*THENx)" )]
-	public void NamedAndNonExactHeadersRemainExplicitlyUnsupported( string pattern ) {
+	public void NonExactHeadersRemainExplicitlyUnsupported( string pattern ) {
 		var result = PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( pattern ) );
 		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code );
 		Assert.Equal( 0, result.Diagnostic?.ByteOffset );
