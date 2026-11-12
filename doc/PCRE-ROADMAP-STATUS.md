@@ -64,8 +64,11 @@ errors,298 expected new failures and47806 passes each,48104 total.266 literal/
 profile fixtures were checked in526 native executions. Six non-atomic ACCEPT
 fixtures use the normal native matcher after native JIT_UNSUPPORTED, an explicit
 finite qualification matching the existing oracle. Obsolete managed inventories
-advance while native matching/capture expectations remain fixed. Full18-result
-native CI and author review gate readiness.
+advance while native matching/capture expectations remain fixed. The18 accepted-call regression controls freeze after clean RED670 with10
+expected label failures and no other failures. The correction preserves native
+accepted-call labels using bounded lexical local-quit metadata and the shared
+journal. Final qualification requires48122 cases per framework in18 native
+results (330 new cases), plus author review.
 
 Failed/partial labels, remaining directives/callouts, UTF C, wider optimizer/
 resources (issue102), UTF16/exported API and realistic consumer performance/

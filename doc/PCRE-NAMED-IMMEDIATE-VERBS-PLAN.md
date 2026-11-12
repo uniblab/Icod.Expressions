@@ -39,7 +39,7 @@ TryParseNamedImmediateVerb, existing CompilePathMark and CompileAccept.
 - [x] Compile nonempty names through PathMark before EarlyAccept/Fail, inside
   any ACCEPT quantifier. Empty/erased names allocate no runtime label slot.
 - [x] Extend lexical atomic history metadata to both nonempty immediate names.
-- [ ] Qualify full native CI:48104 cases per framework,18 results, zero
+- [ ] Qualify full native CI:48122 cases per framework,18 results, zero
   failures/skips/build warnings/errors and frozen214/120 in every result.
 
 ## Task3: review and ready
@@ -70,7 +70,15 @@ PcreAcceptedCallLabelReferenceTests (18 cases,36 native profiles) before the fix
 
 - [x] Reproduce native normal/accepted returns and lexical quit contrast; read
   JIT accepted-call exit and kept-shared label copy rules.
-- [ ] Qualify separate RED and freeze18 controls; original312 refs unchanged.
-- [ ] Add bounded per-target lexical-quit Call metadata and charged label-only
+- [x] Qualify separate RED and freeze18 controls; original312 refs unchanged.
+- [x] Add bounded per-target lexical-quit Call metadata and charged label-only
   journal compaction at accepted-callee exit; preserve older checkpoints.
 - [ ] Qualify final48122 cases/framework across18 native results.
+
+Regression RED670 run43131153280/LinuxARM64 job130895492087 compiled net8/9/10
+with zero warnings/errors. Each had48122 cases:10 expected label failures
+(original1 plus9 regressions),48112 passes,0 skips, no other/native-oracle
+failures. All18 controls freeze at0f04bd2028ac018faa111de758997b7da999b30e;
+original312 remain at1d87fd94a6e71f5b92340a518c25ae3689cb0004. Production fixes
+only accepted-call label undo, using bounded lexical metadata and the existing
+CallScope entry-label snapshot; normal Return and older checkpoints remain.

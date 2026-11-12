@@ -705,7 +705,8 @@ internal static partial class PcreByteMatcher {
 							backtrack.Push( new Frame( pc + 1, position, changes.Count, atomicDepths.Count,
 								activeScope, FrameKind.Call, CallScope: activeCall ) );
 							var callId = callScopes.Count;
-							callScopes.Add( new( pc + 1, activeCall, changes.Count, instruction.Second, activeScope, backtrack.Count ) );
+							callScopes.Add( new( pc + 1, activeCall, changes.Count, instruction.Second, activeScope, backtrack.Count,
+								program.PathMarkSlot >= 0 ? marks[program.PathMarkSlot] : 0 ) );
 							activeCall = callId;
 							pc = instruction.First;
 							break;
@@ -722,10 +723,27 @@ internal static partial class PcreByteMatcher {
 							if ( activeCall >= 0 && callScopes![activeCall].AssertionScope == activeScope ) {
 								// Commit this invocation, retaining its guard to restore caller
 								// state if a later caller instruction fails. Inner arenas pop LIFO.
-								var acceptedCallBoundary = callScopes[activeCall].Boundary;
+								var acceptedCaller = callScopes[activeCall];
+								var acceptedCallBoundary = acceptedCaller.Boundary;
 								while ( backtrack.Count > acceptedCallBoundary ) { Step(); PopFrame( backtrack, assertionScopes, callScopes ); }
 								var acceptedCallDepth = backtrack.Peek().AtomicDepth;
 								atomicDepths.RemoveRange( acceptedCallDepth, atomicDepths.Count - acceptedCallDepth );
+								if ( program.PathMarkSlot >= 0 ) {
+									// Interior checkpoints are gone. Native ACCEPT commits the
+									// callee's label unless its lexical local-quit flag saved the
+									// entry value. Older caller checkpoints remain untouched.
+									var kept = acceptedCaller.ChangeCount;
+									for ( var entry = kept; entry < changes.Count; entry++ ) {
+										Step();
+										var change = changes[entry];
+										if ( change.Kind == StateKind.Mark && change.Index == program.PathMarkSlot ) { continue; }
+										changes[kept++] = change;
+									}
+									changes.RemoveRange( kept, changes.Count - kept );
+									if ( program.Instructions[acceptedCaller.ReturnPc - 1].PropertyValue != 0 ) {
+										changes.Add( new( StateKind.Mark, program.PathMarkSlot, acceptedCaller.EntryLabel, null ) );
+									}
+								}
 								goto case PcreByteOpcode.Return;
 							}
 							if ( activeScope >= 0 ) {
@@ -1039,7 +1057,7 @@ internal static partial class PcreByteMatcher {
 
 	private enum FrameKind : byte { Branch, PositiveAssertion, NegativeAssertion, ReverseRetry, NonAtomicAssertion, ConditionalAssertion, Call, Prune, Skip, Commit, Then, ThenAlternative, PathMark }
 
-	private readonly record struct CallScope( int ReturnPc, int Parent, int ChangeCount, int Number, int AssertionScope, int Boundary );
+	private readonly record struct CallScope( int ReturnPc, int Parent, int ChangeCount, int Number, int AssertionScope, int Boundary, int EntryLabel );
 
 	private readonly record struct AssertionScope( int Boundary, int LimitEnd, int Parent, int ReturnPc, int Position, FrameKind Kind, bool IsolatePathMarks );
 

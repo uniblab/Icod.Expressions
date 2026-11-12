@@ -69,8 +69,10 @@ ACCEPT, caller/condition checkpoints and child calls. Freeze these new controls
 after a separate RED before correcting production. Original312 refs stay fixed.
 
 Annotate Call.PropertyValue with the lexical local-quit flag, using a bounded
-heap metadata walk and per-target cache. At same-scope callee ACCEPT, after
-pruning interior frames, discard only that callee interval's label undo entries
-when no local quit is present. Preserve positional marks, captures/starts, older
-checkpoints and the normal Return path. Charge each inspected journal entry;
-add no runtime arena/frame/mark.
+heap metadata walk and per-target cache. The existing CallScope records its
+entry label as one integer. At same-scope callee ACCEPT, after pruning interior frames, compact that callee interval's
+label undo entries. Only a lexical local-quit callee then appends an undo for
+its saved entry label. This retains accepted child labels across ordinary parent
+returns while allowing accepted parents to restore their own entry value.
+Preserve positional marks, captures/starts, older checkpoints and normal Return.
+Charge each inspected journal entry; add no runtime arena/frame/mark.

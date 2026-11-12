@@ -3034,3 +3034,18 @@ Full applicable native CI and author review gate readiness. Failed/partial
 labels, remaining directives/callouts, UTF C, wider optimizer/resources,
 UTF16/exported API, realistic consumer performance and release remain open.
 Grep stays last.
+
+The accepted-call regression adds18 controls/36 native profiles, frozen after
+clean RED670 (43131153280, LinuxARM64 job130895492087):48122 cases per
+framework,10 expected label failures,48112 passes,0 skips and zero build
+warnings/errors. Its blob is0f04bd2028ac018faa111de758997b7da999b30e;
+the original312 references remain unchanged. Final qualification now requires
+48122 cases in each of18 native results (330 new cases total).
+
+Accepted callees retain the successful label across their guard unless their
+own lexical body contains PRUNE/SKIP/COMMIT/THEN. Bounded, cached Call metadata
+records that native local-quit distinction; the existing CallScope snapshots one
+entry-label integer. After pruning interior frames, ACCEPT compacts only the
+callee label undo interval and conditionally retains an entry-label undo. Older
+checkpoints, captures, positional marks and ordinary Return stay transactional.
+The journal scan charges work/cancellation; no arena, frame or mark slot is added.
