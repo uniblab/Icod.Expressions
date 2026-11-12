@@ -117,9 +117,9 @@ public sealed class PcreFailureVerbReferenceTests {
 	[InlineData( @"(*fail)", true )]
 	[InlineData( @"(*FA)", true )]
 	[InlineData( @"(*FAILx)", true )]
-	[InlineData( @"(*FAIL:x)", false )]
-	[InlineData( @"(*F:x)", false )]
-	public void ExactNoArgumentScopeRetainsOtherVerbRejection( string pattern, bool invalidNative ) {
+	[InlineData( @"(*NO_JIT)(*FAIL)", false )]
+	[InlineData( @"(*NO_START_OPT)(*FAIL)", false )]
+	public void NonExactHeadersAndPendingDirectivesRemainRejected( string pattern, bool invalidNative ) {
 		if ( invalidNative ) { Assert.Throws<PcrePatternException>( () => Reference( pattern, new() ) ); }
 		else { Assert.False( Reference( pattern, new() ).Match( "x"u8.ToArray() ).Success ); }
 		var result = PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( pattern ) );
