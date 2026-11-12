@@ -61,3 +61,16 @@ FAIL070cf3e9dda7e66494d8a41f5acfaa6f9cda4101;
 group-aliasdfd0b09613d7428529998f89ee20be711315e053;
 syntaxb21c77d2509ad661cf2e6a0ca18509624a7dbf46.
 Native source outside obsolete header inventories and bare FAIL EOF1 stay fixed.
+
+## Review regression task
+
+CI668/LinuxARM64 built cleanly and passed48103/48104 per framework; the only
+failure was the frozen accepted-callee label fixture. Add separate
+PcreAcceptedCallLabelReferenceTests (14 cases,28 native profiles) before the fix.
+
+- [x] Reproduce native normal/accepted returns and lexical quit contrast; read
+  JIT accepted-call exit and kept-shared label copy rules.
+- [ ] Qualify separate RED and freeze14 controls; original312 refs unchanged.
+- [ ] Add bounded per-target lexical-quit Call metadata and charged label-only
+  journal compaction at accepted-callee exit; preserve older checkpoints.
+- [ ] Qualify final48118 cases/framework across18 native results.

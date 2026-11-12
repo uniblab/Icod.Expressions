@@ -55,3 +55,22 @@ All new/revised references freeze after clean-build RED before production.
 Earlier native expectations, frozen35/frozen214/120, GNU/BRE/ERE, exported API and
 dependencies remain fixed. Use existing isolation, inline work, no subagents,
 Python or SDK installs. User owns integration/publication; Grep remains last.
+
+## Accepted-callee label correction
+
+CI668 exposed one frozen label failure after successful callee ACCEPT and later
+caller failure. Native JIT get_recurse_data_length/copy_recurse_data saves the
+label for accepted-call failure only when that callee has a lexical local-quit
+verb (PRUNE/SKIP/COMMIT/THEN, including named forms). Otherwise the accepted
+label survives that call guard; older caller journal checkpoints still apply.
+Nested/erased/DEFINE local cuts count, called bodies do not. Fourteen native
+controls (28 profiles) pin both outcomes, ordinary returns, assertion-only
+ACCEPT, caller/condition checkpoints and child calls. Freeze these new controls
+after a separate RED before correcting production. Original312 refs stay fixed.
+
+Annotate Call.PropertyValue with the lexical local-quit flag, using a bounded
+heap metadata walk and per-target cache. At same-scope callee ACCEPT, after
+pruning interior frames, discard only that callee interval's label undo entries
+when no local quit is present. Preserve positional marks, captures/starts, older
+checkpoints and the normal Return path. Charge each inspected journal entry;
+add no runtime arena/frame/mark.
