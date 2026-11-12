@@ -24,9 +24,9 @@ reference extras cast 0x10 and existing Python/NO_BS0/UTS flags where applicable
 
 - [x] Independently qualify 1500 native profiles (1474 JIT-valid, 26 range errors).
 - [x] Write 1495 distinct cases (20 duplicate diagnostic rows removed) covering each review class and all earlier-context controls.
-- [x] Publish draft and observe clean net8/9/10 RED with expected new-only
+- [ ] Publish draft and observe clean net8/9/10 RED with expected new-only
   failures, no earlier/native literal oracle failure and zero build warnings/errors.
-- [x] Freeze the new reference blob before production changes.
+- [ ] Freeze the new reference blob before production changes.
 
 ## Task 2: implement and qualify
 
@@ -37,7 +37,7 @@ Keep original pattern bytes, quotes, raw names and every other escape unchanged.
 Existing typed nodes, class/range metadata, widths, bytecode and matcher own the
 result exactly as for n. No new runtime state.
 
-- [x] Implement those option/plumbing/selection changes only.
+- [ ] Implement those option/plumbing/selection changes only.
 - [ ] Qualify 51948 tests/framework in 18 native platform/framework results,
   zero failures/skips/build warnings/errors and 214 frozen/120 in each.
 - [ ] Verify 35 frozen, Unicode generators, workload/parity/API/corpus/pack and
@@ -56,7 +56,7 @@ PR #226 merged fa0d79c4368f7fb65784a7191c3bf02034a83aac; main 43159771095 and
 scripts 43159771272 are green. Source 101a99ab8c0d4f4d8f630ee84b449a2fcf06c8c4,
 tree 05241a257a48e3764422d7f432e97cc42c8bffb3, 50453 tests/framework before 1495.
 
-## Frozen reference receipt
+## Superseded reference receipt
 
 Corrected tests-only source f3f5b8476c82edf4139b4525140cd0de8396cadb;
 RED 680/run 43164711369, Linux ARM64 job 131003756401. net8/9/10 each:
@@ -65,3 +65,15 @@ build warnings/errors. No earlier-reference or native literal-oracle failure.
 Freeze all 1,495 distinct cases at d08e6c308f4754152166c97c88a67f64fec8f674
 before the three production files change. Initial CI 679's 20 duplicate
 diagnostic rows were removed before this receipt.
+
+## Baseline correction before re-freezing
+
+CI 681 passed 51,946/51,948 per framework and isolated two new default-byte
+range diagnostic expectations at opening 0 instead of the existing hyphen 3.
+The old RED/freeze receipt above is invalid: it included these two unrelated
+failures. Correct the two strict offsets and method name; preserve all native
+profiles, assertions and earlier files. Production is restored to merged PR226
+for a fresh tests-only RED. Expected result: 354 option-dependent failures and
+51,594 passes per framework, zero skips/build warnings/errors. Freeze only after
+checking the failure identities and sites. Reapply the identical three-file
+parser implementation afterward; preserve default diagnostics.

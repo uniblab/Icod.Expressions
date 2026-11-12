@@ -35,7 +35,7 @@ internal static class PcreByteCompiler {
 		}
 
 		var parser = new PcreByteParser( source, options.Caseless, options.AsciiBsD, settings, cancellationToken,
-			options.AltExtendedClass, options.PythonOctal, options.NoBackslashZero, options.EscapedCrIsLf );
+			options.AltExtendedClass, options.PythonOctal, options.NoBackslashZero );
 		try {
 			var root = parser.Parse();
 			var program = new PcreByteProgramCompiler(

@@ -1489,13 +1489,13 @@ public sealed class PcreEscapedCrReferenceTests {
 	}
 
 	[Theory]
-	[InlineData( "[\\r-\\n]", 0, 0 )]
+	[InlineData( "[\\r-\\n]", 0, 3 )]
 	[InlineData( "[\\r-\\n]", 2, 0 )]
-	[InlineData( "[\\r-\\x0c]", 0, 0 )]
+	[InlineData( "[\\r-\\x0c]", 0, 3 )]
 	[InlineData( "[\\r-\\x0c]", 2, 0 )]
 	[InlineData( "[[\\r-\\n]]", 4, 0 )]
 	[InlineData( "[[\\r-\\n]]", 6, 0 )]
-	public void MappingPrecedesRangeValidationWithExistingOpeningDiagnostics( string pattern, int mode, int offset ) {
+	public void MappingPrecedesRangeValidationWithExistingClassDiagnostics( string pattern, int mode, int offset ) {
 		var options = Options( mode ); Assert.Throws<PcrePatternException>( () => Reference( pattern, mode, options ) ); var result = PcreByteCompiler.Compile( Encoding.UTF8.GetBytes( pattern ), options );
 		Assert.Null( result.Pattern ); Assert.Equal( PcreByteDiagnosticCode.InvalidSyntax, result.Diagnostic?.Code ); Assert.Equal( offset, result.Diagnostic?.ByteOffset );
 	}

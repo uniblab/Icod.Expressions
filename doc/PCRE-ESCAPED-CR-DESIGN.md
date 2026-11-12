@@ -43,3 +43,14 @@ exported API and dependencies. No Python, subagents, SDK installs or runtime
 fallback. User owns merge/tag/publication. Other directives/compile modes,
 failed/partial labels, UTF C, wider optimizer/resources, UTF16/API and realistic
 consumer/release qualification remain open; Grep stays last.
+
+## Diagnostic baseline correction
+
+CI 681 exposed two mistaken expectations in the new fixture: existing ordinary
+byte descending ranges diagnose at the hyphen (byte 3 for the two escaped-CR
+ranges), while UTF and extended-class ranges diagnose at their opening bracket.
+RED 680 incorrectly counted those two default-mode failures as feature failures;
+its freeze receipt is invalidated. Correct only those two exact offsets and the
+method name, preserving every assertion and all native match profiles. Restore
+production to the merged baseline for a fresh tests-only RED before re-freezing.
+No production diagnostic behavior or earlier reference file changes.

@@ -16,8 +16,6 @@ internal sealed record PcreByteOptions {
 	public bool PythonOctal { get; init; }
 	/// <summary>Reject a bare backslash-zero escape while retaining multi-digit and braced octals.</summary>
 	public bool NoBackslashZero { get; init; }
-	/// <summary>Interpret the backslash-r escape as LF while retaining other CR spellings.</summary>
-	public bool EscapedCrIsLf { get; init; }
 	/// <summary>Recognize CR, LF, and CRLF as newlines, as in Grep's pinned PCRE2 build.</summary>
 	public bool AnyCrLfNewline { get; init; }
 	/// <summary>Restrict backslash-R sequences to CR, LF, and CRLF; independent of the newline convention.</summary>
