@@ -24,6 +24,8 @@ internal sealed partial class PcreByteParser {
 	private readonly bool noBackslashZero;
 	private readonly bool escapedCrIsLf;
 	private readonly bool allowEmptyClass;
+	private readonly bool matchWord;
+	private readonly bool matchLine;
 	private readonly PcreByteNewline newline;
 	private readonly List<(int Number, int Offset)> backreferences = new();
 	private int index;
@@ -58,6 +60,8 @@ internal sealed partial class PcreByteParser {
 		noBackslashZero = options.NoBackslashZero;
 		escapedCrIsLf = options.EscapedCrIsLf;
 		allowEmptyClass = options.AllowEmptyClass;
+		matchWord = options.MatchWord;
+		matchLine = options.MatchLine;
 		utf8 = settings.Utf8;
 		ucp = settings.Ucp;
 		turkishCasing = settings.TurkishCasing;
@@ -75,6 +79,7 @@ internal sealed partial class PcreByteParser {
 		( asciiRestrictions & restriction ) != AsciiRestriction.None;
 
 	internal PcreByteAlternatives Parse() {
+		var entryOptions = CurrentGroupOptions;
 		while ( true ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			SkipIgnoredPatternText();
@@ -92,6 +97,7 @@ internal sealed partial class PcreByteParser {
 				throw Invalid( reference.Offset, "backreference has no capture group" );
 			}
 		}
+		root = WrapWholeMatch( root, entryOptions );
 		if ( hasNamedReferences ) { root = ResolveNamedReferences( root ); }
 		if ( hasCaptureConditions ) { root = ResolveCaptureConditions( root ); }
 		if ( hasSubroutines ) { root = ResolveSubroutines( root ); }

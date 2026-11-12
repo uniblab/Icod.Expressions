@@ -34,10 +34,10 @@ capacity, canonical work/cancellation and source/instruction limits. Precompile
 all supplemental native patterns before managed matching.
 
 - [x] Independently qualify all 1,480 profiles with native JIT status zero.
-- [ ] Publish tests-only draft and observe net8/9/10 expected RED with zero
+- [x] Publish tests-only draft and observe net8/9/10 expected RED with zero
   warnings/errors/skips. Defaults, exact diagnostics, earlier tests and all
   native literal/oracle checks must pass; inspect identities and assertion sites.
-- [ ] Freeze the new reference hash before production edits.
+- [x] Freeze the new reference hash before production edits.
 
 ## Task 2: wrap the semantic root and qualify
 
@@ -55,7 +55,7 @@ choose the existing Unicode/ASCII word boundary predicate. Line wins. Finish
 subroutine targets only after wrapping, preserving root recursion. No parser
 source offset changes, new AST/opcode or runtime matching flag.
 
-- [ ] Implement those option/root-wrap paths after valid freeze.
+- [x] Implement those option/root-wrap paths after valid freeze.
 - [ ] Qualify all 55,542 tests/framework in 18 native platform/framework results with zero failures,
   skips/build warnings/errors and frozen 214/120 per result.
 - [ ] Verify frozen 35, Unicode generators, workload/parity/API/corpus/pack,
@@ -74,3 +74,13 @@ PR229 merged at a590294fa81439096ba910a953db4be28331b967.
 Main 43181932890 and scripts 43181932592 are green; 53,999 tests/framework.
 Source c7b924676844f6286b4e058a7853548f1698b0f4,
 tree 61031254a98ccc1ec27bfb11712cc30f6fe10551.
+
+## Valid RED and freeze receipt
+
+Tests-only source `7cabd7ffe56049052bd1c9fac416ce2a39a91cf3`, tree
+`f6007b3085bcce45a9fd0abc2f5b321e33a299a0`, retained merged PR229 production.
+CI690/run43189811376/Linux ARM64 job131085966252: each net8/9/10 had
+55,542 tests, 350 expected mode failures, 55,192 passes, zero skips and zero
+build warnings/errors. Defaults, original diagnostics, UTF validation, capture
+capacity, earlier fixtures and native oracle checks passed. Freeze the 1,543-case
+reference blob `ac93862e45ff345c70dd742e0f9b52128c227cbb` before implementation.

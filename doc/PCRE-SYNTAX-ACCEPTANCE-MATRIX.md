@@ -36,6 +36,7 @@ the matcher returns spans, leaving framing, status and output to Grep.
 | Caller option `EscapedCrIsLf` | Textual `\r` becomes canonical LF; other CR spellings, quotes, raw labels and newline policies are preserved | `PcreEscapedCrReferenceTests`; byte/UTF/class/range/offset/resource and ownership controls |
 | Caller option `AllowEmptyClass` | Enables empty `[]` and complemented `[^]` in ordinary/UTS classes, including nested UTS operands; Perl algebra and default literal `]` behavior stay fixed | `PcreEmptyClassReferenceTests`; repeat, UTF/CRLF, grammar, diagnostic, resource and ownership controls |
 | Caller pattern options | DotAll, Multiline, NoAutoCapture, Ungreedy, DuplicateNames, Extended and ExtendedMore initialize existing s/m/n/U/J/x/xx scopes; all default false | `PcreCallerPatternOptionReferenceTests`; 128 combinations, reset/unset/restoration, numbering, lexing, offsets, ownership and quotas |
+| Caller word/line modes | MatchWord adds outer word boundaries; MatchLine adds entry-policy line anchors and takes precedence; implicit noncapturing scope preserves source bytes/captures | `PcreWordLineModeReferenceTests`; all selections, local options, six newlines, recursion/cuts, offsets, diagnostics, ownership and quotas |
 | Ordinary `[ ]` ranges, negation, shorthand unions, 14 POSIX names | Supported subset in byte and UTF modes; ordinary bracket grammar unchanged, Perl algebra listed separately | Bracket and POSIX tests; Unicode table/version reconciliation |
 | `\p`/`\P` general categories and special properties | Byte/UTF categories plus Any/Xan/Xps/Xsp/Xwd/Xuc; loose names, P/caret complements and property predicates independent of UCP/ASCII/i/r. Category-prefixed aliases remain a library extension for categories only. UTF class source operands/endpoints preserve CR/LF flags before folding, including the native negated-singleton exception. Scripts/scx now have pinned Unicode17 data; binary/Bidi properties now have pinned native data | `PcreBytePropertyReferenceTests`, `PcreSpecialPropertyReferenceTests`, `PcreClassNewlineMetadataReferenceTests`, `PcreUtf8GeneralCategoryTests`; see `PCRE-SPECIAL-PROPERTIES-DESIGN.md`; Unicode17 categories and default simple-case mappings are pinned; byte search-optimization parity remains a gate |
 | Unicode script/scx properties | All175 scripts/344 normalized long, short and legacy aliases; bare names are scx, explicit sc/Script and scx/Script_Extensions, native primary-or-extension membership, byte projection and mixed predicates | `PcreScriptPropertyReferenceTests`, 3508 native boundaries and source-hash/native-fingerprint-checked regeneration; script-run groups remain separate |
@@ -3176,3 +3177,42 @@ wider optimizer/resources (#102), UTF16/exported API and realistic consumer/
 release qualification remain open. Grep stays last. See
 [design](PCRE-CALLER-PATTERN-OPTIONS-DESIGN.md) and
 [plan](PCRE-CALLER-PATTERN-OPTIONS-PLAN.md).
+
+## PR230: word and line compile modes
+
+Internal default-false MatchWord and MatchLine implement native extra compile
+bits 0x4/0x8. Line wins when both are set. Existing word boundaries or line
+anchors surround one existing noncapturing source group. Guards use entry
+multiline/UCP/ASCII-word policy, before local source options, and line mode keeps
+the selected newline convention and final-newline behavior. Word mode uses word
+boundaries, including punctuation between word characters. All alternatives,
+cuts, ACCEPT, K, raw labels and capture numbering retain native scope.
+
+The parser copies both flags and snapshots entry options before source headers.
+It wraps the typed root after original source diagnostics, before name/call/width
+resolution and final subroutine targets, so whole-pattern recursion includes the
+guards. With both options false it returns the identical root. No source rewrite,
+new AST node, opcode, runtime mode, exported API or dependency is introduced.
+Existing guards, work, cancellation, journals and resource limits own execution.
+
+The 1,543 new cases include 1,480 independently pinned PCRE2 10.48/JIT profiles,
+all four selections, byte/UTF/UCP, initial/local multiline, six newline conventions,
+recursion and scoped exits. Supplemental controls pin 40 exact diagnostics, every
+octet, malformed-UTF/CRLF offsets, old caller policies, UTF validation, owned
+source/options/raw labels, all 256 user captures, canonical work and quotas.
+Supplemental native patterns compile before managed matching; earlier tests stay fixed.
+
+Valid tests-only RED 690 (run 43189811376, Linux ARM64 job 131085966252), source
+`7cabd7ffe56049052bd1c9fac416ce2a39a91cf3`, exactly matched merged PR229
+production. net8/9/10 built with zero warnings/errors; each had 55,542 tests,
+350 expected mode-dependent failures, 55,192 passes and zero skips. Defaults,
+exact diagnostics, UTF validation, full capture capacity, earlier fixtures and
+native literal/oracle checks passed. Freeze the reference at
+`ac93862e45ff345c70dd742e0f9b52128c227cbb` before production changes.
+Final qualification requires all 55,542 tests in 18 native platform/framework
+results and the existing frozen, Unicode, parity, resource and package gates.
+
+Other modes/directives/callouts, failed/partial labels, UTF code-unit escapes,
+wider optimizer/resources (#102), UTF16/exported API and realistic consumer/
+release qualification remain open. Grep stays last. See
+[design](PCRE-WORD-LINE-MODES-DESIGN.md) and [plan](PCRE-WORD-LINE-MODES-PLAN.md).
