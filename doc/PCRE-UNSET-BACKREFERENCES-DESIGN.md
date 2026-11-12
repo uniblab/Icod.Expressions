@@ -32,6 +32,17 @@ lookahead, DEFINE and content after FAIL retain their existing skipping rules.
 Preserve the established global syntax/reference validation order and byte
 diagnostics. No grammar, source rewrite, new AST node/opcode or runtime mode.
 
+Selected nullable references also make some line-anchored bodies empty. Preserve
+native STARTLINE search after a split ANY UTF newline by permitting the existing
+line-start entry proof when a bounded zero-consumption path through selected
+backreferences is established. Inspect only pure capture/group/repeat/anchor and
+consuming instructions; reject calls, assertions, conditions and verbs outside
+that proof. Require a selected reference and an empty accepting path. Existing
+first-code-unit priority stays authoritative for a mandatory leading literal.
+Defaults retain the original proof. Nonnullable bodies whose first consuming
+instruction is behind an optional capture/reference remain in wider optimizer
+work (#102). This adds compiler metadata only, reusing the matcher candidate exclusion and physical-EOF rules.
+
 ## Evidence and review boundaries
 
 Pin native PCRE2 10.48/JIT literals for optional/forward/self/relative/named/

@@ -45,6 +45,14 @@ EnableUnsetBackreferences(PcreByteAlternatives root) after ResolveNamedReference
 and before condition/call/width/final-target resolution. Helper uses existing
 RewriteTree, setting Backreference.UnsetMatchesEmpty via with. Defaults skip it.
 PcreByteSyntax.cs adds that init property. PcreByteProgram.cs lowers it into Second.
+PcreByteProgram.cs also extends HasLineStartSearch only when new bounded helper
+HasNullableUnsetBackreferencePath() proves an empty accepting instruction path
+with a selected reference and pure supported operations. Check instruction count/
+visits against MaximumStartClassVisits and poll cancellation. Traverse Split/Jump
+and empty Progress exits; block consuming instructions, calls, assertions,
+conditions and unsupported operations. Existing root line-anchor proof still
+applies. This preserves split-ANY-UTF-newline candidate search without overriding
+first-code-unit priority for mandatory leading literals. Defaults keep the old proof.
 PcreByteMatcher.cs keeps duplicate participation lookup; null capture advances pc
 only for Second=1, otherwise fails. No capture mutation, source read or new path
 for participating captures. Lookbehind.cs ReferenceTarget rejects selected nodes
@@ -73,3 +81,14 @@ lookbehind width errors,40 legacy diagnostics,4 all-octet,4 UTF-offset,2 prior-
 policy,2 UTF-validation,ownership/full-capacity facts and2 work/resource facts.
 Expected61,422/framework. Native flag-off research predicts454 primary semantic
 differences and zero default differences. Supplemental native arrays compile first.
+
+Before freeze, extend the UTF-offset loop with nullable numeric/named/plus
+backreferences under ANY multiline anchors, a mandatory leading-B control and five
+Unicode-newline subjects. Native probes confirm STARTLINE exclusion after a split
+newline; the leading-B control retains first-code-unit search. Counts remain1,740/61,422.
+Initial698 is provisional; qualify the expanded fixture before freezing.
+
+Scope: the nullable selected-reference proof is bounded and deliberately does
+not generalize nonnullable optional-capture/reference prefix search. The native example
+ANY/multiline ^(?:(A)?backref1)B after a split Unicode newline remains in the
+wider #102 optimizer work; the leading-B control pins priority of a mandatory first unit.

@@ -1788,11 +1788,11 @@ public sealed class PcreUnsetBackreferenceReferenceTests {
 	public void EverySelectedUtfOffsetKeepsUnsetStateAndFragmentBoundaries( bool enabled, bool caseless ) {
 		foreach ( var anyCrLf in new[] { false, true } ) {
 			var options = Options( enabled, caseless ? 7 : 3 ) with { MatchInvalidUtf = true, AnyCrLfNewline = anyCrLf };
-			var patterns = new[] { @"(A)?\1", @"\1(A)", @"(?<x>A)?\k<x>", @"(?J)(?<x>A)?(?<x>B)?\k<x>", @"(?=(A)?\1)", @"(A)?(?<=(?=\1)A?)", @"(?(DEFINE)(?<x>(A)?\2))(?&x)", @"(A)?\1(?(1)B|C)", @"(A)?\1\KB", @"(A)?\1(*ACCEPT:L)", @"(A)?\1(*SKIP)|B" };
+			var patterns = new[] { @"(A)?\1", @"\1(A)", @"(?<x>A)?\k<x>", @"(?J)(?<x>A)?(?<x>B)?\k<x>", @"(?=(A)?\1)", @"(A)?(?<=(?=\1)A?)", @"(?(DEFINE)(?<x>(A)?\2))(?&x)", @"(A)?\1(?(1)B|C)", @"(A)?\1\KB", @"(A)?\1(*ACCEPT:L)", @"(A)?\1(*SKIP)|B", @"(*ANY)(?m)^(?:(A)?\1)$", @"(*ANY)(?m)^(?:(?<x>A)?\k<x>)$", @"(*ANY)(?m)^(A)?\1+$", @"(*ANY)(?m)^B(A)?\1$" };
 			var references = patterns.Select( pattern => Reference( pattern, enabled, options ) ).ToArray();
 			for ( var i = 0; i < patterns.Length; i++ ) {
 				var compiled = Compile( patterns[i], options );
-				foreach ( var hex in new[] { "", "41", "4141", "0D0A41", "FF0D0A41", "0AFF0D41", "C3A941C3A9", "61FF62", "43", "E284AA6B" } ) {
+				foreach ( var hex in new[] { "", "41", "4141", "0D0A41", "FF0D0A41", "0AFF0D41", "C3A941C3A9", "61FF62", "43", "E284AA6B", "E280A80A", "E280A842", "E280A80D0A", "C2850A", "E280A90A" } ) {
 					var subject = Convert.FromHexString( hex );
 					for ( var offset = 0; offset <= subject.Length; offset++ ) { Compare( references[i], subject, offset, compiled.Match( subject, offset ), $"{patterns[i]}/{hex}/{offset}" ); }
 				}
