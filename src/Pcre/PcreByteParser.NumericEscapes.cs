@@ -3,6 +3,13 @@ namespace Icod.Expressions.Pcre;
 internal sealed partial class PcreByteParser {
 	private PcreByteNode ParseDecimalOrOctalEscape( byte first, int offset, bool inBracket ) {
 		if ( first == (byte)'0' || inBracket ) { return ParseUnbracedOctal( first, offset ); }
+		// Python decides from the first three octal characters, independently
+		// of capture numbering. Any following digits stay ordinary source.
+		if ( pythonOctal && first < (byte)'8' && source.Length - index >= 2
+			&& source[index] is >= (byte)'0' and <= (byte)'7'
+			&& source[index + 1] is >= (byte)'0' and <= (byte)'7' ) {
+			return ParseUnbracedOctal( first, offset );
+		}
 		var number = first - (byte)'0';
 		var cursor = index;
 		while ( cursor < source.Length && source[cursor] is >= (byte)'0' and <= (byte)'9' ) {
@@ -11,7 +18,7 @@ internal sealed partial class PcreByteParser {
 			// force reference syntax. Saturation preserves that decision without overflow.
 			number = Math.Min( MaximumCaptureCount + 1, number * 10 + source[cursor++] - (byte)'0' );
 		}
-		if ( number < 10 || first >= (byte)'8' || number <= groupCount ) {
+		if ( pythonOctal || number < 10 || first >= (byte)'8' || number <= groupCount ) {
 			if ( number > MaximumCaptureCount ) { throw Invalid( offset, "backreference has no capture group" ); }
 			index = cursor;
 			backreferences.Add( (number, offset) );
@@ -25,14 +32,22 @@ internal sealed partial class PcreByteParser {
 	private PcreByteLiteral ParseUnbracedOctal( byte first, int offset ) {
 		if ( first >= (byte)'8' ) { return new( first ); } // Literal 8/9 in a bracket.
 		var value = first - (byte)'0';
-		for ( var digits = 1; digits < 3 && index < source.Length
+		var digits = 1;
+		for ( ; digits < 3 && index < source.Length
 			&& source[index] is >= (byte)'0' and <= (byte)'7'; digits++ ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			value = value * 8 + source[index++] - (byte)'0';
 		}
-		if ( !utf8 && value > 255 ) { throw Invalid( offset, "octal escape exceeds the supported character range" ); }
+		if ( value > 255 && ( !utf8 || pythonOctal ) ) { throw NumericEscapeError( offset, "octal escape exceeds the supported character range" ); }
+		if ( noBackslashZero && value == 0 && digits == 1 ) { throw NumericEscapeError( offset, "bare backslash-zero escape is disabled" ); }
 		return new( value );
 	}
+
+	// Class-algebra grammar errors belong to the outer opening, but these
+	// numeric failures retain the same escape-byte precision as ordinary classes.
+	private static PcreByteParseException NumericEscapeError( int offset, string message ) => new(
+		new( PcreByteDiagnosticCode.InvalidSyntax, offset, message )
+	) { IsNumericEscape = true };
 
 	private PcreByteLiteral ParseBracedOctal( int offset ) {
 		if ( index >= source.Length || source[index] != (byte)'{' ) {

@@ -32,7 +32,7 @@ the matcher returns spans, leaving framing, status and output to Grep.
 | `\h\H\v\V` horizontal/vertical whitespace | Fixed PCRE2 lists, independent of UCP/caseless and newline convention; byte and UTF-8 atoms and ordinary bracket members | `PcreSpaceEscapeReferenceTests`; all 256 bytes, Unicode members/boundaries, captures, CRLF offsets and invalid-UTF barriers |
 | `\R` newline sequence | Atomic CRLF-first matching; Unicode line endings by default, internal `BsrAnyCrLf` restriction independent of newline convention; invalid in brackets | `PcreNewlineSequenceReferenceTests`; membership, captures/repetition, every CRLF/invalid-UTF offset, work and expansion limits |
 | `\N` non-newline, UTF `\N{U+...}` literal | Bare form obeys LF/AnyCRLF and ignores DotAll; counted repetitions supported; Unicode codepoint form shares braced-hex literal/range/fixed-assertion rules | `PcreNonNewlineReferenceTests`; byte/scalar membership, braced-form disambiguation, captures, offsets and diagnostics |
-| Bare and braced octal literals | Default up-to-three-digit octals and `\o{...}` in byte/UTF atoms, brackets/ranges and fixed literal assertions; byte/scalar range checks, brace-edge space/tab | `PcreNumericEscapeReferenceTests`; all 256 byte values, UTF bounds, quoting, offsets and diagnostics; extra Python/NO_BS0 modes pending |
+| Bare and braced octal literals | Default up-to-three-digit octals and `\o{...}` in byte/UTF atoms, brackets/ranges and fixed literal assertions; byte/scalar range checks, brace-edge space/tab | `PcreNumericEscapeReferenceTests`; all 256 byte values, UTF bounds, quoting, offsets and diagnostics; caller PythonOctal/NoBackslashZero modes use PcreNumericEscapeOptionReferenceTests |
 | Ordinary `[ ]` ranges, negation, shorthand unions, 14 POSIX names | Supported subset in byte and UTF modes; ordinary bracket grammar unchanged, Perl algebra listed separately | Bracket and POSIX tests; Unicode table/version reconciliation |
 | `\p`/`\P` general categories and special properties | Byte/UTF categories plus Any/Xan/Xps/Xsp/Xwd/Xuc; loose names, P/caret complements and property predicates independent of UCP/ASCII/i/r. Category-prefixed aliases remain a library extension for categories only. UTF class source operands/endpoints preserve CR/LF flags before folding, including the native negated-singleton exception. Scripts/scx now have pinned Unicode17 data; binary/Bidi properties now have pinned native data | `PcreBytePropertyReferenceTests`, `PcreSpecialPropertyReferenceTests`, `PcreClassNewlineMetadataReferenceTests`, `PcreUtf8GeneralCategoryTests`; see `PCRE-SPECIAL-PROPERTIES-DESIGN.md`; Unicode17 categories and default simple-case mappings are pinned; byte search-optimization parity remains a gate |
 | Unicode script/scx properties | All175 scripts/344 normalized long, short and legacy aliases; bare names are scx, explicit sc/Script and scx/Script_Extensions, native primary-or-extension membership, byte projection and mixed predicates | `PcreScriptPropertyReferenceTests`, 3508 native boundaries and source-hash/native-fingerprint-checked regeneration; script-run groups remain separate |
@@ -3016,3 +3016,32 @@ results plus all previous gates. Wider optimizer/resources (#102), other
 directives/callouts, failed/partial labels, UTF C, UTF16/exported API and realistic
 consumer performance/release stay open. Grep stays last. See
 PCRE-TURKISH-CASING-DESIGN.md and PCRE-TURKISH-CASING-PLAN.md.
+
+## PR226: numeric escape caller options
+
+Internal PythonOctal and NoBackslashZero caller options now select native
+PCRE2_EXTRA_PYTHON_OCTAL and PCRE2_EXTRA_NO_BS0 policies. Both default false.
+Python requires exactly three initial octal digits for a nonzero bare escape;
+otherwise the full decimal run is a globally resolved reference independent of
+preceding capture count. Leading-zero and bracket octals remain literals. Python
+unbraced values stop at255 even in UTF; braced octals keep existing range rules.
+NoBackslashZero rejects only a one-digit zero escape, preserving longer zeros,
+hex/braced/control/raw NUL and quotes. These are caller options, not new (*...)
+syntax. Original-byte diagnostics and UTF validation order remain shared.
+
+Readonly parser flags reuse the bounded decimal scan, octal digit consumption,
+typed literals/references, widths and matcher. No source rewrite, opcode,
+match slot or runtime fallback is added. All earlier reference files remain
+unchanged. The709 controls include688 independent native PCRE2 10.48 profiles:
+534 JIT-valid patterns and154 expected native compile errors. They cover all
+octets, eight flag/byte/UTF combinations, forward/previous captures through256,
+Perl/UTS algebra, ranges, quotes, scopes, offsets and work/cancel/ownership.
+
+RED676 (run43154186921, LinuxARM64 job130970169309) built net8/9/10 with zero
+warnings/errors. Each had50453 cases:149 expected new failures,50304 passes,
+0 skips, no earlier/native literal oracle failure. All709 cases freeze at
+c169f5dfd97ec55a26bfbc2c0e4a538f5109be80 before production changes. Final
+qualification requires50453 cases/framework in18 native results and the prior
+gates. Other directives, failed/partial labels, UTF C, wider optimizer/resources
+(#102), UTF16/public API and realistic consumer/release qualification stay open.
+Grep stays last. See PCRE-NUMERIC-ESCAPE-OPTIONS-DESIGN.md and its PLAN.md.

@@ -12,6 +12,10 @@ internal sealed record PcreByteOptions {
 	/// <summary>Enable PCRE2 UTS#18 nested brackets and doubled set operators.</summary>
 	public bool AltExtendedClass { get; init; }
 	public bool AsciiBsD { get; init; }
+	/// <summary>Use Python's three-digit octal rule instead of preceding-capture disambiguation.</summary>
+	public bool PythonOctal { get; init; }
+	/// <summary>Reject a bare backslash-zero escape while retaining multi-digit and braced octals.</summary>
+	public bool NoBackslashZero { get; init; }
 	/// <summary>Recognize CR, LF, and CRLF as newlines, as in Grep's pinned PCRE2 build.</summary>
 	public bool AnyCrLfNewline { get; init; }
 	/// <summary>Restrict backslash-R sequences to CR, LF, and CRLF; independent of the newline convention.</summary>
