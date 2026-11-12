@@ -33,7 +33,7 @@ work/limit controls. Tests catch overrestrictive Accept-only/selected-only proof
 overbroad admission across mandatory consumption, lost root anchors and bad bounds.
 
 - [x] Preflight all native profiles and supplemental patterns with JIT0.
-- [ ] Publish tests-only draft; observe net8/9/10 expected RED without native,
+- [x] Publish tests-only draft; observe net8/9/10 expected RED without native,
   diagnostic or earlier-fixture failures. Freeze the final fixture hash.
 
 ## Task 2: compiler barrier proof and full qualification
@@ -44,7 +44,7 @@ return true at Backreference as well as Accept along existing nonconsuming CFG.
 Update the explanatory comment. Preserve eligibility/size/visits/cancellation,
 consuming leaves, control-flow edges and existing AST root-line-anchor proof.
 
-- [ ] Implement only after valid RED/freeze; no matcher or earlier tests change.
+- [x] Implement only after valid RED/freeze; no matcher or earlier tests change.
 - [ ] All18 native results pass full/frozen tests with0failures/skips/build warnings/errors.
 - [ ] Verify frozen35, five Unicode generators, seven equal workloads, extraction/
   POSIX/API/corpus, packaging/three package-smokes and three-OS script gates.
@@ -66,3 +66,9 @@ Final test inventory:949 new cases (936 primary literal profiles,4 offset,2stric
 supplemental native profiles compile/JIT0. Native split-versus-boundary research
 predicts285 primary false-positive differences; both default and selected modes
 are affected. No earlier test edits or production changes before valid RED/freeze.
+
+Valid RED702/run43255390418, Linuxx64 job131312086289 at1107f679f0a8da3b3ae069d0934e5c825a53c36c:
+each net8/9/10 has295 expected failures/62,076 passes/62,371 total/0skips,
+0warnings/errors. Primary285 =87default+198selected per framework exactly
+matches native research. Earlier/strict/fallback/native checks pass. Freeze
+f78f3d24ff62419bfefd9672a902259138fbbb7e before compiler changes.

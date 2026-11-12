@@ -205,7 +205,7 @@ internal sealed class PcreByteProgramCompiler {
 				or PcreByteOpcode.StartLine or PcreByteOpcode.EndLine or PcreByteOpcode.EndBeforeFinalLf or PcreByteOpcode.End
 				or PcreByteOpcode.Split or PcreByteOpcode.Jump or PcreByteOpcode.AtomicEnter or PcreByteOpcode.AtomicExit
 				or PcreByteOpcode.Accept ) ) {
-				if ( !HasNullableUnsetBackreferencePath() ) { return false; }
+				if ( !HasBackreferenceStartBarrier() ) { return false; }
 				break;
 			}
 		}
@@ -238,14 +238,13 @@ internal sealed class PcreByteProgramCompiler {
 		}
 	}
 
-	private bool HasNullableUnsetBackreferencePath() {
+	private bool HasBackreferenceStartBarrier() {
 		if ( instructions.Count > MaximumStartClassVisits ) { return false; }
-		var hasSelectedReference = false;
+		var hasReference = false;
 		foreach ( var instruction in instructions ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			if ( instruction.Opcode == PcreByteOpcode.Backreference ) {
-				if ( instruction.Second != 1 ) { return false; }
-				hasSelectedReference = true;
+				hasReference = true;
 			} else if ( instruction.Opcode is not ( PcreByteOpcode.Literal or PcreByteOpcode.Any
 				or PcreByteOpcode.Class or PcreByteOpcode.ScalarClass or PcreByteOpcode.ScalarSet or PcreByteOpcode.ScalarExpression
 				or PcreByteOpcode.CaptureStart or PcreByteOpcode.CaptureEnd or PcreByteOpcode.Start or PcreByteOpcode.SearchStart
@@ -253,10 +252,10 @@ internal sealed class PcreByteProgramCompiler {
 				or PcreByteOpcode.Split or PcreByteOpcode.Jump or PcreByteOpcode.Mark or PcreByteOpcode.Progress
 				or PcreByteOpcode.AtomicEnter or PcreByteOpcode.AtomicExit or PcreByteOpcode.Accept ) ) { return false; }
 		}
-		if ( !hasSelectedReference ) { return false; }
-		// A selected unset reference can be empty, while a mandatory leading literal
-		// retains native first-character search. Prove an empty accepting
-		// path before enabling STARTLINE; keep the existing root-anchor proof.
+		if ( !hasReference ) { return false; }
+		// An opaque reference before consumption blocks native first-character
+		// inference even when the whole body is nonnullable. An empty accepting
+		// path also blocks it. Keep mandatory consumption and the root-anchor proof.
 		var visited = new bool[instructions.Count];
 		var pending = new Stack<int>();
 		pending.Push( 0 );
@@ -269,6 +268,7 @@ internal sealed class PcreByteProgramCompiler {
 			visited[pc] = true;
 			var instruction = instructions[pc];
 			switch ( instruction.Opcode ) {
+				case PcreByteOpcode.Backreference:
 				case PcreByteOpcode.Accept: return true;
 				case PcreByteOpcode.Literal:
 				case PcreByteOpcode.Any:
