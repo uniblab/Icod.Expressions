@@ -10,6 +10,10 @@ internal sealed record PcreByteOptions {
 	public bool DotAll { get; init; }
 	/// <summary>Let line anchors recognize internal newlines.</summary>
 	public bool Multiline { get; init; }
+	/// <summary>Require non-multiline dollar anchors to match the subject end.</summary>
+	public bool DollarEndOnly { get; init; }
+	/// <summary>Permit multiline caret anchors after a final newline.</summary>
+	public bool AltCircumflex { get; init; }
 	/// <summary>Capture only named groups unless a local option restores unnamed captures.</summary>
 	public bool NoAutoCapture { get; init; }
 	/// <summary>Invert the default greedy or lazy preference of repeat quantifiers.</summary>

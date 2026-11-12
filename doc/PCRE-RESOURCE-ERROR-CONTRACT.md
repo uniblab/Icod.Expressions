@@ -3507,3 +3507,55 @@ wider optimizer/resources (#102), UTF16/exported API and realistic consumer/
 release qualification remain open. Grep stays last. See
 [design](PCRE-CALLER-ASCII-POLICIES-DESIGN.md) and
 [plan](PCRE-CALLER-ASCII-POLICIES-PLAN.md).
+
+## PR232: dollar and circumflex compile options
+
+Internal default-false DollarEndOnly and AltCircumflex implement native flags
+0x10 and 0x200000. DollarEndOnly makes non-multiline dollar require the selected
+subject end, while multiline dollar ignores it and backslash-Z/z stay unchanged.
+Alternate multiline caret can match after a final newline. Local m, unsets and
+reset still choose each source anchor; MatchLine guards use their entry snapshot.
+
+Shared parser helpers lower ordinary and synthetic anchors. DollarEndOnly selects
+the existing absolute-end node. One default-false AllowSubjectEnd property on
+existing LineAnchor lowers into the unused StartLine First operand. First=1 only
+extends the endpoint bound; only physical EOF may bypass the existing partial-
+newline candidate exclusion. Fragment/context, newline and Step checks stay shared. Default operands are unchanged. No new AST node, opcode,
+program-global runtime mode, source rewrite, API, dependency or width rule.
+
+The 2,052 new cases include 1,984 independently pinned PCRE2 10.48/JIT profiles.
+All four selections, initial/local/reset multiline, six newlines, empty lines,
+absolute anchors, fixed/variable lookbehind endpoints, assertions/calls, cuts/
+ACCEPT/K, labels and line wrappers are pinned. Supplemental controls cover 40
+exact diagnostics, every octet, selected malformed-UTF/CRLF/Unicode-newline
+offsets, prior caller policies, UTF validation, owned options/source/raw labels,
+canonical work, cancellation and quotas. All native loop arrays compile before
+managed matching. All 245 earlier test files remain hash-identical.
+
+Before freeze, add 72 variable-lookbehind profiles and the same patterns to the
+offset loop; the initial run694 was cancelled. Valid expanded tests-only RED695
+(run43228870315, Linux ARM64 job131219356070), source
+2d166f0ecd5c6f4b8b0047b2007fbd99ccf11d61, retained merged PR231 production.
+net8/9/10 each built with zero warnings/errors and ran 59,682 tests: 245 expected
+option-dependent failures, 59,437 passes and zero skips. The 230 primary failures
+exactly match independent native flag-off research. Defaults, original diagnostics,
+UTF validation, canonical work/cancellation/limits, earlier fixtures and native
+literal/oracle checks passed. Freeze the 2,052-case reference at
+a3e651d589d160f68c574911733e70ad73e4baca before production changes.
+Final qualification requires 59,682 tests in 18 native results and the existing
+frozen, Unicode, parity, resource and packaging gates.
+
+CI696 (run43230182090, source11ce5fca1895033920bc694392084202c5ba9173)
+passed 59,678/59,682 per framework and exposed four selected-offset failures.
+The native STARTLINE newline scan retries physical EOF even if a requested byte
+offset splits its final UTF newline; alternate caret can then accept backward
+newline context. Preserve the partial-newline candidate exclusion except for
+StartLine.First=1 at physical input end. Native probes distinguish final LS/PS
+from the same scalar before trailing text. The frozen offset loop already pins
+this regression; no fixture changes. Final qualification must include this fix.
+
+Other modes/directives/callouts, failed/partial labels, UTF code-unit escapes,
+wider optimizer/resources (#102), UTF16/exported API and realistic consumer/
+release qualification remain open. Grep stays last. See
+[design](PCRE-ANCHOR-COMPILE-OPTIONS-DESIGN.md) and
+[plan](PCRE-ANCHOR-COMPILE-OPTIONS-PLAN.md).
