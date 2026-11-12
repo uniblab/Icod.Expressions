@@ -285,6 +285,44 @@ internal sealed class PcreByteProgramCompiler {
 				default: pending.Push( pc + 1 ); break;
 			}
 		}
+		return HasWideClassBackreferencePrefix();
+	}
+
+	private bool HasWideClassBackreferencePrefix() {
+		// A single ASCII class with more than two possible characters cannot
+		// supply JIT's first-character pair. A following reference stops its
+		// prefix scan, so STARTLINE still wins over the first-character bitmap.
+		// Keep this proof linear: another consuming atom can supply a later pair.
+		if ( turkishCasing ) { return false; }
+		var hasClass = false;
+		foreach ( var instruction in instructions ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			switch ( instruction.Opcode ) {
+				case PcreByteOpcode.Backreference: return hasClass;
+				case PcreByteOpcode.ScalarSet when !hasClass && instruction.Second == 0 && instruction.Predicates.IsEmpty:
+					var set = default( PcreByteSet );
+					foreach ( var range in instruction.Ranges.Span ) {
+						cancellationToken.ThrowIfCancellationRequested();
+						if ( range.Start < 0 || range.End > 127 ) { return false; }
+						set = set.Union( PcreByteSet.Range( (byte)range.Start, (byte)range.End ) );
+					}
+					if ( instruction.Caseless ) { set = set.AsciiCaseClosure(); }
+					if ( BitOperations.PopCount( set.A ) + BitOperations.PopCount( set.B ) <= 2 ) { return false; }
+					hasClass = true;
+					break;
+				case PcreByteOpcode.CaptureStart:
+				case PcreByteOpcode.CaptureEnd:
+				case PcreByteOpcode.Start:
+				case PcreByteOpcode.SearchStart:
+				case PcreByteOpcode.StartLine:
+				case PcreByteOpcode.EndLine:
+				case PcreByteOpcode.EndBeforeFinalLf:
+				case PcreByteOpcode.End:
+				case PcreByteOpcode.AtomicEnter:
+				case PcreByteOpcode.AtomicExit: break;
+				default: return false;
+			}
+		}
 		return false;
 	}
 

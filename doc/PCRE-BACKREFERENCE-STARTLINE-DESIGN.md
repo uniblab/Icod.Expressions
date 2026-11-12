@@ -44,3 +44,23 @@ verbs, over-budget programs, other optimizer shapes and #102 remain open.
 Preserve all247 earlier test files,35 frozen blobs/214 outcomes/120 methods,
 GNU/BRE/ERE, exported API/dependencies. C#13/net8/9/10; UTF8+LF; no Python,
 subagents or SDK installs. User merges/tags/publishes; Grep migration stays last.
+
+## Qualification correction after CI703
+
+CI703 at110dcbe built cleanly but retained six failures/framework, all frozen
+caseless ^[BC]()backref1 split-offset profiles. Native JIT scan_prefix collects
+the class first; fast_forward_first_n_chars can select only a one/two-character
+position unless a longer prefix supplies a search range. Caseless [BC] has four
+ASCII members, so it cannot supply that pair; the following reference terminates
+prefix scanning. STARTLINE then wins over FIRSTMAP. Case-sensitive [BC] retains
+its two-character scan and must continue matching the split-offset control.
+
+Keep the existing pure-IR eligibility and1,000-instruction bound. After the
+zero-consumption proof fails, admit a linear prefix containing exactly one
+positive, predicate-free ASCII ScalarSet with more than two distinct members,
+followed by a reference through captures/anchors/atomic boundaries. Reject
+branches, loops, additional consuming atoms, non-ASCII ranges, predicates and
+Turkish casing in this supplementary proof. The root first-caret proof remains
+mandatory. No matcher or test changes; frozen949-case fixture stays
+f78f3d24ff62419bfefd9672a902259138fbbb7e. The six already-failing cases provide
+RED for this compiler correction. Broader prefix shapes remain in #102.
