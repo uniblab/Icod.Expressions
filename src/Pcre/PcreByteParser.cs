@@ -22,6 +22,7 @@ internal sealed partial class PcreByteParser {
 	private readonly bool altExtendedClass;
 	private readonly bool pythonOctal;
 	private readonly bool noBackslashZero;
+	private readonly bool escapedCrIsLf;
 	private readonly PcreByteNewline newline;
 	private readonly List<(int Number, int Offset)> backreferences = new();
 	private int index;
@@ -41,13 +42,14 @@ internal sealed partial class PcreByteParser {
 
 	internal PcreByteParser( byte[] source, bool caseless, bool asciiBsD,
 		PcreByteStartSettings settings, CancellationToken cancellationToken, bool altExtendedClass = false,
-		bool pythonOctal = false, bool noBackslashZero = false ) {
+		bool pythonOctal = false, bool noBackslashZero = false, bool escapedCrIsLf = false ) {
 		this.source = source;
 		this.caseless = caseless;
 		caselessRestricted = settings.CaselessRestricted;
 		this.altExtendedClass = altExtendedClass;
 		this.pythonOctal = pythonOctal;
 		this.noBackslashZero = noBackslashZero;
+		this.escapedCrIsLf = escapedCrIsLf;
 		utf8 = settings.Utf8;
 		ucp = settings.Ucp;
 		turkishCasing = settings.TurkishCasing;
@@ -694,7 +696,10 @@ internal sealed partial class PcreByteParser {
 			(byte)'t' => 0x09,
 			_ => -1
 		};
-		if ( escaped >= 0 ) { return new PcreByteLiteral( (byte)escaped ); }
+		if ( escaped >= 0 ) {
+			if ( escapedCrIsLf && escaped == 0x0D ) { escaped = 0x0A; }
+			return new PcreByteLiteral( (byte)escaped );
+		}
 		if ( value is >= (byte)'0' and <= (byte)'9'
 			or >= (byte)'A' and <= (byte)'Z'
 			or >= (byte)'a' and <= (byte)'z' ) {

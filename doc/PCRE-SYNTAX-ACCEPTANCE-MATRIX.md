@@ -3065,13 +3065,22 @@ original byte/UTF diagnostics, source/option ownership, canonical work equality,
 cancellation and existing resource ceilings. All earlier reference files stay
 unchanged.
 
-Initial tests-only CI 679 exposed 20 duplicate diagnostic rows; removed before
-freeze. Corrected RED 680 (run 43164711369, Linux ARM64 job 131003756401) built
-net8/9/10 with zero warnings/errors. Each framework had 51,948 tests: 356 expected
-new-only failures, 51,592 passes and zero skips, with no native literal-oracle
-failure. The new reference blob freezes at
-`d08e6c308f4754152166c97c88a67f64fec8f674` before production changes.
-Final qualification requires all 51,948 tests in 18 native platform/framework
+Initial tests-only CI 679 exposed 20 duplicate diagnostic rows, removed before
+freeze. CI 681 passed 51,946/51,948 and exposed two mistaken default-byte
+range diagnostic expectations in this new fixture. The old RED 680/freeze
+receipt is invalidated: ordinary byte ranges retain the existing hyphen offset,
+while UTF/algebra retains the opening bracket. Only those two exact expected
+offsets and the method name changed; assertions and native profiles remain.
+
+Production was restored to merged PR226 for valid tests-only RED 682
+(run 43166167501, Linux ARM64 job 131008465287), source
+`f0384874b3a39adb2128db895a7709b5e53abfcc`. net8/9/10 each built with zero
+warnings/errors and had 51,948 tests: 354 option-dependent new failures, 51,594
+passes and zero skips. All default profiles, diagnostic cases, earlier fixtures
+and native literal-oracle checks passed. All new cases freeze at
+`02a1e6f7874e39f406b91ee7496b71fc51ade294` before restoring the same three-file
+parser implementation. Existing diagnostic behavior stays unchanged.
+Final qualification requires 51,948 tests in all 18 native platform/framework
 results and the existing frozen, Unicode, parity, resource and package gates.
 
 Other directives/callouts, failed/partial labels, UTF code-unit escapes, wider

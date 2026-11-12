@@ -70,12 +70,19 @@ and six unique compile-error cases, researched across 1,500 native profiles.
 Additional cases exercise all byte values, UTF/CRLF offsets, option composition,
 byte diagnostics, ownership, work equality, cancellation and resource ceilings.
 
-Corrected tests-only RED 680 (run 43164711369) had 356 expected new failures and
-51,592 passes per framework, with zero skips, build warnings/errors or earlier
-reference/native literal-oracle failures. The new file freezes at
-`d08e6c308f4754152166c97c88a67f64fec8f674`. Production now needs the complete
-51,948-test suite in 18 native results and author review. All earlier reference
-files, 35 frozen source blobs and 214 frozen outcomes in 120 methods remain fixed.
+Valid tests-only RED 682 (run 43166167501, source
+`f0384874b3a39adb2128db895a7709b5e53abfcc`) had 354 option-dependent new
+failures and 51,594 passes per framework, with zero skips, build warnings/errors
+or earlier-reference/native literal-oracle failures. Production matched merged
+PR226 exactly. All default profiles and diagnostic checks passed. The 1,495-case
+reference freezes at `02a1e6f7874e39f406b91ee7496b71fc51ade294` before restoring
+the same three-file implementation. The earlier RED 680/freeze receipt is
+invalidated: CI 681 exposed two incorrect new default-byte diagnostic offsets,
+now corrected strictly to the existing hyphen contract, with every assertion
+and native profile retained. Production diagnostic behavior stays fixed.
+Final qualification requires 51,948 tests in all 18 native results and author
+review. All earlier reference files, 35 frozen source blobs and 214 frozen
+outcomes in 120 methods remain fixed.
 
 Other directives/callouts, failed/partial labels, UTF code-unit escapes, wider
 optimizer/resources (#102), UTF16/exported API and realistic consumer/release

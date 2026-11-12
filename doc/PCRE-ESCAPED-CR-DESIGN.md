@@ -54,3 +54,9 @@ its freeze receipt is invalidated. Correct only those two exact offsets and the
 method name, preserving every assertion and all native match profiles. Restore
 production to the merged baseline for a fresh tests-only RED before re-freezing.
 No production diagnostic behavior or earlier reference file changes.
+
+Valid tests-only RED 682 (run 43166167501) confirms 354 option-dependent
+failures and 51,594 passes in each framework, with zero skips/build warnings or
+errors and all default profiles/diagnostics/native literal checks passing.
+The corrected reference is frozen at 02a1e6f7874e39f406b91ee7496b71fc51ade294
+before the identical three-file implementation is restored.
