@@ -79,6 +79,7 @@ internal enum PcreByteClassPrefix { None, Atom, Exact, AnyProperty, Bitmap }
 internal sealed record PcreByteClass(
 	PcreByteSet Set, bool ExplicitNewline = false, PcreByteClassPrefix PrefixKind = PcreByteClassPrefix.None
 ) : PcreByteNode {
+	internal bool IsEmptySource { get; init; }
 	internal bool PrefixAny => PrefixKind is PcreByteClassPrefix.Atom
 		or PcreByteClassPrefix.Exact or PcreByteClassPrefix.AnyProperty;
 }

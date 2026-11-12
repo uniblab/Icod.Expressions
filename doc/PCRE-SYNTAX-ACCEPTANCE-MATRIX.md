@@ -34,6 +34,7 @@ the matcher returns spans, leaving framing, status and output to Grep.
 | `\N` non-newline, UTF `\N{U+...}` literal | Bare form obeys LF/AnyCRLF and ignores DotAll; counted repetitions supported; Unicode codepoint form shares braced-hex literal/range/fixed-assertion rules | `PcreNonNewlineReferenceTests`; byte/scalar membership, braced-form disambiguation, captures, offsets and diagnostics |
 | Bare and braced octal literals | Default up-to-three-digit octals and `\o{...}` in byte/UTF atoms, brackets/ranges and fixed literal assertions; byte/scalar range checks, brace-edge space/tab | `PcreNumericEscapeReferenceTests`; all 256 byte values, UTF bounds, quoting, offsets and diagnostics; caller PythonOctal/NoBackslashZero modes use PcreNumericEscapeOptionReferenceTests |
 | Caller option `EscapedCrIsLf` | Textual `\r` becomes canonical LF; other CR spellings, quotes, raw labels and newline policies are preserved | `PcreEscapedCrReferenceTests`; byte/UTF/class/range/offset/resource and ownership controls |
+| Caller option `AllowEmptyClass` | Enables empty `[]` and complemented `[^]` in ordinary/UTS classes, including nested UTS operands; Perl algebra and default literal `]` behavior stay fixed | `PcreEmptyClassReferenceTests`; repeat, UTF/CRLF, grammar, diagnostic, resource and ownership controls |
 | Ordinary `[ ]` ranges, negation, shorthand unions, 14 POSIX names | Supported subset in byte and UTF modes; ordinary bracket grammar unchanged, Perl algebra listed separately | Bracket and POSIX tests; Unicode table/version reconciliation |
 | `\p`/`\P` general categories and special properties | Byte/UTF categories plus Any/Xan/Xps/Xsp/Xwd/Xuc; loose names, P/caret complements and property predicates independent of UCP/ASCII/i/r. Category-prefixed aliases remain a library extension for categories only. UTF class source operands/endpoints preserve CR/LF flags before folding, including the native negated-singleton exception. Scripts/scx now have pinned Unicode17 data; binary/Bidi properties now have pinned native data | `PcreBytePropertyReferenceTests`, `PcreSpecialPropertyReferenceTests`, `PcreClassNewlineMetadataReferenceTests`, `PcreUtf8GeneralCategoryTests`; see `PCRE-SPECIAL-PROPERTIES-DESIGN.md`; Unicode17 categories and default simple-case mappings are pinned; byte search-optimization parity remains a gate |
 | Unicode script/scx properties | All175 scripts/344 normalized long, short and legacy aliases; bare names are scx, explicit sc/Script and scx/Script_Extensions, native primary-or-extension membership, byte projection and mixed predicates | `PcreScriptPropertyReferenceTests`, 3508 native boundaries and source-hash/native-fingerprint-checked regeneration; script-run groups remain separate |
@@ -3087,3 +3088,51 @@ Other directives/callouts, failed/partial labels, UTF code-unit escapes, wider
 optimizer/resources (#102), UTF16/public API and realistic consumer/release
 qualification remain open. Grep stays last. See
 [design](PCRE-ESCAPED-CR-DESIGN.md) and [plan](PCRE-ESCAPED-CR-PLAN.md).
+
+## PR228: empty character class caller option
+
+Internal `AllowEmptyClass` defaults to false and selects native
+`PCRE2_ALLOW_EMPTY_CLASS` (0x1). Enabled `[]` never matches; `[^]` matches any
+character including newlines, and classes retain quantifier behavior. Default
+first-position literal `]`, quotes and raw labels stay fixed. Existing class-
+start trivia/negation selects emptiness before ordinary/UTF/UTS dispatch; a failed
+probe restores the index. Empty bitmap/ALLANY nodes and bounded UTS scalar terms
+own matching. Perl class algebra keeps its grammar and rejects empty operands.
+
+Direct empty-class source has no native consumed lookbehind length, even under
+`{0}` or through captures/references/calls. One default-false provenance field
+on the existing bitmap node preserves that distinction during shared width
+analysis and reports InvalidSyntax at the assertion opening. Computed-empty
+ordinary/UTS sets retain their widths; ordinary lookahead, DEFINE and content
+after FAIL retain native skipping. No new node, opcode or runtime state is added.
+Source bytes, UTF validation, exported API, dependencies and earlier tests stay fixed.
+
+The 1,005 cases include the primary 941 controls (818 pinned JIT profiles,
+94 distinct compile-error cases and 19 exact legacy diagnostics) plus 64 width
+controls (24 compile errors and 40 JIT profiles). Independent native research
+replays all 1,472 PCRE2 10.48 profiles: 858 valid and 614 error profiles. Coverage
+includes all octets, malformed-UTF/CRLF offsets, class algebra, caller policies,
+source/options/raw labels, work equality, cancellation and resource ceilings.
+
+Initial RED 684 established 640 option-dependent failures. CI 685 passed
+52,883/52,889 and exposed four missing lookbehind rejections plus two invalid
+entries in the positive offset loop. The earlier freeze is superseded: replace
+only those two entries with valid positive/negative lookahead controls, preserving
+all rejection assertions. Precompile all native offset patterns before managed
+matching so invalid fixtures cannot hide behind an earlier feature failure.
+
+Valid tests-only RED 686 (run 43173736095, Linux ARM64 job 131032890324), source
+`56e69c751148142a74f52d34e46d5829863a6684`, kept production unchanged from
+CI 685. net8/9/10 built with zero warnings/errors; each had 52,953 tests,
+28 expected consumed-empty-source rejection failures, 52,925 passes and zero
+skips. All valid/computed-set/UTS/lookahead/DEFINE/FAIL/offset/default/diagnostic/
+earlier-reference/native-oracle checks passed. Before the provenance/width fix,
+freeze the corrected 941-case blob `c917a24b7d6d7a9cdaacd8a43a27a01e9058562d`
+and 64-case blob `08edf98ee26f4c3efcd44c2a591ae5b087756567`.
+Final qualification requires all 52,953 tests in 18 native platform/framework
+results and the existing frozen, Unicode, parity, resource and package gates.
+
+Other modes/directives/callouts, failed/partial labels, UTF code-unit escapes,
+wider optimizer/resources (#102), UTF16/public API and realistic consumer/release
+qualification remain open. Grep stays last. See
+[design](PCRE-EMPTY-CLASSES-DESIGN.md) and [plan](PCRE-EMPTY-CLASSES-PLAN.md).

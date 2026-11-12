@@ -1,6 +1,6 @@
 # PCRE roadmap status
 
-Reviewed after merged PR226, with PR227 in progress. Issue #7 remains the delivery roadmap; the
+Reviewed after merged PR227, with PR228 in progress. Issue #7 remains the delivery roadmap; the
 [syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md),
 [resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) and
 [Grep fixture inventory](PCRE-GREP-CONSUMER-FIXTURES.md) define the detailed gates.
@@ -40,6 +40,7 @@ retaining each framework's complete suite and frozen-result qualification.
    PR225 adds UTF Turkish casing through the shared scalar folding policy.
    PR226 adds caller Python-octal and bare-zero policies to shared numeric parsing.
    PR227 adds caller escaped-CR remapping through canonical literal parsing.
+   PR228 adds caller-selected empty classes through canonical nodes and bounded UTS terms.
    UTF code-unit escape,
    remaining directives/verbs/callouts and other matrix gaps require their own
    pinned reference fixtures. Decide any intentional exclusions before release;
@@ -57,34 +58,37 @@ retaining each framework's complete suite and frozen-result qualification.
 
 ## Current increment and next syntax work
 
-PR226 is merged at `fa0d79c4368f7fb65784a7191c3bf02034a83aac`;
-main 43159771095 and scripts 43159771272 are green. Its 709 new controls
-qualified in 18 native results, 50,453 tests per framework, with zero failures,
+PR227 is merged at `600d4f9e9f0d6c984ed101c163262cbcc615f3b1`;
+main 43169151838 and scripts 43169151810 are green. Its 1,495 new controls
+qualified in 18 native results, 51,948 tests per framework, with zero failures,
 skips, build warnings or errors.
 
-PR227 adds internal `EscapedCrIsLf`, default false. Only textual `\r` is
-mapped to canonical LF in the shared escape parser; other CR spellings, raw
-labels, original source bytes, newline policies and existing matcher paths stay
-unchanged. The 1,495 distinct controls include 1,474 JIT-valid native profiles
-and six unique compile-error cases, researched across 1,500 native profiles.
-Additional cases exercise all byte values, UTF/CRLF offsets, option composition,
-byte diagnostics, ownership, work equality, cancellation and resource ceilings.
+PR228 adds internal `AllowEmptyClass`, default false. Enabled `[]` never matches
+and `[^]` matches any character including newlines; classes remain repeatable.
+Ordinary and nested UTS classes use the existing empty bitmap/ALLANY nodes and
+bounded scalar terms. Perl class algebra, original source bytes, default literal
+closing-bracket behavior and all existing matcher paths remain unchanged.
 
-Valid tests-only RED 682 (run 43166167501, source
-`f0384874b3a39adb2128db895a7709b5e53abfcc`) had 354 option-dependent new
-failures and 51,594 passes per framework, with zero skips, build warnings/errors
-or earlier-reference/native literal-oracle failures. Production matched merged
-PR226 exactly. All default profiles and diagnostic checks passed. The 1,495-case
-reference freezes at `02a1e6f7874e39f406b91ee7496b71fc51ade294` before restoring
-the same three-file implementation. The earlier RED 680/freeze receipt is
-invalidated: CI 681 exposed two incorrect new default-byte diagnostic offsets,
-now corrected strictly to the existing hyphen contract, with every assertion
-and native profile retained. Production diagnostic behavior stays fixed.
-Final qualification requires 51,948 tests in all 18 native results and author
-review. All earlier reference files, 35 frozen source blobs and 214 frozen
-outcomes in 120 methods remain fixed.
+The 1,005 controls include the primary 941-case fixture and 64 width controls,
+researched across 1,472 native profiles (858 JIT-valid, 614 error profiles).
+One compile-time class provenance field distinguishes direct empty source,
+which native rejects in consumed lookbehind, from computed-empty sets and
+unconsumed lookahead/DEFINE/FAIL content. No new node, opcode or VM state.
 
-Other directives/callouts, failed/partial labels, UTF code-unit escapes, wider
-optimizer/resources (#102), UTF16/exported API and realistic consumer/release
-qualification remain open. Grep stays last. See
-[design](PCRE-ESCAPED-CR-DESIGN.md) and [plan](PCRE-ESCAPED-CR-PLAN.md).
+Valid tests-only RED 686 (run 43173736095, Linux ARM64 job 131032890324),
+source `56e69c751148142a74f52d34e46d5829863a6684`, kept the first implementation
+fixed and had 28 expected lookbehind-rejection failures and 52,925 passes per
+framework, zero skips/build warnings/errors. Every valid/default/diagnostic/
+offset/native-oracle/earlier-reference check passed. The corrected 941-case blob
+`c917a24b7d6d7a9cdaacd8a43a27a01e9058562d` and 64-case blob
+`08edf98ee26f4c3efcd44c2a591ae5b087756567` freeze before the width correction.
+The initial freeze is superseded after CI 685 exposed two invalid positive-loop
+entries, now replaced with valid lookaheads while all rejection controls remain.
+Final qualification requires 52,953 tests in all 18 native results and author
+review. Earlier references, 35 frozen production blobs and 214 frozen outcomes
+in 120 methods stay fixed.
+
+Other modes/directives/callouts, failed/partial labels, UTF code-unit escapes,
+wider optimizer/resources (#102), UTF16/exported API and realistic consumer/
+release qualification remain open. Grep stays last. See
+[design](PCRE-EMPTY-CLASSES-DESIGN.md) and [plan](PCRE-EMPTY-CLASSES-PLAN.md).

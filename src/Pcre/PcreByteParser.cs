@@ -23,6 +23,7 @@ internal sealed partial class PcreByteParser {
 	private readonly bool pythonOctal;
 	private readonly bool noBackslashZero;
 	private readonly bool escapedCrIsLf;
+	private readonly bool allowEmptyClass;
 	private readonly PcreByteNewline newline;
 	private readonly List<(int Number, int Offset)> backreferences = new();
 	private int index;
@@ -42,7 +43,8 @@ internal sealed partial class PcreByteParser {
 
 	internal PcreByteParser( byte[] source, bool caseless, bool asciiBsD,
 		PcreByteStartSettings settings, CancellationToken cancellationToken, bool altExtendedClass = false,
-		bool pythonOctal = false, bool noBackslashZero = false, bool escapedCrIsLf = false ) {
+		bool pythonOctal = false, bool noBackslashZero = false, bool escapedCrIsLf = false,
+		bool allowEmptyClass = false ) {
 		this.source = source;
 		this.caseless = caseless;
 		caselessRestricted = settings.CaselessRestricted;
@@ -50,6 +52,7 @@ internal sealed partial class PcreByteParser {
 		this.pythonOctal = pythonOctal;
 		this.noBackslashZero = noBackslashZero;
 		this.escapedCrIsLf = escapedCrIsLf;
+		this.allowEmptyClass = allowEmptyClass;
 		utf8 = settings.Utf8;
 		ucp = settings.Ucp;
 		turkishCasing = settings.TurkishCasing;
@@ -222,6 +225,10 @@ internal sealed partial class PcreByteParser {
 			return CreateAnyCharacter( dotAll );
 		}
 		if ( value == (byte)'[' ) {
+			if ( TryReadEmptyClass( out var negated ) ) {
+				return negated ? new PcreByteAny( true )
+					: new PcreByteClass( default, PrefixKind: PcreByteClassPrefix.Bitmap ) { IsEmptySource = true };
+			}
 			if ( altExtendedClass ) { return ParseUtsClass( offset ); }
 			if ( utf8 ) { return ParseUtf8Bracket( offset ); }
 			return ParseBracket( offset );
