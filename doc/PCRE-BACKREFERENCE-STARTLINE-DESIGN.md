@@ -20,7 +20,7 @@ Backreference or Accept; consuming instructions stop that path. Keep existing
 Split/Jump/empty-Progress handling, 1,000 instruction/visit ceiling, heap storage,
 cancellation and the existing AST first-caret proof for every branch. Default
 and selected references share native optimization opacity. Mandatory leading
-literals/classes keep their priority. No matcher, parser, AST/IR shape, capture
+literals and one/two-member classes keep their prefix-search priority. No matcher, parser, AST/IR shape, capture
 journal, work charging, source ownership, flags, API, dependency or quota changes.
 
 Alternative runtime newline exceptions would duplicate compiler policy and can
@@ -64,3 +64,20 @@ Turkish casing in this supplementary proof. The root first-caret proof remains
 mandatory. No matcher or test changes; frozen949-case fixture stays
 f78f3d24ff62419bfefd9672a902259138fbbb7e. The six already-failing cases provide
 RED for this compiler correction. Broader prefix shapes remain in #102.
+
+## Qualified outcome
+
+Qualification after the frozen six-case correction: source
+`a00c32c0f9531808415991f99dd6cb4a2bfc5f38`, [CI704](https://github.com/uniblab/Icod.Expressions/actions/runs/43260813850)
+and [scripts266](https://github.com/uniblab/Icod.Expressions/actions/runs/43260813804)
+are green. All18 native platform/framework results pass62,371 tests each, with
+zero failures/skips/build warnings/errors and214 frozen outcomes in120 methods.
+Frozen35, five Unicode generators, seven equal component workloads, extraction/
+POSIX/glibc/API/corpus, packaging and three package-smokes pass. Three-OS script
+gates pass; full consumer compatibility is skipped by the PCRE-only classifier.
+The949-case fixture and247 earlier test files are unchanged. An additional1,728
+native JIT checks confirm class-pair priority across casing/UCP/reference policies,
+root wrappers andNEL/LS/PS offsets. Whole-branch author review found no remaining
+issues in this scope; independent review was not performed. Broader optimizer
+shapes remain in #102. Final documentation changes preserve the qualified
+source, test, packaging and workflow trees.

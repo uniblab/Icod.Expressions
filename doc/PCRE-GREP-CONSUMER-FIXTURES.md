@@ -3457,10 +3457,14 @@ but matches3:1/capture1=3:0 at boundary3 under either reference policy.
 
 Only PcreByteProgram.cs changes: rename the existing private helper to
 HasBackreferenceStartBarrier, require any canonical reference and accept a
-nonconsuming path reaching Backreference or Accept. Mandatory literals/classes
-still block that path; every branch must pass the existing AST first-caret
-proof. Keep pure-instruction eligibility,1,000 instructions/visits, heap storage
-and cancellation. No matcher/parser/IR-shape/source/capture/journal/work/quota/
+nonconsuming path reaching Backreference or Accept. Mandatory literals and
+one/two-member classes keep native prefix-search priority. A supplementary
+linear proof admits exactly one positive, predicate-free ASCII class with more
+than two members before a reference: it cannot supply JIT first-character-pair
+search. Additional consumers, branches/loops, non-ASCII ranges, predicates and
+Turkish casing stay outside that proof. Every branch must still pass the existing
+AST first-caret proof. Keep pure-instruction eligibility,1,000 instructions/visits,
+heap storage and cancellation. No matcher/parser/IR-shape/source/capture/journal/work/quota/
 API/dependency changes. Calls/assertions/conditions/verbs and over-budget
 programs remain outside this conservative proof; broader #102 stays open.
 
@@ -3480,6 +3484,21 @@ native split/boundary research, including87 default and198 selected failures.
 Earlier fixtures, strict/fallback controls and native literal/oracle checks
 passed. Freeze fixture f78f3d24ff62419bfefd9672a902259138fbbb7e before
 production; require all18 native results and every configured supporting gate.
+
+Qualification after the frozen six-case correction: source
+`a00c32c0f9531808415991f99dd6cb4a2bfc5f38`, [CI704](https://github.com/uniblab/Icod.Expressions/actions/runs/43260813850)
+and [scripts266](https://github.com/uniblab/Icod.Expressions/actions/runs/43260813804)
+are green. All18 native platform/framework results pass62,371 tests each, with
+zero failures/skips/build warnings/errors and214 frozen outcomes in120 methods.
+Frozen35, five Unicode generators, seven equal component workloads, extraction/
+POSIX/glibc/API/corpus, packaging and three package-smokes pass. Three-OS script
+gates pass; full consumer compatibility is skipped by the PCRE-only classifier.
+The949-case fixture and247 earlier test files are unchanged. An additional1,728
+native JIT checks confirm class-pair priority across casing/UCP/reference policies,
+root wrappers andNEL/LS/PS offsets. Whole-branch author review found no remaining
+issues in this scope; independent review was not performed. Broader optimizer
+shapes remain in #102. Final documentation changes preserve the qualified
+source, test, packaging and workflow trees.
 
 Other syntax/modes/directives/callouts, failed/partial labels, wider optimizer/
 resources (#102), UTF16/exported API and realistic consumer/release gates remain

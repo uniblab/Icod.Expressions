@@ -43,18 +43,20 @@ HasBackreferenceStartBarrier(); require any Backreference instead of Second=1;
 return true at Backreference as well as Accept along existing nonconsuming CFG.
 Update the explanatory comment. Preserve eligibility/size/visits/cancellation,
 consuming leaves, control-flow edges and existing AST root-line-anchor proof.
+The six frozen broad-class failures in CI703 also require the bounded linear
+ASCII-class/reference proof documented below; narrow classes remain barriers.
 
 - [x] Implement only after valid RED/freeze; no matcher or earlier tests change.
-- [ ] All18 native results pass full/frozen tests with0failures/skips/build warnings/errors.
-- [ ] Verify frozen35, five Unicode generators, seven equal workloads, extraction/
+- [x] All18 native results pass full/frozen tests with0failures/skips/build warnings/errors.
+- [x] Verify frozen35, five Unicode generators, seven equal workloads, extraction/
   POSIX/API/corpus, packaging/three package-smokes and three-OS script gates.
 
 ## Task 3: review and delivery
 
-- [ ] Author review of all five boundaries; verify hashes/clean tree and exact
+- [x] Author review of all five boundaries; verify hashes/clean tree and exact
   source/base/proposed-merge identity; independent review excluded by user preference.
-- [ ] Update design/matrix/resource/consumer/status inventories and issue7 footer only.
-- [ ] Mark ready after all gates, remove only this tranche ledger; user owns merge.
+- [x] Update design/matrix/resource/consumer/status inventories and issue7 footer only.
+- [x] Mark ready after all gates, remove only this tranche ledger; user owns merge.
 
 Baseline233 merged5a286d566e8f3714cd4fd6fe185b927c7d0e2812,
 tree8fa3cf1e8921ce44d91aeb5dd14a3a7d65203872. Main43251995145 and
@@ -92,3 +94,25 @@ Turkish casing in this supplementary proof. The root first-caret proof remains
 mandatory. No matcher or test changes; frozen949-case fixture stays
 f78f3d24ff62419bfefd9672a902259138fbbb7e. The six already-failing cases provide
 RED for this compiler correction. Broader prefix shapes remain in #102.
+
+## Qualification and author review
+
+Qualification after the frozen six-case correction: source
+`a00c32c0f9531808415991f99dd6cb4a2bfc5f38`, [CI704](https://github.com/uniblab/Icod.Expressions/actions/runs/43260813850)
+and [scripts266](https://github.com/uniblab/Icod.Expressions/actions/runs/43260813804)
+are green. All18 native platform/framework results pass62,371 tests each, with
+zero failures/skips/build warnings/errors and214 frozen outcomes in120 methods.
+Frozen35, five Unicode generators, seven equal component workloads, extraction/
+POSIX/glibc/API/corpus, packaging and three package-smokes pass. Three-OS script
+gates pass; full consumer compatibility is skipped by the PCRE-only classifier.
+The949-case fixture and247 earlier test files are unchanged. An additional1,728
+native JIT checks confirm class-pair priority across casing/UCP/reference policies,
+root wrappers andNEL/LS/PS offsets. Whole-branch author review found no remaining
+issues in this scope; independent review was not performed. Broader optimizer
+shapes remain in #102. Final documentation changes preserve the qualified
+source, test, packaging and workflow trees.
+
+The existing six frozen caseless-class failures in CI703 are GREEN in CI704.
+All five review boundaries pass. Keep the branch for user review and merge;
+merge/tag/publication remain user-owned. Readiness and any automatic CI for
+the final documentation commit are tracked on PR234.
