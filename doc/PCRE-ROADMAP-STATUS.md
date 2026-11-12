@@ -69,17 +69,24 @@ Ordinary and nested UTS classes use the existing empty bitmap/ALLANY nodes and
 bounded scalar terms. Perl class algebra, original source bytes, default literal
 closing-bracket behavior and all existing matcher paths remain unchanged.
 
-The 941 controls cover 818 JIT-valid native profiles and 94 unique compile-error
-cases researched across 1,408 native profiles, 19 exact legacy diagnostic cases,
-all bytes, UTF/CRLF offsets, caller policies, ownership, work/cancellation and
-resource ceilings. Valid tests-only RED 684 (run 43171972153, Linux x64
-job 131027191251) had 640 option-dependent new failures and 52,249 passes per
-framework, with zero skips/build warnings/errors. Default profiles, grammar,
-exact diagnostics, UTF validation, earlier fixtures and native literal checks
-passed. Reference `8565080638577ecf293f0d4f24685cead1e1de64` freezes before
-production changes. Final qualification requires 52,889 tests in all 18 native
-results and author review. Earlier references, 35 frozen production blobs and
-214 frozen outcomes in 120 methods stay fixed.
+The 1,005 controls include the primary 941-case fixture and 64 width controls,
+researched across 1,472 native profiles (858 JIT-valid, 614 error profiles).
+One compile-time class provenance field distinguishes direct empty source,
+which native rejects in consumed lookbehind, from computed-empty sets and
+unconsumed lookahead/DEFINE/FAIL content. No new node, opcode or VM state.
+
+Valid tests-only RED 686 (run 43173736095, Linux ARM64 job 131032890324),
+source `56e69c751148142a74f52d34e46d5829863a6684`, kept the first implementation
+fixed and had 28 expected lookbehind-rejection failures and 52,925 passes per
+framework, zero skips/build warnings/errors. Every valid/default/diagnostic/
+offset/native-oracle/earlier-reference check passed. The corrected 941-case blob
+`c917a24b7d6d7a9cdaacd8a43a27a01e9058562d` and 64-case blob
+`08edf98ee26f4c3efcd44c2a591ae5b087756567` freeze before the width correction.
+The initial freeze is superseded after CI 685 exposed two invalid positive-loop
+entries, now replaced with valid lookaheads while all rejection controls remain.
+Final qualification requires 52,953 tests in all 18 native results and author
+review. Earlier references, 35 frozen production blobs and 214 frozen outcomes
+in 120 methods stay fixed.
 
 Other modes/directives/callouts, failed/partial labels, UTF code-unit escapes,
 wider optimizer/resources (#102), UTF16/exported API and realistic consumer/

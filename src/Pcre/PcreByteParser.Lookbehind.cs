@@ -134,6 +134,8 @@ internal sealed partial class PcreByteParser {
 				continue;
 			}
 			widths[item.Node] = item.Node switch {
+				PcreByteClass { IsEmptySource: true } => throw Invalid( item.Opening,
+					"empty character class source has no bounded lookbehind length" ),
 				PcreByteLiteral or PcreByteAny or PcreByteClass or PcreByteScalarClass or PcreByteScalarSet or PcreByteScalarExpression => new( 1, 1 ),
 				PcreByteNewlineSequence => new( 1, 2 ),
 				PcreByteAnchor or PcreByteSearchStart or PcreByteMatchStartReset or PcreByteLineAnchor or PcreByteEndBeforeFinalLf

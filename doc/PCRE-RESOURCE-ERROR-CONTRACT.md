@@ -3344,29 +3344,44 @@ qualification remain open. Grep stays last. See
 
 Internal `AllowEmptyClass` defaults to false and selects native
 `PCRE2_ALLOW_EMPTY_CLASS` (0x1). Enabled `[]` never matches; `[^]` matches any
-character, including newlines, and classes retain normal quantifier behavior.
-Default first-position literal `]`, quoted text and raw labels remain fixed.
-Existing class-start negation/trivia rules select emptiness before ordinary/UTF/
-UTS dispatch. A failed empty-class probe restores the index. Empty classes lower
-to the existing empty bitmap or ALLANY node; nested UTS operands reuse bounded
-scalar-set terms. Perl class algebra keeps its grammar and does not admit empty
-bracket operands. Source bytes, UTF validation and legacy diagnostics stay fixed.
-No AST, opcode, matcher state, exported API or dependency change is introduced.
+character including newlines, and classes retain quantifier behavior. Default
+first-position literal `]`, quotes and raw labels stay fixed. Existing class-
+start trivia/negation selects emptiness before ordinary/UTF/UTS dispatch; a failed
+probe restores the index. Empty bitmap/ALLANY nodes and bounded UTS scalar terms
+own matching. Perl class algebra keeps its grammar and rejects empty operands.
 
-The 941 cases include 818 pinned JIT-valid profiles and 94 unique native compile
-errors, researched across 1,408 PCRE2 10.48 profiles. Nineteen exact legacy byte/
-UTF diagnostic cases, all octets, selected malformed-UTF/CRLF offsets, option
-composition, source/options/raw labels, canonical work equality, cancellation and
-resource ceilings cover the review boundaries. All earlier test files stay fixed.
+Direct empty-class source has no native consumed lookbehind length, even under
+`{0}` or through captures/references/calls. One default-false provenance field
+on the existing bitmap node preserves that distinction during shared width
+analysis and reports InvalidSyntax at the assertion opening. Computed-empty
+ordinary/UTS sets retain their widths; ordinary lookahead, DEFINE and content
+after FAIL retain native skipping. No new node, opcode or runtime state is added.
+Source bytes, UTF validation, exported API, dependencies and earlier tests stay fixed.
 
-Tests-only RED 684 (run 43171972153, Linux x64 job 131027191251), source
-`399c334c6caaf166421b5969cfd90d2f16e388b0`, built net8/9/10 with zero warnings
-or errors. Each had 52,889 tests: 640 option-dependent new failures, 52,249 passes
-and zero skips. Default profiles, grammar errors, exact legacy diagnostics, UTF
-validation, earlier fixtures and native literal-oracle checks passed. The new
-reference freezes at `8565080638577ecf293f0d4f24685cead1e1de64` before production
-changes. Final qualification requires all 52,889 tests in 18 native platform/
-framework results and all earlier frozen, Unicode, parity and package gates.
+The 1,005 cases include the primary 941 controls (818 pinned JIT profiles,
+94 distinct compile-error cases and 19 exact legacy diagnostics) plus 64 width
+controls (24 compile errors and 40 JIT profiles). Independent native research
+replays all 1,472 PCRE2 10.48 profiles: 858 valid and 614 error profiles. Coverage
+includes all octets, malformed-UTF/CRLF offsets, class algebra, caller policies,
+source/options/raw labels, work equality, cancellation and resource ceilings.
+
+Initial RED 684 established 640 option-dependent failures. CI 685 passed
+52,883/52,889 and exposed four missing lookbehind rejections plus two invalid
+entries in the positive offset loop. The earlier freeze is superseded: replace
+only those two entries with valid positive/negative lookahead controls, preserving
+all rejection assertions. Precompile all native offset patterns before managed
+matching so invalid fixtures cannot hide behind an earlier feature failure.
+
+Valid tests-only RED 686 (run 43173736095, Linux ARM64 job 131032890324), source
+`56e69c751148142a74f52d34e46d5829863a6684`, kept production unchanged from
+CI 685. net8/9/10 built with zero warnings/errors; each had 52,953 tests,
+28 expected consumed-empty-source rejection failures, 52,925 passes and zero
+skips. All valid/computed-set/UTS/lookahead/DEFINE/FAIL/offset/default/diagnostic/
+earlier-reference/native-oracle checks passed. Before the provenance/width fix,
+freeze the corrected 941-case blob `c917a24b7d6d7a9cdaacd8a43a27a01e9058562d`
+and 64-case blob `08edf98ee26f4c3efcd44c2a591ae5b087756567`.
+Final qualification requires all 52,953 tests in 18 native platform/framework
+results and the existing frozen, Unicode, parity, resource and package gates.
 
 Other modes/directives/callouts, failed/partial labels, UTF code-unit escapes,
 wider optimizer/resources (#102), UTF16/public API and realistic consumer/release

@@ -227,7 +227,7 @@ internal sealed partial class PcreByteParser {
 		if ( value == (byte)'[' ) {
 			if ( TryReadEmptyClass( out var negated ) ) {
 				return negated ? new PcreByteAny( true )
-					: new PcreByteClass( default, PrefixKind: PcreByteClassPrefix.Bitmap );
+					: new PcreByteClass( default, PrefixKind: PcreByteClassPrefix.Bitmap ) { IsEmptySource = true };
 			}
 			if ( altExtendedClass ) { return ParseUtsClass( offset ); }
 			if ( utf8 ) { return ParseUtf8Bracket( offset ); }

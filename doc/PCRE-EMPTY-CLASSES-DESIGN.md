@@ -20,7 +20,7 @@ class before ordinary/UTF/UTS dispatch using existing class-negation/trivia
 scanning. Restore the index if it is not empty. Lower to existing empty bitmap
 class or ALLANY node, matching native lowering. At a nested UTS opening, add an
 empty/complemented scalar-set operand through the current bounded term stack.
-Perl algebra keeps its current direct reader and grammar. No new AST, opcode,
+Perl algebra keeps its current direct reader and grammar. No new AST node, opcode,
 matcher state or runtime mode is needed.
 
 Simply relaxing closing-bracket conditions would give negated empty classes
@@ -63,3 +63,9 @@ so such errors cannot hide behind a missing feature. Add 64 independently
 checked width profiles (24 errors, 40 JIT-valid); total 1,005 new cases, 52,953
 overall. Observe a fresh tests-only RED against the existing implementation and
 freeze both corrected files before the provenance/width production change.
+
+Valid tests-only RED 686 (run 43173736095) confirms 28 expected consumed-empty-
+source rejection failures and 52,925 passes/framework; zero skips/build warnings
+or errors. All native-valid/default/diagnostic/offset controls pass. Freeze the
+corrected 941-case c917a24b7d6d7a9cdaacd8a43a27a01e9058562d and width-64-case
+08edf98ee26f4c3efcd44c2a591ae5b087756567 before the provenance/width correction.

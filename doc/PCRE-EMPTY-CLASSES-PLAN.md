@@ -51,7 +51,7 @@ using existing scalar operands/AddUtsTerm/JoinUtsSequence. Preserve depth checks
 Perl class-algebra readers, existing AST/width/VM/runtime remain unchanged.
 
 - [x] Implement only those interfaces and paths after the valid reference freeze.
-- [ ] Qualify all 52,889 tests/framework in all 18 native platform/framework results, zero
+- [ ] Qualify all 52,953 tests/framework in all 18 native platform/framework results, zero
   failures/skips/build warnings/errors and frozen 214/120 in each.
 - [ ] Verify frozen 35, five Unicode generators, workload/parity/API/corpus,
   package-only smoke and three-OS scripts; state existing consumer classifier.
@@ -70,7 +70,7 @@ Main 43169151838 and scripts 43169151810 are green; 51,948 tests/framework.
 Source ae2ba88e6869b7b13192c95b6ae1bbbb12dfbaf2,
 tree f6660fdcd403e7d2a23d776663376d16e4c30d58.
 
-## Frozen reference receipt
+## Superseded initial reference receipt
 
 Tests-only source 399c334c6caaf166421b5969cfd90d2f16e388b0,
 tree 7c3c638e9ca7b45882a6f9376311a5b4aecdaed3.
@@ -98,3 +98,22 @@ so such errors cannot hide behind a missing feature. Add 64 independently
 checked width profiles (24 errors, 40 JIT-valid); total 1,005 new cases, 52,953
 overall. Observe a fresh tests-only RED against the existing implementation and
 freeze both corrected files before the provenance/width production change.
+
+## Valid final reference receipt and width fix
+
+Tests-only source 56e69c751148142a74f52d34e46d5829863a6684,
+tree 22c53b077bac996e6fc8a0fd1c7699f20f2fdf3d. Production is identical to
+e79999aa008a3163bd30a73a9fb00a5788710783. RED 686/run 43173736095, Linux
+ARM64 job 131032890324: net8/9/10 each 52,953 tests, 28 expected consumed-empty-
+source rejection failures, 52,925 passes and zero skips/build warnings/errors.
+All valid/computed/UTS/lookahead/DEFINE/FAIL/default/offset/diagnostic/native-
+oracle/earlier-reference cases pass. Freeze primary-941 blob
+c917a24b7d6d7a9cdaacd8a43a27a01e9058562d and width-64 blob
+08edf98ee26f4c3efcd44c2a591ae5b087756567 before the width change.
+
+Additional production files: PcreByteSyntax.cs adds default-false IsEmptySource
+on PcreByteClass; PcreByteParser.cs sets it only for a direct positive empty
+class; PcreByteParser.Lookbehind.cs rejects this node at the current assertion
+opening in shared width analysis, including erased and reference/call children.
+Computed sets and skipped lookahead/DEFINE/FAIL content retain existing paths.
+No new AST node, opcode or runtime state.
