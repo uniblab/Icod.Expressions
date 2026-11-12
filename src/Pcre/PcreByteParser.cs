@@ -20,6 +20,8 @@ internal sealed partial class PcreByteParser {
 	private readonly bool ucp;
 	private readonly bool turkishCasing;
 	private readonly bool altExtendedClass;
+	private readonly bool pythonOctal;
+	private readonly bool noBackslashZero;
 	private readonly PcreByteNewline newline;
 	private readonly List<(int Number, int Offset)> backreferences = new();
 	private int index;
@@ -38,11 +40,14 @@ internal sealed partial class PcreByteParser {
 	private ExtendedMode extended;
 
 	internal PcreByteParser( byte[] source, bool caseless, bool asciiBsD,
-		PcreByteStartSettings settings, CancellationToken cancellationToken, bool altExtendedClass = false ) {
+		PcreByteStartSettings settings, CancellationToken cancellationToken, bool altExtendedClass = false,
+		bool pythonOctal = false, bool noBackslashZero = false ) {
 		this.source = source;
 		this.caseless = caseless;
 		caselessRestricted = settings.CaselessRestricted;
 		this.altExtendedClass = altExtendedClass;
+		this.pythonOctal = pythonOctal;
+		this.noBackslashZero = noBackslashZero;
 		utf8 = settings.Utf8;
 		ucp = settings.Ucp;
 		turkishCasing = settings.TurkishCasing;

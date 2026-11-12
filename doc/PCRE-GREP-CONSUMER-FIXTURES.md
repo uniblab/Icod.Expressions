@@ -3107,3 +3107,32 @@ results plus all previous gates. Wider optimizer/resources (#102), other
 directives/callouts, failed/partial labels, UTF C, UTF16/exported API and realistic
 consumer performance/release stay open. Grep stays last. See
 PCRE-TURKISH-CASING-DESIGN.md and PCRE-TURKISH-CASING-PLAN.md.
+
+## PR226: numeric escape caller options
+
+Internal PythonOctal and NoBackslashZero caller options now select native
+PCRE2_EXTRA_PYTHON_OCTAL and PCRE2_EXTRA_NO_BS0 policies. Both default false.
+Python requires exactly three initial octal digits for a nonzero bare escape;
+otherwise the full decimal run is a globally resolved reference independent of
+preceding capture count. Leading-zero and bracket octals remain literals. Python
+unbraced values stop at255 even in UTF; braced octals keep existing range rules.
+NoBackslashZero rejects only a one-digit zero escape, preserving longer zeros,
+hex/braced/control/raw NUL and quotes. These are caller options, not new (*...)
+syntax. Original-byte diagnostics and UTF validation order remain shared.
+
+Readonly parser flags reuse the bounded decimal scan, octal digit consumption,
+typed literals/references, widths and matcher. No source rewrite, opcode,
+match slot or runtime fallback is added. All earlier reference files remain
+unchanged. The709 controls include688 independent native PCRE2 10.48 profiles:
+534 JIT-valid patterns and154 expected native compile errors. They cover all
+octets, eight flag/byte/UTF combinations, forward/previous captures through256,
+Perl/UTS algebra, ranges, quotes, scopes, offsets and work/cancel/ownership.
+
+RED676 (run43154186921, LinuxARM64 job130970169309) built net8/9/10 with zero
+warnings/errors. Each had50453 cases:149 expected new failures,50304 passes,
+0 skips, no earlier/native literal oracle failure. All709 cases freeze at
+c169f5dfd97ec55a26bfbc2c0e4a538f5109be80 before production changes. Final
+qualification requires50453 cases/framework in18 native results and the prior
+gates. Other directives, failed/partial labels, UTF C, wider optimizer/resources
+(#102), UTF16/public API and realistic consumer/release qualification stay open.
+Grep stays last. See PCRE-NUMERIC-ESCAPE-OPTIONS-DESIGN.md and its PLAN.md.
