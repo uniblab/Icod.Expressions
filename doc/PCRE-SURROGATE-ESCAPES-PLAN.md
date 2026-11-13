@@ -129,3 +129,43 @@ directives/callouts, failed/partial labels, wider optimizer/resources (#102),
 UTF16/exported API and realistic consumer/release gates remain open. User owns
 merge/tag/publication; Grep last. See [design](PCRE-SURROGATE-ESCAPES-DESIGN.md)
 and [plan](PCRE-SURROGATE-ESCAPES-PLAN.md).
+
+## Integration correction: tolerant native literal matching
+
+CI724/sourcea4a1bfba9bb2130496807e9a8cb29303cea531b2 cleared the original
+compile/label cases but retained22 failures per framework:10 pinned literal spans
+on encoded surrogate input and12 offset theories. Native JIT CHAR compares
+encoded literal bytes directly; general class/type decoders still reject those
+bytes. Strict UTF subject errors remain unchanged. Preserve frozen751bd unchanged.
+
+Add a separate580-case native-first fixture for literal/singleton versus generic
+class source shapes, zero/greedy/possessive bodies, assertions and fixed/variable
+rewinds, calls/graphemes, hard malformed barriers, all2,048 literal values in two
+policies and explicit unsupported combinations. Its558 matching profiles and12
+strict/boundary controls,4,096 supplemental JIT0 literal matches and1,836 offset
+protocols are preflighted. Combined1,830 cases/69,855 total;1,799 primary native
+profiles,10,240 supplemental JIT0 profiles plus3 restriction errors,4,500 offsets.
+
+The builder chooses a bounded extension: record HasSurrogateLiterals from emitted
+Literal instructions and lower only positive ordinary Source=Literal singleton
+surrogate classes to that same opcode. Duplicate/range/algebra classes stay typed.
+PcreUtf8.TryReadLiteral(ReadOnlySpan<byte> source,int offset,bool allowSurrogates,
+out int scalar,out int width) first uses strict TryRead, then admits exactly
+ED/A0..BF/80..BF when selected. Use it only for the existing fragment scan, literal
+comparison, nullable entry and assertion rewind/retry positions when both
+MatchInvalidUtf and HasSurrogateLiterals are true. General scalar/type/class,
+source and strict-subject decoders remain unchanged; FF/truncation/other malformed
+bytes remain barriers. No new opcode or matching engine. Existing work and
+cancellation checks surround these operations.
+
+Combinations with WordBoundary, Backreference or ScriptRunCheck have additional
+native malformed-UTF context rules. Reject them explicitly with UnsupportedSyntax
+at byte0 after bounded compilation when tolerant surrogate literals are emitted.
+Strict UTF, label-only names and erased surrogates retain existing constructs.
+This conservative boundary avoids claiming unqualified behavior; qualify these
+combinations separately before allowing them. Nine production files now include
+PcreByteMatcher.cs and a default-false internal program metadata property.
+
+Observe the additional fixture RED against CI724 production before implementing
+this correction; freeze it, retain both fixtures, and requalify all18 results and
+supporting gates. All repo inventories are updated before the final source head.
