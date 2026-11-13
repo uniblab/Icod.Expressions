@@ -30,9 +30,9 @@ qualification; final evidence goes on PR242/issue7 only, with no docs-only CI ru
 **Interfaces:** Optional reflection sets future CaselessRestricted/TurkishCasing
 for executable RED. Native extras0x80/0x10000 pin independent results/errors.
 
-- [ ] Preflight matching/diagnostic profiles, full membership masks, selected
+- [x] Preflight matching/diagnostic profiles, full membership masks, selected
   offsets, ownership/work/capacity proofs; separate unsupported native JIT paths.
-- [ ] Add all four selections and five review boundaries. Publish tests-only
+- [x] Add all four selections and five review boundaries. Publish tests-only
   draft PR242, inspect clean net8/9/10 RED with zero compiler warnings/errors,
   only missing-policy failures, and freeze the fixture before production.
 
@@ -43,7 +43,7 @@ update seven repository documentation files.
 **Interfaces:** bool CaselessRestricted/TurkishCasing init properties;
 existing local caselessRestricted/turkishCasing initialize from options in Parse.
 
-- [ ] Add documented options and replace only the two false initializers; retain
+- [x] Add documented options and replace only the two false initializers; retain
   existing prefix OR, validation, parser initialization and comparison consumers.
 - [ ] Include all inventories before final qualification. Verify all18 native
   results, configured supporting gates, prior257 hashes and frozen identities.
@@ -54,3 +54,9 @@ existing local caselessRestricted/turkishCasing initialize from options in Parse
 - [ ] Verify clean tree and exact source/base/tree/proposed-merge identity.
 - [ ] Record final GREEN/review on PR242 and only issue7's footer, mark ready,
   and remove only this plan's ledger. User owns merge/tag/publication.
+
+## Inline progress before qualification
+
+Tests-only [RED733](https://github.com/uniblab/Icod.Expressions/actions/runs/43432119944), source `c77092cbfb760f9c0e1452353d84bc68316773a5`, Linux ARM job131907925887: net8/9/10 each built without compiler warnings/errors and ran678 expected failures/76,852 passes/77,530total/zero skips. All failures were new missing-policy cases (338 spans,321 diagnostics,2 membership,12 offsets,2 work,2 ownership and1 quota); every earlier test and3,995 new controls passed. Fixture `94b6ffd9c834cbbc10ab03d97cf3c98b7e303c08` froze before production and remains unchanged.
+
+Task1 and Task2 settings integration are complete. All seven repository documentation files precede qualification. The all18 GREEN gate and Task3 review/identities/footer/readiness are intentionally recorded on PR242/issue7 after observation, without another documentation-only source push.

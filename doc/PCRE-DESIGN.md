@@ -3253,3 +3253,65 @@ wider optimizer/resources (#102), NO_UTF_CHECK/UTF16/exported API, realistic
 consumer performance and release gates remain open. User owns merge/tag/
 publication, issue7 stays open and Grep migrates last. See
 [design](PCRE-NEVER-CALLOUT-DESIGN.md) and [plan](PCRE-NEVER-CALLOUT-PLAN.md).
+
+## PR242: caller-selected restricted and Turkish casing
+
+Default-false internal CaselessRestricted and TurkishCasing implement PCRE2 10.48
+extra-options0x80 and0x10000. PcreByteStartSettings seeds its two existing choices
+from caller settings, then exact source prefixes OR into those choices. Neither
+option enables caseless or UTF matching. Original bytes and consumed-prefix end
+remain authoritative; there is no synthetic prefix or source rewriting.
+
+Restricted casing initializes lexical r, so local set/unset/reset remains native.
+Turkish casing persists globally across resets; lexical r selects the existing
+restricted-default comparisons. Global caller/source Turkish and global caller/
+source restriction conflict before body parsing, even if a later scope unsets r.
+The8-bit Turkish mode requires effective UTF; UCP-only byte mode remains invalid.
+Whole-source UTF validation and NeverUTF/UCP priority remain existing. Mode errors
+use the same prefix-end diagnostics and Turkish error family as source activation.
+Neither case policy relaxes malformed input, resources, cancellation or existing
+unsupported syntax. Real disabled-callout/body syntax cannot preempt earlier
+global validation.
+
+Only two production files change: options and start-settings initialization.
+The existing parser, program compiler, pinned Unicode17 folds, literal/class/
+assertion/reference/call consumers and mode-specific bounded optimizer proofs
+receive the same settings as source prefixes. No AST/IR/opcode/matcher/journal/
+shared-limit/exported-API/dependency/workflow changes. All257 earlier test files
+remain fixed, as do GNU/BRE/ERE and frozen35/214 outcomes/120 methods.
+
+The4,673 new cases include4,652 primary native profiles (4,134 matching spans/
+captures/success labels and518 compile profiles), three complete-membership
+cases,12 newline/offset theories and six work/ownership/quota cases. Supplemental
+native preflight covers776 complete class-membership comparisons,3,528 selected
+offset protocols and13 work/ownership/capacity profiles. All accepted profiles
+are JIT0 and every negative matching result is no-match(-1); no unsupported JIT
+profiles were used. Cover all four selections, independent i/UTF/UCP/tolerant
+modes, I/i/İ/ı, Kelvin/long-s pairs, scoped/reset options, ordinary/Perl/UTS classes,
+assertions, references/calls, prefixes, word/line modes, successful labels,
+source/caller/error priority, malformed offsets and owned source/options.
+Caller-versus-prefix work traces, work limits/cancellation and capture/depth/
+expansion ceilings are pinned. Tests-only RED and fixture freezing precede source.
+
+Tests-only [RED733](https://github.com/uniblab/Icod.Expressions/actions/runs/43432119944), source `c77092cbfb760f9c0e1452353d84bc68316773a5`, Linux ARM job131907925887: net8/9/10 each built without compiler warnings/errors and ran678 expected failures/76,852 passes/77,530total/zero skips. All failures were new missing-policy cases (338 spans,321 diagnostics,2 membership,12 offsets,2 work,2 ownership and1 quota); every earlier test and3,995 new controls passed. Fixture `94b6ffd9c834cbbc10ab03d97cf3c98b7e303c08` froze before production and remains unchanged.
+
+
+The baseline is merged241 `e27a301cc8493ac457db8c2a5f2b95fd58e3f2e8`,
+tree `cbdd3ee4735486e5db4bb8a5c885a058ed9dc524`,72,857 tests/framework;
+main43429623367 and scripts43429623412 are green. Qualification requires all18
+native results at77,530 tests/framework, zero failures/skips/compiler warnings/
+errors,214 frozen outcomes in120 methods, frozen35 and every configured Unicode/
+workload/extraction/POSIX/glibc/API/corpus/package/build-script gate. Repository
+inventories precede final qualification. Final GREEN, whole-branch author review
+and exact source/base/tree/proposed-merge identity belong on
+[PR242](https://github.com/uniblab/Icod.Expressions/pull/242) and only issue7's
+roadmap footer, without another documentation-only CI run.
+
+Callout execution, lookaround backslash-K allowance, valid unimplemented UTF
+code-unit/escaped-UTF syntax and PR239's tolerant-surrogate word/reference/script
+exclusions remain open. Remaining syntax/modes/directives, failed/partial labels,
+wider optimizer/resources (#102), NO_UTF_CHECK/UTF16/exported API, realistic
+consumer performance and release gates remain open. User owns merge/tag/
+publication, issue7 stays open and Grep migrates last. See
+[design](PCRE-CALLER-CASE-POLICIES-DESIGN.md) and
+[plan](PCRE-CALLER-CASE-POLICIES-PLAN.md).
