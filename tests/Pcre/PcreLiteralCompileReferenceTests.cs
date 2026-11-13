@@ -3226,7 +3226,7 @@ public sealed class PcreLiteralCompileReferenceTests {
 		var subject = Convert.FromHexString( subjectHex );
 		var reference = Reference( source, mode, literal );
 		AssertNative( reference, subject, offset, spans );
-		Compare( reference, subject, offset, Compile( source, Options( mode, literal ) ).Match( subject ) );
+		Compare( reference, subject, offset, Compile( source, Options( mode, literal ) ).Match( subject, offset ) );
 	}
 
 	[Theory]
