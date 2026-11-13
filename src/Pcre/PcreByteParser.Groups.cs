@@ -123,6 +123,12 @@ internal sealed partial class PcreByteParser {
 			GroupFrame? child = null;
 			PcreByteNode? atom;
 			try {
+				// Native validates a leading conditional assertion's minimum header
+				// before dispatching its optional callout. Other callouts reject at C.
+				if ( neverCallout && !current.Quoting && source.AsSpan( index ).StartsWith( "(?C"u8 )
+					&& ( !current.WaitingForCondition || source.Length - index >= 4 ) ) {
+					throw Invalid( index, "callouts are disabled by the caller" );
+				}
 				atom = current.Quoting ? ParseQuotedLiteral()
 					: ParseAtom( current.Depth, current.AssertionOpeningContext, out child );
 			} catch ( PcreByteParseException error ) when ( Math.Abs( current.AssertionKind ) == 2
