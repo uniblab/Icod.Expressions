@@ -58,3 +58,24 @@ Baseline merged237 f9b28d2a9a31342a46b3e92679d82ce11f8f5028:66,451tests/framewor
 251 earlier files under tests. C#13/net8/9/10; UTF8+LF; no Python/subagents/SDK
 installs. Preserve frozen35/214 outcomes/120 methods, GNU/BRE/ERE, all existing
 limits and unsupported boundaries. User merges/tags/publishes; Grep last.
+
+## Integration correction: leading MARK and STARTLINE
+
+CI719 resolves all name decoder cases but exposes one frozen ANY/tolerant-UTF
+caret/MARK split-offset theory. The raw canonical form has the same native rule:
+JIT scan_prefix stops at OP_MARK, returning no first-character position, so
+STARTLINE precedes FIRSTMAP. The existing pure instruction proof excludes MARK.
+Keep the frozen name fixture unchanged and add PcreMarkStartLineReferenceTests.
+Its704 pinned JIT profiles cover raw/decoded/empty labels, NEL/LS/PS split and
+boundary offsets, capture/noncapture/atomic wrappers, empty bodies, casing/UCP,
+byte/strict boundaries and leading-literal/non-multiline priority controls.
+Fourteen more native profiles cover literal suffixes at the1,000-instruction
+proof limit, over-budget valid-boundary fallback and full256-capture capacity.
+
+Extend only HasLineStartSearch eligibility in PcreByteProgram.cs through private
+HasLinearPathMarkStartBarrier(). Require at most MaximumStartClassVisits(1,000)
+instructions and only Literal, PathMark, captures, StartLine/end anchors, atomic
+boundaries and the final Accept. Require a PathMark before any Literal. Reject
+all branches/loops/calls/assertions/classes/references/other verbs, and keep the
+existing AST first-caret proof. Preserve literal-before-MARK priority. Do not
+change opcodes, IR shape, matcher/journal/work/quotas. Broader #102 remains open.
