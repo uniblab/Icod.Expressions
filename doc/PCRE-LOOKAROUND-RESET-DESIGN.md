@@ -48,3 +48,11 @@ Grep migrates last and wider optimizer issue102 remains open.
 References: pinned PCRE2 10.48 pcre2_compile.c ESC_K assertion guard; native JIT
 and endpoint protocols; https://www.pcre.org/current/doc/html/pcre2api.html and
 https://www.pcre.org/current/doc/html/pcre2pattern.html .
+
+## PR243: optional assertion match-start resets
+
+Tests-only [RED737](https://github.com/uniblab/Icod.Expressions/actions/runs/43444152881), source `552f6672bac9d57214d556d73fb76478429cd340`, Linux ARM job131949099519: net8/9/10 each built with zero compiler warnings/errors, then ran **1,406 expected failures / 79,328 passes / 80,734 total / zero skips**. Only missing-policy cases failed:1,366 primary spans,3 error boundaries,24 offset theories,4 work/ownership cases,2 capacity/depth facts,1 quota fact and6 implicit-guard profiles per framework. All79,118 earlier tests and210 new controls passed. All native literal endpoint assertions passed. Freeze `a6cd825ba357ca8be6f11fd3ff788032f0c24217` before production; no fixture refinements were needed.
+
+The1,616 new cases include1,574 primary native profiles (1,510 matching/query/capture/success-label and64 compile profiles),1,032 selected offset protocols and16 supplemental work/capacity/implicit-guard profiles. All accepted native matching uses JIT0 and negative matching requires no-match(-1). Fifty-eight primary profiles report reversed group0 endpoints. Two UTF-C profiles outside native JIT support remain separate compile/unsupported boundaries. Another54 native review probes cover selected reset/i/r scopes, UTF/casing prefixes and lexical callee resets.
+
+Integration changes only options and parser: one default-false property, one readonly snapshot and one existing guard condition. No IR, opcode, matcher, journal or limit changes. All259 earlier files stay fixed. All18 final GREEN/supporting gates and author-review/identity evidence are recorded on PR243 and issue7 after observation, without another source push for documentation.

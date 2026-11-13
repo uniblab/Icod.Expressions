@@ -4185,3 +4185,15 @@ remaining syntax/modes/directives, failed/partial labels, wider optimizer/resour
 gates remain open. User owns merge/tag/publication, issue7 stays open and Grep
 migrates last. See [design](PCRE-CALLER-CASE-POLICIES-DESIGN.md) and
 [plan](PCRE-CALLER-CASE-POLICIES-PLAN.md).
+
+## PR243: optional assertion match-start resets
+
+AllowLookaroundBackslashK defaults false; a global readonly parser snapshot alone relaxes the existing active-assertion token prohibition. Default InvalidSyntax remains at the outer active assertion opener. Opt-in never relaxes invalid UTF, caller NeverUTF/UCP/callout restrictions, class/repeated-K grammar, lookbehind width or other unsupported/resource boundaries.
+
+The existing shared journal retains capture-start0 through positive success and restores it through failed/negative scopes and retries. Internal ByteLength is signed end-start, not a slice length: group0 can end before its reported start or begin before the caller offset. NOTEMPTY policies still reject equality at final acceptance under their original-offset rules. Numbered captures retain independent endpoints. The eventual public adapter must deliberately handle these opt-in reports.
+
+Tests-only [RED737](https://github.com/uniblab/Icod.Expressions/actions/runs/43444152881), source `552f6672bac9d57214d556d73fb76478429cd340`, Linux ARM job131949099519: net8/9/10 each built with zero compiler warnings/errors, then ran **1,406 expected failures / 79,328 passes / 80,734 total / zero skips**. Only missing-policy cases failed:1,366 primary spans,3 error boundaries,24 offset theories,4 work/ownership cases,2 capacity/depth facts,1 quota fact and6 implicit-guard profiles per framework. All79,118 earlier tests and210 new controls passed. All native literal endpoint assertions passed. Freeze `a6cd825ba357ca8be6f11fd3ff788032f0c24217` before production; no fixture refinements were needed.
+
+The1,616 new cases include1,574 primary native profiles (1,510 matching/query/capture/success-label and64 compile profiles),1,032 selected offset protocols and16 supplemental work/capacity/implicit-guard profiles. All accepted native matching uses JIT0 and negative matching requires no-match(-1). Fifty-eight primary profiles report reversed group0 endpoints. Two UTF-C profiles outside native JIT support remain separate compile/unsupported boundaries. Another54 native review probes cover selected reset/i/r scopes, UTF/casing prefixes and lexical callee resets.
+
+Owned source/options, full256 captures, depth256, expansion/work limits and deterministic cancellation are covered. No matcher/IR/journal/shared-limit changes. Frozen35/214 outcomes/120methods and259 prior test hashes remain fixed. Final all18/supporting/review/identities live on PR243/issue7.
