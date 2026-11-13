@@ -1,6 +1,6 @@
 # PCRE roadmap status
 
-Reviewed after merged PR234, with PR235 in progress. Issue #7 remains the delivery roadmap; the
+Reviewed after merged PR235, with PR236 in progress. Issue #7 remains the delivery roadmap; the
 [syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md),
 [resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) and
 [Grep fixture inventory](PCRE-GREP-CONSUMER-FIXTURES.md) define the detailed gates.
@@ -48,6 +48,7 @@ retaining each framework's complete suite and frozen-result qualification.
    PR233 adds optional unset backreferences through the existing capture instruction.
    PR234 extends bounded STARTLINE search to opaque reference prefixes in both policies.
    PR235 adds caller UTF/UCP/code-unit restrictions at existing compile boundaries.
+   PR236 adds standard alternate backslash-u/U/x grammar through canonical literals.
    UTF code-unit escape,
    remaining directives/verbs/callouts and other matrix gaps require their own
    pinned reference fixtures. Decide any intentional exclusions before release;
@@ -65,10 +66,10 @@ retaining each framework's complete suite and frozen-result qualification.
 
 ## Current increment and next syntax work
 
-PR234 merged at ebdc4d9712f342b959878d3798073bf21d60d076;
-main43366970313 and scripts43366970320 are green. Its62,371 tests/framework
-remain the baseline. PR235 adds caller restrictions as described below; final
-qualification and delivery evidence are recorded on the PR and issue7.
+PR235 merged at a5521bba5e4b15346ee0f972118c19c68a37c9a2;
+main43374278672 and scripts43374278547 are green. Its64,884 tests/framework
+remain the baseline. PR236 adds alternate backslash grammar as described below;
+final qualification and delivery evidence are recorded on the PR and issue7.
 
 ## PR234: backreferences blocking first-character search
 
@@ -176,3 +177,56 @@ partial labels, UTF16/exported API and realistic consumer/release gates remain
 open. User owns merge/tag/publication; Grep stays last. See
 [design](PCRE-CALLER-COMPILE-LOCKOUTS-DESIGN.md) and
 [plan](PCRE-CALLER-COMPILE-LOCKOUTS-PLAN.md).
+
+## PR236: alternate backslash-u, U and x grammar
+
+Default-false internal AltBsux snapshots standard PCRE2 10.48 ALT_BSUX. Exactly
+four adjacent hex digits after u produce one canonical character; U is literal
+uppercase U. An x token requires two adjacent digits. Incomplete/nonhex sequences
+consume only the escape letter, leaving every following source byte to ordinary
+syntax. A local cursor validates all digits before committing the source index
+or testing character bounds, so incomplete high-valued prefixes cannot trigger
+premature range errors. Byte mode caps values at255; UTF rejects surrogates and
+does not combine adjacent surrogate escapes.
+
+Fallback braces use the existing quantifier/literal grammar: backslash-u{2}
+repeats literal u twice, and backslash-x{41} repeats literal x41 times. Standard
+ALT_BSUX does not enable EXTRA_ALT_BSUX braced-u syntax. A produced backslash is
+one literal node and cannot re-tokenize later source. Quotes/comments/control
+operands/raw MARK names stay inert, caller reset scopes retain the flag, and
+whole-pattern UTF validation and previous caller restrictions keep precedence.
+Class/range/algebra diagnostic ownership and canonical casing/captures/widths/
+newlines/search metadata/work/cancellation/structural quotas remain shared.
+
+Production changes only PcreByteOptions.cs, PcreByteParser.cs and the focused
+PcreByteParser.AltBsux.cs partial. No AST/IR/matcher/journal/work/quota/public API/
+dependency/workflow changes. All249 earlier test files and frozen35/214 outcomes/
+120 methods remain fixed. The586 new cases include554 unique pinned native
+profiles (491 accepted JIT,60 compile diagnostics and3 strict-UTF subject errors), plus1,115 supplementary JIT0
+compile profiles (1,024 all-value,84 offset-pattern,6 structural/work/owned and1
+produced-backslash caller-policy control). Native arrays compile before managed
+comparison. Literal captures/labels and diagnostic codes/end offsets are pinned
+independently. Six newlines, every selected subject byte offset, malformed UTF,
+default diagnostics and resource/ownership/precedence controls are included.
+
+Clean refined tests-only [RED713](https://github.com/uniblab/Icod.Expressions/actions/runs/43380230552),
+source523784aaad7838a9399f745e1d62662ad6ef5052, LinuxARM job131736180443,
+built net8/9/10 with0warnings/errors. Each ran65,470 tests:430 expected managed
+failures,65,040 passes,0skips. The410 primary differences and20 supplemental
+cases failed only for missing alternate grammar; native/default/earlier/UTF
+controls passed. Freeze fixture780b5a5583aaef908bcae74bbb4cea48e4cc0d35 before
+reapplying production. Earlier RED711/freeze were superseded: three strict-UTF
+subject errors were incorrectly called nonmatches. Those exact profiles now pin
+native error-4 and managed InvalidUtf8Subject0; no span/compile-error expectation
+was weakened. Four redundant compile-error rows were removed earlier. Reader
+source is byte-identical to the initial implementation712.
+
+Qualification requires all18 native results at65,470 tests/framework and every
+configured Unicode/workload/extraction/POSIX/API/corpus/frozen/package/script gate.
+Final results, author review and reviewed source/proposed-merge identities are
+recorded in [PR236](https://github.com/uniblab/Icod.Expressions/pull/236) and issue7.
+Extra braced-u and surrogate policies, other syntax/modes/directives/callouts,
+failed/partial labels, broader optimizer/resources (#102), UTF16/exported API and
+realistic consumer/release gates remain open. User owns merge/tag/publication;
+Grep stays last. See [design](PCRE-ALT-BSUX-DESIGN.md) and
+[plan](PCRE-ALT-BSUX-PLAN.md).
