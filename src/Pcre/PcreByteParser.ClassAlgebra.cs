@@ -14,8 +14,10 @@ internal sealed partial class PcreByteParser {
 	private PcreByteNode ParsePerlClass( int openingOffset ) {
 		var savedExtended = extended;
 		var savedAlgebra = classAlgebra;
+		var savedSuppression = suppressBadEscapeLiteral;
 		extended = ExtendedMode.More;
 		classAlgebra = true;
+		suppressBadEscapeLiteral = true;
 		try {
 			var terms = new List<PcreScalarSetTerm>();
 			var operators = new Stack<byte>();
@@ -96,7 +98,7 @@ internal sealed partial class PcreByteParser {
 			throw Invalid( openingOffset, "unclosed extended class" );
 		} catch ( PcreByteParseException error ) when ( error.Diagnostic.Code == PcreByteDiagnosticCode.InvalidSyntax && !error.IsNumericEscape ) {
 			throw Invalid( openingOffset, "invalid extended character-class expression" );
-		} finally { extended = savedExtended; classAlgebra = savedAlgebra; }
+		} finally { extended = savedExtended; classAlgebra = savedAlgebra; suppressBadEscapeLiteral = savedSuppression; }
 	}
 
 	private static void CheckClassNesting( int nesting, int offset ) {

@@ -49,6 +49,8 @@ internal sealed record PcreByteOptions {
 	public bool AltVerbNames { get; init; }
 	/// <summary>Allow escaped surrogate code points in UTF patterns without relaxing strict input validation.</summary>
 	public bool AllowSurrogateEscapes { get; init; }
+	/// <summary>Recover eligible bad escapes as their escaped character, retaining following source grammar.</summary>
+	public bool BadEscapeIsLiteral { get; init; }
 	public bool AsciiBsD { get; init; }
 	/// <summary>Restrict backslash-s whitespace predicates to ASCII.</summary>
 	public bool AsciiBsS { get; init; }

@@ -55,3 +55,9 @@ earlier test files. Preserve GNU/BRE/ERE, frozen35/214 outcomes/120 methods,
 canonical AST/instruction types/opcodes, matcher/journals/shared limits/public
 API/dependencies/workflows. C#13/net8/9/10, UTF8+LF; no Python/subagents/SDK
 installs. Reuse the isolated linked worktree and execute inline without pauses.
+
+## Regression evidence and implementation
+
+Refined tests-only [RED728](https://github.com/uniblab/Icod.Expressions/actions/runs/43415326648), source `a5551e54a4c9f4df6262524f5704481aae24bd21`, Linux ARM job131851844227: net8/9/10 each built with zero warnings/errors, then ran449 expected failures/70,961 passes/71,410total/zero skips. All failures were in the new fixture (424 accepted cases,5 post-recovery diagnostics,3 octet theories,12 offset theories and5 facts); every earlier test and1,106 new controls passed. Fixture `130f1ba203c0b0c64a479435ac418710448d0f19` froze before production and remains unchanged.
+
+The implementation uses five production files: options and parser initialization, a new BadEscapes partial, and the existing alternate-name/Perl-class boundaries. Only local cursors inspect native numeric syntax; no source spans escape the parser. Eligibility scans execute inside the catch body so cancellation is never swallowed by exception-filter semantics. Remaining qualification and author-review evidence is recorded on PR240 and issue7 after the final source head.
