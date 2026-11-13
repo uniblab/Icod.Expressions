@@ -1,6 +1,6 @@
 # PCRE roadmap status
 
-Reviewed after merged PR238, with PR239 in progress. Issue #7 remains the delivery roadmap; the
+Reviewed after merged PR239, with PR240 in progress. Issue #7 remains the delivery roadmap; the
 [syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md),
 [resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) and
 [Grep fixture inventory](PCRE-GREP-CONSUMER-FIXTURES.md) define the detailed gates.
@@ -52,6 +52,7 @@ retaining each framework's complete suite and frozen-result qualification.
    PR237 adds extra braced-u scalars and native malformed literal-brace ownership.
    PR238 adds alternate control-verb name decoding through existing label machinery.
    PR239 adds optional surrogate escape code points while retaining UTF validation.
+   PR240 adds opt-in native bad-escape literal recovery through the existing parser.
    UTF code-unit escape,
    remaining directives/verbs/callouts and other matrix gaps require their own
    pinned reference fixtures. Decide any intentional exclusions before release;
@@ -69,9 +70,9 @@ retaining each framework's complete suite and frozen-result qualification.
 
 ## Current increment and next syntax work
 
-PR238 merged at c17ea37489f5a550f7952117db11fa1141125f2f;
-main43400531039 and scripts43400531037 are green. Its68,025 tests/framework
-remain the baseline. PR239 adds optional surrogate escapes as described below;
+PR239 merged at 6e0d56f3962100f0f48657d9d7af61d203d46ad3;
+main43410260851 and scripts43410260857 are green. Its69,855 tests/framework
+remain the baseline. PR240 adds bad-escape literal recovery as described below;
 final qualification and delivery evidence are recorded on the PR and issue7.
 
 ## PR234: backreferences blocking first-character search
@@ -463,3 +464,62 @@ failed/partial labels, wider optimizer/resources (#102), UTF16/exported API and
 realistic consumer/release gates remain open. User owns merge/tag/publication;
 Grep last. See [design](PCRE-SURROGATE-ESCAPES-DESIGN.md) and
 [plan](PCRE-SURROGATE-ESCAPES-PLAN.md).
+
+## PR240: opt-in literal recovery for bad escapes
+
+Default-false internal BadEscapeIsLiteral implements PCRE2 10.48 extra-option2.
+The parser snapshots the option and wraps its existing escape reader. Successful
+escapes and the disabled path retain that reader. Eligible InvalidSyntax or
+UnsupportedSyntax failures restore pending reference state and consume only the
+original escape letter (or a terminal backslash). Following source is parsed
+normally: byte-invalid `\x{100}` becomes x repeated100 times, and `\g{0}` becomes
+g repeated zero times. Original offsets, scopes and quantifier ownership survive;
+there is no source rewriting, alternate AST, instruction or matching engine.
+
+Eligibility follows native error stages, not the library's diagnostics alone.
+A local, cancellable numeric probe uses native65535 bounds and current capture
+count to distinguish malformed references from valid syntax beyond the internal
+256-capture ceiling. Unresolved targets remain errors after parsing. Class
+property failures and valid escapes forbidden as class members remain errors.
+Perl class operands suppress recovery with finally restoration; UTS operands
+allow recovery. Alternate verb-name decoding explicitly bypasses the option.
+Native NeverBackslashC failures outside classes can recover; source UTF validation,
+NeverUTF/UCP guards, resource diagnostics and cancellation retain their priority.
+Valid unimplemented UTF code-unit execution/ordinary escaped UTF, fake option
+prefixes and PR239's tolerant-surrogate exclusions remain explicit errors.
+
+The new fixture has1,555 cases:1,150 native spans/captures/success labels,
+383 native compile diagnostics,3 all-octet theories,12 newline/offset theories
+and7 facts. Primary native profiles total1,533; supplemental native preflight
+covers4,176 selected offset protocols. The octet theories compare768 values
+native-first. Twenty-four unsupported native JIT UTF-C profiles stay separate;
+negative matching evidence is native no-match(-1), never a JIT error. Coverage
+includes all52 ASCII escape letters, data/control/numeric/alternate syntax,
+references at both ceilings, properties and class/label contexts, caller policies,
+case/reset/extended scopes, malformed UTF and source/options/label ownership.
+Canonical-work equality, work limits, cancellation and capture/depth/expansion
+ceilings are checked after recovery. Earlier255 test files remain unchanged.
+
+The initial tests-only CI727 found five incorrect, unfrozen managed diagnostic
+offsets: three byte-class errors own the escape slash rather than the UTF/algebra
+opening, and two errors after a valid call own the later slash. Correcting those
+expectations retained every case and native expectation. Refined tests-only RED
+and the frozen fixture identity follow.
+
+Refined tests-only [RED728](https://github.com/uniblab/Icod.Expressions/actions/runs/43415326648), source `a5551e54a4c9f4df6262524f5704481aae24bd21`, Linux ARM job131851844227: net8/9/10 each built with zero warnings/errors, then ran449 expected failures/70,961 passes/71,410total/zero skips. All failures were in the new fixture (424 accepted cases,5 post-recovery diagnostics,3 octet theories,12 offset theories and5 facts); every earlier test and1,106 new controls passed. Fixture `130f1ba203c0b0c64a479435ac418710448d0f19` froze before production and remains unchanged.
+
+
+The baseline is merged239 `6e0d56f3962100f0f48657d9d7af61d203d46ad3`,
+tree `25c5d9d3c4095f12e45f233234cf862758d2b755`,69,855 tests/framework;
+main43410260851 and scripts43410260857 are green. Qualification requires all18
+native results at71,410 tests/framework,214 frozen outcomes in120 methods,
+zero failures/skips/compiler warnings/errors, frozen35 and all configured
+Unicode/workload/extraction/POSIX/glibc/API/corpus/package/build-script gates.
+No public API, dependencies, workflows, matcher, journal or shared-limit changes.
+Whole-branch review, final GREEN and source/base/tree/proposed-merge evidence
+belong on [PR240](https://github.com/uniblab/Icod.Expressions/pull/240) and only
+issue7's roadmap footer. Repository inventories precede final qualification.
+Remaining syntax/modes/directives/callouts, failed/partial labels, wider optimizer
+and resource gaps (#102), NO_UTF_CHECK/UTF16/exported API, realistic consumer
+performance and release gates remain open. User owns merge/tag/publication;
+Grep migrates last and issue7 remains open.

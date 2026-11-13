@@ -44,6 +44,7 @@ the matcher returns spans, leaving framing, status and output to Grep.
 | Caller extra alternate escapes | ExtraAltBsux implies alternate grammar and adds braced-u scalars; malformed braces retain native literal/quantifier ownership and true uint overflow retains early precedence | PcreExtraAltBsuxReferenceTests; all selections, values/scalars, overflow/zero padding, classes, case/reset scopes, offsets, ownership and limits |
 | Caller alternate verb names | AltVerbNames decodes literal escapes/local quotes and extended trivia while enforcing raw-byte quotas and named-empty identity; default false | PcreAltVerbNameReferenceTests; all verbs/octets, literal/forbidden escapes, raw limits/priority, case/quote/comment/reset scopes, offsets, ownership and shared limits |
 | Caller surrogate escape policy | AllowSurrogateEscapes permits escaped D800..DFFF; strict UTF stays validated; tolerant explicit literals match native bytes while typed classes remain strict; tolerant word/reference/script combinations reject explicitly | PcreSurrogateEscapeReferenceTests and PcreSurrogateLiteralReferenceTests; all2,048 labels/literals, class source shapes, assertions, offsets, hard barriers and resources |
+| Caller bad-escape literal policy | BadEscapeIsLiteral recovers native-eligible malformed escapes through canonical literals; following grammar and offsets survive; Perl classes, alternate names, class properties, valid unresolved references and resource failures retain their native stages | PcreBadEscapeLiteralReferenceTests; 1,555 cases, native number limits, octets, offsets, caller guards, ownership and work/structural limits |
 | Leading MARK after caret | Bounded linear MARK prefix stops native character scanning, allowing existing STARTLINE policy before FIRSTMAP for ANY/tolerant UTF | PcreMarkStartLineReferenceTests; raw/decoded labels, NEL/LS/PS offsets, wrappers/casing/UCP, literal priority, proof/capture boundaries |
 | Ordinary `[ ]` ranges, negation, shorthand unions, 14 POSIX names | Supported subset in byte and UTF modes; ordinary bracket grammar unchanged, Perl algebra listed separately | Bracket and POSIX tests; Unicode table/version reconciliation |
 | `\p`/`\P` general categories and special properties | Byte/UTF categories plus Any/Xan/Xps/Xsp/Xwd/Xuc; loose names, P/caret complements and property predicates independent of UCP/ASCII/i/r. Category-prefixed aliases remain a library extension for categories only. UTF class source operands/endpoints preserve CR/LF flags before folding, including the native negated-singleton exception. Scripts/scx now have pinned Unicode17 data; binary/Bidi properties now have pinned native data | `PcreBytePropertyReferenceTests`, `PcreSpecialPropertyReferenceTests`, `PcreClassNewlineMetadataReferenceTests`, `PcreUtf8GeneralCategoryTests`; see `PCRE-SPECIAL-PROPERTIES-DESIGN.md`; Unicode17 categories and default simple-case mappings are pinned; byte search-optimization parity remains a gate |
@@ -3756,3 +3757,62 @@ failed/partial labels, wider optimizer/resources (#102), UTF16/exported API and
 realistic consumer/release gates remain open. User owns merge/tag/publication;
 Grep last. See [design](PCRE-SURROGATE-ESCAPES-DESIGN.md) and
 [plan](PCRE-SURROGATE-ESCAPES-PLAN.md).
+
+## PR240: opt-in literal recovery for bad escapes
+
+Default-false internal BadEscapeIsLiteral implements PCRE2 10.48 extra-option2.
+The parser snapshots the option and wraps its existing escape reader. Successful
+escapes and the disabled path retain that reader. Eligible InvalidSyntax or
+UnsupportedSyntax failures restore pending reference state and consume only the
+original escape letter (or a terminal backslash). Following source is parsed
+normally: byte-invalid `\x{100}` becomes x repeated100 times, and `\g{0}` becomes
+g repeated zero times. Original offsets, scopes and quantifier ownership survive;
+there is no source rewriting, alternate AST, instruction or matching engine.
+
+Eligibility follows native error stages, not the library's diagnostics alone.
+A local, cancellable numeric probe uses native65535 bounds and current capture
+count to distinguish malformed references from valid syntax beyond the internal
+256-capture ceiling. Unresolved targets remain errors after parsing. Class
+property failures and valid escapes forbidden as class members remain errors.
+Perl class operands suppress recovery with finally restoration; UTS operands
+allow recovery. Alternate verb-name decoding explicitly bypasses the option.
+Native NeverBackslashC failures outside classes can recover; source UTF validation,
+NeverUTF/UCP guards, resource diagnostics and cancellation retain their priority.
+Valid unimplemented UTF code-unit execution/ordinary escaped UTF, fake option
+prefixes and PR239's tolerant-surrogate exclusions remain explicit errors.
+
+The new fixture has1,555 cases:1,150 native spans/captures/success labels,
+383 native compile diagnostics,3 all-octet theories,12 newline/offset theories
+and7 facts. Primary native profiles total1,533; supplemental native preflight
+covers4,176 selected offset protocols. The octet theories compare768 values
+native-first. Twenty-four unsupported native JIT UTF-C profiles stay separate;
+negative matching evidence is native no-match(-1), never a JIT error. Coverage
+includes all52 ASCII escape letters, data/control/numeric/alternate syntax,
+references at both ceilings, properties and class/label contexts, caller policies,
+case/reset/extended scopes, malformed UTF and source/options/label ownership.
+Canonical-work equality, work limits, cancellation and capture/depth/expansion
+ceilings are checked after recovery. Earlier255 test files remain unchanged.
+
+The initial tests-only CI727 found five incorrect, unfrozen managed diagnostic
+offsets: three byte-class errors own the escape slash rather than the UTF/algebra
+opening, and two errors after a valid call own the later slash. Correcting those
+expectations retained every case and native expectation. Refined tests-only RED
+and the frozen fixture identity follow.
+
+Refined tests-only [RED728](https://github.com/uniblab/Icod.Expressions/actions/runs/43415326648), source `a5551e54a4c9f4df6262524f5704481aae24bd21`, Linux ARM job131851844227: net8/9/10 each built with zero warnings/errors, then ran449 expected failures/70,961 passes/71,410total/zero skips. All failures were in the new fixture (424 accepted cases,5 post-recovery diagnostics,3 octet theories,12 offset theories and5 facts); every earlier test and1,106 new controls passed. Fixture `130f1ba203c0b0c64a479435ac418710448d0f19` froze before production and remains unchanged.
+
+
+The baseline is merged239 `6e0d56f3962100f0f48657d9d7af61d203d46ad3`,
+tree `25c5d9d3c4095f12e45f233234cf862758d2b755`,69,855 tests/framework;
+main43410260851 and scripts43410260857 are green. Qualification requires all18
+native results at71,410 tests/framework,214 frozen outcomes in120 methods,
+zero failures/skips/compiler warnings/errors, frozen35 and all configured
+Unicode/workload/extraction/POSIX/glibc/API/corpus/package/build-script gates.
+No public API, dependencies, workflows, matcher, journal or shared-limit changes.
+Whole-branch review, final GREEN and source/base/tree/proposed-merge evidence
+belong on [PR240](https://github.com/uniblab/Icod.Expressions/pull/240) and only
+issue7's roadmap footer. Repository inventories precede final qualification.
+Remaining syntax/modes/directives/callouts, failed/partial labels, wider optimizer
+and resource gaps (#102), NO_UTF_CHECK/UTF16/exported API, realistic consumer
+performance and release gates remain open. User owns merge/tag/publication;
+Grep migrates last and issue7 remains open.

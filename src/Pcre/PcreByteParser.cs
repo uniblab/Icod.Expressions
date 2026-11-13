@@ -24,6 +24,7 @@ internal sealed partial class PcreByteParser {
 	private readonly bool extraAltBsux;
 	private readonly bool altVerbNames;
 	private readonly bool allowSurrogateEscapes;
+	private readonly bool badEscapeIsLiteral;
 	private readonly bool pythonOctal;
 	private readonly bool noBackslashZero;
 	private readonly bool neverBackslashC;
@@ -68,6 +69,7 @@ internal sealed partial class PcreByteParser {
 		altBsux = options.AltBsux || extraAltBsux;
 		altVerbNames = options.AltVerbNames;
 		allowSurrogateEscapes = options.AllowSurrogateEscapes;
+		badEscapeIsLiteral = options.BadEscapeIsLiteral;
 		pythonOctal = options.PythonOctal;
 		noBackslashZero = options.NoBackslashZero;
 		neverBackslashC = options.NeverBackslashC;
@@ -604,7 +606,7 @@ internal sealed partial class PcreByteParser {
 		return (negated ? set.Complement() : set, null, false, false, false);
 	}
 
-	private PcreByteNode ParseEscape( int offset, bool inBracket = false ) {
+	private PcreByteNode ParseEscapeCore( int offset, bool inBracket = false ) {
 		if ( index >= source.Length ) {
 			throw Invalid( offset, "trailing backslash" );
 		}

@@ -49,7 +49,7 @@ internal sealed partial class PcreByteParser {
 			or (byte)'r' or (byte)'t' or (byte)'o' or (byte)'x' or (byte)'N' or (byte)'u' or (byte)'U';
 		if ( letter && !literalLetter ) { throw Invalid( offset, "control-verb name escapes must be literal" ); }
 		PcreByteNode escaped;
-		try { escaped = ParseEscape( offset ); }
+		try { escaped = ParseEscape( offset, allowBadLiteral: false ); }
 		catch ( PcreByteParseException error ) when ( error.Diagnostic.Code == PcreByteDiagnosticCode.UnsupportedSyntax ) {
 			throw Invalid( offset, "control-verb name escape is not recognized" );
 		}
