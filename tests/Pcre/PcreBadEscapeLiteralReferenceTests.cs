@@ -1699,14 +1699,19 @@ public sealed class PcreBadEscapeLiteralReferenceTests {
 	}
 
 	[Fact]
-	public void ValidUnimplementedSyntaxAndCompilerGuardsAreNotLiteralized() {
+	public void ValidEscapedScalarsAndPendingCompilerGuardsStaySeparate() {
 		foreach ( var enabled in new[] { false, true } ) {
-			foreach ( var source in new[] { "\\C"u8.ToArray(), Encoding.UTF8.GetBytes( @"\é" ), "(*BAD_ESCAPE_IS_LITERAL)A"u8.ToArray() } ) {
+			foreach ( var source in new[] { "\\C"u8.ToArray(), "(*BAD_ESCAPE_IS_LITERAL)A"u8.ToArray() } ) {
 				var actual = PcreByteCompiler.Compile( source, Options( enabled, 1 ) );
 				Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, actual.Diagnostic?.Code );
 				Assert.Equal( 0, actual.Diagnostic?.ByteOffset );
 				Assert.Null( actual.Pattern );
 			}
+			var escaped = Encoding.UTF8.GetBytes( @"\é" );
+			var subject = "é"u8.ToArray();
+			var reference = Reference( escaped, enabled, 1 );
+			AssertLiteral( reference, subject, 0, "0:2", "" );
+			Compare( reference, subject, 0, Compile( escaped, Options( enabled, 1 ) ).Match( subject ), "valid scalar independent of recovery" );
 			var guarded = PcreByteCompiler.Compile( "\\x{D800}\\B"u8.ToArray(), Options( enabled, 4103 ) );
 			Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, guarded.Diagnostic?.Code );
 			Assert.Contains( "tolerant surrogate literals", guarded.Diagnostic!.Message );

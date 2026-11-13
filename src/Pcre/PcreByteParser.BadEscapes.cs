@@ -27,7 +27,7 @@ internal sealed partial class PcreByteParser {
 	private bool CanLiteralizeBadEscape( int start, bool inBracket, PcreByteParseException error ) {
 		if ( start == source.Length ) { return true; }
 		var value = source[start];
-		if ( value >= 0x80 ) { return false; } // Valid escaped UTF is not yet implemented.
+		if ( value >= 0x80 ) { return false; } // Valid UTF scalars use the literal reader; malformed source fails before parsing.
 		if ( value is (byte)'p' or (byte)'P' ) { return !inBracket; }
 		if ( value == (byte)'C' ) { return !inBracket && neverBackslashC; }
 		if ( value is (byte)'X' or (byte)'R' or (byte)'G' or (byte)'K' ) { return false; }

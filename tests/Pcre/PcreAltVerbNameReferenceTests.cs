@@ -1014,18 +1014,17 @@ public sealed class PcreAltVerbNameReferenceTests {
 	}
 
 	[Fact]
-	public void LocalNameQuotingDoesNotQuoteFollowingRegexGroupsOrEnableOrdinaryEscapedUtf() {
+	public void LocalNameQuotingPreservesFollowingGroupsAndOrdinaryEscapedUtf() {
 		var source = Encoding.ASCII.GetBytes( @"(*MARK:\Q)\E)(A)" );
 		var reference = Reference( source, true, 0 );
 		var subject = "A"u8.ToArray();
 		AssertLiteral( reference, subject, "0:1,0:1", "29" );
 		Compare( reference, subject, 0, Compile( source, Options( true, 0 ) ).Match( subject ), "local name quoting" );
 		var escaped = Encoding.UTF8.GetBytes( @"\é" );
-		AssertLiteral( Reference( escaped, true, 3 ), "é"u8.ToArray(), "0:2", "" );
-		var actual = PcreByteCompiler.Compile( escaped, Options( true, 3 ) );
-		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, actual.Diagnostic?.Code );
-		Assert.Equal( 0, actual.Diagnostic?.ByteOffset );
-		Assert.Null( actual.Pattern );
+		var scalarSubject = "é"u8.ToArray();
+		var scalarReference = Reference( escaped, true, 3 );
+		AssertLiteral( scalarReference, scalarSubject, "0:2", "" );
+		Compare( scalarReference, scalarSubject, 0, Compile( escaped, Options( true, 3 ) ).Match( scalarSubject ), "ordinary escaped scalar" );
 	}
 
 	private static readonly string[] OffsetBodies = [@"(*MARK:\x4b)(A)", @"\G(*MARK:\x4b)(A)", @"(*MARK:\x4b)A(*SKIP:K)B|A", @"(*MARK:K)A(*SKIP:\E)B|A", @"(*MARK:\E)A(*SKIP:\E)B|A", @"(*MARK:old)A(*PRUNE:\E)", @"(*MARK:\Q)\E)(A)", @"(?m)^(*MARK:\x4b)A"];

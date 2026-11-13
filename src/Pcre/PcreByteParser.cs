@@ -614,6 +614,7 @@ internal sealed partial class PcreByteParser {
 		if ( index >= source.Length ) {
 			throw Invalid( offset, "trailing backslash" );
 		}
+		if ( utf8 && source[index] >= 0x80 ) { return ParseQuotedLiteral(); }
 		var value = source[index++];
 		if ( altBsux && ( value is (byte)'u' or (byte)'U' or (byte)'x' ) ) {
 			return ParseAltBsuxEscape( value, offset, inBracket );
@@ -754,7 +755,6 @@ internal sealed partial class PcreByteParser {
 			or >= (byte)'a' and <= (byte)'z' ) {
 			throw Unsupported( offset );
 		}
-		if ( utf8 && value >= 0x80 ) { throw Unsupported( offset ); }
 		return new PcreByteLiteral( value );
 	}
 
