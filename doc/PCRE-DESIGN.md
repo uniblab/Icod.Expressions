@@ -3253,3 +3253,72 @@ wider optimizer/resources (#102), NO_UTF_CHECK/UTF16/exported API, realistic
 consumer performance and release gates remain open. User owns merge/tag/
 publication, issue7 stays open and Grep migrates last. See
 [design](PCRE-NEVER-CALLOUT-DESIGN.md) and [plan](PCRE-NEVER-CALLOUT-PLAN.md).
+
+## PR242: caller casing policies and bounded marked-set search
+
+Default-false internal CaselessRestricted and TurkishCasing implement PCRE2 10.48
+extra-options0x80 and0x10000. Existing start settings initialize from the caller,
+then exact source prefixes OR into them. Neither enables i/UTF, and original
+bytes/consumed-prefix offsets remain authoritative. Local r set/unset/reset is
+lexical; Turkish persists globally, with local r selecting restricted-default
+comparisons. Global caller/source restriction conflicts with global Turkish
+before body parsing. Turkish requires effective UTF in8-bit mode; source UTF
+validation and NeverUTF/UCP priority retain their existing paths.
+
+Initial integration changed only options and two start-setting initializers.
+Existing parser/program/comparison consumers, Unicode17 folding and mode-specific
+proofs receive the same policy as source prefixes. Tests-only RED733, source
+c77092cbfb760f9c0e1452353d84bc68316773a5, LinuxARM job131907925887, built all
+net8/9/10 with0warnings/errors: each678 expected failures/76,852 passes/77,530total/
+0skips. Every earlier test and3,995 new controls passed. The first fixture
+`94b6ffd9c834cbbc10ab03d97cf3c98b7e303c08` froze before that integration.
+
+CI734 passed77,529/77,530 per framework, leaving one frozen ANY/tolerant/Turkish
+split-newline offset. Native caller and source-prefix activation both give no
+match when the requested byte lies inside LS before a marked scalar set. A
+leading MARK stops native JIT scan_prefix before collecting a character, so
+STARTLINE precedes FIRSTMAP. The existing linear proof covered following
+literals but excluded ScalarSet. It now treats ScalarSet as consuming, retaining
+leading MARK before consumption, AST first-caret requirement,1,000-instruction
+cap, cancellation and all other opcode exclusions. Literal/scalar-before-MARK
+priority is preserved. No matcher, opcode, journal or shared-limit changes.
+Broader optimizer issue102 remains open.
+
+Separate tests-only [RED735](https://github.com/uniblab/Icod.Expressions/actions/runs/43437776788),
+source `3089e3febffc47eb0efdd364619788fbd0d75549`, LinuxARM job131927213552,
+built net8/9/10 with0warnings/errors: each286 expected failures/78,832 passes/
+79,118total/0skips. Failures were original1+281 new native-no-match split profiles
+and4 new work/capture/budget cases; native/boundary/priority/default/strict/byte/
+earlier controls passed. New fixture `2fc86257fe9c14bf84d94d6d982ccbdabc503b05`
+froze before the compiler correction. Both fixtures remain unchanged.
+
+Final increment:6,261 new cases, including6,236 primary native profiles (5,718
+span/capture/success-label and518 compile profiles). Supplemental native evidence
+includes776 complete class-membership comparisons,3,528 selected offset protocols
+and24 work/ownership/capacity/budget profiles. All accepted profiles use JIT0 and
+negative matching is no-match(-1). Cover all four case selections, I/i/İ/ı and
+Kelvin/long-s pairs, scoped/reset options, comparison consumers, prefixes,
+word/line modes, source/caller/global error priority, malformed offsets, owned
+state, marked singleton/range/negative/predicate sets, wrappers, mark ordering,
+no-caret/byte/strict controls and bounded resources/work/cancellation.
+
+Only three production files change: options, start settings and the bounded
+compiler proof. No AST/IR/opcode/matcher/journal/shared-limit/exported-API/
+dependency/workflow changes. All257 earlier test files remain hash-identical,
+as do GNU/BRE/ERE and frozen35/214 outcomes/120methods. Baseline merged241 is
+`e27a301cc8493ac457db8c2a5f2b95fd58e3f2e8`, tree
+`cbdd3ee4735486e5db4bb8a5c885a058ed9dc524`,72,857 tests/framework;
+main43429623367/scripts43429623412 are green. Qualification requires all18 native
+results at79,118 tests/framework,0failures/skips/compiler warnings/errors,
+214frozen outcomes/120methods and every configured supporting gate. All repository
+inventories precede qualification; final GREEN, author review and exact source/
+base/tree/proposed-merge evidence live on [PR242](https://github.com/uniblab/Icod.Expressions/pull/242)
+and only issue7's footer, without another documentation-only CI run.
+
+Callout execution, lookaround backslash-K allowance, unimplemented UTF code-unit/
+escaped-UTF syntax, PR239's tolerant-surrogate word/reference/script exclusions,
+remaining syntax/modes/directives, failed/partial labels, wider optimizer/resources
+(#102), NO_UTF_CHECK/UTF16/exported API, realistic consumer performance and release
+gates remain open. User owns merge/tag/publication, issue7 stays open and Grep
+migrates last. See [design](PCRE-CALLER-CASE-POLICIES-DESIGN.md) and
+[plan](PCRE-CALLER-CASE-POLICIES-PLAN.md).

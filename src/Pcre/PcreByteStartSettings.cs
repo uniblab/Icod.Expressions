@@ -13,8 +13,8 @@ internal readonly record struct PcreByteStartSettings(
 		var bsrAnyCrLf = options.BsrAnyCrLf;
 		var notEmpty = false;
 		var notEmptyAtStart = false;
-		var caselessRestricted = false;
-		var turkishCasing = false;
+		var caselessRestricted = options.CaselessRestricted;
+		var turkishCasing = options.TurkishCasing;
 		var offset = 0;
 		// PCRE processes an uninterrupted prefix before ordinary options/trivia.
 		// Keep the original source and body index for validation and diagnostics.

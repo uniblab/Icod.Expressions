@@ -259,7 +259,8 @@ internal sealed class PcreByteProgramCompiler {
 		foreach ( var instruction in instructions ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			switch ( instruction.Opcode ) {
-				case PcreByteOpcode.Literal: consumed = true; break;
+				case PcreByteOpcode.Literal:
+				case PcreByteOpcode.ScalarSet: consumed = true; break;
 				case PcreByteOpcode.PathMark:
 					// Native prefix scanning stops at MARK before collecting a character.
 					if ( !consumed ) { hasLeadingMark = true; }

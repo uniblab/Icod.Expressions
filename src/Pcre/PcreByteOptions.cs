@@ -6,6 +6,10 @@ internal sealed record PcreByteOptions {
 
 	public int MatchWorkLimit { get; init; } = DefaultMatchWorkLimit;
 	public bool Caseless { get; init; }
+	/// <summary>Initialize restricted comparisons without enabling caseless matching.</summary>
+	public bool CaselessRestricted { get; init; }
+	/// <summary>Select global Turkish casing in effective UTF mode without enabling caseless matching.</summary>
+	public bool TurkishCasing { get; init; }
 	/// <summary>Let dot match newline characters.</summary>
 	public bool DotAll { get; init; }
 	/// <summary>Let line anchors recognize internal newlines.</summary>
