@@ -48,3 +48,23 @@ Grep last and existing unsupported boundaries remain explicit.
 Tests-only [RED733](https://github.com/uniblab/Icod.Expressions/actions/runs/43432119944), source `c77092cbfb760f9c0e1452353d84bc68316773a5`, Linux ARM job131907925887: net8/9/10 each built without compiler warnings/errors and ran678 expected failures/76,852 passes/77,530total/zero skips. All failures were new missing-policy cases (338 spans,321 diagnostics,2 membership,12 offsets,2 work,2 ownership and1 quota); every earlier test and3,995 new controls passed. Fixture `94b6ffd9c834cbbc10ab03d97cf3c98b7e303c08` froze before production and remains unchanged.
 
 The implementation changes only the two planned production files: two documented caller properties and two existing start-setting initializers. Prefix composition, validation and all parser/runtime consumers remain unchanged. Final all18 qualification, author review and exact identities are recorded on PR242/issue7 after the final source head.
+
+## Marked scalar-set search follow-up
+
+CI734 exposed one frozen ANY/tolerant/Turkish offset theory. The comparison
+result is correct, but a requested byte inside LS can incorrectly reuse that
+newline's end as the first candidate. Native gives the same no-match for caller
+and source-prefix activation. A leading MARK stops JIT scan_prefix before a
+character is collected, so STARTLINE precedes FIRSTMAP. The existing bounded
+HasLinearPathMarkStartBarrier admits literals but excludes ScalarSet.
+
+Extend only that linear proof to ScalarSet as a consuming instruction, keeping
+its1,000-instruction cap, cancellation, leading MARK before consumption and AST
+first-caret requirement. Branches/loops/calls/assertions/references/other verbs
+remain excluded; literal-before-MARK priority stays unchanged. No matcher,
+opcode, journal or shared-limit changes. Add a separate native-first fixture
+for source/caller/default policies, singleton/range/negative/predicate sets,
+wrappers, mark-order/no-caret/byte/strict controls, newline boundaries, budget,
+capture capacity and shared work. Observe a second tests-only RED and freeze
+that fixture before the compiler correction. The original fixture stays fixed.
+Broader optimizer issue102 remains open.

@@ -60,3 +60,18 @@ existing local caselessRestricted/turkishCasing initialize from options in Parse
 Tests-only [RED733](https://github.com/uniblab/Icod.Expressions/actions/runs/43432119944), source `c77092cbfb760f9c0e1452353d84bc68316773a5`, Linux ARM job131907925887: net8/9/10 each built without compiler warnings/errors and ran678 expected failures/76,852 passes/77,530total/zero skips. All failures were new missing-policy cases (338 spans,321 diagnostics,2 membership,12 offsets,2 work,2 ownership and1 quota); every earlier test and3,995 new controls passed. Fixture `94b6ffd9c834cbbc10ab03d97cf3c98b7e303c08` froze before production and remains unchanged.
 
 Task1 and Task2 settings integration are complete. All seven repository documentation files precede qualification. The all18 GREEN gate and Task3 review/identities/footer/readiness are intentionally recorded on PR242/issue7 after observation, without another documentation-only source push.
+
+## Task 2a: marked scalar-set search correction
+
+**Files:** Create tests/Pcre/PcreMarkedScalarSetStartLineReferenceTests.cs;
+modify src/Pcre/PcreByteProgram.cs only after its separate tests-only RED.
+**Interfaces:** Existing HasLinearPathMarkStartBarrier handles ScalarSet like
+Literal for consumed state, retaining all bounds/eligibility and AST caret proof.
+
+- [ ] Pin native spans/captures/labels for caller/source/default marked sets and
+  order/no-caret/byte/strict controls, boundaries, bounded capacity/work.
+- [ ] Publish tests-only fixture on initial production; inspect net8/9/10 RED
+  with the retained original one failure and only new supported-gap failures;
+  freeze the new fixture before source correction.
+- [ ] Extend only the linear compiler proof, include all final inventories,
+  then qualify the complete suite/all18/supporting gates and final identities.
