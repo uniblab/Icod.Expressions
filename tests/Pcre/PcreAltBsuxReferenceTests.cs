@@ -54,13 +54,10 @@ public sealed class PcreAltBsuxReferenceTests {
 	[InlineData( "5C7530306539", "C3A9", true, 0, "", "" )]
 	[InlineData( "5C7530306539", "E9", true, 2, "0:1", "" )]
 	[InlineData( "5C7530306539", "C3A9", true, 2, "", "" )]
-	[InlineData( "5C7530306539", "E9", true, 3, "", "" )]
 	[InlineData( "5C7530306539", "C3A9", true, 3, "0:2", "" )]
 	[InlineData( "5C7530306539", "E9", true, 7, "", "" )]
 	[InlineData( "5C7530306539", "C3A9", true, 7, "0:2", "" )]
-	[InlineData( "5C7530306539", "E9", true, 11, "", "" )]
 	[InlineData( "5C7530306539", "C3A9", true, 11, "0:2", "" )]
-	[InlineData( "5C7530306539", "E9", true, 19, "", "" )]
 	[InlineData( "5C7530306539", "C3A9", true, 19, "0:2", "" )]
 	[InlineData( "5C7530334232", "CEB2", true, 3, "0:2", "" )]
 	[InlineData( "5C7530334232", "CEB2", true, 7, "0:2", "" )]
@@ -508,6 +505,22 @@ public sealed class PcreAltBsuxReferenceTests {
 		var reference = Reference( source, enabled, mode );
 		AssertLiteral( reference, subject, spans, mark );
 		Compare( reference, subject, 0, Compile( source, Options( enabled, mode ) ).Match( subject ), hex );
+	}
+
+	[Theory]
+	[InlineData( 3 )]
+	[InlineData( 11 )]
+	[InlineData( 19 )]
+	public void StrictUtfSubjectsRetainNativeValidationBeforeMatching( int mode ) {
+		var source = Encoding.ASCII.GetBytes( @"\u00e9" );
+		var subject = new byte[] { 0xE9 };
+		var reference = Reference( source, true, mode );
+		var native = Assert.Throws<PcreMatchException>( () => reference.Match( subject ) );
+		Assert.Equal( -4, (int)native.ErrorCode );
+		var actual = Compile( source, Options( true, mode ) ).Match( subject );
+		Assert.Equal( PcreByteDiagnosticCode.InvalidUtf8Subject, actual.Diagnostic?.Code );
+		Assert.Equal( 0, actual.Diagnostic?.ByteOffset );
+		Assert.Null( actual.Match );
 	}
 
 	[Theory]

@@ -85,3 +85,14 @@ snapshot/dispatch and a bounded partial reader; canonical literals retain all
 existing downstream behavior. Full CI and final identity/footer/readiness gates
 remain pending and are recorded on PR236/issue7 after qualification. No additional
 documentation-only commit is needed to re-run the qualified production tree.
+
+## Strict-UTF protocol correction before refreeze
+
+Implementation712 resolved427 managed grammar failures, but3 native strict-UTF
+subject errors had been mislabeled as nonmatches in the fixture. RED711 therefore
+contained3 native failures and is not the valid freeze. Reclassify exactly those
+three existing profiles to require native error-4 and managed InvalidUtf8Subject0;
+retain all span/compile-error expectations. Native profiles are491 span
+profiles plus3 strict-subject errors (and60 compile diagnostics). Restore merged
+235 production for a corrected tests-only RED, then refreeze before reapplying
+the same reader. Case count stays586/65,470total and430 expected managed failures.

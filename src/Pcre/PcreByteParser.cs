@@ -20,7 +20,6 @@ internal sealed partial class PcreByteParser {
 	private readonly bool ucp;
 	private readonly bool turkishCasing;
 	private readonly bool altExtendedClass;
-	private readonly bool altBsux;
 	private readonly bool pythonOctal;
 	private readonly bool noBackslashZero;
 	private readonly bool neverBackslashC;
@@ -61,7 +60,6 @@ internal sealed partial class PcreByteParser {
 			: options.Extended ? ExtendedMode.Extended : ExtendedMode.None;
 		caselessRestricted = settings.CaselessRestricted;
 		altExtendedClass = options.AltExtendedClass;
-		altBsux = options.AltBsux;
 		pythonOctal = options.PythonOctal;
 		noBackslashZero = options.NoBackslashZero;
 		neverBackslashC = options.NeverBackslashC;
@@ -603,9 +601,6 @@ internal sealed partial class PcreByteParser {
 			throw Invalid( offset, "trailing backslash" );
 		}
 		var value = source[index++];
-		if ( altBsux && ( value is (byte)'u' or (byte)'U' or (byte)'x' ) ) {
-			return ParseAltBsuxEscape( value, offset );
-		}
 		if ( value == (byte)'c' ) {
 			if ( index >= source.Length || source[index] is < 0x20 or > 0x7e ) {
 				throw Invalid( offset, "control escape requires a printable ASCII operand" );
