@@ -33,15 +33,15 @@ ownership, canonical work/limit, caller-lockout and structural-boundary controls
 Use optional reflection for the new flag until it exists so RED builds normally.
 
 - [x] Preflight every primary/supplemental native profile and expected case count.
-- [ ] Publish tests-only draft; inspect net8/9/10 expected RED with no native,
+- [x] Publish tests-only draft; inspect net8/9/10 expected RED with no native,
   earlier or legacy-control failures. Freeze final fixture before production.
 
 ## Task 2: parser integration
 
-- [ ] Add bool AltBsux init property in src/Pcre/PcreByteOptions.cs, default false.
-- [ ] Snapshot a readonly bool in src/Pcre/PcreByteParser.cs. After reading the
+- [x] Add bool AltBsux init property in src/Pcre/PcreByteOptions.cs, default false.
+- [x] Snapshot a readonly bool in src/Pcre/PcreByteParser.cs. After reading the
   escape letter, route selected x/u/U to ParseAltBsuxEscape(byte value,int offset).
-- [ ] Create src/Pcre/PcreByteParser.AltBsux.cs. U returns itself. For x/u,
+- [x] Create src/Pcre/PcreByteParser.AltBsux.cs. U returns itself. For x/u,
   require2/4 adjacent hex digits with a local cursor and cancellation polls;
   incomplete/invalid sequences return the letter without consuming digits.
   On success commit index, check byte255/UTF-surrogate bounds, return a literal.
@@ -52,7 +52,7 @@ Use optional reflection for the new flag until it exists so RED builds normally.
 
 ## Task 3: review and delivery
 
-- [ ] Author review all five boundaries; independent review excluded by user.
+- [x] Author review all five boundaries; independent review excluded by user.
 - [ ] Update design/matrix/resource/consumer/status inventories and issue7 footer.
 - [ ] Verify frozen/earlier hashes, clean tree and source/base/proposed-merge
   identity; record final GREEN/review on PR/issue7, mark ready and remove only this
@@ -70,3 +70,18 @@ files and default/UTF/native controls passing.
 Initial tests-only e6daceb exposed four duplicate error rows after subject-only
 profiles collapsed to identical compile diagnostics. Remove those redundant rows
 and rerun warning-free RED before fixture freeze; production remains unchanged.
+
+Clean tests-only [RED711](https://github.com/uniblab/Icod.Expressions/actions/runs/43378368443),
+source ced76915f05704e106f754bb3dac1b235c941ffb, LinuxARM job131730254977,
+built net8/9/10 with0warnings/errors. Each ran65,470 tests:430 expected failures,
+65,040 passes,0skips. All410 primary flag-off differences and20 supplemental
+cases failed for missing alternate grammar; earlier/default/native/UTF controls
+passed. Four redundant compile-diagnostic rows were removed before this clean
+RED. Freeze fixture0302ebafc754634d76d49553f1a0403dbe774bf7 before production.
+
+Author review before qualification checked all five boundaries against the pinned
+compile reader and frozen fixture. Production scope is one option, readonly
+snapshot/dispatch and a bounded partial reader; canonical literals retain all
+existing downstream behavior. Full CI and final identity/footer/readiness gates
+remain pending and are recorded on PR236/issue7 after qualification. No additional
+documentation-only commit is needed to re-run the qualified production tree.

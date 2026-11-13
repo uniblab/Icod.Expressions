@@ -3714,3 +3714,52 @@ partial labels, UTF16/exported API and realistic consumer/release gates remain
 open. User owns merge/tag/publication; Grep stays last. See
 [design](PCRE-CALLER-COMPILE-LOCKOUTS-DESIGN.md) and
 [plan](PCRE-CALLER-COMPILE-LOCKOUTS-PLAN.md).
+
+## PR236: alternate backslash-u, U and x grammar
+
+Default-false internal AltBsux snapshots standard PCRE2 10.48 ALT_BSUX. Exactly
+four adjacent hex digits after u produce one canonical character; U is literal
+uppercase U. An x token requires two adjacent digits. Incomplete/nonhex sequences
+consume only the escape letter, leaving every following source byte to ordinary
+syntax. A local cursor validates all digits before committing the source index
+or testing character bounds, so incomplete high-valued prefixes cannot trigger
+premature range errors. Byte mode caps values at255; UTF rejects surrogates and
+does not combine adjacent surrogate escapes.
+
+Fallback braces use the existing quantifier/literal grammar: backslash-u{2}
+repeats literal u twice, and backslash-x{41} repeats literal x41 times. Standard
+ALT_BSUX does not enable EXTRA_ALT_BSUX braced-u syntax. A produced backslash is
+one literal node and cannot re-tokenize later source. Quotes/comments/control
+operands/raw MARK names stay inert, caller reset scopes retain the flag, and
+whole-pattern UTF validation and previous caller restrictions keep precedence.
+Class/range/algebra diagnostic ownership and canonical casing/captures/widths/
+newlines/search metadata/work/cancellation/structural quotas remain shared.
+
+Production changes only PcreByteOptions.cs, PcreByteParser.cs and the focused
+PcreByteParser.AltBsux.cs partial. No AST/IR/matcher/journal/work/quota/public API/
+dependency/workflow changes. All249 earlier test files and frozen35/214 outcomes/
+120 methods remain fixed. The586 new cases include554 unique pinned native
+profiles (494 accepted JIT and60 diagnostics), plus1,115 supplementary JIT0
+compile profiles (1,024 all-value,84 offset-pattern,6 structural/work/owned and1
+produced-backslash caller-policy control). Native arrays compile before managed
+comparison. Literal captures/labels and diagnostic codes/end offsets are pinned
+independently. Six newlines, every selected subject byte offset, malformed UTF,
+default diagnostics and resource/ownership/precedence controls are included.
+
+Clean tests-only [RED711](https://github.com/uniblab/Icod.Expressions/actions/runs/43378368443),
+source ced76915f05704e106f754bb3dac1b235c941ffb, LinuxARM job131730254977,
+built net8/9/10 with0warnings/errors. Each ran65,470 tests:430 expected failures,
+65,040 passes,0skips. All410 primary flag-off differences and20 supplemental
+cases failed for missing alternate grammar; earlier/default/native/UTF controls
+passed. Four redundant compile-diagnostic rows were removed before this clean
+RED. Freeze fixture0302ebafc754634d76d49553f1a0403dbe774bf7 before production.
+
+Qualification requires all18 native results at65,470 tests/framework and every
+configured Unicode/workload/extraction/POSIX/API/corpus/frozen/package/script gate.
+Final results, author review and reviewed source/proposed-merge identities are
+recorded in [PR236](https://github.com/uniblab/Icod.Expressions/pull/236) and issue7.
+Extra braced-u and surrogate policies, other syntax/modes/directives/callouts,
+failed/partial labels, broader optimizer/resources (#102), UTF16/exported API and
+realistic consumer/release gates remain open. User owns merge/tag/publication;
+Grep stays last. See [design](PCRE-ALT-BSUX-DESIGN.md) and
+[plan](PCRE-ALT-BSUX-PLAN.md).
