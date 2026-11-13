@@ -21,6 +21,7 @@ internal sealed partial class PcreByteParser {
 	private readonly bool turkishCasing;
 	private readonly bool altExtendedClass;
 	private readonly bool altBsux;
+	private readonly bool extraAltBsux;
 	private readonly bool pythonOctal;
 	private readonly bool noBackslashZero;
 	private readonly bool neverBackslashC;
@@ -61,7 +62,8 @@ internal sealed partial class PcreByteParser {
 			: options.Extended ? ExtendedMode.Extended : ExtendedMode.None;
 		caselessRestricted = settings.CaselessRestricted;
 		altExtendedClass = options.AltExtendedClass;
-		altBsux = options.AltBsux;
+		extraAltBsux = options.ExtraAltBsux;
+		altBsux = options.AltBsux || extraAltBsux;
 		pythonOctal = options.PythonOctal;
 		noBackslashZero = options.NoBackslashZero;
 		neverBackslashC = options.NeverBackslashC;
@@ -604,7 +606,7 @@ internal sealed partial class PcreByteParser {
 		}
 		var value = source[index++];
 		if ( altBsux && ( value is (byte)'u' or (byte)'U' or (byte)'x' ) ) {
-			return ParseAltBsuxEscape( value, offset );
+			return ParseAltBsuxEscape( value, offset, inBracket );
 		}
 		if ( value == (byte)'c' ) {
 			if ( index >= source.Length || source[index] is < 0x20 or > 0x7e ) {
