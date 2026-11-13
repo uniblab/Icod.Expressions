@@ -1797,7 +1797,7 @@ internal sealed class PcreByteProgramCompiler {
 				case PcreByteLiteral literal:
 					if ( !needsEntryFilter ) { return null; }
 					var first = (byte)literal.Value;
-					if ( utf8 ) { new Rune( literal.Value ).EncodeToUtf8( encoded ); first = encoded[0]; }
+					if ( utf8 ) { PcreUtf8.EncodeCodePoint( literal.Value, encoded ); first = encoded[0]; }
 					return FirstBytes( first, literal.Caseless, literal.CaselessRestricted );
 				default: return null;
 			}

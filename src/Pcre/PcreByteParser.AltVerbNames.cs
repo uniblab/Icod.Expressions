@@ -1,5 +1,3 @@
-using System.Text;
-
 namespace Icod.Expressions.Pcre;
 
 internal sealed partial class PcreByteParser {
@@ -63,7 +61,7 @@ internal sealed partial class PcreByteParser {
 	private void AppendControlVerbScalar( List<byte> name, int scalar ) {
 		if ( !utf8 ) { name.Add( (byte)scalar ); return; }
 		Span<byte> encoded = stackalloc byte[4];
-		var width = new Rune( scalar ).EncodeToUtf8( encoded );
+		var width = PcreUtf8.EncodeCodePoint( scalar, encoded );
 		for ( var count = 0; count < width; count++ ) { name.Add( encoded[count] ); }
 	}
 }

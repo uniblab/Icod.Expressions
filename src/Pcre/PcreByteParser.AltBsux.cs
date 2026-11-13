@@ -23,7 +23,7 @@ internal sealed partial class PcreByteParser {
 		if ( !utf8 && scalar > 0xFF ) {
 			throw Invalid( offset, "alternate hex escape exceeds the supported character range" );
 		}
-		if ( utf8 && scalar is >= 0xD800 and <= 0xDFFF ) {
+		if ( utf8 && !allowSurrogateEscapes && scalar is >= 0xD800 and <= 0xDFFF ) {
 			throw Invalid( offset, "alternate hex escape is a surrogate code point" );
 		}
 		return new PcreByteLiteral( scalar );
@@ -51,7 +51,7 @@ internal sealed partial class PcreByteParser {
 		if ( scalar > ( utf8 ? 0x10FFFFu : 0xFFu ) ) {
 			throw Invalid( offset, "alternate hex escape exceeds the supported character range" );
 		}
-		if ( utf8 && scalar is >= 0xD800u and <= 0xDFFFu ) {
+		if ( utf8 && !allowSurrogateEscapes && scalar is >= 0xD800u and <= 0xDFFFu ) {
 			throw Invalid( offset, "alternate hex escape is a surrogate code point" );
 		}
 		return new PcreByteLiteral( (int)scalar );
