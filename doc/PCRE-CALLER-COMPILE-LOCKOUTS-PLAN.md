@@ -57,9 +57,19 @@ rather than fail to build. Add every-octet and shared-resource/ownership control
 - [ ] Verify fixture/earlier hashes, clean tree, source/base/proposed merge identity;
   mark ready after checks and remove only this tranche ledger. User merges.
 
-Native inventory:2,508 pinned profiles (1,821 policy/UTF rejections,120 prior
-class rejections,567 accepted JIT profiles);3,072 every-octet preflight profiles
-and6 shared-resource/quota native controls pass.2,521 new managed cases produce
-expected64,892/framework. All1,653 caller-policy profiles and4 octet theories
-should fail on the unchanged baseline; expected RED1,657/63,235passes/framework.
+Native inventory:2,499 pinned profiles (1,821 policy/UTF rejections,120 prior
+class rejections,558 accepted JIT profiles);3,072 every-octet preflight profiles
+and6 shared-resource/quota native controls pass.2,513 new managed cases produce
+expected64,884/framework. All1,653 caller-policy profiles and4 octet theories
+should fail on the unchanged baseline; expected RED1,657/63,227passes/framework.
 Other unsupported/native-only compile profiles remain outside this increment.
+
+Tests-only706 built cleanly but exposed legacy fixture assumptions:60 Perl
+algebra controls/framework use the existing expression-opening offset,9 native
+erased UTF-C successes remain unsupported here, and1 native consumed UTF-C
+behind is error136 even without JIT. These controls were corrected before
+freeze; all1,653 caller-policy profiles remain unchanged, as do248 earlier files
+and all production source. Expected refined RED remains1,657/framework.
+
+An explicit erased UTF-C boundary control is retained in the supplementary
+theory, alongside bare and consumed-behind C; total2,513 new cases.

@@ -22,7 +22,10 @@ escape at its opening backslash, then retain the existing unsupported UTF-C
 boundary. Parse all real escapes, including DEFINE, zero repeats and unreachable
 verb tails. Quoting, comments, escaped backslashes, control operands and raw
 MARK names do not contain such a token. Bracket and algebra C keep their existing
-InvalidSyntax diagnostic; native class error107 precedes caller error183.
+InvalidSyntax diagnostic; native class error107 precedes caller error183. Ordinary
+classes retain the escape offset; Perl algebra retains its expression opener.
+Erased UTF-C execution remains unsupported, while native consumed UTF-C behind
+is itself invalid (error136). Caller prohibitions still apply before either boundary.
 
 This follows native compile stages without raw-source scanning, source rewriting,
 new modes, bytecode or matcher state. A blanket prefix rejection would get UTF
