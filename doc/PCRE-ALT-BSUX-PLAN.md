@@ -58,11 +58,15 @@ Use optional reflection for the new flag until it exists so RED builds normally.
   identity; record final GREEN/review on PR/issue7, mark ready and remove only this
   tranche ledger. User owns merge.
 
-Native preflight:558 independently pinned primary profiles (494 accepted,64
+Native preflight:554 independently pinned primary profiles (494 accepted,60
 diagnostics), plus1,115 supplemental JIT0 compile profiles (1,024 all-value,84
 offset-pattern,6 structural/work/ownership and1 produced-slash control).
-590 new managed cases yield65,474/framework. Independent native flag-off
-comparison predicts414 primary differences;4 octet/12 offset theories and4
+586 new managed cases yield65,470/framework. Independent native flag-off
+comparison predicts410 primary differences;4 octet/12 offset theories and4
 work/ownership/quota/caller-policy facts should add20 expected failures.
-Expected RED434/65,040passes/65,474total per framework, with all249 earlier
+Expected RED430/65,040passes/65,470total per framework, with all249 earlier
 files and default/UTF/native controls passing.
+
+Initial tests-only e6daceb exposed four duplicate error rows after subject-only
+profiles collapsed to identical compile diagnostics. Remove those redundant rows
+and rerun warning-free RED before fixture freeze; production remains unchanged.
