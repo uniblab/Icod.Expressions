@@ -3494,20 +3494,24 @@ Production changes only PcreByteOptions.cs, PcreByteParser.cs and the focused
 PcreByteParser.AltBsux.cs partial. No AST/IR/matcher/journal/work/quota/public API/
 dependency/workflow changes. All249 earlier test files and frozen35/214 outcomes/
 120 methods remain fixed. The586 new cases include554 unique pinned native
-profiles (494 accepted JIT and60 diagnostics), plus1,115 supplementary JIT0
+profiles (491 accepted JIT,60 compile diagnostics and3 strict-UTF subject errors), plus1,115 supplementary JIT0
 compile profiles (1,024 all-value,84 offset-pattern,6 structural/work/owned and1
 produced-backslash caller-policy control). Native arrays compile before managed
 comparison. Literal captures/labels and diagnostic codes/end offsets are pinned
 independently. Six newlines, every selected subject byte offset, malformed UTF,
 default diagnostics and resource/ownership/precedence controls are included.
 
-Clean tests-only [RED711](https://github.com/uniblab/Icod.Expressions/actions/runs/43378368443),
-source ced76915f05704e106f754bb3dac1b235c941ffb, LinuxARM job131730254977,
-built net8/9/10 with0warnings/errors. Each ran65,470 tests:430 expected failures,
-65,040 passes,0skips. All410 primary flag-off differences and20 supplemental
-cases failed for missing alternate grammar; earlier/default/native/UTF controls
-passed. Four redundant compile-diagnostic rows were removed before this clean
-RED. Freeze fixture0302ebafc754634d76d49553f1a0403dbe774bf7 before production.
+Clean refined tests-only [RED713](https://github.com/uniblab/Icod.Expressions/actions/runs/43380230552),
+source523784aaad7838a9399f745e1d62662ad6ef5052, LinuxARM job131736180443,
+built net8/9/10 with0warnings/errors. Each ran65,470 tests:430 expected managed
+failures,65,040 passes,0skips. The410 primary differences and20 supplemental
+cases failed only for missing alternate grammar; native/default/earlier/UTF
+controls passed. Freeze fixture780b5a5583aaef908bcae74bbb4cea48e4cc0d35 before
+reapplying production. Earlier RED711/freeze were superseded: three strict-UTF
+subject errors were incorrectly called nonmatches. Those exact profiles now pin
+native error-4 and managed InvalidUtf8Subject0; no span/compile-error expectation
+was weakened. Four redundant compile-error rows were removed earlier. Reader
+source is byte-identical to the initial implementation712.
 
 Qualification requires all18 native results at65,470 tests/framework and every
 configured Unicode/workload/extraction/POSIX/API/corpus/frozen/package/script gate.

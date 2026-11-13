@@ -58,41 +58,26 @@ Use optional reflection for the new flag until it exists so RED builds normally.
   identity; record final GREEN/review on PR/issue7, mark ready and remove only this
   tranche ledger. User owns merge.
 
-Native preflight:554 independently pinned primary profiles (494 accepted,60
-diagnostics), plus1,115 supplemental JIT0 compile profiles (1,024 all-value,84
-offset-pattern,6 structural/work/ownership and1 produced-slash control).
-586 new managed cases yield65,470/framework. Independent native flag-off
-comparison predicts410 primary differences;4 octet/12 offset theories and4
-work/ownership/quota/caller-policy facts should add20 expected failures.
-Expected RED430/65,040passes/65,470total per framework, with all249 earlier
-files and default/UTF/native controls passing.
+Native preflight:554 unique profiles:491 accepted JIT,60 compile diagnostics and
+3 strict-UTF subject errors; plus1,115 supplemental JIT0 compile profiles
+(1,024 all-value,84 offset-pattern,6 structural/work/ownership and1 produced-slash).
+586 cases yield65,470/framework. Corrected native comparison predicts410 primary
+differences plus20 supplemental cases, all430 expected managed failures.
 
-Initial tests-only e6daceb exposed four duplicate error rows after subject-only
-profiles collapsed to identical compile diagnostics. Remove those redundant rows
-and rerun warning-free RED before fixture freeze; production remains unchanged.
+Clean refined tests-only [RED713](https://github.com/uniblab/Icod.Expressions/actions/runs/43380230552),
+source523784aaad7838a9399f745e1d62662ad6ef5052, LinuxARM job131736180443,
+built net8/9/10 with0warnings/errors. Each ran65,470 tests:430 expected managed
+failures,65,040 passes,0skips. The410 primary differences and20 supplemental
+cases failed only for missing alternate grammar; native/default/earlier/UTF
+controls passed. Freeze fixture780b5a5583aaef908bcae74bbb4cea48e4cc0d35 before
+reapplying production. Earlier RED711/freeze were superseded: three strict-UTF
+subject errors were incorrectly called nonmatches. Those exact profiles now pin
+native error-4 and managed InvalidUtf8Subject0; no span/compile-error expectation
+was weakened. Four redundant compile-error rows were removed earlier. Reader
+source is byte-identical to the initial implementation712.
 
-Clean tests-only [RED711](https://github.com/uniblab/Icod.Expressions/actions/runs/43378368443),
-source ced76915f05704e106f754bb3dac1b235c941ffb, LinuxARM job131730254977,
-built net8/9/10 with0warnings/errors. Each ran65,470 tests:430 expected failures,
-65,040 passes,0skips. All410 primary flag-off differences and20 supplemental
-cases failed for missing alternate grammar; earlier/default/native/UTF controls
-passed. Four redundant compile-diagnostic rows were removed before this clean
-RED. Freeze fixture0302ebafc754634d76d49553f1a0403dbe774bf7 before production.
-
-Author review before qualification checked all five boundaries against the pinned
-compile reader and frozen fixture. Production scope is one option, readonly
-snapshot/dispatch and a bounded partial reader; canonical literals retain all
-existing downstream behavior. Full CI and final identity/footer/readiness gates
-remain pending and are recorded on PR236/issue7 after qualification. No additional
-documentation-only commit is needed to re-run the qualified production tree.
-
-## Strict-UTF protocol correction before refreeze
-
-Implementation712 resolved427 managed grammar failures, but3 native strict-UTF
-subject errors had been mislabeled as nonmatches in the fixture. RED711 therefore
-contained3 native failures and is not the valid freeze. Reclassify exactly those
-three existing profiles to require native error-4 and managed InvalidUtf8Subject0;
-retain all span/compile-error expectations. Native profiles are491 span
-profiles plus3 strict-subject errors (and60 compile diagnostics). Restore merged
-235 production for a corrected tests-only RED, then refreeze before reapplying
-the same reader. Case count stays586/65,470total and430 expected managed failures.
+Author review checked all five boundaries and confirmed that only the strict-UTF
+protocol classification changed during refreeze. The reader remains unchanged.
+Final all18-result qualification and supporting gates, source/base/merge identity,
+issue7 footer and readiness are recorded on PR236/issue7 after completion, without
+a documentation-only CI repeat. User owns merge/tag/publication; Grep last.

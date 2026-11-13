@@ -41,6 +41,8 @@ internal sealed record PcreByteOptions {
 	public bool NeverBackslashC { get; init; }
 	/// <summary>Enable PCRE2 UTS#18 nested brackets and doubled set operators.</summary>
 	public bool AltExtendedClass { get; init; }
+	/// <summary>Use alternate backslash-u, U and x grammar with complete adjacent hex digits.</summary>
+	public bool AltBsux { get; init; }
 	public bool AsciiBsD { get; init; }
 	/// <summary>Restrict backslash-s whitespace predicates to ASCII.</summary>
 	public bool AsciiBsS { get; init; }
