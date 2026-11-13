@@ -1,6 +1,6 @@
 # PCRE roadmap status
 
-Reviewed after merged PR242, with PR243 in progress. Issue #7 remains the delivery roadmap; the
+Reviewed after merged PR243, with PR244 in progress. Issue #7 remains the delivery roadmap; the
 [syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md),
 [resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) and
 [Grep fixture inventory](PCRE-GREP-CONSUMER-FIXTURES.md) define the detailed gates.
@@ -56,6 +56,7 @@ retaining each framework's complete suite and frozen-result qualification.
    PR241 adds caller prohibition of manual callouts at existing atom dispatch.
    PR242 adds caller casing policies and bounded marked-scalar-set newline search.
    PR243 adds caller opt-in for match-start resets in supported assertions.
+   PR244 adds ordinary escaped UTF literals through the validated scalar reader.
    UTF code-unit escape,
    remaining directives/verbs/callouts and other matrix gaps require their own
    pinned reference fixtures. Decide any intentional exclusions before release;
@@ -73,9 +74,9 @@ retaining each framework's complete suite and frozen-result qualification.
 
 ## Current increment and next syntax work
 
-PR242 merged at e3a772301a021a65797f44d5d397444661532288;
-main43442096467 and scripts43442096348 are green. Its79,118 tests/framework
-remain the baseline. PR243 adds optional assertion resets as described below;
+PR243 merged at8d3221a738a4d69639dc1ac11e2d0459bf04c3f0;
+main43459503753 and scripts43459504967 are green. Its80,734 tests/framework
+remain the baseline. PR244 adds ordinary escaped UTF literals as described below;
 final qualification and delivery evidence are recorded on the PR and issue7.
 
 ## PR234: backreferences blocking first-character search
@@ -669,3 +670,17 @@ Tests-only [RED737](https://github.com/uniblab/Icod.Expressions/actions/runs/434
 Baseline merged242 is e3a772301a021a65797f44d5d397444661532288/tree525de953b3e6f05f4ef49caf783863bfd2179ace,79,118 tests/framework; main43442096467/scripts43442096348 are green. All259 earlier test files and GNU/frozen35/214 outcomes/120methods stay fixed. Final qualification requires all18 native results at80,734 tests/framework with0failures/skips/compiler warnings/errors and every configured supporting gate. All seven repository inventories precede final source qualification; final GREEN/review/exact identities live on PR243 and only issue7 footer, avoiding another documentation-only CI run.
 
 Callout execution, unimplemented UTF-C/escaped-UTF syntax, PR239 tolerant-surrogate word/reference/script exclusions, remaining syntax/modes/directives, failed/partial labels, wider optimizer/resources102, NO_UTF_CHECK/UTF16/exported API and realistic consumer/release gates remain open. Issue7 stays open; user owns merge/tag/publish; Grep last. See [design](PCRE-LOOKAROUND-RESET-DESIGN.md) and [plan](PCRE-LOOKAROUND-RESET-PLAN.md).
+
+## PR244: ordinary escaped UTF literal scalars
+
+Use existing ParseQuotedLiteral at UTF non-ASCII escape entry after the trailing-backslash check, before ASCII dispatch. One complete validated scalar becomes the canonical literal. Remove the obsolete UnsupportedSyntax tail and update the recovery comment. All class/range/case/width/capture/reference/call/assertion/optimization consumers remain existing; no new flag, source rewrite, IR/opcode/matcher/journal/shared-limit/API/dependency/workflow change.
+
+The993 new cases include956 primary native profiles (854 matching/query/capture/success-label and102 compile profiles),1,320 selected offset protocols and15 paired work/capacity profiles. Accepted native matching requires JIT0 and negative matching requires no-match(-1). Four UTF-C profiles outside native JIT support remain separate compile/unsupported controls.
+
+Tests-only [RED739](https://github.com/uniblab/Icod.Expressions/actions/runs/43461757644), source `7198004337030e2d39008bc20843809b0fe5dc4d`, Linux ARM job132010183721: net8/9/10 each built with zero compiler warnings/errors and ran **687 expected failures / 81,040 passes / 81,727 total / zero skips**. Failures were619 primary profiles,35 later-error boundaries,24 offset theories,5 work/ownership cases,2 capacity/depth facts,1 quota and1 strict-subject fact per framework. All80,734 earlier tests and306 new controls passed; every native literal assertion passed. Freeze `1d6cf18667352f51c8d3a245560803af8fe1ab31` before production; no fixture refinements.
+
+Two earlier facts intentionally retire temporary escaped-e-acute UnsupportedSyntax assertions. Their same inputs and caller selections now require pinned native0:2 acceptance and managed parity, with every unrelated quote/C/directive/surrogate guard retained. Both facts remain; the other258 earlier test files stay hash-identical. The frozen new fixture also covers those exact source/caller selections, guarding against a masked regression. No invented caller flag or escape-recovery interpretation is introduced.
+
+Baseline2438d3221a738a4d69639dc1ac11e2d0459bf04c3f0/treee2ab37e841f9c0a207a1b9e170051693558ae906 has80,734 tests/framework; main43459503753/scripts43459504967 are green. GNU/frozen35/214 outcomes/120methods stay fixed. Final qualification requires all18 native results at81,727 tests/framework with0failures/skips/compiler warnings/errors and every configured supporting gate. All seven inventories precede qualification; final GREEN/review/exact source/base/tree/proposed-merge identities live on PR244 and only issue7 footer, without another documentation-only source push.
+
+UTF-C execution, callouts, PR239 tolerant-surrogate word/reference/script exclusions, remaining syntax/modes/directives, failed/partial labels, wider optimizer/resources102, NO_UTF_CHECK/UTF16/exported API and realistic consumer/release gates remain open. Issue7 stays open; user owns merge/tag/publish; Grep last. See [design](PCRE-ESCAPED-UTF-LITERALS-DESIGN.md) and [plan](PCRE-ESCAPED-UTF-LITERALS-PLAN.md).
