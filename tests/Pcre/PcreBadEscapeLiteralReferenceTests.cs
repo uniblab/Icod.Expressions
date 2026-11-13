@@ -1320,7 +1320,7 @@ public sealed class PcreBadEscapeLiteralReferenceTests {
 	[InlineData( "5C673C36353533363E", false, 1, 161, 2, "InvalidSyntax", 0 )]
 	[InlineData( "5C673C36353533363E", false, 7, 161, 2, "InvalidSyntax", 0 )]
 	[InlineData( "5C673C36353533363E", false, 9, 161, 2, "InvalidSyntax", 0 )]
-	[InlineData( "5B5C6A5D", false, 0, 103, 3, "UnsupportedSyntax", 0 )]
+	[InlineData( "5B5C6A5D", false, 0, 103, 3, "UnsupportedSyntax", 1 )]
 	[InlineData( "5B5C6A5D", false, 1, 103, 3, "UnsupportedSyntax", 0 )]
 	[InlineData( "283F5B205B5C6A5D205D29", false, 0, 103, 7, "UnsupportedSyntax", 0 )]
 	[InlineData( "283F5B205B5C6A5D205D29", false, 1, 103, 7, "UnsupportedSyntax", 0 )]
@@ -1352,9 +1352,9 @@ public sealed class PcreBadEscapeLiteralReferenceTests {
 	[InlineData( "283F5B205B5C4E7B5D205D29", true, 1, 137, 8, "InvalidSyntax", 0 )]
 	[InlineData( "5B5B5C4E7B5D26265B6A5D5D", false, 128, 137, 5, "InvalidSyntax", 0 )]
 	[InlineData( "5B5B5C4E7B5D26265B6A5D5D", false, 129, 137, 5, "InvalidSyntax", 0 )]
-	[InlineData( "5B5C707B6261647D5D", false, 0, 147, 8, "UnsupportedSyntax", 0 )]
+	[InlineData( "5B5C707B6261647D5D", false, 0, 147, 8, "UnsupportedSyntax", 1 )]
 	[InlineData( "5B5C707B6261647D5D", false, 1, 147, 8, "UnsupportedSyntax", 0 )]
-	[InlineData( "5B5C707B6261647D5D", true, 0, 147, 8, "UnsupportedSyntax", 0 )]
+	[InlineData( "5B5C707B6261647D5D", true, 0, 147, 8, "UnsupportedSyntax", 1 )]
 	[InlineData( "5B5C707B6261647D5D", true, 1, 147, 8, "UnsupportedSyntax", 0 )]
 	[InlineData( "283F5B205B5C707B6261647D5D205D29", false, 0, 147, 12, "UnsupportedSyntax", 0 )]
 	[InlineData( "283F5B205B5C707B6261647D5D205D29", false, 1, 147, 12, "UnsupportedSyntax", 0 )]
@@ -1548,8 +1548,8 @@ public sealed class PcreBadEscapeLiteralReferenceTests {
 	[InlineData( "283F78295C6A202320636F6D6D656E740A2041", false, 9, 103, 6, "UnsupportedSyntax", 4 )]
 	[InlineData( "283F78295C630A2041", false, 1, 168, 7, "InvalidSyntax", 4 )]
 	[InlineData( "283F78295C630A2041", false, 9, 168, 7, "InvalidSyntax", 4 )]
-	[InlineData( "283F3C613E41295C673C613E5C673C6261642D6E616D653E", false, 1, 142, 18, "InvalidSyntax", 7 )]
-	[InlineData( "283F3C613E41295C673C613E5C673C6261642D6E616D653E", false, 7, 142, 18, "InvalidSyntax", 7 )]
+	[InlineData( "283F3C613E41295C673C613E5C673C6261642D6E616D653E", false, 1, 142, 18, "InvalidSyntax", 12 )]
+	[InlineData( "283F3C613E41295C673C613E5C673C6261642D6E616D653E", false, 7, 142, 18, "InvalidSyntax", 12 )]
 	public void NonrecoverableAndPostRecoveryErrorsRetainTheirNativeStageAndOwningOffset( string hex, bool enabled, int mode, int nativeCode, int nativeOffset, string code, int offset ) {
 		var source = Convert.FromHexString( hex );
 		var native = Assert.Throws<PcrePatternException>( () => Reference( source, enabled, mode ) );
