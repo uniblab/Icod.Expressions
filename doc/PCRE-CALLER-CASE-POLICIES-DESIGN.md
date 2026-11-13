@@ -47,7 +47,7 @@ Grep last and existing unsupported boundaries remain explicit.
 
 Tests-only [RED733](https://github.com/uniblab/Icod.Expressions/actions/runs/43432119944), source `c77092cbfb760f9c0e1452353d84bc68316773a5`, Linux ARM job131907925887: net8/9/10 each built without compiler warnings/errors and ran678 expected failures/76,852 passes/77,530total/zero skips. All failures were new missing-policy cases (338 spans,321 diagnostics,2 membership,12 offsets,2 work,2 ownership and1 quota); every earlier test and3,995 new controls passed. Fixture `94b6ffd9c834cbbc10ab03d97cf3c98b7e303c08` froze before production and remains unchanged.
 
-The implementation changes only the two planned production files: two documented caller properties and two existing start-setting initializers. Prefix composition, validation and all parser/runtime consumers remain unchanged. Final all18 qualification, author review and exact identities are recorded on PR242/issue7 after the final source head.
+The initial implementation changed the two planned production files: two documented caller properties and two existing start-setting initializers. Prefix composition, validation and all parser/runtime consumers remain unchanged. Final all18 qualification, author review and exact identities are recorded on PR242/issue7 after the final source head.
 
 ## Marked scalar-set search follow-up
 
@@ -68,3 +68,9 @@ wrappers, mark-order/no-caret/byte/strict controls, newline boundaries, budget,
 capture capacity and shared work. Observe a second tests-only RED and freeze
 that fixture before the compiler correction. The original fixture stays fixed.
 Broader optimizer issue102 remains open.
+
+## Follow-up regression evidence
+
+Task2a tests-only [RED735](https://github.com/uniblab/Icod.Expressions/actions/runs/43437776788), source `3089e3febffc47eb0efdd364619788fbd0d75549`, LinuxARM job131927213552: net8/9/10 each built0warnings/errors, then286 expected failures/78,832 passes/79,118total/0skips. Original1+281new split profiles+4new supplemental cases failed; controls passed. Freeze `2fc86257fe9c14bf84d94d6d982ccbdabc503b05` before the compiler correction; original `94b6ffd9c834cbbc10ab03d97cf3c98b7e303c08` remains unchanged.
+
+Final source touches three production files, including only a ScalarSet consuming case in HasLinearPathMarkStartBarrier. Its existing bounds, exclusions, cancellation and AST caret proof remain unchanged. Final6,261 new cases/79,118total; GREEN/review/identities live on PR242/issue7.

@@ -68,10 +68,16 @@ modify src/Pcre/PcreByteProgram.cs only after its separate tests-only RED.
 **Interfaces:** Existing HasLinearPathMarkStartBarrier handles ScalarSet like
 Literal for consumed state, retaining all bounds/eligibility and AST caret proof.
 
-- [ ] Pin native spans/captures/labels for caller/source/default marked sets and
+- [x] Pin native spans/captures/labels for caller/source/default marked sets and
   order/no-caret/byte/strict controls, boundaries, bounded capacity/work.
-- [ ] Publish tests-only fixture on initial production; inspect net8/9/10 RED
+- [x] Publish tests-only fixture on initial production; inspect net8/9/10 RED
   with the retained original one failure and only new supported-gap failures;
   freeze the new fixture before source correction.
 - [ ] Extend only the linear compiler proof, include all final inventories,
   then qualify the complete suite/all18/supporting gates and final identities.
+
+## Marked-set follow-up progress
+
+Task2a tests-only [RED735](https://github.com/uniblab/Icod.Expressions/actions/runs/43437776788), source `3089e3febffc47eb0efdd364619788fbd0d75549`, LinuxARM job131927213552: net8/9/10 each built0warnings/errors, then286 expected failures/78,832 passes/79,118total/0skips. Original1+281new split profiles+4new supplemental cases failed; controls passed. Freeze `2fc86257fe9c14bf84d94d6d982ccbdabc503b05` before the compiler correction; original `94b6ffd9c834cbbc10ab03d97cf3c98b7e303c08` remains unchanged.
+
+Task2a compiler integration is implemented. Scope expands from two to three production files to fix the pre-existing supported-path search gap exposed by CI734. All final repository inventories precede qualification; both frozen fixtures/257 earlier files stay fixed. Final all18 gates, review and identity evidence belong on PR242/issue7 without another documentation-only source push.
