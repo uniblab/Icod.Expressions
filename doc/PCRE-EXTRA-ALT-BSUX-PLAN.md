@@ -60,10 +60,17 @@ and error assertions precede managed comparisons.
   record final evidence on PR/issue7, mark ready and remove only this ledger.
 
 Native preflight:940 primary profiles (730 spans/labels,204 compile diagnostics,
-6 strict-UTF subject errors);2,304 supplemental compile profiles include2,297 JIT0
+6 strict-UTF subject errors);2,310 supplemental compile profiles include2,303 JIT0
 accepts and7 expected rejects. All17,040 selected offset protocols return match or
 real no-match(-1), never other negative errors. All primary rows are unique.
 Native extra-off comparison has718 differences;6 already share the same managed
-Perl InvalidSyntax0, predicting712 primary failures plus37 supplemental failures.
-Expected RED749fail/65,700pass/66,449total/0skip;979 new cases.
+Perl InvalidSyntax0, predicting712 primary failures plus39 supplemental failures.
+Expected RED751fail/65,700pass/66,451total/0skip;981 new cases.
 Merged236 main43382670308/scripts43382670284 are now green.
+
+Initial RED715/43384959777 at438f29d4b1c0e796ca6e17c9ca53a4b5e66191d4,
+LinuxARM131751162236: net8/9/10 each0build warnings/errors,749 expected managed
+failures/65,700passes/66,449total/0skips; native/default/earlier controls pass.
+Before freeze, author review adds2 local casing theories (6 extra native JIT0
+profiles) to pin uppercase fallback prefixes and local unsets. No prior
+expectations change. Refined RED now expects751fail/65,700pass/66,451total.

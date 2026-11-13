@@ -1039,6 +1039,20 @@ public sealed class PcreExtraAltBsuxReferenceTests {
 		}
 	}
 
+	[Theory]
+	[InlineData( 2 )]
+	[InlineData( 3 )]
+	public void MalformedPrefixRetainsLocalCaseScopesOnBothCanonicalLiterals( int selection ) {
+		var sources = new[] { Encoding.ASCII.GetBytes( @"(?i:\u{{2})" ), Encoding.ASCII.GetBytes( @"(?-i:\u{{2})" ), Encoding.ASCII.GetBytes( @"(?i:\u{ 2})(?-i:A)" ) };
+		var references = sources.Select( source => Reference( source, selection, 11 ) ).ToArray();
+		var subjects = new[] { "U{{"u8.ToArray(), "U{{"u8.ToArray(), "U{ 2}A"u8.ToArray() };
+		var spans = new[] { "0:3", "", "0:6" };
+		for ( var index = 0; index < sources.Length; index++ ) {
+			AssertLiteral( references[index], subjects[index], spans[index], "" );
+			Compare( references[index], subjects[index], 0, Compile( sources[index], Options( selection, 11 ) ).Match( subjects[index] ), "fallback local case scope" );
+		}
+	}
+
 	[Fact]
 	public void BracedLiteralsKeepCanonicalWorkAndCancellation() {
 		var source = Encoding.ASCII.GetBytes( @"(\u{41}|\u{41}\u{41})+B" );
