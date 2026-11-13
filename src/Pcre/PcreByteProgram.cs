@@ -74,6 +74,7 @@ internal sealed record PcreByteProgram(
 	internal PcreByteSet? CommitStartBytes { get; init; }
 	internal int PathMarkSlot { get; init; } = -1;
 	internal bool TrackPathMarks { get; init; }
+	internal bool HasSurrogateLiterals { get; init; }
 	internal bool AnyCrLfNewline => Newline == PcreByteNewline.AnyCrLf;
 	internal byte NewlineCharacter => Newline.Character();
 }
@@ -90,6 +91,7 @@ internal sealed class PcreByteProgramCompiler {
 	private readonly Stack<Action> compileWork = new();
 	private readonly CancellationToken cancellationToken;
 	private bool hasCaselessComparisons;
+	private bool hasSurrogateLiterals;
 	private readonly bool utf8;
 	private readonly bool ucp;
 	private readonly bool turkishCasing;
@@ -187,13 +189,25 @@ internal sealed class PcreByteProgramCompiler {
 		// A first-byte cut may trigger on a malformed lead: admit a zero-width
 		// synthetic candidate, while the fragment still forbids consumption.
 		var commitBytes = hasCommit ? FindCommitStartBytes( root ) : null;
+		ValidateSurrogateLiteralProgram();
 		return new( instructions.ToArray(), markCount, hasCaselessComparisons, utf8, matchInvalidUtf,
 			FindRequiredLiteralSuffix( root ), newline, HasExplicitNewline( root ), hasEarlyAccept || commitBytes.HasValue || CanMatchEmptyAtAnyOffset( root ),
 			bytePrefix.Unconditional, utfCrLfStartClass, notEmpty, notEmptyAtStart,
 			matchInvalidUtf && newline == PcreByteNewline.Any && HasLineStartSearch( root ), ucp, bytePrefix.Literal ) {
 			ScalarExpressionStackDepth = scalarExpressionStackDepth, CommitStartBytes = commitBytes, TurkishCasing = turkishCasing,
-			PathMarkSlot = pathMarkSlot, TrackPathMarks = hasNamedSkip
+			PathMarkSlot = pathMarkSlot, TrackPathMarks = hasNamedSkip, HasSurrogateLiterals = hasSurrogateLiterals
 		};
+	}
+
+	private void ValidateSurrogateLiteralProgram() {
+		if ( !matchInvalidUtf || !hasSurrogateLiterals ) { return; }
+		foreach ( var instruction in instructions ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( instruction.Opcode is PcreByteOpcode.WordBoundary or PcreByteOpcode.Backreference or PcreByteOpcode.ScriptRunCheck ) {
+				throw new PcreByteParseException( new( PcreByteDiagnosticCode.UnsupportedSyntax, 0,
+					"tolerant surrogate literals cannot yet combine with word boundaries, backreferences or script runs" ) );
+			}
+		}
 	}
 
 	private bool HasLineStartSearch( PcreByteAlternatives root ) {
@@ -1515,6 +1529,7 @@ internal sealed class PcreByteProgramCompiler {
 		instructions.Add( new( opcode, first, second, set, bytes, ranges, predicates, category, caseless, caselessRestricted,
 			captureNumbers, skipCrLfAfterRepeat, propertyValue, terms ) );
 		hasCaselessComparisons |= caseless;
+		hasSurrogateLiterals |= utf8 && opcode == PcreByteOpcode.Literal && first is >= 0xD800 and <= 0xDFFF;
 		return index;
 	}
 
@@ -1630,6 +1645,13 @@ internal sealed class PcreByteProgramCompiler {
 				Emit( PcreByteOpcode.ScalarClass, (int)scalarClass.Kind, scalarClass.Negated ? 1 : 0,
 					category: scalarClass.Category, caseless: scalarClass.Caseless, caselessRestricted: scalarClass.CaselessRestricted,
 					skipCrLfAfterRepeat: TakeUtfCrLfLeadingStarSkip( scalarClass ), propertyValue: scalarClass.PropertyValue );
+				break;
+			case PcreByteScalarSet { Negated: false, Source: PcreByteScalarSetSource.Literal,
+				SourceLiteral: >= 0xD800 and <= 0xDFFF } surrogateSet when utf8:
+				Emit( PcreByteOpcode.Literal, surrogateSet.SourceLiteral, caseless: surrogateSet.Caseless,
+					caselessRestricted: surrogateSet.CaselessRestricted,
+					skipCrLfAfterRepeat: TakeUtfCrLfLeadingStarSkip( surrogateSet )
+						|| skipUtfCrLfLeadingRepeat && ReferenceEquals( surrogateSet, utfCrLfLeadingRepeatSet ) );
 				break;
 			case PcreByteScalarSet scalarSet:
 				Emit( PcreByteOpcode.ScalarSet, second: scalarSet.Negated ? 1 : 0,

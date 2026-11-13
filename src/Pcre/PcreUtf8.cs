@@ -15,6 +15,17 @@ internal static class PcreUtf8 {
 		return 3;
 	}
 
+	// Native tolerant CHAR reads can compare these literal bytes directly.
+	// General scalar consumers and strict input validation keep using TryRead.
+	internal static bool TryReadLiteral( ReadOnlySpan<byte> source, int offset, bool allowSurrogates, out int scalar, out int width ) {
+		if ( TryRead( source, offset, out scalar, out width ) ) { return true; }
+		if ( !allowSurrogates || offset < 0 || offset > source.Length - 3 || source[offset] != 0xED
+			|| source[offset + 1] is < 0xA0 or > 0xBF || source[offset + 2] is < 0x80 or > 0xBF ) { return false; }
+		scalar = 0xD000 | ( ( source[offset + 1] & 0x3F ) << 6 ) | ( source[offset + 2] & 0x3F );
+		width = 3;
+		return true;
+	}
+
 	internal static bool TryRead( ReadOnlySpan<byte> source, int offset, out int scalar, out int width ) {
 		scalar = 0;
 		width = 0;
