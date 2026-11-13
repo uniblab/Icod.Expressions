@@ -49,3 +49,9 @@ identities go on PR245 and only issue7's footer, without docs-only CI pushes.
 
 References: pinned PCRE2 10.48 PUBLIC_LITERAL_COMPILE_OPTIONS/EXTRA_OPTIONS masks,
 literal parse loop and native protocols; https://www.pcre.org/current/doc/html/pcre2api.html .
+
+## Tests-first evidence
+
+Tests-only [RED743](https://github.com/uniblab/Icod.Expressions/actions/runs/43483771907), source `02f144580c5af853578e682d3a5ae3a648252b2f`, Linux ARM job132086996194: net8/9/10 each built with zero compiler warnings/errors and ran **786 expected failures / 84,574 passes / 85,360 total / zero skips**. Failures were466 primary profiles,316 compatibility/error boundaries,1 work/ownership case and3 structural cases per framework. All81,727 earlier tests and2,847 new controls passed; every native assertion passed. Freeze `842c7045a4a7ed25d1f486f56702644eed8ac53c` before production. Before this clean RED, seven overlaps were deduplicated and the new helper's managed offset argument was corrected; no expected outcome was weakened.
+
+Implementation stays within the five scoped source files. The parser snapshots Literal and dispatches before grammar/trivia/options; prefix scanning is suppressed while caller global policies remain active. The compatibility predicate accounts for all40 earlier boolean options:9 allowed and31 rejected. All261 prior test files stay hash-fixed. Final qualification/review/identities are external on PR245/issue7.

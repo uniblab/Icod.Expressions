@@ -1,6 +1,6 @@
 # PCRE roadmap status
 
-Reviewed after merged PR243, with PR244 in progress. Issue #7 remains the delivery roadmap; the
+Reviewed after merged PR244, with PR245 in progress. Issue #7 remains the delivery roadmap; the
 [syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md),
 [resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) and
 [Grep fixture inventory](PCRE-GREP-CONSUMER-FIXTURES.md) define the detailed gates.
@@ -57,6 +57,7 @@ retaining each framework's complete suite and frozen-result qualification.
    PR242 adds caller casing policies and bounded marked-scalar-set newline search.
    PR243 adds caller opt-in for match-start resets in supported assertions.
    PR244 adds ordinary escaped UTF literals through the validated scalar reader.
+   PR245 adds whole-pattern literal compilation through canonical literal nodes.
    UTF code-unit escape,
    remaining directives/verbs/callouts and other matrix gaps require their own
    pinned reference fixtures. Decide any intentional exclusions before release;
@@ -74,10 +75,10 @@ retaining each framework's complete suite and frozen-result qualification.
 
 ## Current increment and next syntax work
 
-PR243 merged at8d3221a738a4d69639dc1ac11e2d0459bf04c3f0;
-main43459503753 and scripts43459504967 are green. Its80,734 tests/framework
-remain the baseline. PR244 adds ordinary escaped UTF literals as described below;
-final qualification and delivery evidence are recorded on the PR and issue7.
+PR244 merged at075e6adc284187fd8716dc109af130fc6e533cb9;
+its81,727 tests/framework remain the baseline. PR245 adds caller literal
+compilation as described below. Final qualification and delivery evidence,
+including the main WindowsARM SDK-install retry, are recorded on PR245/issue7.
 
 ## PR234: backreferences blocking first-character search
 
@@ -684,3 +685,15 @@ Two earlier facts intentionally retire temporary escaped-e-acute UnsupportedSynt
 Baseline2438d3221a738a4d69639dc1ac11e2d0459bf04c3f0/treee2ab37e841f9c0a207a1b9e170051693558ae906 has80,734 tests/framework; main43459503753/scripts43459504967 are green. GNU/frozen35/214 outcomes/120methods stay fixed. Final qualification requires all18 native results at81,727 tests/framework with0failures/skips/compiler warnings/errors and every configured supporting gate. All seven inventories precede qualification; final GREEN/review/exact source/base/tree/proposed-merge identities live on PR244 and only issue7 footer, without another documentation-only source push.
 
 UTF-C execution, callouts, PR239 tolerant-surrogate word/reference/script exclusions, remaining syntax/modes/directives, failed/partial labels, wider optimizer/resources102, NO_UTF_CHECK/UTF16/exported API and realistic consumer/release gates remain open. Issue7 stays open; user owns merge/tag/publish; Grep last. See [design](PCRE-ESCAPED-UTF-LITERALS-DESIGN.md) and [plan](PCRE-ESCAPED-UTF-LITERALS-PLAN.md).
+
+## PR245: caller-selected literal compilation
+
+Caller-selected `Literal` treats the entire original pattern as data, including metacharacters, escapes, quoting, inline options, start directives, comments, captures, callouts and verbs. It reads bytes or validated UTF scalars into existing canonical literal nodes, retaining caller casing and the existing word/line wrappers. No source prefix changes UTF/UCP, newline/BSR, notempty or casing settings.
+
+Pinned PCRE2 10.48 permits caller caseless, UTF/tolerant UTF, word/line and restricted/Turkish casing; newline/BSR remain compile-context choices. Its literal masks allow both casing extras even though the public manpage mentions only word/line. The other31 exposed regex options are rejected with InvalidSyntax at byte0 identifying literal compilation, before source validation. Existing cancellation/nonpositive-work-limit priority and subsequent whole-source UTF/Turkish validation remain shared. Default-false Literal preserves every earlier test hash.
+
+Baseline244 `075e6adc284187fd8716dc109af130fc6e533cb9`/tree `328e5acad7569d300a752a6604a2d94a6ab90204` has81,727 tests/framework and261 prior test files, all fixed. PR245 adds3,633 tests for85,360/framework. All seven inventories precede qualification; final CI/review/identity evidence remains on PR245/issue7.
+
+Tests-only [RED743](https://github.com/uniblab/Icod.Expressions/actions/runs/43483771907), source `02f144580c5af853578e682d3a5ae3a648252b2f`, Linux ARM job132086996194: net8/9/10 each built with zero compiler warnings/errors and ran **786 expected failures / 84,574 passes / 85,360 total / zero skips**. Failures were466 primary profiles,316 compatibility/error boundaries,1 work/ownership case and3 structural cases per framework. All81,727 earlier tests and2,847 new controls passed; every native assertion passed. Freeze `842c7045a4a7ed25d1f486f56702644eed8ac53c` before production. Before this clean RED, seven overlaps were deduplicated and the new helper's managed offset argument was corrected; no expected outcome was weakened.
+
+See [design](PCRE-LITERAL-COMPILE-DESIGN.md) and [plan](PCRE-LITERAL-COMPILE-PLAN.md). GNU/BRE/ERE, frozen35/214 outcomes/120methods, IR/opcodes/matcher/journal/shared limits/exported API/dependencies/workflows stay fixed. Final all18 native results and every supporting gate, author review and exact source/base/tree/proposed-merge identities belong on PR245 and only issue7 footer; no documentation-only CI push. UTF-C execution, remaining syntax/modes/callouts/directives, broader102, UTF16/public API and consumer/release gates remain open; Grep last.

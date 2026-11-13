@@ -16,6 +16,7 @@ internal sealed partial class PcreByteParser {
 	private const int MaximumRepeatMarks = 256;
 	private readonly byte[] source;
 	private readonly CancellationToken cancellationToken;
+	private readonly bool literal;
 	private readonly bool utf8;
 	private readonly bool ucp;
 	private readonly bool turkishCasing;
@@ -57,6 +58,7 @@ internal sealed partial class PcreByteParser {
 	internal PcreByteParser( byte[] source, PcreByteOptions options,
 		PcreByteStartSettings settings, CancellationToken cancellationToken ) {
 		this.source = source;
+		literal = options.Literal;
 		caseless = options.Caseless;
 		dotAll = options.DotAll;
 		multiline = options.Multiline;
@@ -106,6 +108,7 @@ internal sealed partial class PcreByteParser {
 
 	internal PcreByteAlternatives Parse() {
 		var entryOptions = CurrentGroupOptions;
+		if ( literal ) { return WrapWholeMatch( ParseLiteralPattern(), entryOptions ); }
 		while ( true ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			SkipIgnoredPatternText();

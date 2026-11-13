@@ -5,6 +5,8 @@ internal sealed record PcreByteOptions {
 	internal const int DefaultMatchWorkLimit = 1_000_000;
 
 	public int MatchWorkLimit { get; init; } = DefaultMatchWorkLimit;
+	/// <summary>Treat the complete owned pattern as literal text, including prefix and escape syntax.</summary>
+	public bool Literal { get; init; }
 	public bool Caseless { get; init; }
 	/// <summary>Initialize restricted comparisons without enabling caseless matching.</summary>
 	public bool CaselessRestricted { get; init; }
@@ -80,6 +82,17 @@ internal sealed record PcreByteOptions {
 	public bool AnyCrLfNewline { get; init; }
 	/// <summary>Restrict backslash-R sequences to CR, LF, and CRLF; independent of the newline convention.</summary>
 	public bool BsrAnyCrLf { get; init; }
+
+	// PCRE2 10.48 permits casing/UTF and word/line policies with literal text.
+	// Newline and BSR are compile-context settings, not incompatible option bits.
+	internal bool HasLiteralOptionConflict =>
+		AllowEmptyClass || AltBsux || DollarEndOnly || DotAll || DuplicateNames
+		|| Extended || MatchUnsetBackreference || Multiline || NeverUcp || NeverUtf
+		|| NoAutoCapture || Ucp || Ungreedy || NeverBackslashC || AltCircumflex
+		|| AltVerbNames || ExtendedMore || AltExtendedClass || AllowSurrogateEscapes
+		|| BadEscapeIsLiteral || EscapedCrIsLf || ExtraAltBsux || AllowLookaroundBackslashK
+		|| AsciiBsD || AsciiBsS || AsciiBsW || AsciiPosix || AsciiDigit || PythonOctal
+		|| NoBackslashZero || NeverCallout;
 
 	/// <summary>Test-only progress hook used to cancel a running match deterministically.</summary>
 	internal Action<int>? WorkObserver { get; init; }

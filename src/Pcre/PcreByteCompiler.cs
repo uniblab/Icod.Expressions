@@ -16,6 +16,10 @@ internal static class PcreByteCompiler {
 				"match work limit must be positive"
 			) );
 		}
+		if ( options.Literal && options.HasLiteralOptionConflict ) {
+			return new( null, new( PcreByteDiagnosticCode.InvalidSyntax, 0,
+				"literal compilation cannot combine with the selected regex options" ) );
+		}
 		var source = pattern.ToArray();
 		var settings = PcreByteStartSettings.Parse( source, options, cancellationToken );
 		if ( settings.Utf8 && options.NeverUtf ) {
