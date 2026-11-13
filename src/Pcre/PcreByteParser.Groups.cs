@@ -185,6 +185,10 @@ internal sealed partial class PcreByteParser {
 			: new PcreByteLookahead( body, frame.AssertionKind > 0, frame.NonAtomic );
 
 	private void AppendNode( GroupFrame frame, PcreByteNode atom, bool atomCaseless, bool atomCaselessRestricted ) {
+		if ( atom is ParsedAltBsuxLiteralBrace ) {
+			frame.Nodes.Add( new PcreByteLiteral( 'u' ) { Caseless = atomCaseless, CaselessRestricted = atomCaselessRestricted } );
+			atom = new PcreByteLiteral( '{' );
+		}
 		if ( atom.Caseless != atomCaseless || atom.CaselessRestricted != atomCaselessRestricted ) {
 			atom = atom with { Caseless = atomCaseless, CaselessRestricted = atomCaselessRestricted };
 		}

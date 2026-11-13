@@ -35,19 +35,19 @@ and error assertions precede managed comparisons.
 
 - [x] Preflight every native profile; classify negative match results explicitly,
   deduplicate diagnostic rows and compute expected case/failure counts.
-- [ ] Publish tests-only draft, observe net8/9/10 RED with0compiler warnings/errors
+- [x] Publish tests-only draft, observe net8/9/10 RED with0compiler warnings/errors
   and no native/default/earlier-control failures; freeze before production.
 
 ## Task 2: parser integration
 
-- [ ] Add bool ExtraAltBsux init property in src/Pcre/PcreByteOptions.cs.
-- [ ] Snapshot extraAltBsux in src/Pcre/PcreByteParser.cs; altBsux is either flag.
+- [x] Add bool ExtraAltBsux init property in src/Pcre/PcreByteOptions.cs.
+- [x] Snapshot extraAltBsux in src/Pcre/PcreByteParser.cs; altBsux is either flag.
   Pass inBracket to ParseAltBsuxEscape(byte value,int offset,bool inBracket).
-- [ ] Extend src/Pcre/PcreByteParser.AltBsux.cs with
+- [x] Extend src/Pcre/PcreByteParser.AltBsux.cs with
   ParseBracedAltBsuxEscape(int offset,bool inBracket) and private
   ParsedAltBsuxLiteralBrace marker. Use uint high-nibble overflow before shifting,
   cancellation per digit, complete-token bounds and separate malformed fallback.
-- [ ] In src/Pcre/PcreByteParser.Groups.cs AppendNode, flatten the marker into
+- [x] In src/Pcre/PcreByteParser.Groups.cs AppendNode, flatten the marker into
   canonical case-scoped u and brace before existing quantifier handling.
 - [ ] Qualify all18 native results/full/frozen suites plus existing Unicode,
   workloads, extraction/POSIX/API/corpus/frozen35/package/three smokes/OS scripts.
@@ -74,3 +74,19 @@ failures/65,700passes/66,449total/0skips; native/default/earlier controls pass.
 Before freeze, author review adds2 local casing theories (6 extra native JIT0
 profiles) to pin uppercase fallback prefixes and local unsets. No prior
 expectations change. Refined RED now expects751fail/65,700pass/66,451total.
+
+Clean refined tests-only [RED716](https://github.com/uniblab/Icod.Expressions/actions/runs/43385834110),
+source f5554d6e5e48781ccf42aeeb5d5fcb7e3fd2b32e, LinuxARM job131754114215,
+built net8/9/10 with0warnings/errors. Each ran66,451 tests:751 expected managed
+failures,65,700 passes,0skips. Failures comprise533 span profiles,176 compile
+diagnostics,3 strict-subject controls and39 supplemental cases, all for missing
+extra grammar; native/default/earlier controls pass. The first749-failure RED715
+was extended before freeze by2 local case-scope theories, retaining every earlier
+expectation. Freeze fixture9cd132c867fd8775818b5517f7a633068c66713d before production.
+
+Prequalification author source review checked all five boundaries, including
+uppercase prefix/local unsets and marker flattening before repeats/scopes/IR.
+Implementation matches the pinned check_escape/ESC_ub stages; no persistent
+syntax, matcher or shared limit changes. Full qualification and final whole-branch
+review/identities/footer/readiness remain gates, recorded on PR237/issue7 without
+a subsequent documentation-only CI repeat. Independent review excluded by user.
