@@ -1,6 +1,6 @@
 # PCRE roadmap status
 
-Reviewed after merged PR233, with PR234 in progress. Issue #7 remains the delivery roadmap; the
+Reviewed after merged PR234, with PR235 in progress. Issue #7 remains the delivery roadmap; the
 [syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md),
 [resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) and
 [Grep fixture inventory](PCRE-GREP-CONSUMER-FIXTURES.md) define the detailed gates.
@@ -47,6 +47,7 @@ retaining each framework's complete suite and frozen-result qualification.
    PR232 adds dollar/circumflex compile options through canonical anchor lowering.
    PR233 adds optional unset backreferences through the existing capture instruction.
    PR234 extends bounded STARTLINE search to opaque reference prefixes in both policies.
+   PR235 adds caller UTF/UCP/code-unit restrictions at existing compile boundaries.
    UTF code-unit escape,
    remaining directives/verbs/callouts and other matrix gaps require their own
    pinned reference fixtures. Decide any intentional exclusions before release;
@@ -64,10 +65,10 @@ retaining each framework's complete suite and frozen-result qualification.
 
 ## Current increment and next syntax work
 
-PR233 merged at5a286d566e8f3714cd4fd6fe185b927c7d0e2812;
-main43251995145 and scripts43251995258 are green. Its1,740 new cases
-qualified in18 native results,61,422 tests/framework, with zero failures,
-skips, build warnings or errors.
+PR234 merged at ebdc4d9712f342b959878d3798073bf21d60d076;
+main43366970313 and scripts43366970320 are green. Its62,371 tests/framework
+remain the baseline. PR235 adds caller restrictions as described below; final
+qualification and delivery evidence are recorded on the PR and issue7.
 
 ## PR234: backreferences blocking first-character search
 
@@ -127,3 +128,51 @@ Other syntax/modes/directives/callouts, failed/partial labels, wider optimizer/
 resources (#102), UTF16/exported API and realistic consumer/release gates remain
 open. Grep stays last. See [design](PCRE-BACKREFERENCE-STARTLINE-DESIGN.md) and
 [plan](PCRE-BACKREFERENCE-STARTLINE-PLAN.md).
+
+## PR235: caller UTF, UCP and code-unit restrictions
+
+Default-false internal NeverUtf, NeverUcp and NeverBackslashC caller options
+constrain existing compilation modes and tokens. Effective UTF includes
+MatchInvalidUtf and the uninterrupted UTF/UTF8 prefix. NeverUtf rejects it before
+whole-pattern UTF validation; NeverUcp rejects effective UCP after that validation
+and before Turkish-casing conflicts. Both return InvalidSyntax at the original
+prefix-end body offset and identify the caller restriction. Existing cancellation
+and invalid-work-limit checks retain their earlier priority.
+
+The parser snapshots NeverBackslashC and rejects a real C escape after prior
+bracket/algebra rejection, before the existing unsupported UTF-C branch. It owns
+the escape's opening byte, including DEFINE/zero-repeat/failed-tail and late-name
+contexts. Quotes, comments, escaped backslashes, control operands and raw MARK
+labels stay inert. Ordinary class errors retain their escape offset; Perl algebra
+retains its expression opener. Unsupported UTF-C execution, including erased C,
+and other unimplemented prefixes remain explicit boundaries.
+
+Only PcreByteOptions.cs, PcreByteCompiler.cs and PcreByteParser.cs change in
+production: three bool properties, staged compiler guards and a readonly token
+policy. No matcher/IR/journal/work/quota/public API/dependency/workflow changes.
+All248 earlier test files and frozen35/214 outcomes/120 methods remain fixed.
+
+The2,513 new cases include2,499 independently pinned PCRE2 10.48 profiles
+(1,821 restriction/UTF diagnostics,120 legacy class controls,558 accepted JIT
+span/label profiles), plus3,072 preflighted all-octet profiles and shared
+resource/ownership/structural/legacy controls. Native codes and native end offsets
+are asserted before managed diagnostics; native captures/labels before matching.
+
+Clean tests-only [RED708](https://github.com/uniblab/Icod.Expressions/actions/runs/43369721925),
+source1b50d1a6d4e5c0950c45d83a3d6d5d06b5684b5d, LinuxARM job131702547003,
+built net8/9/10 with0warnings/errors. Each ran64,884 tests:1,657 expected policy
+failures,63,227 passes,0skips. All1,653 primary caller-policy profiles and4 octet
+theories failed for the missing restrictions; earlier/native/UTF/class/ownership/
+quota/work controls passed. Freeze fixture68cd3d1c943c27bfd82ac7d67a3968ae80c17db8
+before production. Initial fixture-only corrections retained established
+Perl-algebra diagnostic ownership and the unsupported UTF-C boundary.
+
+Qualification requires all18 native results at64,884 tests/framework and every
+configured Unicode/workload/extraction/POSIX/API/corpus/frozen/package/script gate.
+Final results, author review and reviewed source/proposed-merge identities are
+recorded in [PR235](https://github.com/uniblab/Icod.Expressions/pull/235) and issue7.
+Wider optimizer/resources (#102), other syntax/modes/directives/callouts, failed/
+partial labels, UTF16/exported API and realistic consumer/release gates remain
+open. User owns merge/tag/publication; Grep stays last. See
+[design](PCRE-CALLER-COMPILE-LOCKOUTS-DESIGN.md) and
+[plan](PCRE-CALLER-COMPILE-LOCKOUTS-PLAN.md).

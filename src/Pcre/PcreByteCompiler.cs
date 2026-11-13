@@ -18,6 +18,10 @@ internal static class PcreByteCompiler {
 		}
 		var source = pattern.ToArray();
 		var settings = PcreByteStartSettings.Parse( source, options, cancellationToken );
+		if ( settings.Utf8 && options.NeverUtf ) {
+			return new( null, new( PcreByteDiagnosticCode.InvalidSyntax, settings.BodyOffset,
+				"UTF mode is disabled by the caller" ) );
+		}
 		if ( settings.Utf8 ) {
 			for ( var offset = 0; offset < source.Length; ) {
 				cancellationToken.ThrowIfCancellationRequested();
@@ -27,6 +31,11 @@ internal static class PcreByteCompiler {
 				}
 				offset += width;
 			}
+		}
+
+		if ( settings.Ucp && options.NeverUcp ) {
+			return new( null, new( PcreByteDiagnosticCode.InvalidSyntax, settings.BodyOffset,
+				"UCP mode is disabled by the caller" ) );
 		}
 
 		if ( settings.TurkishCasing && ( !settings.Utf8 || settings.CaselessRestricted ) ) {

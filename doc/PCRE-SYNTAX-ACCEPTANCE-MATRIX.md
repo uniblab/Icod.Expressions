@@ -39,6 +39,7 @@ the matcher returns spans, leaving framing, status and output to Grep.
 | Caller word/line modes | MatchWord adds outer word boundaries; MatchLine adds entry-policy line anchors and takes precedence; implicit noncapturing scope preserves source bytes/captures | `PcreWordLineModeReferenceTests`; all selections, local options, six newlines, recursion/cuts, offsets, diagnostics, ownership and quotas |
 | Caller ASCII type policies | AsciiBsS, AsciiBsW, AsciiPosix and AsciiDigit initialize independent existing mask bits beside AsciiBsD; source scopes/unsets/reset stay native | PcreCallerAsciiPolicyReferenceTests; all32 combinations/modes, POSIX/algebra, outer word policy, offsets, ownership and quotas |
 | Caller anchor options | DollarEndOnly restricts non-multiline dollar to end; AltCircumflex permits multiline caret after a final newline; local m and line-wrapper entry scopes stay native | PcreAnchorCompileOptionReferenceTests; six newlines, fixed/variable assertion ends, UTF offsets, labels, ownership and quotas |
+| Caller compile restrictions | NeverUtf/NeverUcp prohibit effective modes at their native compile stages; NeverBackslashC prohibits real C tokens after prior class errors; defaults false | PcreCallerCompileLockoutReferenceTests; native errors/positions, quoting/labels, all-octet precedence and shared work/ownership/quotas |
 | Ordinary `[ ]` ranges, negation, shorthand unions, 14 POSIX names | Supported subset in byte and UTF modes; ordinary bracket grammar unchanged, Perl algebra listed separately | Bracket and POSIX tests; Unicode table/version reconciliation |
 | `\p`/`\P` general categories and special properties | Byte/UTF categories plus Any/Xan/Xps/Xsp/Xwd/Xuc; loose names, P/caret complements and property predicates independent of UCP/ASCII/i/r. Category-prefixed aliases remain a library extension for categories only. UTF class source operands/endpoints preserve CR/LF flags before folding, including the native negated-singleton exception. Scripts/scx now have pinned Unicode17 data; binary/Bidi properties now have pinned native data | `PcreBytePropertyReferenceTests`, `PcreSpecialPropertyReferenceTests`, `PcreClassNewlineMetadataReferenceTests`, `PcreUtf8GeneralCategoryTests`; see `PCRE-SPECIAL-PROPERTIES-DESIGN.md`; Unicode17 categories and default simple-case mappings are pinned; byte search-optimization parity remains a gate |
 | Unicode script/scx properties | All175 scripts/344 normalized long, short and legacy aliases; bare names are scx, explicit sc/Script and scx/Script_Extensions, native primary-or-extension membership, byte projection and mixed predicates | `PcreScriptPropertyReferenceTests`, 3508 native boundaries and source-hash/native-fingerprint-checked regeneration; script-run groups remain separate |
@@ -3419,3 +3420,51 @@ Other syntax/modes/directives/callouts, failed/partial labels, wider optimizer/
 resources (#102), UTF16/exported API and realistic consumer/release gates remain
 open. Grep stays last. See [design](PCRE-BACKREFERENCE-STARTLINE-DESIGN.md) and
 [plan](PCRE-BACKREFERENCE-STARTLINE-PLAN.md).
+
+## PR235: caller UTF, UCP and code-unit restrictions
+
+Default-false internal NeverUtf, NeverUcp and NeverBackslashC caller options
+constrain existing compilation modes and tokens. Effective UTF includes
+MatchInvalidUtf and the uninterrupted UTF/UTF8 prefix. NeverUtf rejects it before
+whole-pattern UTF validation; NeverUcp rejects effective UCP after that validation
+and before Turkish-casing conflicts. Both return InvalidSyntax at the original
+prefix-end body offset and identify the caller restriction. Existing cancellation
+and invalid-work-limit checks retain their earlier priority.
+
+The parser snapshots NeverBackslashC and rejects a real C escape after prior
+bracket/algebra rejection, before the existing unsupported UTF-C branch. It owns
+the escape's opening byte, including DEFINE/zero-repeat/failed-tail and late-name
+contexts. Quotes, comments, escaped backslashes, control operands and raw MARK
+labels stay inert. Ordinary class errors retain their escape offset; Perl algebra
+retains its expression opener. Unsupported UTF-C execution, including erased C,
+and other unimplemented prefixes remain explicit boundaries.
+
+Only PcreByteOptions.cs, PcreByteCompiler.cs and PcreByteParser.cs change in
+production: three bool properties, staged compiler guards and a readonly token
+policy. No matcher/IR/journal/work/quota/public API/dependency/workflow changes.
+All248 earlier test files and frozen35/214 outcomes/120 methods remain fixed.
+
+The2,513 new cases include2,499 independently pinned PCRE2 10.48 profiles
+(1,821 restriction/UTF diagnostics,120 legacy class controls,558 accepted JIT
+span/label profiles), plus3,072 preflighted all-octet profiles and shared
+resource/ownership/structural/legacy controls. Native codes and native end offsets
+are asserted before managed diagnostics; native captures/labels before matching.
+
+Clean tests-only [RED708](https://github.com/uniblab/Icod.Expressions/actions/runs/43369721925),
+source1b50d1a6d4e5c0950c45d83a3d6d5d06b5684b5d, LinuxARM job131702547003,
+built net8/9/10 with0warnings/errors. Each ran64,884 tests:1,657 expected policy
+failures,63,227 passes,0skips. All1,653 primary caller-policy profiles and4 octet
+theories failed for the missing restrictions; earlier/native/UTF/class/ownership/
+quota/work controls passed. Freeze fixture68cd3d1c943c27bfd82ac7d67a3968ae80c17db8
+before production. Initial fixture-only corrections retained established
+Perl-algebra diagnostic ownership and the unsupported UTF-C boundary.
+
+Qualification requires all18 native results at64,884 tests/framework and every
+configured Unicode/workload/extraction/POSIX/API/corpus/frozen/package/script gate.
+Final results, author review and reviewed source/proposed-merge identities are
+recorded in [PR235](https://github.com/uniblab/Icod.Expressions/pull/235) and issue7.
+Wider optimizer/resources (#102), other syntax/modes/directives/callouts, failed/
+partial labels, UTF16/exported API and realistic consumer/release gates remain
+open. User owns merge/tag/publication; Grep stays last. See
+[design](PCRE-CALLER-COMPILE-LOCKOUTS-DESIGN.md) and
+[plan](PCRE-CALLER-COMPILE-LOCKOUTS-PLAN.md).

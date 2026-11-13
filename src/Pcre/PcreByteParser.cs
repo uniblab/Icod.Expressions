@@ -22,6 +22,7 @@ internal sealed partial class PcreByteParser {
 	private readonly bool altExtendedClass;
 	private readonly bool pythonOctal;
 	private readonly bool noBackslashZero;
+	private readonly bool neverBackslashC;
 	private readonly bool escapedCrIsLf;
 	private readonly bool allowEmptyClass;
 	private readonly bool matchWord;
@@ -61,6 +62,7 @@ internal sealed partial class PcreByteParser {
 		altExtendedClass = options.AltExtendedClass;
 		pythonOctal = options.PythonOctal;
 		noBackslashZero = options.NoBackslashZero;
+		neverBackslashC = options.NeverBackslashC;
 		escapedCrIsLf = options.EscapedCrIsLf;
 		allowEmptyClass = options.AllowEmptyClass;
 		matchWord = options.MatchWord;
@@ -609,6 +611,7 @@ internal sealed partial class PcreByteParser {
 		}
 		if ( value == (byte)'C' ) {
 			if ( inBracket ) { throw Invalid( offset, "a code-unit escape is not a character class member" ); }
+			if ( neverBackslashC ) { throw Invalid( offset, "code-unit escapes are disabled by the caller" ); }
 			if ( utf8 ) { throw Unsupported( offset ); }
 			return new PcreByteAny( true );
 		}
