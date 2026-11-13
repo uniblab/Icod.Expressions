@@ -29,6 +29,7 @@ internal sealed partial class PcreByteParser {
 	private readonly bool noBackslashZero;
 	private readonly bool neverBackslashC;
 	private readonly bool neverCallout;
+	private readonly bool allowLookaroundBackslashK;
 	private readonly bool escapedCrIsLf;
 	private readonly bool allowEmptyClass;
 	private readonly bool matchWord;
@@ -75,6 +76,7 @@ internal sealed partial class PcreByteParser {
 		noBackslashZero = options.NoBackslashZero;
 		neverBackslashC = options.NeverBackslashC;
 		neverCallout = options.NeverCallout;
+		allowLookaroundBackslashK = options.AllowLookaroundBackslashK;
 		escapedCrIsLf = options.EscapedCrIsLf;
 		allowEmptyClass = options.AllowEmptyClass;
 		matchWord = options.MatchWord;
@@ -271,7 +273,7 @@ internal sealed partial class PcreByteParser {
 		}
 		if ( value == (byte)'\\' ) {
 			var escaped = ParseEscape( offset );
-			if ( escaped is PcreByteMatchStartReset && assertionOpeningContext >= 0 ) {
+			if ( escaped is PcreByteMatchStartReset && assertionOpeningContext >= 0 && !allowLookaroundBackslashK ) {
 				throw Invalid( assertionOpeningContext, "a match-start reset is not allowed in an assertion" );
 			}
 			return escaped;

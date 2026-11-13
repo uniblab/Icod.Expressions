@@ -1,6 +1,6 @@
 # PCRE roadmap status
 
-Reviewed after merged PR241, with PR242 in progress. Issue #7 remains the delivery roadmap; the
+Reviewed after merged PR242, with PR243 in progress. Issue #7 remains the delivery roadmap; the
 [syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md),
 [resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) and
 [Grep fixture inventory](PCRE-GREP-CONSUMER-FIXTURES.md) define the detailed gates.
@@ -55,6 +55,7 @@ retaining each framework's complete suite and frozen-result qualification.
    PR240 adds opt-in native bad-escape literal recovery through the existing parser.
    PR241 adds caller prohibition of manual callouts at existing atom dispatch.
    PR242 adds caller casing policies and bounded marked-scalar-set newline search.
+   PR243 adds caller opt-in for match-start resets in supported assertions.
    UTF code-unit escape,
    remaining directives/verbs/callouts and other matrix gaps require their own
    pinned reference fixtures. Decide any intentional exclusions before release;
@@ -72,9 +73,9 @@ retaining each framework's complete suite and frozen-result qualification.
 
 ## Current increment and next syntax work
 
-PR241 merged at e27a301cc8493ac457db8c2a5f2b95fd58e3f2e8;
-main43429623367 and scripts43429623412 are green. Its72,857 tests/framework
-remain the baseline. PR242 adds caller casing policies as described below;
+PR242 merged at e3a772301a021a65797f44d5d397444661532288;
+main43442096467 and scripts43442096348 are green. Its79,118 tests/framework
+remain the baseline. PR243 adds optional assertion resets as described below;
 final qualification and delivery evidence are recorded on the PR and issue7.
 
 ## PR234: backreferences blocking first-character search
@@ -654,3 +655,17 @@ remaining syntax/modes/directives, failed/partial labels, wider optimizer/resour
 gates remain open. User owns merge/tag/publication, issue7 stays open and Grep
 migrates last. See [design](PCRE-CALLER-CASE-POLICIES-DESIGN.md) and
 [plan](PCRE-CALLER-CASE-POLICIES-PLAN.md).
+
+## PR243: optional assertion match-start resets
+
+Default-false internal AllowLookaroundBackslashK implements native extra0x40 by snapshotting one parser boolean and gating the existing assertion prohibition. Canonical reset lowering and the shared assertion/call journal retain positive state and restore failed/negative/retried state. Local options/reset cannot alter the global policy. Only options/parser change; no matcher/IR/opcode/journal/shared-limit/exported API/dependency/workflow changes.
+
+Reported internal group0 endpoints remain authoritative, including signed end-start when lookahead reports beyond its end and lookbehind reports before the requested offset. The oracle wrapper Length clamps, so the fixture compares EndIndex-Index. Other captures keep their own spans; no public iteration/extraction API is introduced.
+
+The1,616 new cases include1,574 primary native profiles (1,510 matching/query/capture/success-label and64 compile profiles),1,032 selected offset protocols and16 supplemental work/capacity/implicit-guard profiles. All accepted native matching uses JIT0 and negative matching requires no-match(-1). Fifty-eight primary profiles report reversed group0 endpoints. Two UTF-C profiles outside native JIT support remain separate compile/unsupported boundaries. Another54 native review probes cover selected reset/i/r scopes, UTF/casing prefixes and lexical callee resets.
+
+Tests-only [RED737](https://github.com/uniblab/Icod.Expressions/actions/runs/43444152881), source `552f6672bac9d57214d556d73fb76478429cd340`, Linux ARM job131949099519: net8/9/10 each built with zero compiler warnings/errors, then ran **1,406 expected failures / 79,328 passes / 80,734 total / zero skips**. Only missing-policy cases failed:1,366 primary spans,3 error boundaries,24 offset theories,4 work/ownership cases,2 capacity/depth facts,1 quota fact and6 implicit-guard profiles per framework. All79,118 earlier tests and210 new controls passed. All native literal endpoint assertions passed. Freeze `a6cd825ba357ca8be6f11fd3ff788032f0c24217` before production; no fixture refinements were needed.
+
+Baseline merged242 is e3a772301a021a65797f44d5d397444661532288/tree525de953b3e6f05f4ef49caf783863bfd2179ace,79,118 tests/framework; main43442096467/scripts43442096348 are green. All259 earlier test files and GNU/frozen35/214 outcomes/120methods stay fixed. Final qualification requires all18 native results at80,734 tests/framework with0failures/skips/compiler warnings/errors and every configured supporting gate. All seven repository inventories precede final source qualification; final GREEN/review/exact identities live on PR243 and only issue7 footer, avoiding another documentation-only CI run.
+
+Callout execution, unimplemented UTF-C/escaped-UTF syntax, PR239 tolerant-surrogate word/reference/script exclusions, remaining syntax/modes/directives, failed/partial labels, wider optimizer/resources102, NO_UTF_CHECK/UTF16/exported API and realistic consumer/release gates remain open. Issue7 stays open; user owns merge/tag/publish; Grep last. See [design](PCRE-LOOKAROUND-RESET-DESIGN.md) and [plan](PCRE-LOOKAROUND-RESET-PLAN.md).

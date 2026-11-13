@@ -27,7 +27,7 @@ the matcher returns spans, leaving framing, status and output to Grep.
 |---|---|---|
 | Literal bytes, NUL, UTF-8 scalar literals; `|`, ordinary capture and `(?:...)` | Supported subset; source-byte spans and ordered alternatives | `PcreByteFoundationTests`, `PcreUtf8ScalarTests`, `PcreReferenceCaptureTests` |
 | `^`, `$`, `\A`, `\Z`, `\z`, `\b`, `\B`, `\G` | Supported subset under LF, ANYCRLF, CR, NUL, CRLF or ANY convention; `\G` tests the original requested match offset | Anchor and boundary tests; `PcreMatchPositionReferenceTests` pins nonzero offsets and alternatives |
-| `\K` reported match start | Resets group zero and whole-match spans; numbered captures retained, reset state journaled on fallback; invalid in brackets/lookarounds or with direct quantifiers | `PcreMatchPositionReferenceTests`; branch/atomic/repetition rollback, byte spans and empty paths |
+| `\K` reported match start | Resets group zero and whole-match spans; numbered captures retained and reset state journaled. Assertions require default-false caller AllowLookaroundBackslashK; signed end-start and before-caller-start reports preserved. Brackets/direct quantifiers remain invalid | `PcreMatchPositionReferenceTests`, `PcreLookaroundResetReferenceTests`; positive/negative/non-atomic/conditional/callee rollback, signed endpoints, UTF offsets and shared limits |
 | Dot, shorthand `\d\D\s\S\w\W`, simple/control/hex escapes | Supported subset with explicit UTF/UCP and ASCII-`\d` policy | Atom, scalar, space/word/digit tests and Grep consumer fixtures |
 | `\h\H\v\V` horizontal/vertical whitespace | Fixed PCRE2 lists, independent of UCP/caseless and newline convention; byte and UTF-8 atoms and ordinary bracket members | `PcreSpaceEscapeReferenceTests`; all 256 bytes, Unicode members/boundaries, captures, CRLF offsets and invalid-UTF barriers |
 | `\R` newline sequence | Atomic CRLF-first matching; Unicode line endings by default, internal `BsrAnyCrLf` restriction independent of newline convention; invalid in brackets | `PcreNewlineSequenceReferenceTests`; membership, captures/repetition, every CRLF/invalid-UTF offset, work and expansion limits |
@@ -3947,3 +3947,13 @@ remaining syntax/modes/directives, failed/partial labels, wider optimizer/resour
 gates remain open. User owns merge/tag/publication, issue7 stays open and Grep
 migrates last. See [design](PCRE-CALLER-CASE-POLICIES-DESIGN.md) and
 [plan](PCRE-CALLER-CASE-POLICIES-PLAN.md).
+
+## PR243: optional assertion match-start resets
+
+Caller AllowLookaroundBackslashK is an immutable parse policy for native extra0x40, default false. It permits real assertion K tokens through existing canonical lowering and shared journal paths. Default error ownership and prior/source validation remain; quotes/comments/raw labels stay inert, class/repeated K and unbounded lookbehind remain rejected.
+
+The1,616 new cases include1,574 primary native profiles (1,510 matching/query/capture/success-label and64 compile profiles),1,032 selected offset protocols and16 supplemental work/capacity/implicit-guard profiles. All accepted native matching uses JIT0 and negative matching requires no-match(-1). Fifty-eight primary profiles report reversed group0 endpoints. Two UTF-C profiles outside native JIT support remain separate compile/unsupported boundaries. Another54 native review probes cover selected reset/i/r scopes, UTF/casing prefixes and lexical callee resets.
+
+Tests-only [RED737](https://github.com/uniblab/Icod.Expressions/actions/runs/43444152881), source `552f6672bac9d57214d556d73fb76478429cd340`, Linux ARM job131949099519: net8/9/10 each built with zero compiler warnings/errors, then ran **1,406 expected failures / 79,328 passes / 80,734 total / zero skips**. Only missing-policy cases failed:1,366 primary spans,3 error boundaries,24 offset theories,4 work/ownership cases,2 capacity/depth facts,1 quota fact and6 implicit-guard profiles per framework. All79,118 earlier tests and210 new controls passed. All native literal endpoint assertions passed. Freeze `a6cd825ba357ca8be6f11fd3ff788032f0c24217` before production; no fixture refinements were needed.
+
+All259 earlier test files remain hash-identical. Final all18/supporting/review/identity evidence belongs on PR243/issue7. Callout execution, unimplemented UTF-C/escaped-UTF syntax, PR239 exclusions, wider102, remaining syntax/modes/directives, failed/partial labels, UTF16/exported API and consumer/release gates remain open; Grep last.

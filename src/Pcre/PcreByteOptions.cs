@@ -45,6 +45,8 @@ internal sealed record PcreByteOptions {
 	public bool NeverBackslashC { get; init; }
 	/// <summary>Reject manual callout tokens before validating their arguments.</summary>
 	public bool NeverCallout { get; init; }
+	/// <summary>Permit match-start resets inside assertions, including reversed reported endpoints.</summary>
+	public bool AllowLookaroundBackslashK { get; init; }
 	/// <summary>Enable PCRE2 UTS#18 nested brackets and doubled set operators.</summary>
 	public bool AltExtendedClass { get; init; }
 	/// <summary>Use alternate backslash-u, U and x grammar with complete adjacent hex digits.</summary>
