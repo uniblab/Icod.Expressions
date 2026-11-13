@@ -46,6 +46,7 @@ internal sealed partial class PcreByteParser {
 	}
 
 	private ReadOnlyMemory<byte> ReadControlVerbName( string verb, bool requireName ) {
+		if ( altVerbNames ) { return ReadAlternateControlVerbName( verb, requireName ); }
 		var start = index;
 		// Without ALT_VERBNAMES, backslashes and extended-mode trivia are raw
 		// name bytes. Only the first closing parenthesis terminates this token.

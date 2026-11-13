@@ -15,7 +15,7 @@ internal sealed partial class PcreByteParser {
 		}
 	}
 
-	private void SkipIgnoredPatternText() {
+	private void SkipIgnoredPatternText( bool allowInlineComments = true ) {
 		while ( index < source.Length ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			if ( extended != ExtendedMode.None ) {
@@ -48,7 +48,7 @@ internal sealed partial class PcreByteParser {
 					continue;
 				}
 			}
-			if ( source.AsSpan( index ).StartsWith( "(?#"u8 ) ) {
+			if ( allowInlineComments && source.AsSpan( index ).StartsWith( "(?#"u8 ) ) {
 				var opening = index;
 				index += 3;
 				while ( index < source.Length && source[index] != (byte)')' ) {

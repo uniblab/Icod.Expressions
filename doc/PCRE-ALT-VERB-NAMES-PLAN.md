@@ -34,18 +34,18 @@ reflection keeps tests-only RED executable before the new property exists.
 
 - [x] Preflight all native profiles/protocols, deduplicate error rows independently
   of subjects, classify negative results and compute expected unique case counts.
-- [ ] Publish tests-only draft and validate net8/9/10 RED with0compiler warnings/
+- [x] Publish tests-only draft and validate net8/9/10 RED with0compiler warnings/
   errors and no native/default/earlier-control failures; freeze before production.
 
 ## Task 2: decoder integration
 
-- [ ] Add bool AltVerbNames init property in src/Pcre/PcreByteOptions.cs, snapshot
+- [x] Add bool AltVerbNames init property in src/Pcre/PcreByteOptions.cs, snapshot
   readonly altVerbNames in src/Pcre/PcreByteParser.cs.
-- [ ] Gate ReadControlVerbName in src/Pcre/PcreByteParser.PathMarks.cs to
+- [x] Gate ReadControlVerbName in src/Pcre/PcreByteParser.PathMarks.cs to
   ReadAlternateControlVerbName(string verb,bool requireName).
-- [ ] Add bool allowInlineComments=true to SkipIgnoredPatternText in
+- [x] Add bool allowInlineComments=true to SkipIgnoredPatternText in
   src/Pcre/PcreByteParser.Extended.cs; only gate (?#...) skipping by that bool.
-- [ ] Create src/Pcre/PcreByteParser.AltVerbNames.cs: local quoting, shared trivia
+- [x] Create src/Pcre/PcreByteParser.AltVerbNames.cs: local quoting, shared trivia
   with inline comments disabled, raw-byte closure quotas, literal-only escape
   decode/UTF encoding and existing NUL representation for decoded-empty names.
   AppendControlVerbEscape(List<byte> name,int offset) accepts only literal kinds;
@@ -69,3 +69,18 @@ labels are deliberately excluded from the implemented result contract. Predicted
 RED650fail/66,657pass/67,307total/0skip:490 primary label/span differences,139
 new diagnostics and21 supplemental failures. There are856 new managed cases.
 Merged237 main43388625282/scripts43388625167 are now green.
+
+Clean tests-only [RED718](https://github.com/uniblab/Icod.Expressions/actions/runs/43392128698),
+source2d0953fd995c0783cfc06e5a3251630587077ae7, LinuxARM job131774325691,
+built net8/9/10 with0warnings/errors. Each ran67,307 tests:650 expected managed
+failures,66,657 passes,0skips. Failures comprise490 success-label/span profiles,
+139 compile diagnostics and21 supplemental cases, all for missing name decoding;
+native/default/earlier controls pass. Freeze fixture
+44ef5f4a1ca903df65c2f48c3c02a1db0d7f55e5 before production.
+
+Prequalification author source review checked all five boundaries: source-byte
+quota/escape priority, local UTF/quotes/comments/casing, literal-only decode,
+existing NUL-presence identity and shared ownership/resources. No canonical
+syntax/IR/matcher/journal/API/limit changes. All repo docs precede qualification;
+final whole-branch review, GREEN, identities/footer/readiness live on PR238/issue7
+without a documentation-only CI repeat. Independent review excluded by user.

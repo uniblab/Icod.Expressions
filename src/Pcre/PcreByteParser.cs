@@ -22,6 +22,7 @@ internal sealed partial class PcreByteParser {
 	private readonly bool altExtendedClass;
 	private readonly bool altBsux;
 	private readonly bool extraAltBsux;
+	private readonly bool altVerbNames;
 	private readonly bool pythonOctal;
 	private readonly bool noBackslashZero;
 	private readonly bool neverBackslashC;
@@ -64,6 +65,7 @@ internal sealed partial class PcreByteParser {
 		altExtendedClass = options.AltExtendedClass;
 		extraAltBsux = options.ExtraAltBsux;
 		altBsux = options.AltBsux || extraAltBsux;
+		altVerbNames = options.AltVerbNames;
 		pythonOctal = options.PythonOctal;
 		noBackslashZero = options.NoBackslashZero;
 		neverBackslashC = options.NeverBackslashC;

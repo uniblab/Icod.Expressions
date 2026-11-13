@@ -3826,3 +3826,63 @@ failed/partial labels, broader optimizer/resources (#102), UTF16/exported API an
 realistic consumer/release gates remain open. User owns merge/tag/publication;
 Grep stays last. See [design](PCRE-EXTRA-ALT-BSUX-DESIGN.md) and
 [plan](PCRE-EXTRA-ALT-BSUX-PLAN.md).
+
+## PR238: alternate control-verb name grammar
+
+Default-false internal AltVerbNames implements PCRE2 10.48 ALT_VERBNAMES for
+MARK/shorthand, named SKIP, PRUNE/COMMIT/THEN and ACCEPT/FAIL/F. A focused decoder
+accepts literal data escapes and local Q/E quotes. Regex types/anchors/references
+are invalid name tokens. Names remain case-sensitive; decoded delimiters and
+backslashes remain bytes and cannot enter regex syntax. Escaped/raw UTF labels
+retain native UTF8 encoding without enabling ordinary escaped-UTF regex syntax.
+
+The parser snapshots the caller flag and retains the old raw reader when false.
+Literal controls/numeric/octal/hex/N/u/U policies and the alternate literal-brace
+marker reuse existing readers. Name-specific rejection precedes token policies
+such as NeverBackslashC. Extended/More whitespace and # comments use shared
+newlines outside local quotes; escaped whitespace remains data. The private
+SkipIgnoredPatternText gains default-true allowInlineComments; only names pass
+false so inline (?#...) remains name data and outer regex comments are unchanged.
+Raw UTF advances by complete source characters before trivia processing.
+
+Raw source255-byte limits and MARK's nonempty requirement include ignored trivia,
+escape spellings and quote delimiters. They apply at the real unquoted closing
+parenthesis, after earlier escape errors. A nonempty argument that decodes empty
+uses the existing NUL name representation, preserving named versus unnamed SKIP
+and implicit MARK transactions without new canonical AST/IR/matcher/journal flags.
+Owned byte buffers retain source/options isolation and CString visible-name rules.
+
+Production changes only PcreByteOptions.cs, PcreByteParser.cs,
+PcreByteParser.PathMarks.cs, PcreByteParser.Extended.cs and the new
+PcreByteParser.AltVerbNames.cs. Shared work/cancellation/structural limits,
+GNU/BRE/ERE, public API/dependencies/workflows remain unchanged. All251 earlier
+test files and frozen35/214 outcomes/120 methods stay fixed.
+
+The856 new cases include833 unique pinned native profiles:671 byte span/capture/
+success-label and162 compile-diagnostic/offset profiles. Supplemental preflight
+checks1,137 compile profiles (1,130 JIT0 accepts/7 expected rejects) and6,240
+selected offset protocols. Cover every label octet, all named verbs, literal and
+forbidden/numeric escapes, raw byte limits/error precedence, quote/close/comment/
+case/reset scope, empty/NUL identity, caller policies, six newlines, strict/tolerant
+UTF, owned source/options and shared resources. Native no-match(-1) is separated
+from other negative results; failed/partial labels remain outside the result
+contract. Native arrays/error assertions precede managed comparison; compile
+errors are deduplicated independently of match subjects.
+
+Clean tests-only [RED718](https://github.com/uniblab/Icod.Expressions/actions/runs/43392128698),
+source2d0953fd995c0783cfc06e5a3251630587077ae7, LinuxARM job131774325691,
+built net8/9/10 with0warnings/errors. Each ran67,307 tests:650 expected managed
+failures,66,657 passes,0skips. Failures comprise490 success-label/span profiles,
+139 compile diagnostics and21 supplemental cases, all for missing name decoding;
+native/default/earlier controls pass. Freeze fixture
+44ef5f4a1ca903df65c2f48c3c02a1db0d7f55e5 before production.
+
+Qualification requires all18 native results at67,307 tests/framework and every
+configured Unicode/workload/extraction/POSIX/API/corpus/frozen/package/script gate.
+Final GREEN, whole-branch author review and base/head/tree/proposed-merge identity
+live on [PR238](https://github.com/uniblab/Icod.Expressions/pull/238) and issue7,
+with repo docs included before qualification. Surrogate allowance, other syntax/
+modes/directives/callouts, failed/partial labels, wider optimizer/resources (#102),
+UTF16/exported API and realistic consumer/release gates remain open. User owns
+merge/tag/publication; Grep stays last. See [design](PCRE-ALT-VERB-NAMES-DESIGN.md)
+and [plan](PCRE-ALT-VERB-NAMES-PLAN.md).
