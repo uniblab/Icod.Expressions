@@ -1963,6 +1963,8 @@ public sealed class PcreCallerCompileLockoutReferenceTests {
 		if ( nativeCode is 174 or 175 or 183 ) {
 			Assert.Contains( "disabled by the caller", diagnostic.Message );
 			Assert.Contains( nativeCode == 174 ? "UTF" : nativeCode == 175 ? "UCP" : "code-unit", diagnostic.Message );
+		} else if ( nativeCode == 107 ) {
+			Assert.DoesNotContain( "disabled by the caller", diagnostic.Message );
 		}
 	}
 
