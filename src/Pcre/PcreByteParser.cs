@@ -23,6 +23,7 @@ internal sealed partial class PcreByteParser {
 	private readonly bool altBsux;
 	private readonly bool extraAltBsux;
 	private readonly bool altVerbNames;
+	private readonly bool allowSurrogateEscapes;
 	private readonly bool pythonOctal;
 	private readonly bool noBackslashZero;
 	private readonly bool neverBackslashC;
@@ -66,6 +67,7 @@ internal sealed partial class PcreByteParser {
 		extraAltBsux = options.ExtraAltBsux;
 		altBsux = options.AltBsux || extraAltBsux;
 		altVerbNames = options.AltVerbNames;
+		allowSurrogateEscapes = options.AllowSurrogateEscapes;
 		pythonOctal = options.PythonOctal;
 		noBackslashZero = options.NoBackslashZero;
 		neverBackslashC = options.NeverBackslashC;
@@ -842,7 +844,7 @@ internal sealed partial class PcreByteParser {
 			throw Invalid( offset, $"unclosed {kind} escape or non{kind} character" );
 		}
 		index++;
-		if ( utf8 && scalar is >= 0xD800 and <= 0xDFFF ) {
+		if ( utf8 && !allowSurrogateEscapes && scalar is >= 0xD800 and <= 0xDFFF ) {
 			throw Invalid( offset, $"{kind} escape is a surrogate code point" );
 		}
 		return scalar;

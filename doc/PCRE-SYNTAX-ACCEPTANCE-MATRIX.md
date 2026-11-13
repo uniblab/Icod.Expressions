@@ -43,6 +43,7 @@ the matcher returns spans, leaving framing, status and output to Grep.
 | Caller alternate escape grammar | AltBsux recognizes four-digit u, literal U and two-digit x; incomplete tokens leave subsequent source untouched; default false, extra braced-u is a separate caller policy | PcreAltBsuxReferenceTests; byte/UTF/UCP, bounds, fallback braces, captures/labels, offsets, inert text, ownership and shared limits |
 | Caller extra alternate escapes | ExtraAltBsux implies alternate grammar and adds braced-u scalars; malformed braces retain native literal/quantifier ownership and true uint overflow retains early precedence | PcreExtraAltBsuxReferenceTests; all selections, values/scalars, overflow/zero padding, classes, case/reset scopes, offsets, ownership and limits |
 | Caller alternate verb names | AltVerbNames decodes literal escapes/local quotes and extended trivia while enforcing raw-byte quotas and named-empty identity; default false | PcreAltVerbNameReferenceTests; all verbs/octets, literal/forbidden escapes, raw limits/priority, case/quote/comment/reset scopes, offsets, ownership and shared limits |
+| Caller surrogate escape policy | AllowSurrogateEscapes permits escaped D800..DFFF; strict UTF stays validated; tolerant explicit literals match native bytes while typed classes remain strict; tolerant word/reference/script combinations reject explicitly | PcreSurrogateEscapeReferenceTests and PcreSurrogateLiteralReferenceTests; all2,048 labels/literals, class source shapes, assertions, offsets, hard barriers and resources |
 | Leading MARK after caret | Bounded linear MARK prefix stops native character scanning, allowing existing STARTLINE policy before FIRSTMAP for ANY/tolerant UTF | PcreMarkStartLineReferenceTests; raw/decoded labels, NEL/LS/PS offsets, wrappers/casing/UCP, literal priority, proof/capture boundaries |
 | Ordinary `[ ]` ranges, negation, shorthand unions, 14 POSIX names | Supported subset in byte and UTF modes; ordinary bracket grammar unchanged, Perl algebra listed separately | Bracket and POSIX tests; Unicode table/version reconciliation |
 | `\p`/`\P` general categories and special properties | Byte/UTF categories plus Any/Xan/Xps/Xsp/Xwd/Xuc; loose names, P/caret complements and property predicates independent of UCP/ASCII/i/r. Category-prefixed aliases remain a library extension for categories only. UTF class source operands/endpoints preserve CR/LF flags before folding, including the native negated-singleton exception. Scripts/scx now have pinned Unicode17 data; binary/Bidi properties now have pinned native data | `PcreBytePropertyReferenceTests`, `PcreSpecialPropertyReferenceTests`, `PcreClassNewlineMetadataReferenceTests`, `PcreUtf8GeneralCategoryTests`; see `PCRE-SPECIAL-PROPERTIES-DESIGN.md`; Unicode17 categories and default simple-case mappings are pinned; byte search-optimization parity remains a gate |
@@ -3670,3 +3671,88 @@ modes/directives/callouts, failed/partial labels, wider optimizer/resources (#10
 UTF16/exported API and realistic consumer/release gates remain open. User owns
 merge/tag/publication; Grep stays last. See [design](PCRE-ALT-VERB-NAMES-DESIGN.md)
 and [plan](PCRE-ALT-VERB-NAMES-PLAN.md).
+
+## PR239: optional surrogate escapes and tolerant literals
+
+Default-false internal AllowSurrogateEscapes implements PCRE2 10.48 extra-option1.
+The parser snapshots it and gates three existing UTF surrogate checks in ordinary
+braced hex/octal/N and standard/extra u grammar. Byte limits, values above10FFFF,
+malformed syntax, uint overflow, owning offsets and caller restrictions retain
+their existing paths. Adjacent surrogates remain separate code points; caller
+policy survives reset scopes. Canonical integer literals/ranges retain widths,
+negation and algebra. Surrogate folds are identity; valid Unicode17 mappings and
+other out-of-range guards are unchanged. Non-Rune literal assertions use existing
+general assertion lowering. EncodeCodePoint writes native surrogate bytes for
+decoded labels and existing COMMIT first-code-unit metadata only.
+
+Source and strict-subject TryRead validation remain unchanged. Native JIT also
+allows encoded surrogate bytes through explicit literal comparisons in tolerant
+mode while general classes/types reject them. A derived HasSurrogateLiterals
+program property records emitted Literal instructions. Positive ordinary classes
+with original Source=Literal surrogate singleton/equal-end range use the existing
+Literal opcode; duplicate/range/algebra classes retain their typed paths. Only
+when MatchInvalidUtf and this property are true, TryReadLiteral admits complete
+ED/A0..BF/80..BF units for fragment scanning, literal comparison, nullable entry
+and assertion rewind/retry positions. General scalar/class/type readers remain
+strict. FF, truncated encodings and other malformed bytes remain hard barriers.
+Labels and erased literals do not activate this path. Work/cancellation and all
+journals/limits remain shared; no new opcode, instruction type or matching engine.
+
+**Explicit boundary:** compiled tolerant surrogate literals combined with
+WordBoundary, Backreference or ScriptRunCheck return UnsupportedSyntax at byte0.
+These native malformed-context rules need separate qualification. The bounded
+post-compilation scan polls cancellation within the existing4,096-instruction
+ceiling. Strict UTF, label-only names and erased literals retain those constructs.
+This deliberate restriction applies only to the new tolerant literal path.
+NO_UTF_CHECK execution and UTF16 remain separate gates.
+
+Nine production files change: PcreByteOptions.cs, PcreByteParser.cs,
+PcreByteParser.AltBsux.cs, PcreByteParser.Groups.cs,
+PcreByteParser.AltVerbNames.cs, PcreUtf8.cs, PcreUtf8CaseFold.cs,
+PcreByteProgram.cs and PcreByteMatcher.cs. The program gains one derived metadata
+property; AST/instruction types, opcodes, journals, shared limits, public API,
+dependencies and workflows are unchanged. All253 earlier test files and frozen35/
+214 outcomes/120 methods remain fixed.
+
+The1,830 new cases include1,799 unique primary native profiles:1,332 matching or
+explicit-boundary/strict controls,437 compile diagnostics and30 strict-subject
+errors. Supplemental preflight checks10,240 JIT0 profiles (all2,048 label encodings
+in three modes and all2,048 literal byte matches in two modes), three restriction
+errors and4,500 selected offset protocols. Coverage includes numeric spellings/
+bounds/priority, singleton versus duplicate/range/algebra classes, erased and
+repeated bodies, fixed/variable and non-atomic assertions, calls/graphemes,
+nonpairing, casing/UCP/Turkish/reset scopes, raw/decoded/inert labels, ownership,
+hard malformed barriers and shared work/cancellation/capture/depth/expansion.
+All-surrogate label fingerprint remains
+F268065A0C6B161BC958261B53D01F16174B8107640F79B8C5A262DAF1E0690E.
+
+Tests-only [RED723](https://github.com/uniblab/Icod.Expressions/actions/runs/43402553616),
+source846c85ee20f193dd02c8d857343c0666508e0c38, LinuxARM job131809003628,
+built net8/9/10 without compiler warnings/errors: each572 expected failures,
+68,703 passes,69,275total,0skips. Only new missing-policy cases failed; native,
+default and earlier controls passed. The unfrozen fixture first retained existing
+outer-expression ownership for Perl/UTS errors without changing native expectations.
+Freeze751bd09a727ca5ea584b48527538f5d77ccddd07 before the initial implementation.
+
+CI724 then exposed22 retained failures per framework (10 native literal spans and
+12 offset theories): the initial design incorrectly treated surrogate encodings
+as barriers even for direct native literal comparisons. Keep the fixture fixed.
+Add separate tests-only [RED725](https://github.com/uniblab/Icod.Expressions/actions/runs/43406280480),
+sourcef5b742ba0c4d40e496dd5f94dfb4bbfc3e277ec9, LinuxARM job131821296383.
+All frameworks built without compiler warnings/errors: each201 expected failures,
+69,654 passes,69,855total,0skips. The added164 span profiles,6 explicit guards,
+2 all-value theories,6 offset theories and1 work fact failed with the original22.
+Native/strict/erased/label/default/earlier controls passed. Freeze second fixture
+444f833a7190b5a41a9f4cf229bae89f3f939b56 before the matcher correction. Both fixtures
+remain unchanged.
+
+Qualification requires all18 native results at69,855 tests/framework and every
+configured supporting gate. All repository inventories precede the final source
+head; final GREEN, author review and exact base/head/tree/proposed-merge identity
+live on [PR239](https://github.com/uniblab/Icod.Expressions/pull/239) and issue7's
+roadmap footer without another documentation-only CI run. Tolerant surrogate
+word/reference/script combinations, remaining syntax/modes/directives/callouts,
+failed/partial labels, wider optimizer/resources (#102), UTF16/exported API and
+realistic consumer/release gates remain open. User owns merge/tag/publication;
+Grep last. See [design](PCRE-SURROGATE-ESCAPES-DESIGN.md) and
+[plan](PCRE-SURROGATE-ESCAPES-PLAN.md).

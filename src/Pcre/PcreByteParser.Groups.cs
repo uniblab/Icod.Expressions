@@ -165,7 +165,8 @@ internal sealed partial class PcreByteParser {
 			Span<byte> encoded = stackalloc byte[4];
 			foreach ( var node in literals ) {
 				cancellationToken.ThrowIfCancellationRequested();
-				if ( node is not PcreByteLiteral literal || literal.Caseless != frame.EntryOptions.Caseless
+				if ( node is not PcreByteLiteral literal || utf8 && !Rune.IsValid( literal.Value )
+					|| literal.Caseless != frame.EntryOptions.Caseless
 					|| utf8 && literal.Caseless && literal.CaselessRestricted != frame.EntryOptions.CaselessRestricted ) {
 					return FinishGeneralAssertion( frame, body );
 				}

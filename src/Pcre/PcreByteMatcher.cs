@@ -31,6 +31,7 @@ internal static partial class PcreByteMatcher {
 				"start byte offset is outside the input"
 			) );
 		}
+		var surrogateLiterals = program.MatchInvalidUtf && program.HasSurrogateLiterals;
 		// No candidate can reach the VM when the required first byte is absent.
 		// This is limited to unobserved, noncancellable exact byte searches.
 		var unobservedByteSearch = !program.Utf8 && !program.HasCaselessComparisons
@@ -94,7 +95,7 @@ internal static partial class PcreByteMatcher {
 				var hasValidScalar = false;
 				for ( var offset = 0; offset < input.Length; ) {
 					Step(); // Inspect one scalar or invalid byte within the match work budget.
-					if ( !PcreUtf8.TryRead( input.Span, offset, out _, out var width ) ) {
+					if ( !PcreUtf8.TryReadLiteral( input.Span, offset, surrogateLiterals, out _, out var width ) ) {
 						if ( !program.MatchInvalidUtf ) {
 							return new( null, new( PcreByteDiagnosticCode.InvalidUtf8Subject, offset,
 								"subject contains invalid UTF-8" ) );
@@ -140,7 +141,7 @@ internal static partial class PcreByteMatcher {
 				return new( new PcreByteMatch( startOffset, 0, Array.AsReadOnly( emptyCaptures ) ), null );
 			}
 			if ( program.MatchInvalidUtf && program.CanMatchEmptyAtAnyOffset
-				&& startOffset < input.Length && !PcreUtf8.TryRead( input.Span, startOffset, out _, out _ ) ) {
+				&& startOffset < input.Length && !PcreUtf8.TryReadLiteral( input.Span, startOffset, surrogateLiterals, out _, out _ ) ) {
 				// PCRE2 can accept a zero-width path exactly at a requested byte offset,
 				// including inside a scalar or malformed run. Consumption remains barred.
 				// A real fragment ending here already permits a zero-width candidate
@@ -315,7 +316,7 @@ internal static partial class PcreByteMatcher {
 							Step(); // Attempted scalar/byte comparison.
 							var literalWidth = 1;
 							if ( position < subjectEnd && ( program.Utf8
-								? PcreUtf8.TryRead( input.Span, position, out var scalar, out literalWidth )
+								? PcreUtf8.TryReadLiteral( input.Span, position, surrogateLiterals, out var scalar, out literalWidth )
 									&& literalWidth <= subjectEnd - position
 									&& ( instruction.Caseless ? PcreUtf8CaseFold.Equals( scalar, instruction.First, instruction.CaselessRestricted, program.TurkishCasing )
 										: scalar == instruction.First )
@@ -550,7 +551,7 @@ internal static partial class PcreByteMatcher {
 										Step();
 										reversed--;
 									}
-									if ( !PcreUtf8.TryRead( input.Span, reversed, out _, out var reverseWidth )
+									if ( !PcreUtf8.TryReadLiteral( input.Span, reversed, surrogateLiterals, out _, out var reverseWidth )
 										|| reversed + reverseWidth != reverseEnd ) { failed = true; break; }
 								}
 								reversedCount++;
@@ -561,7 +562,7 @@ internal static partial class PcreByteMatcher {
 									if ( backtrack.Count >= MaximumBacktrackFrames ) {
 										throw new MatchLimitException( PcreByteDiagnosticCode.MatchDepthLimitExceeded, "backtrack stack limit exceeded" );
 									}
-									backtrack.Push( new Frame( pc + 1, NextReverseStart( input.Span, position, program.Utf8 ),
+									backtrack.Push( new Frame( pc + 1, NextReverseStart( input.Span, position, program.Utf8, surrogateLiterals ),
 										changes.Count, atomicDepths.Count, activeScope, FrameKind.ReverseRetry,
 										(byte)( reversedCount - minimumReverse - 1 ), activeCall ) );
 								}
@@ -941,7 +942,7 @@ internal static partial class PcreByteMatcher {
 						if ( frame.Kind == FrameKind.ReverseRetry && frame.ReverseRemaining > 0 ) {
 							// The popped retry frees its slot; keep only one pending next start.
 							backtrack.Push( frame with {
-								Position = NextReverseStart( input.Span, position, program.Utf8 ),
+								Position = NextReverseStart( input.Span, position, program.Utf8, surrogateLiterals ),
 								ReverseRemaining = (byte)( frame.ReverseRemaining - 1 )
 							} );
 						}
@@ -1038,9 +1039,9 @@ internal static partial class PcreByteMatcher {
 
 	private readonly record struct Fragment( int Start, int End );
 
-	private static int NextReverseStart( ReadOnlySpan<byte> input, int position, bool utf8 ) {
+	private static int NextReverseStart( ReadOnlySpan<byte> input, int position, bool utf8, bool surrogateLiterals ) {
 		if ( !utf8 ) { return position + 1; }
-		PcreUtf8.TryRead( input, position, out _, out var width );
+		PcreUtf8.TryReadLiteral( input, position, surrogateLiterals, out _, out var width );
 		return position + width;
 	}
 
