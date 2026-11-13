@@ -32,7 +32,13 @@ internal sealed record PcreByteOptions {
 	public bool MatchLine { get; init; }
 	public bool Utf8 { get; init; }
 	public bool MatchInvalidUtf { get; init; }
+	/// <summary>Prohibit UTF mode, including pattern directives and implicit tolerant UTF.</summary>
+	public bool NeverUtf { get; init; }
 	public bool Ucp { get; init; }
+	/// <summary>Prohibit UCP mode selected by the caller or pattern prefix.</summary>
+	public bool NeverUcp { get; init; }
+	/// <summary>Prohibit real code-unit escape tokens without restricting inert source text.</summary>
+	public bool NeverBackslashC { get; init; }
 	/// <summary>Enable PCRE2 UTS#18 nested brackets and doubled set operators.</summary>
 	public bool AltExtendedClass { get; init; }
 	public bool AsciiBsD { get; init; }

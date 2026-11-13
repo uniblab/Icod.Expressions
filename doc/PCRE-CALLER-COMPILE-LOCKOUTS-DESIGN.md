@@ -48,3 +48,11 @@ framework results and existing supporting gates before readiness.
 C#13/net8/9/10, UTF8+LF; no Python, subagents or SDK installs. Preserve all248
 earlier test files, frozen35/214 outcomes/120 methods, GNU/BRE/ERE, matcher,
 public API, dependencies and workflows. User owns merge/tag/publication; Grep last.
+
+## Native-first freeze
+
+The final2,513-case fixture froze at68cd3d1c943c27bfd82ac7d67a3968ae80c17db8
+after clean tests-only RED708: each framework built0warnings/errors and observed
+1,657 expected failures/63,227 passes/0skips. The248 earlier tests and all native,
+legacy, UTF, quota, work and ownership controls passed. Full source qualification
+and delivery evidence are recorded in PR235 and issue7.

@@ -33,17 +33,17 @@ until the production flags exist, so RED tests exercise missing policy behavior
 rather than fail to build. Add every-octet and shared-resource/ownership controls.
 
 - [x] Preflight native profiles and supplemental loop arrays; pin expected count.
-- [ ] Publish tests-only draft and inspect net8/9/10 RED: only expected policy
+- [x] Publish tests-only draft and inspect net8/9/10 RED: only expected policy
   failures; earlier tests and native controls pass. Freeze final fixture hash.
 
 ## Task 2: compiler/parser policy and full GREEN
 
-- [ ] Add bool NeverUtf, NeverUcp, NeverBackslashC init properties in
+- [x] Add bool NeverUtf, NeverUcp, NeverBackslashC init properties in
   src/Pcre/PcreByteOptions.cs; default false.
-- [ ] In src/Pcre/PcreByteCompiler.cs, reject settings.Utf8 && options.NeverUtf
+- [x] In src/Pcre/PcreByteCompiler.cs, reject settings.Utf8 && options.NeverUtf
   before UTF validation, and settings.Ucp && options.NeverUcp after it. Use
   InvalidSyntax/settings.BodyOffset and specific caller-disabled messages.
-- [ ] In src/Pcre/PcreByteParser.cs snapshot NeverBackslashC in a readonly bool;
+- [x] In src/Pcre/PcreByteParser.cs snapshot NeverBackslashC in a readonly bool;
   check it in ParseEscape C after inBracket rejection, before UTF Unsupported.
   Use InvalidSyntax at the escape opening. No source search or matcher change.
 - [ ] Full18 native results: expected test count/frozen214, zero failures/skips/
@@ -52,7 +52,7 @@ rather than fail to build. Add every-octet and shared-resource/ownership control
 
 ## Task 3: review and delivery
 
-- [ ] Author review of all five boundaries; independent review excluded by user.
+- [x] Author review of all five boundaries; independent review excluded by user.
 - [ ] Update design/matrix/resource/consumer/status inventories and issue7 footer.
 - [ ] Verify fixture/earlier hashes, clean tree, source/base/proposed merge identity;
   mark ready after checks and remove only this tranche ledger. User merges.
@@ -73,3 +73,17 @@ and all production source. Expected refined RED remains1,657/framework.
 
 An explicit erased UTF-C boundary control is retained in the supplementary
 theory, alongside bare and consumed-behind C; total2,513 new cases.
+
+## Execution record
+
+Valid RED708/run43369721925, LinuxARM job131702547003, source
+1b50d1a6d4e5c0950c45d83a3d6d5d06b5684b5d: each net8/9/10 has
+64,884total/1,657expectedfail/63,227pass/0skip/0buildwarnings/errors.
+All failures are1,653 primary caller-policy profiles and4 octet theories; native
+assertions, legacy/UTF/resource/ownership controls and248 earlier files pass.
+Freeze68cd3d1c943c27bfd82ac7d67a3968ae80c17db8 before source changes.
+
+The planned three-file implementation is18 added lines. Author review covers all
+five boundaries; no new unresolved findings. Execution evidence for the remaining
+GREEN/delivery gates, including the final reviewed head and merge tree, is kept
+on [PR235](https://github.com/uniblab/Icod.Expressions/pull/235) and issue7.
