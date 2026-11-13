@@ -106,5 +106,38 @@ all branches/loops/calls/assertions/classes/references/other verbs, and keep the
 existing AST first-caret proof. Preserve literal-before-MARK priority. Do not
 change opcodes, IR shape, matcher/journal/work/quotas. Broader #102 remains open.
 
-- [ ] Observe added MARK regression RED before compiler-metadata correction.
-- [ ] Add HasLinearPathMarkStartBarrier and requalify complete18-result matrix.
+- [x] Observe added MARK regression RED before compiler-metadata correction.
+- [x] Add HasLinearPathMarkStartBarrier and requalify complete18-result matrix.
+
+
+CI719 then cleared the decoder cases, exposing one frozen ANY/tolerant-UTF caret/
+MARK split-offset theory. Native JIT scan_prefix stops at OP_MARK; no collected
+character means STARTLINE precedes FIRSTMAP. The raw canonical name has the same
+rule. PcreByteProgram.cs now adds HasLinearPathMarkStartBarrier beside the existing
+reference proof. Require at most1,000 instructions, only literals/PathMark/
+captures/line-end anchors/atomic boundaries/final Accept, a PathMark before any
+consumption, and the existing AST first-caret proof. Reject branches/loops/calls/
+assertions/classes/references/other verbs; retain literal-before-MARK priority.
+No opcode, instruction shape, matcher/journal/work/quota changes. Wider #102 stays
+open. Six production files change, including this bounded compile-time metadata.
+
+PcreMarkStartLineReferenceTests adds718 cases:704 pinned JIT profiles for raw/
+decoded/empty labels, NEL/LS/PS split/boundary offsets, wrappers/casing/UCP, empty
+bodies and priority/byte/strict controls;14 supplemental profiles cover1,000-
+instruction boundaries, over-budget valid-boundary fallback and256 captures.
+Combined increment:1,574 new cases,1,537 primary native profiles,1,151 supplemental
+compile profiles (1,144 JIT0/7 expected rejects), and6,240 offset protocols.
+
+Integration tests-only [RED720](https://github.com/uniblab/Icod.Expressions/actions/runs/43396124768),
+sourcef6424db14a3f18e655baf928c213ffd8f4e559f9, LinuxARM job131787334583,
+built net8/9/10 with0warnings/errors. Each ran68,025 tests:367 expected failures,
+67,658passes,0skips. All360 added split-offset profiles,4 literal-boundary cases,
+2 capture-capacity cases and the original1 theory failed; all name/earlier/native/
+priority/boundary controls passed. Freeze MARK fixture
+1e238d6f3cdbd5d4a1b70420dd9a1d9debc341a8 before compiler correction. Both frozen
+fixtures remain unchanged.
+
+Source review confirms the name decoder is unchanged since CI719; the additional
+compiler proof is linear, cancellation-aware and bounded by the existing ceiling.
+All repo evidence precedes final qualification. Final all18 results, supporting
+gates, whole-branch review and exact identities are recorded on PR238/issue7.

@@ -205,7 +205,7 @@ internal sealed class PcreByteProgramCompiler {
 				or PcreByteOpcode.StartLine or PcreByteOpcode.EndLine or PcreByteOpcode.EndBeforeFinalLf or PcreByteOpcode.End
 				or PcreByteOpcode.Split or PcreByteOpcode.Jump or PcreByteOpcode.AtomicEnter or PcreByteOpcode.AtomicExit
 				or PcreByteOpcode.Accept ) ) {
-				if ( !HasBackreferenceStartBarrier() ) { return false; }
+				if ( !HasBackreferenceStartBarrier() && !HasLinearPathMarkStartBarrier() ) { return false; }
 				break;
 			}
 		}
@@ -236,6 +236,33 @@ internal sealed class PcreByteProgramCompiler {
 			}
 			return true;
 		}
+	}
+
+	private bool HasLinearPathMarkStartBarrier() {
+		if ( instructions.Count > MaximumStartClassVisits ) { return false; }
+		var consumed = false;
+		var hasLeadingMark = false;
+		foreach ( var instruction in instructions ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			switch ( instruction.Opcode ) {
+				case PcreByteOpcode.Literal: consumed = true; break;
+				case PcreByteOpcode.PathMark:
+					// Native prefix scanning stops at MARK before collecting a character.
+					if ( !consumed ) { hasLeadingMark = true; }
+					break;
+				case PcreByteOpcode.CaptureStart:
+				case PcreByteOpcode.CaptureEnd:
+				case PcreByteOpcode.StartLine:
+				case PcreByteOpcode.EndLine:
+				case PcreByteOpcode.EndBeforeFinalLf:
+				case PcreByteOpcode.End:
+				case PcreByteOpcode.AtomicEnter:
+				case PcreByteOpcode.AtomicExit:
+				case PcreByteOpcode.Accept: break;
+				default: return false;
+			}
+		}
+		return hasLeadingMark;
 	}
 
 	private bool HasBackreferenceStartBarrier() {

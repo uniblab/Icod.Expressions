@@ -317,7 +317,7 @@ uses the existing NUL name representation, preserving named versus unnamed SKIP
 and implicit MARK transactions without new canonical AST/IR/matcher/journal flags.
 Owned byte buffers retain source/options isolation and CString visible-name rules.
 
-Production changes only PcreByteOptions.cs, PcreByteParser.cs,
+The name decoder changes PcreByteOptions.cs, PcreByteParser.cs,
 PcreByteParser.PathMarks.cs, PcreByteParser.Extended.cs and the new
 PcreByteParser.AltVerbNames.cs. Shared work/cancellation/structural limits,
 GNU/BRE/ERE, public API/dependencies/workflows remain unchanged. All251 earlier
@@ -338,11 +338,37 @@ Clean tests-only [RED718](https://github.com/uniblab/Icod.Expressions/actions/ru
 source2d0953fd995c0783cfc06e5a3251630587077ae7, LinuxARM job131774325691,
 built net8/9/10 with0warnings/errors. Each ran67,307 tests:650 expected managed
 failures,66,657 passes,0skips. Failures comprise490 success-label/span profiles,
-139 compile diagnostics and21 supplemental cases, all for missing name decoding;
-native/default/earlier controls pass. Freeze fixture
-44ef5f4a1ca903df65c2f48c3c02a1db0d7f55e5 before production.
+139 compile diagnostics and21 supplemental cases; native/default/earlier controls
+pass. Name fixture44ef5f4a1ca903df65c2f48c3c02a1db0d7f55e5 froze before production.
+CI719 then cleared the decoder cases, exposing one frozen ANY/tolerant-UTF caret/
+MARK split-offset theory. Native JIT scan_prefix stops at OP_MARK; no collected
+character means STARTLINE precedes FIRSTMAP. The raw canonical name has the same
+rule. PcreByteProgram.cs now adds HasLinearPathMarkStartBarrier beside the existing
+reference proof. Require at most1,000 instructions, only literals/PathMark/
+captures/line-end anchors/atomic boundaries/final Accept, a PathMark before any
+consumption, and the existing AST first-caret proof. Reject branches/loops/calls/
+assertions/classes/references/other verbs; retain literal-before-MARK priority.
+No opcode, instruction shape, matcher/journal/work/quota changes. Wider #102 stays
+open. Six production files change, including this bounded compile-time metadata.
 
-Qualification requires all18 native results at67,307 tests/framework and every
+PcreMarkStartLineReferenceTests adds718 cases:704 pinned JIT profiles for raw/
+decoded/empty labels, NEL/LS/PS split/boundary offsets, wrappers/casing/UCP, empty
+bodies and priority/byte/strict controls;14 supplemental profiles cover1,000-
+instruction boundaries, over-budget valid-boundary fallback and256 captures.
+Combined increment:1,574 new cases,1,537 primary native profiles,1,151 supplemental
+compile profiles (1,144 JIT0/7 expected rejects), and6,240 offset protocols.
+
+Integration tests-only [RED720](https://github.com/uniblab/Icod.Expressions/actions/runs/43396124768),
+sourcef6424db14a3f18e655baf928c213ffd8f4e559f9, LinuxARM job131787334583,
+built net8/9/10 with0warnings/errors. Each ran68,025 tests:367 expected failures,
+67,658passes,0skips. All360 added split-offset profiles,4 literal-boundary cases,
+2 capture-capacity cases and the original1 theory failed; all name/earlier/native/
+priority/boundary controls passed. Freeze MARK fixture
+1e238d6f3cdbd5d4a1b70420dd9a1d9debc341a8 before compiler correction. Both frozen
+fixtures remain unchanged.
+
+
+Qualification requires all18 native results at68,025 tests/framework and every
 configured Unicode/workload/extraction/POSIX/API/corpus/frozen/package/script gate.
 Final GREEN, whole-branch author review and base/head/tree/proposed-merge identity
 live on [PR238](https://github.com/uniblab/Icod.Expressions/pull/238) and issue7,
