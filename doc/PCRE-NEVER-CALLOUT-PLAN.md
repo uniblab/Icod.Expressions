@@ -31,11 +31,11 @@ on PR241/issue7 only, without another documentation-only CI run.
 **Interfaces:** Optional reflection sets future NeverCallout for executable
 RED. Native factory uses extra0x8000 and independent literal errors/spans/labels.
 
-- [ ] Preflight native profiles and selected offsets; classify accepted JIT0,
+- [x] Preflight native profiles and selected offsets; classify accepted JIT0,
   no-match(-1), native/source errors and deliberate existing internal boundaries.
-- [ ] Add guard/default/inert controls plus five review boundaries, ownership,
+- [x] Add guard/default/inert controls plus five review boundaries, ownership,
   shared work/cancellation and capture/depth/expansion quota checks.
-- [ ] Publish tests-only draft PR241, inspect clean net8/9/10 RED with zero
+- [x] Publish tests-only draft PR241, inspect clean net8/9/10 RED with zero
   compiler warnings/errors and only missing-policy failures; freeze the fixture.
 
 ## Task 2: parser integration
@@ -46,7 +46,7 @@ src/Pcre/PcreByteParser.Groups.cs; update seven repository doc files.
 ParseAlternatives uses existing current.Quoting/WaitingForCondition/index/source
 and Invalid(int offset,string message); no new functions/types.
 
-- [ ] Add the option/snapshot. At atom dispatch reject `(?C` only when unquoted
+- [x] Add the option/snapshot. At atom dispatch reject `(?C` only when unquoted
   and not a truncated leading condition (remaining source >=4 for conditions).
 - [ ] Include design/matrix/resource/consumer/status inventories before the
   final qualified head. Verify all18 native results and configured supporting
@@ -58,3 +58,9 @@ and Invalid(int offset,string message); no new functions/types.
 - [ ] Verify clean tree and exact source/base/tree/proposed-merge identity.
 - [ ] Record GREEN/review on PR241 and only issue7's footer; mark ready and
   remove only this plan's ledger. User owns merge/tag/publication.
+
+## Inline progress before qualification
+
+Refined tests-only [RED731](https://github.com/uniblab/Icod.Expressions/actions/runs/43425307698), source `3306ed9677a09d35e3f2cbf7f03cf72e850a5cf5`, Linux ARM job131885343849: net8/9/10 each built without compiler warnings/errors, then ran716 expected failures/72,141 passes/72,857total/zero skips. Only715 new guard diagnostics and one capacity fact failed; all71,410 earlier tests and731 new controls passed. Fixture `a95af4ea2353748653500573cfd680b8a5984ccd` froze before production and remains unchanged. Initial unfrozen RED730 had718 failures because two byte-range offsets incorrectly used the UTF opening convention; correcting only those offsets preserved every case and native expectation.
+
+Task1 and the Task2 parser integration are complete. All seven repository documentation files precede qualification. The all18 GREEN gate and Task3 review/identities/footer/readiness are intentionally recorded on PR241/issue7 after observation, without a documentation-only source push.

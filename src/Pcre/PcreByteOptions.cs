@@ -39,6 +39,8 @@ internal sealed record PcreByteOptions {
 	public bool NeverUcp { get; init; }
 	/// <summary>Prohibit real code-unit escape tokens without restricting inert source text.</summary>
 	public bool NeverBackslashC { get; init; }
+	/// <summary>Reject manual callout tokens before validating their arguments.</summary>
+	public bool NeverCallout { get; init; }
 	/// <summary>Enable PCRE2 UTS#18 nested brackets and doubled set operators.</summary>
 	public bool AltExtendedClass { get; init; }
 	/// <summary>Use alternate backslash-u, U and x grammar with complete adjacent hex digits.</summary>

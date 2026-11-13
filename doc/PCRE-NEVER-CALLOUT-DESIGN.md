@@ -45,3 +45,9 @@ tree0f7215505e3a92510a15a5511d74baa0e881cc1e;71,410 tests/framework,256 earlier
 test files. Preserve their hashes, GNU/BRE/ERE, frozen35/214 outcomes/120methods,
 C#13/net8/9/10 and UTF8+LF. Existing unsupported UTF/code-unit/surrogate-context
 boundaries, exported API and wider optimizer/consumer/release gaps remain open.
+
+## Regression evidence and integration
+
+Refined tests-only [RED731](https://github.com/uniblab/Icod.Expressions/actions/runs/43425307698), source `3306ed9677a09d35e3f2cbf7f03cf72e850a5cf5`, Linux ARM job131885343849: net8/9/10 each built without compiler warnings/errors, then ran716 expected failures/72,141 passes/72,857total/zero skips. Only715 new guard diagnostics and one capacity fact failed; all71,410 earlier tests and731 new controls passed. Fixture `a95af4ea2353748653500573cfd680b8a5984ccd` froze before production and remains unchanged. Initial unfrozen RED730 had718 failures because two byte-range offsets incorrectly used the UTF opening convention; correcting only those offsets preserved every case and native expectation.
+
+Only the three planned production files change. The guard uses existing atom dispatch and current frame state, after trivia/quotes and before any callout argument reader. Final all18 qualification, whole-branch review and exact identities are recorded on PR241/issue7 after the final source head.

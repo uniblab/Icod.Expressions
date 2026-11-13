@@ -28,6 +28,7 @@ internal sealed partial class PcreByteParser {
 	private readonly bool pythonOctal;
 	private readonly bool noBackslashZero;
 	private readonly bool neverBackslashC;
+	private readonly bool neverCallout;
 	private readonly bool escapedCrIsLf;
 	private readonly bool allowEmptyClass;
 	private readonly bool matchWord;
@@ -73,6 +74,7 @@ internal sealed partial class PcreByteParser {
 		pythonOctal = options.PythonOctal;
 		noBackslashZero = options.NoBackslashZero;
 		neverBackslashC = options.NeverBackslashC;
+		neverCallout = options.NeverCallout;
 		escapedCrIsLf = options.EscapedCrIsLf;
 		allowEmptyClass = options.AllowEmptyClass;
 		matchWord = options.MatchWord;

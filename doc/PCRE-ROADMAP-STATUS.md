@@ -1,6 +1,6 @@
 # PCRE roadmap status
 
-Reviewed after merged PR239, with PR240 in progress. Issue #7 remains the delivery roadmap; the
+Reviewed after merged PR240, with PR241 in progress. Issue #7 remains the delivery roadmap; the
 [syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md),
 [resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) and
 [Grep fixture inventory](PCRE-GREP-CONSUMER-FIXTURES.md) define the detailed gates.
@@ -53,6 +53,7 @@ retaining each framework's complete suite and frozen-result qualification.
    PR238 adds alternate control-verb name decoding through existing label machinery.
    PR239 adds optional surrogate escape code points while retaining UTF validation.
    PR240 adds opt-in native bad-escape literal recovery through the existing parser.
+   PR241 adds caller prohibition of manual callouts at existing atom dispatch.
    UTF code-unit escape,
    remaining directives/verbs/callouts and other matrix gaps require their own
    pinned reference fixtures. Decide any intentional exclusions before release;
@@ -70,9 +71,9 @@ retaining each framework's complete suite and frozen-result qualification.
 
 ## Current increment and next syntax work
 
-PR239 merged at 6e0d56f3962100f0f48657d9d7af61d203d46ad3;
-main43410260851 and scripts43410260857 are green. Its69,855 tests/framework
-remain the baseline. PR240 adds bad-escape literal recovery as described below;
+PR240 merged at 99a7a99baf52fdcb41db73e0dcfa21dd89c68c0f;
+main43422411224 and scripts43422411127 are green. Its71,410 tests/framework
+remain the baseline. PR241 adds manual-callout prohibition as described below;
 final qualification and delivery evidence are recorded on the PR and issue7.
 
 ## PR234: backreferences blocking first-character search
@@ -523,3 +524,63 @@ Remaining syntax/modes/directives/callouts, failed/partial labels, wider optimiz
 and resource gaps (#102), NO_UTF_CHECK/UTF16/exported API, realistic consumer
 performance and release gates remain open. User owns merge/tag/publication;
 Grep migrates last and issue7 remains open.
+
+## PR241: caller prohibition of manual callouts
+
+Default-false internal NeverCallout implements PCRE2 10.48 extra-option0x8000.
+The parser snapshots it and rejects real `(?C` atom tokens before callout
+argument parsing. Numeric/string, malformed/incomplete, nested, zero-repeated,
+unreachable and definition-body tokens all receive InvalidSyntax at their
+original opening byte. Native203 reports the byte after C; internal diagnostics
+retain the existing token-opening convention. The disabled path still explicitly
+rejects unimplemented callout execution; no callout is silently ignored.
+
+The existing atom dispatch follows quote/trivia processing and has the current
+conditional frame. A leading conditional callout requires one byte after C to
+reach native dispatch: truncated `(?(?C` has native128 first and retains the
+existing internal UnsupportedSyntax at its inner opening. This does not parse
+or execute conditional callouts. Source UTF/caller-mode validation and prior
+syntax errors retain priority; later unresolved references and compiled repeat
+expansion do not preempt the guard. Library capture/depth/expansion ceilings and
+cancellation remain shared. BadEscapeIsLiteral does not recover group errors.
+Caller reset/unset scopes cannot disable this immutable compile policy.
+
+No global source scan is used. Quotes, comments, ordinary/Perl/UTS classes and
+raw/decoded labels keep their own readers and canonical matching. Only three
+production files change: options, parser initialization and Groups atom dispatch.
+No AST/IR/opcodes, matcher/journal/shared-limit/exported-API/dependency/workflow
+changes. Earlier256 test files and frozen35/214 outcomes/120 methods stay fixed.
+
+The1,447 new cases include1,428 primary native profiles (168 matching spans/
+captures/success labels and1,260 compile profiles), three quoted-octet theories,
+12 newline/offset theories and four ownership/work/resource/capacity facts.
+Native preflight adds768 quoted scalar/octet comparisons,2,820 selected offset
+protocols and eight fact/capacity profiles. All256 bytes after a real header
+are checked in byte/strict-UTF/tolerant modes; invalid source UTF wins first.
+Four default leading-conditional callout profiles are native JIT-unsupported
+and are separated from compiled matching/no-match evidence. Accepted matching
+profiles require JIT0; negative matching results require native no-match(-1).
+Guard errors occur before JIT. Native results and managed regression evidence
+follow; the implementation plan records the same regression gate.
+
+Refined tests-only [RED731](https://github.com/uniblab/Icod.Expressions/actions/runs/43425307698), source `3306ed9677a09d35e3f2cbf7f03cf72e850a5cf5`, Linux ARM job131885343849: net8/9/10 each built without compiler warnings/errors, then ran716 expected failures/72,141 passes/72,857total/zero skips. Only715 new guard diagnostics and one capacity fact failed; all71,410 earlier tests and731 new controls passed. Fixture `a95af4ea2353748653500573cfd680b8a5984ccd` froze before production and remains unchanged. Initial unfrozen RED730 had718 failures because two byte-range offsets incorrectly used the UTF opening convention; correcting only those offsets preserved every case and native expectation.
+
+
+The baseline is merged240 `99a7a99baf52fdcb41db73e0dcfa21dd89c68c0f`,
+tree `0f7215505e3a92510a15a5511d74baa0e881cc1e`,71,410 tests/framework;
+main43422411224 and scripts43422411127 are green. Qualification requires all18
+native results at72,857 tests/framework, zero failures/skips/compiler warnings/
+errors,214 frozen outcomes in120 methods, frozen35 and every configured Unicode/
+workload/extraction/POSIX/glibc/API/corpus/package/build-script gate. Repository
+inventories precede final qualification. Final GREEN, whole-branch author review
+and exact source/base/tree/proposed-merge identity belong on
+[PR241](https://github.com/uniblab/Icod.Expressions/pull/241) and only issue7's
+roadmap footer, without another documentation-only CI run.
+
+Callout execution, lookaround backslash-K allowance, valid unimplemented UTF
+code-unit/escaped-UTF syntax and PR239's tolerant-surrogate word/reference/script
+exclusions remain open. Remaining syntax/modes/directives, failed/partial labels,
+wider optimizer/resources (#102), NO_UTF_CHECK/UTF16/exported API, realistic
+consumer performance and release gates remain open. User owns merge/tag/
+publication, issue7 stays open and Grep migrates last. See
+[design](PCRE-NEVER-CALLOUT-DESIGN.md) and [plan](PCRE-NEVER-CALLOUT-PLAN.md).
