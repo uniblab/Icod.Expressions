@@ -3607,3 +3607,62 @@ Other syntax/modes/directives/callouts, labels on failed/partial results, wider
 optimizer/resources (#102), UTF16/exported API and realistic consumer/release
 qualification remain open. See [design](PCRE-UNSET-BACKREFERENCES-DESIGN.md) and
 [plan](PCRE-UNSET-BACKREFERENCES-PLAN.md).
+
+## PR234: backreferences blocking first-character search
+
+Extend PR233 STARTLINE metadata from selected nullable bodies to pure programs
+with an opaque reference reachable before consumption. Native compile_branch
+disables inferred first characters at references; JIT scan_prefix cannot cross
+them before any character, and STARTLINE precedes FIRSTMAP. Default references
+are equally opaque. ANY/multiline ^()backref1B on LS+B misses at split offset1
+but matches3:1/capture1=3:0 at boundary3 under either reference policy.
+
+Only PcreByteProgram.cs changes: rename the existing private helper to
+HasBackreferenceStartBarrier, require any canonical reference and accept a
+nonconsuming path reaching Backreference or Accept. Mandatory literals and
+one/two-member classes keep native prefix-search priority. A supplementary
+linear proof admits exactly one positive, predicate-free ASCII class with more
+than two members before a reference: it cannot supply JIT first-character-pair
+search. Additional consumers, branches/loops, non-ASCII ranges, predicates and
+Turkish casing stay outside that proof. Every branch must still pass the existing
+AST first-caret proof. Keep pure-instruction eligibility,1,000 instructions/visits,
+heap storage and cancellation. No matcher/parser/IR-shape/source/capture/journal/work/quota/
+API/dependency changes. Calls/assertions/conditions/verbs and over-budget
+programs remain outside this conservative proof; broader #102 stays open.
+
+The949 new cases include936 independently pinned PCRE2 10.48/JIT profiles
+and284 preflighted supplemental native profiles. Cover both reference/casing
+policies, aliases, participation/duplicates, repeats, wrappers/alternatives,
+NEL/LS/PS split/boundary offsets, malformed fragments, strict boundaries, UCP,
+owned source/options, deep/full-capacity/large-prefix proofs and shared work/
+cancellation/quotas. Native arrays compile before managed comparison. All247
+earlier test files and GNU/frozen35/214 outcomes/120 methods remain fixed.
+
+Clean tests-only RED702 (run43255390418, Linux x64 job131312086289), source
+1107f679f0a8da3b3ae069d0934e5c825a53c36c, retained merged PR233 production.
+Each net8/9/10 built0warnings/errors and ran62,371 tests:295 expected failures,
+62,076 passes,0skips. All285 primary differences/framework match independent
+native split/boundary research, including87 default and198 selected failures.
+Earlier fixtures, strict/fallback controls and native literal/oracle checks
+passed. Freeze fixture f78f3d24ff62419bfefd9672a902259138fbbb7e before
+production; require all18 native results and every configured supporting gate.
+
+Qualification after the frozen six-case correction: source
+`a00c32c0f9531808415991f99dd6cb4a2bfc5f38`, [CI704](https://github.com/uniblab/Icod.Expressions/actions/runs/43260813850)
+and [scripts266](https://github.com/uniblab/Icod.Expressions/actions/runs/43260813804)
+are green. All18 native platform/framework results pass62,371 tests each, with
+zero failures/skips/build warnings/errors and214 frozen outcomes in120 methods.
+Frozen35, five Unicode generators, seven equal component workloads, extraction/
+POSIX/glibc/API/corpus, packaging and three package-smokes pass. Three-OS script
+gates pass; full consumer compatibility is skipped by the PCRE-only classifier.
+The949-case fixture and247 earlier test files are unchanged. An additional1,728
+native JIT checks confirm class-pair priority across casing/UCP/reference policies,
+root wrappers andNEL/LS/PS offsets. Whole-branch author review found no remaining
+issues in this scope; independent review was not performed. Broader optimizer
+shapes remain in #102. Final documentation changes preserve the qualified
+source, test, packaging and workflow trees.
+
+Other syntax/modes/directives/callouts, failed/partial labels, wider optimizer/
+resources (#102), UTF16/exported API and realistic consumer/release gates remain
+open. Grep stays last. See [design](PCRE-BACKREFERENCE-STARTLINE-DESIGN.md) and
+[plan](PCRE-BACKREFERENCE-STARTLINE-PLAN.md).
