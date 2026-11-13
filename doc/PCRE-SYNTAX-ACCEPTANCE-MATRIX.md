@@ -42,6 +42,8 @@ the matcher returns spans, leaving framing, status and output to Grep.
 | Caller compile restrictions | NeverUtf/NeverUcp prohibit effective modes at their native compile stages; NeverBackslashC prohibits real C tokens after prior class errors; defaults false | PcreCallerCompileLockoutReferenceTests; native errors/positions, quoting/labels, all-octet precedence and shared work/ownership/quotas |
 | Caller alternate escape grammar | AltBsux recognizes four-digit u, literal U and two-digit x; incomplete tokens leave subsequent source untouched; default false, extra braced-u is a separate caller policy | PcreAltBsuxReferenceTests; byte/UTF/UCP, bounds, fallback braces, captures/labels, offsets, inert text, ownership and shared limits |
 | Caller extra alternate escapes | ExtraAltBsux implies alternate grammar and adds braced-u scalars; malformed braces retain native literal/quantifier ownership and true uint overflow retains early precedence | PcreExtraAltBsuxReferenceTests; all selections, values/scalars, overflow/zero padding, classes, case/reset scopes, offsets, ownership and limits |
+| Caller alternate verb names | AltVerbNames decodes literal escapes/local quotes and extended trivia while enforcing raw-byte quotas and named-empty identity; default false | PcreAltVerbNameReferenceTests; all verbs/octets, literal/forbidden escapes, raw limits/priority, case/quote/comment/reset scopes, offsets, ownership and shared limits |
+| Leading MARK after caret | Bounded linear MARK prefix stops native character scanning, allowing existing STARTLINE policy before FIRSTMAP for ANY/tolerant UTF | PcreMarkStartLineReferenceTests; raw/decoded labels, NEL/LS/PS offsets, wrappers/casing/UCP, literal priority, proof/capture boundaries |
 | Ordinary `[ ]` ranges, negation, shorthand unions, 14 POSIX names | Supported subset in byte and UTF modes; ordinary bracket grammar unchanged, Perl algebra listed separately | Bracket and POSIX tests; Unicode table/version reconciliation |
 | `\p`/`\P` general categories and special properties | Byte/UTF categories plus Any/Xan/Xps/Xsp/Xwd/Xuc; loose names, P/caret complements and property predicates independent of UCP/ASCII/i/r. Category-prefixed aliases remain a library extension for categories only. UTF class source operands/endpoints preserve CR/LF flags before folding, including the native negated-singleton exception. Scripts/scx now have pinned Unicode17 data; binary/Bidi properties now have pinned native data | `PcreBytePropertyReferenceTests`, `PcreSpecialPropertyReferenceTests`, `PcreClassNewlineMetadataReferenceTests`, `PcreUtf8GeneralCategoryTests`; see `PCRE-SPECIAL-PROPERTIES-DESIGN.md`; Unicode17 categories and default simple-case mappings are pinned; byte search-optimization parity remains a gate |
 | Unicode script/scx properties | All175 scripts/344 normalized long, short and legacy aliases; bare names are scx, explicit sc/Script and scx/Script_Extensions, native primary-or-extension membership, byte projection and mixed predicates | `PcreScriptPropertyReferenceTests`, 3508 native boundaries and source-hash/native-fingerprint-checked regeneration; script-run groups remain separate |
@@ -3582,3 +3584,89 @@ failed/partial labels, broader optimizer/resources (#102), UTF16/exported API an
 realistic consumer/release gates remain open. User owns merge/tag/publication;
 Grep stays last. See [design](PCRE-EXTRA-ALT-BSUX-DESIGN.md) and
 [plan](PCRE-EXTRA-ALT-BSUX-PLAN.md).
+
+## PR238: alternate control-verb name grammar
+
+Default-false internal AltVerbNames implements PCRE2 10.48 ALT_VERBNAMES for
+MARK/shorthand, named SKIP, PRUNE/COMMIT/THEN and ACCEPT/FAIL/F. A focused decoder
+accepts literal data escapes and local Q/E quotes. Regex types/anchors/references
+are invalid name tokens. Names remain case-sensitive; decoded delimiters and
+backslashes remain bytes and cannot enter regex syntax. Escaped/raw UTF labels
+retain native UTF8 encoding without enabling ordinary escaped-UTF regex syntax.
+
+The parser snapshots the caller flag and retains the old raw reader when false.
+Literal controls/numeric/octal/hex/N/u/U policies and the alternate literal-brace
+marker reuse existing readers. Name-specific rejection precedes token policies
+such as NeverBackslashC. Extended/More whitespace and # comments use shared
+newlines outside local quotes; escaped whitespace remains data. The private
+SkipIgnoredPatternText gains default-true allowInlineComments; only names pass
+false so inline (?#...) remains name data and outer regex comments are unchanged.
+Raw UTF advances by complete source characters before trivia processing.
+
+Raw source255-byte limits and MARK's nonempty requirement include ignored trivia,
+escape spellings and quote delimiters. They apply at the real unquoted closing
+parenthesis, after earlier escape errors. A nonempty argument that decodes empty
+uses the existing NUL name representation, preserving named versus unnamed SKIP
+and implicit MARK transactions without new canonical AST/IR/matcher/journal flags.
+Owned byte buffers retain source/options isolation and CString visible-name rules.
+
+The name decoder changes PcreByteOptions.cs, PcreByteParser.cs,
+PcreByteParser.PathMarks.cs, PcreByteParser.Extended.cs and the new
+PcreByteParser.AltVerbNames.cs. Shared work/cancellation/structural limits,
+GNU/BRE/ERE, public API/dependencies/workflows remain unchanged. All251 earlier
+test files and frozen35/214 outcomes/120 methods stay fixed.
+
+The856 new cases include833 unique pinned native profiles:671 byte span/capture/
+success-label and162 compile-diagnostic/offset profiles. Supplemental preflight
+checks1,137 compile profiles (1,130 JIT0 accepts/7 expected rejects) and6,240
+selected offset protocols. Cover every label octet, all named verbs, literal and
+forbidden/numeric escapes, raw byte limits/error precedence, quote/close/comment/
+case/reset scope, empty/NUL identity, caller policies, six newlines, strict/tolerant
+UTF, owned source/options and shared resources. Native no-match(-1) is separated
+from other negative results; failed/partial labels remain outside the result
+contract. Native arrays/error assertions precede managed comparison; compile
+errors are deduplicated independently of match subjects.
+
+Clean tests-only [RED718](https://github.com/uniblab/Icod.Expressions/actions/runs/43392128698),
+source2d0953fd995c0783cfc06e5a3251630587077ae7, LinuxARM job131774325691,
+built net8/9/10 with0warnings/errors. Each ran67,307 tests:650 expected managed
+failures,66,657 passes,0skips. Failures comprise490 success-label/span profiles,
+139 compile diagnostics and21 supplemental cases; native/default/earlier controls
+pass. Name fixture44ef5f4a1ca903df65c2f48c3c02a1db0d7f55e5 froze before production.
+CI719 then cleared the decoder cases, exposing one frozen ANY/tolerant-UTF caret/
+MARK split-offset theory. Native JIT scan_prefix stops at OP_MARK; no collected
+character means STARTLINE precedes FIRSTMAP. The raw canonical name has the same
+rule. PcreByteProgram.cs now adds HasLinearPathMarkStartBarrier beside the existing
+reference proof. Require at most1,000 instructions, only literals/PathMark/
+captures/line-end anchors/atomic boundaries/final Accept, a PathMark before any
+consumption, and the existing AST first-caret proof. Reject branches/loops/calls/
+assertions/classes/references/other verbs; retain literal-before-MARK priority.
+No opcode, instruction shape, matcher/journal/work/quota changes. Wider #102 stays
+open. Six production files change, including this bounded compile-time metadata.
+
+PcreMarkStartLineReferenceTests adds718 cases:704 pinned JIT profiles for raw/
+decoded/empty labels, NEL/LS/PS split/boundary offsets, wrappers/casing/UCP, empty
+bodies and priority/byte/strict controls;14 supplemental profiles cover1,000-
+instruction boundaries, over-budget valid-boundary fallback and256 captures.
+Combined increment:1,574 new cases,1,537 primary native profiles,1,151 supplemental
+compile profiles (1,144 JIT0/7 expected rejects), and6,240 offset protocols.
+
+Integration tests-only [RED720](https://github.com/uniblab/Icod.Expressions/actions/runs/43396124768),
+sourcef6424db14a3f18e655baf928c213ffd8f4e559f9, LinuxARM job131787334583,
+built net8/9/10 with0warnings/errors. Each ran68,025 tests:367 expected failures,
+67,658passes,0skips. All360 added split-offset profiles,4 literal-boundary cases,
+2 capture-capacity cases and the original1 theory failed; all name/earlier/native/
+priority/boundary controls passed. Freeze MARK fixture
+1e238d6f3cdbd5d4a1b70420dd9a1d9debc341a8 before compiler correction. Both frozen
+fixtures remain unchanged.
+
+
+Qualification requires all18 native results at68,025 tests/framework and every
+configured Unicode/workload/extraction/POSIX/API/corpus/frozen/package/script gate.
+Final GREEN, whole-branch author review and base/head/tree/proposed-merge identity
+live on [PR238](https://github.com/uniblab/Icod.Expressions/pull/238) and issue7,
+with repo docs included before qualification. Surrogate allowance, other syntax/
+modes/directives/callouts, failed/partial labels, wider optimizer/resources (#102),
+UTF16/exported API and realistic consumer/release gates remain open. User owns
+merge/tag/publication; Grep stays last. See [design](PCRE-ALT-VERB-NAMES-DESIGN.md)
+and [plan](PCRE-ALT-VERB-NAMES-PLAN.md).

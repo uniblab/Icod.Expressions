@@ -45,6 +45,8 @@ internal sealed record PcreByteOptions {
 	public bool AltBsux { get; init; }
 	/// <summary>Recognize braced-u hex scalars and imply alternate u, U and x grammar.</summary>
 	public bool ExtraAltBsux { get; init; }
+	/// <summary>Interpret literal escapes, quotes and extended trivia in control-verb names.</summary>
+	public bool AltVerbNames { get; init; }
 	public bool AsciiBsD { get; init; }
 	/// <summary>Restrict backslash-s whitespace predicates to ASCII.</summary>
 	public bool AsciiBsS { get; init; }
