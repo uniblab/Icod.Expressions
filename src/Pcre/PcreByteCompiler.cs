@@ -20,10 +20,6 @@ internal static class PcreByteCompiler {
 			return new( null, new( PcreByteDiagnosticCode.InvalidSyntax, 0,
 				"literal compilation cannot combine with the selected regex options" ) );
 		}
-		if ( options.MaxPatternLength is uint maximum && (uint)pattern.Length > maximum ) {
-			return new( null, new( PcreByteDiagnosticCode.PatternLengthLimitExceeded, 0,
-				"pattern byte length exceeds the caller limit" ) );
-		}
 		var source = pattern.ToArray();
 		var settings = PcreByteStartSettings.Parse( source, options, cancellationToken );
 		if ( settings.Utf8 && options.NeverUtf ) {

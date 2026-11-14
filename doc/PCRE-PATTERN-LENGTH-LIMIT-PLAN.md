@@ -29,19 +29,19 @@
 **Files:** create tests/Pcre/PcrePatternLengthLimitReferenceTests.cs and PcrePatternLengthLimitProtocols.Part1.cs/Part2.cs; this design/plan.
 **Interfaces:** native PcreRegexSettings.MaxPatternLength versus optional reflection setter on internal nullable options; expected diagnostic name strings compile before the enum member exists.
 
-- [x] Pin576 matching groups/535 diagnostics and24 work/ownership/view/no-read/priority/capacity cases; native first.
-- [x] Publish draft PR252 with production identical to merged251.
-- [x] Observe336 expected failures/90,367 passes/90,703 total/zero skips/compiler warnings/errors; exact334 missing groups plus2 no-read cases, all89,568 prior and799 new controls pass.
-- [x] Freeze3 C# blobs and exact RED source/tree/job evidence before production.
+- [ ] Pin576 matching groups/535 diagnostics and24 work/ownership/view/no-read/priority/capacity cases; native first.
+- [ ] Publish draft PR252 with production identical to merged251.
+- [ ] Observe336 expected failures/90,367 passes/90,703 total/zero skips/compiler warnings/errors; exact334 missing groups plus2 no-read cases, all89,568 prior and799 new controls pass.
+- [ ] Freeze3 C# blobs and exact RED source/tree/job evidence before production.
 
 ### Task2: compile admission
 
 **Files:** modify src/Pcre/PcreByteOptions.cs, PcreByteCompiler.cs, PcreByteResult.cs; seven inventories.
 **Interfaces:** public uint? MaxPatternLength init on internal options, defaultnull; PatternLengthLimitExceeded appended; original memory.Length compared before ToArray.
 
-- [x] Add nullable option outside Literal conflicts and append the diagnostic without reordering.
-- [x] Check exceeded ceiling after cancellation/work/Literal checks and before source access; report byte0.
-- [x] Update design/syntax/resource/Grep/roadmap/current design/current plan before source qualification.
+- [ ] Add nullable option outside Literal conflicts and append the diagnostic without reordering.
+- [ ] Check exceeded ceiling after cancellation/work/Literal checks and before source access; report byte0.
+- [ ] Update design/syntax/resource/Grep/roadmap/current design/current plan before source qualification.
 - [ ] Require six fresh90,703 native net10 results, all3 library outputs/frozen/supporting gates.
 
 ### Task3: review and delivery
@@ -53,4 +53,4 @@
 - [ ] Record final GREEN/review/identities externally, mark ready and verify readback; no docs-only CI repeat.
 - [ ] Retire only this plan's identity-checked ledger; preserve branch/worktree.
 
-Observed Task1 proof/frozen blobs are recorded in the design. Task2 is implemented; current-head native/supporting qualification and Task3 review/evidence remain delivery gates recorded externally.
+Initial qualification was invalidated by the zero-as-unset native-wrapper behavior. Production is restored to merged251; all assertions/native expectations remain. Repeat Task1 with the corrected reference helper and refreeze before Task2. Details are recorded in the design.

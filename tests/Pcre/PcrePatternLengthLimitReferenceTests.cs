@@ -726,15 +726,26 @@ public sealed partial class PcrePatternLengthLimitReferenceTests {
 		SetMaximum( options, maximum );
 		return options;
 	}
-	private static PcreRegex8Bit Reference( byte[] source, int mode, long maximum ) => new( source, Encoding.UTF8, new PcreRegexSettings {
-		Options = PcreOptions.Compiled | (PcreOptions)( ( ( mode & 1 ) != 0 ? 0x80000u : 0u ) | ( ( mode & 2 ) != 0 ? 0x20000u : 0u )
-			| ( ( mode & 4 ) != 0 ? 0x4000000u : 0u ) | ( ( mode & 8 ) != 0 ? 0x2000000u : 0u )
-			| ( ( mode & 16 ) != 0 ? 0x400u : 0u ) | ( ( mode & 32 ) != 0 ? 0x1000u : 0u )
-			| ( ( mode & 64 ) != 0 ? 0x800u : 0u ) | ( ( mode & 128 ) != 0 ? 0x100000u : 0u ) ),
-		ExtraCompileOptions = (PcreExtraCompileOptions)( ( ( mode & 256 ) != 0 ? 0x8000 : 0 ) | ( ( mode & 512 ) != 0 ? 8 : 0 ) | ( ( mode & 1024 ) != 0 ? 4 : 0 ) | ( ( mode & 4096 ) != 0 ? 64 : 0 ) ),
-		MaxPatternLength = maximum < 0 ? null : (uint)maximum,
-		ParensLimit = 512, NewLine = (PcreNewLine)2, BackslashR = (PcreBackslashR)1
-	} );
+	private static PcreRegex8Bit Reference( byte[] source, int mode, long maximum ) {
+		// PCRE.NET's native shim uses zero as "unset" for this context field.
+		// For nonempty zero-limit source, adding one byte and using limit one
+		// preserves native admission/option-error priority without parsing it.
+		if ( maximum == 0 && source.Length > 0 ) {
+			var padded = new byte[source.Length + 1];
+			source.CopyTo( padded, 1 );
+			source = padded;
+			maximum = 1;
+		}
+		return new( source, Encoding.UTF8, new PcreRegexSettings {
+			Options = PcreOptions.Compiled | (PcreOptions)( ( ( mode & 1 ) != 0 ? 0x80000u : 0u ) | ( ( mode & 2 ) != 0 ? 0x20000u : 0u )
+				| ( ( mode & 4 ) != 0 ? 0x4000000u : 0u ) | ( ( mode & 8 ) != 0 ? 0x2000000u : 0u )
+				| ( ( mode & 16 ) != 0 ? 0x400u : 0u ) | ( ( mode & 32 ) != 0 ? 0x1000u : 0u )
+				| ( ( mode & 64 ) != 0 ? 0x800u : 0u ) | ( ( mode & 128 ) != 0 ? 0x100000u : 0u ) ),
+			ExtraCompileOptions = (PcreExtraCompileOptions)( ( ( mode & 256 ) != 0 ? 0x8000 : 0 ) | ( ( mode & 512 ) != 0 ? 8 : 0 ) | ( ( mode & 1024 ) != 0 ? 4 : 0 ) | ( ( mode & 4096 ) != 0 ? 64 : 0 ) ),
+			MaxPatternLength = maximum < 0 ? null : (uint)maximum,
+			ParensLimit = 512, NewLine = (PcreNewLine)2, BackslashR = (PcreBackslashR)1
+		} );
+	}
 	private static PcreCompiledBytePattern Compile( byte[] source, PcreByteOptions options ) {
 		var actual = PcreByteCompiler.Compile( source, options );
 		Assert.True( actual.IsSuccess, actual.Diagnostic?.Message );
