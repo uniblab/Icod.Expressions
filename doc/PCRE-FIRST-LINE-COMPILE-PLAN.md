@@ -33,7 +33,7 @@ plus independent Anchored0x80000000 and EndAnchored0x20000000.
 
 - [x] Preflight window/offset/newline/fragment/cut/scoped/caller protocols, diagnostics, work and capacity boundaries.
 - [x] Write explicit native batches and ownership/default/validation/work/capacity controls; keep all264 earlier test files fixed.
-- [ ] Publish tests-only draft PR248; inspect clean net8/net9/net10 RED with only missing-policy failures and freeze fixture before production.
+- [x] Publish tests-only draft PR248; inspect clean net8/net9/net10 RED with only missing-policy failures and freeze fixture before production.
 
 ## Task 2: immutable policy and bounded candidate frontier
 
@@ -44,10 +44,10 @@ PcreByteProgram.FirstLine init; compiler snapshots after ordinary compilation.
 Add bool PcreByteProgram.FirstLineSkipBypassesWindow from bounded
 HasUnfilteredFirstLineSkipEntry(PcreByteAlternatives root), without IR changes.
 
-- [ ] Add default-false option/program flag and snapshot without syntax/opcode/capacity cost.
-- [ ] Disable unobserved byte/suffix shortcuts under FirstLine. Gate ordinary candidate entry after scalar selection and before COMMIT entry using a frontier from startOffset, existing newline/UTF readers and Step charges; ignore flag when Anchored.
-- [ ] Honor explicit forward SKIP before anchored termination, allowing only its requested next entry. Bypass FirstLine only for a bounded proven-unfiltered root prefix; preserve filtered entry and ordinary-failure termination.
-- [ ] Include all seven inventories before source push.
+- [x] Add default-false option/program flag and snapshot without syntax/opcode/capacity cost.
+- [x] Disable unobserved byte/suffix shortcuts under FirstLine. Gate ordinary candidate entry after scalar selection and before COMMIT entry using a frontier from startOffset, existing newline/UTF readers and Step charges; ignore flag when Anchored.
+- [x] Honor explicit forward SKIP before anchored termination, allowing only its requested next entry. Bypass FirstLine only for a bounded proven-unfiltered root prefix; preserve filtered entry and ordinary-failure termination.
+- [x] Include all seven inventories before source push.
 - [ ] Verify all18 results/supporting gates, prior264 hashes, frozen fixture/source and shared resources; record final evidence externally.
 
 ## Task 3: review and delivery
@@ -64,3 +64,9 @@ passed. Expand tests before production with native filtered/unfiltered forward
 SKIP and explicit FirstLine=false anchored regressions. The four-file scope is
 unchanged; the additional immutable proof and forced-entry marker are now part
 of Task2. Require clean expanded RED and fixture freeze before implementation.
+
+## Tests-first checkpoint
+
+Expanded tests-only [RED751](https://github.com/uniblab/Icod.Expressions/actions/runs/43590798617), source `77ed49eca15e2f9c2a77ca9feda7917f485b21fa`, Linux ARM132434872721: net8/net9/net10 each built with zero compiler warnings/errors and ran **368 expected failures /86,487 passes /86,855 total /zero skips**. Failures were341 missing-window groups,24 anchored-SKIP groups,2 bounded-work cases and1 ownership case/framework, all after successful native assertions. All86,250 earlier tests and237 new controls passed. Freeze `68d9c25772810758954234e4df4b45c76677e3dd` before production. Initial RED750 exposed four anchored-SKIP groups beyond the original FirstLine predictions; the fixture was expanded from413 to605 before production, preserving every original expectation and all prior test files.
+
+Remaining qualification/closure boxes are tracked by final PR248/issue7 evidence after this source head; do not push a documentation-only CI repeat.

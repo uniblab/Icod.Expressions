@@ -89,3 +89,9 @@ Before any production change, expand the fixture from413 to605 cases, preserving
 every original expectation and adding forced-entry/filtered-entry controls,
 including explicit FirstLine=false anchored-SKIP regressions. Re-run clean RED
 and freeze the expanded fixture before implementing either boundary.
+
+## Tests-first checkpoint
+
+Expanded tests-only [RED751](https://github.com/uniblab/Icod.Expressions/actions/runs/43590798617), source `77ed49eca15e2f9c2a77ca9feda7917f485b21fa`, Linux ARM132434872721: net8/net9/net10 each built with zero compiler warnings/errors and ran **368 expected failures /86,487 passes /86,855 total /zero skips**. Failures were341 missing-window groups,24 anchored-SKIP groups,2 bounded-work cases and1 ownership case/framework, all after successful native assertions. All86,250 earlier tests and237 new controls passed. Freeze `68d9c25772810758954234e4df4b45c76677e3dd` before production. Initial RED750 exposed four anchored-SKIP groups beyond the original FirstLine predictions; the fixture was expanded from413 to605 before production, preserving every original expectation and all prior test files.
+
+The605 tests retain8,041 protocols in520 groups,65 diagnostics and20 supplemental cases. Final qualification/review/identities remain external on PR248/issue7.
