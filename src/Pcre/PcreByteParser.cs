@@ -40,6 +40,7 @@ internal sealed partial class PcreByteParser {
 	private readonly bool notBol;
 	private readonly bool notEol;
 	private readonly bool matchUnsetBackreference;
+	private readonly uint maxVarLookbehind;
 	private readonly PcreByteNewline newline;
 	private readonly List<(int Number, int Offset)> backreferences = new();
 	private int index;
@@ -90,6 +91,7 @@ internal sealed partial class PcreByteParser {
 		notBol = options.NotBol;
 		notEol = options.NotEol;
 		matchUnsetBackreference = options.MatchUnsetBackreference;
+		maxVarLookbehind = options.MaxVarLookbehind;
 		utf8 = settings.Utf8;
 		ucp = settings.Ucp;
 		turkishCasing = settings.TurkishCasing;
