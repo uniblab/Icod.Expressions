@@ -866,8 +866,9 @@ public sealed class PcreCallerEmptyMatchReferenceTests {
 		Compare( reference, subject, 0, empty, Compile( prefix, Options( mode, 0 ) with { WorkObserver = prefixSteps.Add } ).Match( subject ), "source equivalent" );
 		Assert.Equal( prefixSteps, steps );
 		Assert.Equal( Enumerable.Range( 1, steps.Count ), steps );
-		Compare( reference, subject, 0, empty, Compile( source, options with { MatchWorkLimit = steps.Count } ).Match( subject ), "exact budget" );
-		var limited = Compile( source, options with { MatchWorkLimit = steps.Count - 1 } ).Match( subject );
+		var workCount = steps.Count;
+		Compare( reference, subject, 0, empty, Compile( source, options with { MatchWorkLimit = workCount } ).Match( subject ), "exact budget" );
+		var limited = Compile( source, options with { MatchWorkLimit = workCount - 1 } ).Match( subject );
 		Assert.Null( limited.Match );
 		Assert.Equal( PcreByteDiagnosticCode.MatchWorkLimitExceeded, limited.Diagnostic?.Code );
 		using var cancellation = new CancellationTokenSource();

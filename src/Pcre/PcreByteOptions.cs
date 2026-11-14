@@ -11,10 +11,6 @@ internal sealed record PcreByteOptions {
 	public bool EndAnchored { get; init; }
 	/// <summary>Limit ordinary unanchored starts to the first configured newline following the requested offset.</summary>
 	public bool FirstLine { get; init; }
-	/// <summary>Reject results whose reported group-zero endpoints are equal.</summary>
-	public bool NotEmpty { get; init; }
-	/// <summary>Reject an empty result at the requested offset, while permitting later empty results.</summary>
-	public bool NotEmptyAtStart { get; init; }
 	/// <summary>Treat the complete owned pattern as literal text, including prefix and escape syntax.</summary>
 	public bool Literal { get; init; }
 	public bool Caseless { get; init; }

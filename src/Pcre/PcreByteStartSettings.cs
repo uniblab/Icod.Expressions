@@ -11,8 +11,8 @@ internal readonly record struct PcreByteStartSettings(
 		var ucp = options.Ucp;
 		var newline = options.AnyCrLfNewline ? PcreByteNewline.AnyCrLf : PcreByteNewline.Lf;
 		var bsrAnyCrLf = options.BsrAnyCrLf;
-		var notEmpty = options.NotEmpty;
-		var notEmptyAtStart = options.NotEmptyAtStart;
+		var notEmpty = false;
+		var notEmptyAtStart = false;
 		var caselessRestricted = options.CaselessRestricted;
 		var turkishCasing = options.TurkishCasing;
 		var offset = 0;
