@@ -341,6 +341,12 @@ internal static partial class PcreByteMatcher {
 										: scalar == instruction.First )
 								: ScalarEquals( input.Span[position], instruction.First, instruction.Caseless, program.Ucp, instruction.CaselessRestricted ) ) ) {
 								position += literalWidth;
+								if ( instruction.CommitOptional ) {
+									// Commit only this literal query's immediately preceding Split.
+									// A failed literal still takes its ordinary zero-length edge.
+									PopFrame( backtrack, assertionScopes, callScopes );
+									if ( backtrack.Count == 0 ) { changes.Clear(); }
+								}
 								if ( instruction.SkipCrLfAfterRepeat && activeCall < 0 && activeScope < 0 ) {
 									utfRepeatEnd = Math.Max( utfRepeatEnd, position );
 								}

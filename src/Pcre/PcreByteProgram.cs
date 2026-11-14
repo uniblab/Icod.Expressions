@@ -59,7 +59,9 @@ internal sealed record PcreByteInstruction(
 	ReadOnlyMemory<PcreByteScalarPredicate> Predicates = default, UnicodeCategory? Category = null,
 	bool Caseless = false, bool CaselessRestricted = false, ReadOnlyMemory<int> CaptureNumbers = default,
 	bool SkipCrLfAfterRepeat = false, int PropertyValue = 0, ReadOnlyMemory<PcreScalarSetTerm> Terms = default
-);
+) {
+	internal bool CommitOptional { get; init; }
+}
 
 internal readonly record struct PcreBytePrefixLiteral( int ByteOffset, int Value, bool Caseless, bool CaselessRestricted );
 
@@ -126,6 +128,7 @@ internal sealed class PcreByteProgramCompiler {
 	private ThenTarget? thenTarget;
 	private readonly record struct ThenTarget( int Mark, bool HasNext );
 	private PcreByteRepeat? pruneLiteralCacheRepeat;
+	private PcreByteRepeat? terminalOptionalLiteral;
 
 	internal PcreByteProgramCompiler( CancellationToken cancellationToken, bool utf8, bool matchInvalidUtf,
 		PcreByteNewline newline, bool bsrAnyCrLf, bool notEmpty, bool notEmptyAtStart, bool ucp, bool hasThen = false, bool hasNamedSkip = false,
@@ -144,6 +147,14 @@ internal sealed class PcreByteProgramCompiler {
 	}
 
 	internal PcreByteProgram Compile( PcreByteAlternatives root, IReadOnlyDictionary<int, PcreByteGroup> targets ) {
+		// Native auto_possessify commits greedy literal queries at OP_END.
+		// Keep the proof at one direct root tail without any called copy.
+		if ( ( notEmpty || notEmptyAtStart ) && targets.Count == 0 && root.Branches.Count == 1 ) {
+			var branch = root.Branches[0];
+			if ( branch.Count > 0 && branch[^1] is PcreByteRepeat {
+				Minimum: 0, Maximum: 1, Greedy: true, Child: PcreByteLiteral
+			} optional ) { terminalOptionalLiteral = optional; }
+		}
 		(utfCrLfLeadingStarAtom, skipUtfCrLfLeadingStar) = utf8 ? FindUtfCrLfRootStarAtom( root ) : default;
 		(utfCrLfLeadingRepeatSet, skipUtfCrLfLeadingRepeat) = utf8 ? FindUtfCrLfLeadingRepeat( root ) : default;
 		utfCrLfJoinedNullablePrefix = false;
@@ -2157,6 +2168,9 @@ internal sealed class PcreByteProgramCompiler {
 			compileWork.Push( () => {
 				var end = instructions.Count;
 				Patch( split, repeat.Greedy ? body : end, repeat.Greedy ? end : body );
+				if ( ReferenceEquals( repeat, terminalOptionalLiteral ) ) {
+					instructions[body] = instructions[body] with { CommitOptional = true };
+				}
 			} );
 			ScheduleNode( repeat.Child );
 			return;
@@ -2230,6 +2244,9 @@ internal sealed class PcreByteProgramCompiler {
 			var split = Emit( PcreByteOpcode.Split );
 			var body = instructions.Count;
 			compileWork.Push( () => {
+				if ( ReferenceEquals( repeat, terminalOptionalLiteral ) ) {
+					instructions[body] = instructions[body] with { CommitOptional = true };
+				}
 				options.Add( (split, body) );
 				CompileCountedOptions( repeat, index + 1, options );
 			} );
