@@ -11,7 +11,8 @@ internal enum PcreByteDiagnosticCode {
 	InvalidUtf8Pattern,
 	InvalidUtf8Subject,
 	MatchWorkLimitExceeded,
-	MatchDepthLimitExceeded
+	MatchDepthLimitExceeded,
+	PatternLengthLimitExceeded
 }
 
 internal sealed record PcreByteDiagnostic(
