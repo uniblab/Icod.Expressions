@@ -94,7 +94,7 @@ internal sealed partial class PcreByteParser {
 				maximum = Math.Max( maximum, width.Maximum );
 				variable |= width.Minimum != width.Maximum;
 			}
-			if ( variable && maximum > 255 ) { throw Unsupported( opening ); }
+			if ( variable && (uint)maximum > maxVarLookbehind ) { throw Unsupported( opening ); }
 			return (lengths, variable ? minimum : -1);
 		}
 		LookbehindWidth ValidateNestedBehind( PcreByteLookbehind assertion ) {

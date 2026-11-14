@@ -1,6 +1,6 @@
 # PCRE roadmap status
 
-Reviewed after merged PR249, with PR250 in progress. Issue #7 remains the delivery roadmap; the
+Reviewed after merged PR250, with PR251 in progress. Issue #7 remains the delivery roadmap; the
 [syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md),
 [resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) and
 [Grep fixture inventory](PCRE-GREP-CONSUMER-FIXTURES.md) define the detailed gates.
@@ -62,6 +62,8 @@ retaining each framework's complete suite and frozen-result qualification.
    PR247 adds caller end-anchored root completion through the same policy metadata.
    PR248 adds caller first-line candidate windows through a bounded newline frontier.
    PR249 adds caller empty-match rejection through existing global acceptance policy.
+   PR250 adds caller NotBol/NotEol through typed caret/dollar provenance.
+   PR251 adds caller variable-lookbehind ceilings through existing width analysis.
    UTF code-unit escape,
    remaining directives/verbs/callouts and other matrix gaps require their own
    pinned reference fixtures. Decide any intentional exclusions before release;
@@ -79,10 +81,10 @@ retaining each framework's complete suite and frozen-result qualification.
 
 ## Current increment and next syntax work
 
-PR248 merged at74af49bb62fcad01f79fdaff2fb26b29abf6611d;
-its86,855 net10 tests remain the baseline. Main43605349078/scripts43605349020 are green.
-PR249 adds caller empty-result policies as described below; final qualification/
-review/delivery identities are recorded on PR249/issue7.
+PR250 merged at505c3acf2c729bb5be531cc4399bad2b7f52c44a;
+its88,872 net10 tests remain the baseline. Main43632261155/scripts43632261161 are green.
+PR251 adds caller variable-lookbehind ceilings as described below; final qualification/
+review/delivery identities are recorded on PR251/issue7.
 
 ## PR234: backreferences blocking first-character search
 
@@ -771,3 +773,9 @@ PR249 merged as eb9751af94f3824113b7715af7cc008d21465841 with the reviewed tree6
 The 1,128 new cases pin 1,023 groups/45,411 native PCRE2 10.48/JIT0 match-offset protocols, 69 compile diagnostics and 36 ownership/work/validation/capacity controls. Native batches precede managed comparisons; no-match requires -1. Separate 864 strict split-offset (-36) research rows from matching. Tests-only [RED](https://github.com/uniblab/Icod.Expressions/actions/runs/43619048623), source329e1756bcb62f8eebe53b75a8962c647923ba74/treef759260b064b84559ae4c724c73f7930f34055bd, completed Linux x64 job132520352642: **682 expected failures / 88,190 passes / 88,872 total / zero skips/compiler warnings/errors**. The failure-key multiset is exactly679 missing-policy groups plus3 ownership cases; all87,744 prior tests and446 new controls pass. Freeze before production: common7f3396440e33d1874da11a41ad28e6144a903036, part1=890cd328cca3dac7c01c8d3e044ec18d50d9ef3c, part2=ea04095d4436791070062f8cf7fcda975234502c. All266 prior test files/261 C# sources and frozen35 blobs stay fixed.
 
 See [design](PCRE-CALLER-LINE-BOUNDARIES-DESIGN.md) and [plan](PCRE-CALLER-LINE-BOUNDARIES-PLAN.md). Final qualification requires six fresh net10 results at88,872 tests each, zero failures/skips/compiler warnings/errors,214 frozen outcomes/120 methods per result, all net8/net9/net10 library outputs on each native host and every configured supporting gate. The .NET10-only execution policy remains. All seven inventories precede final source qualification; final GREEN/whole-branch author review/exact source/base/tree/proposed-merge identities belong on PR250 and only issue7 footer, preserving its original2600-character prefix. No documentation-only CI repeat. Wider optimizer #102, remaining syntax/directives/UTF/callouts/API, tolerant-surrogate exclusions, failed/partial labels, realistic consumer/packaging/release gates remain open. Grep last; user owns merge/tag/publication.
+
+## PR251: caller variable-lookbehind ceiling
+
+PR250 merged as505c3acf2c729bb5be531cc4399bad2b7f52c44a/tree7488f706f55c0f3ae3c898068fd7819f2f0daee3, with ordered parents eb9751a then2aec54e. Main43632261155/scripts43632261161 are green;88,872 tests are the baseline. PR251 adds caller MaxVarLookbehind through the existing width analysis. Offset-limit research exposed native JIT optimizer-inferred anchoring/FIRSTLINE interactions; defer that separate integration to the wider optimizer work.
+
+The696 cases comprise410 groups/15,174 native10.48/JIT0 match-offset protocols,267 compile diagnostics and19 work/ownership/validation/capacity controls;294 strict split-offset rows remain separate. Native batches precede managed comparison; signed captures and successful labels are pinned. See [design](PCRE-VARIABLE-LOOKBEHIND-LIMIT-DESIGN.md) and [plan](PCRE-VARIABLE-LOOKBEHIND-LIMIT-PLAN.md) for exact baseline evidence/frozen blobs. Require six fresh net10 results at89,568 passes each, zero failures/skips/compiler warnings/errors,214 frozen outcomes/120 methods per result, all3 library outputs and every configured supporting gate. Builds remain C#13/net8/net9/net10; tests only net10. All seven inventories precede final source qualification. Final GREEN/author review/source/base/tree/proposed-merge evidence belongs on PR251 and only issue7 footer, preserving its original2600-character prefix, with no docs-only CI repeat. Remaining syntax/UTF-code-unit/callout/directive/match/API/optimizer (#102)/consumer/release gates remain open; Grep last; user owns merge/tag/publication.

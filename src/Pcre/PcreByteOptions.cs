@@ -5,6 +5,8 @@ internal sealed record PcreByteOptions {
 	internal const int DefaultMatchWorkLimit = 1_000_000;
 
 	public int MatchWorkLimit { get; init; } = DefaultMatchWorkLimit;
+	/// <summary>Limit variable lookbehind width; fixed branches retain their independent ceiling.</summary>
+	public uint MaxVarLookbehind { get; init; } = 255;
 	/// <summary>Try only the requested candidate offset, retaining normal backtracking and reported resets.</summary>
 	public bool Anchored { get; init; }
 	/// <summary>Require root completion at the physical subject end, retaining scoped assertion and callee exits.</summary>
