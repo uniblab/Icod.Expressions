@@ -70,6 +70,7 @@ internal sealed record PcreByteProgram(
 	bool LineStartSearch, bool Ucp, PcreBytePrefixLiteral? ByteCrLfPrefixLiteral
 ) {
 	internal bool Anchored { get; init; }
+	internal bool EndAnchored { get; init; }
 	internal int ScalarExpressionStackDepth { get; init; }
 	internal bool TurkishCasing { get; init; }
 	internal PcreByteSet? CommitStartBytes { get; init; }

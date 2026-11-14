@@ -1,6 +1,6 @@
 # PCRE roadmap status
 
-Reviewed after merged PR245, with PR246 in progress. Issue #7 remains the delivery roadmap; the
+Reviewed after merged PR246, with PR247 in progress. Issue #7 remains the delivery roadmap; the
 [syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md),
 [resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) and
 [Grep fixture inventory](PCRE-GREP-CONSUMER-FIXTURES.md) define the detailed gates.
@@ -59,6 +59,7 @@ retaining each framework's complete suite and frozen-result qualification.
    PR244 adds ordinary escaped UTF literals through the validated scalar reader.
    PR245 adds whole-pattern literal compilation through canonical literal nodes.
    PR246 adds caller-anchored candidate selection through immutable program policy.
+   PR247 adds caller end-anchored root completion through the same policy metadata.
    UTF code-unit escape,
    remaining directives/verbs/callouts and other matrix gaps require their own
    pinned reference fixtures. Decide any intentional exclusions before release;
@@ -76,10 +77,10 @@ retaining each framework's complete suite and frozen-result qualification.
 
 ## Current increment and next syntax work
 
-PR245 merged at03c105b5a13890059f20ff51a074f67d180a20f6;
-its85,360 tests/framework remain the baseline. Main43575611111 and scripts
-43575611113 are green. PR246 adds caller-anchored compilation as described below;
-final qualification/review/delivery identities are recorded on PR246/issue7.
+PR246 merged at153273df6fd58266599e0dc495f15da4f51b3bda;
+its85,685 tests/framework remain the baseline. Main43583523079 and scripts
+43583523076 are green. PR247 adds end-anchored compilation as described below;
+final qualification/review/delivery identities are recorded on PR247/issue7.
 
 ## PR234: backreferences blocking first-character search
 
@@ -710,3 +711,15 @@ Merged245 `03c105b5a13890059f20ff51a074f67d180a20f6`/tree `4868b519b9205cf6327fc
 Tests-only [RED746](https://github.com/uniblab/Icod.Expressions/actions/runs/43578255592), source `33ed1a4a6e5344fa53df7aeb03c6c462ab371706`, Linux ARM job132397293572: net8/net9/net10 each built with zero compiler warnings/errors and ran **131 expected failures / 85,554 passes / 85,685 total / zero skips**. Failures were128 protocol groups,2 bounded-byte-budget cases and1 ownership case/framework. Every pinned native assertion, all85,360 earlier tests and194 new controls passed. Freeze `95620f1478537b71880c07c64e20474c3de537ad` before production. Before clean RED, one new byte-range diagnostic control was corrected to preserve its existing hyphen offset2; native108/offset4 and all earlier tests remained unchanged.
 
 See [design](PCRE-ANCHORED-COMPILE-DESIGN.md) and [plan](PCRE-ANCHORED-COMPILE-PLAN.md). All262 prior test files and frozen35 production blobs remain hash-fixed; GNU/BRE/ERE and214 frozen outcomes/120 methods are preserved. Final all18 native results, every configured supporting gate, whole-branch author review and exact source/base/tree/proposed-merge identities belong on PR246 and only issue7 footer, without a documentation-only CI push. ENDANCHORED/FIRSTLINE, UTF-C execution, callouts, remaining syntax/modes/directives, tolerant-surrogate exclusions, failed/partial labels, broader102, NO_UTF_CHECK/UTF16/public API and consumer/release gates remain open; Grep last.
+
+## PR247: caller-selected end-anchored compilation
+
+Default-false caller `EndAnchored` implements PCRE2_ENDANCHORED0x20000000. Root completion must consume through the physical subject end. Short ordinary completion backtracks through existing alternatives; short root `(*ACCEPT)` abandons the entire candidate, discarding its choices/cuts before unanchored restart. Assertion and callee ACCEPT remain scoped. Caller Anchored independently constrains candidate selection, and Literal/casing/word/line/newline/source policies compose normally.
+
+The compiler snapshots EndAnchored alongside Anchored in immutable program metadata after ordinary compilation. Normal ACCEPT gates consumed position against input.Length before publishing captures/labels. Root EarlyAccept checks after synthetic capture closes and scoped exits, discarding saved choices only when short. Tolerant empty patterns use shared candidate traversal under EndAnchored, so fragment ends and reported backslash-K starts never substitute for physical EOF. Parser/root0/callee IR/opcodes/scopes/journal/shared ceilings stay unchanged; no source wrapper or subject slicing.
+
+Merged246 `153273df6fd58266599e0dc495f15da4f51b3bda`/tree `62a2e3ee4994368a362a044ab98dc67f02aab3a9` has85,685 tests/framework and263 prior files. Main43583523079/scripts43583523076 are green. PR247 adds565 tests for86,250/framework; all earlier hashes remain fixed. All seven inventories precede source qualification; final evidence remains external on PR247/issue7.
+
+Tests-only [RED748](https://github.com/uniblab/Icod.Expressions/actions/runs/43585144086), source `7140659a6924969d2fa5dd4ea658cfc49bcc2719`, Linux ARM job132417911226: net8/net9/net10 each built with zero compiler warnings/errors and ran **385 expected failures / 85,865 passes / 86,250 total / zero skips**. Failures were384 missing-policy protocol groups and1 ownership case/framework, all after successful native assertions. All85,685 earlier tests and180 new controls passed. Freeze `2e39a5a936a8358973932a230d53f37abd7c9199` before production; no fixture correction or prior-test change was needed.
+
+See [design](PCRE-END-ANCHORED-COMPILE-DESIGN.md) and [plan](PCRE-END-ANCHORED-COMPILE-PLAN.md). All263 prior test files and frozen35 production blobs remain hash-fixed; GNU/BRE/ERE and214 frozen outcomes/120 methods are preserved. Final all18 native results, configured supporting gates, whole-branch author review and exact source/base/tree/proposed-merge identities belong on PR247 and only issue7 footer, without a documentation-only CI push. FIRSTLINE, UTF-C execution, callouts, remaining syntax/modes/directives, tolerant-surrogate exclusions, failed/partial labels, broader102, NO_UTF_CHECK/UTF16/public API and consumer/release gates remain open; Grep last.
