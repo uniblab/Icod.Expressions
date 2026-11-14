@@ -266,7 +266,7 @@ public sealed class PcreAnchoredCompileReferenceTests {
 	[InlineData( "28", 0, 114, 1, "InvalidSyntax", 0 )]
 	[InlineData( "5B", 0, 106, 1, "InvalidSyntax", 0 )]
 	[InlineData( "5C", 0, 101, 1, "InvalidSyntax", 0 )]
-	[InlineData( "5B422D415D", 0, 108, 4, "InvalidSyntax", 0 )]
+	[InlineData( "5B422D415D", 0, 108, 4, "InvalidSyntax", 2 )]
 	[InlineData( "417B322C317D", 0, 104, 5, "InvalidSyntax", 1 )]
 	[InlineData( "28", 1, 114, 1, "InvalidSyntax", 0 )]
 	[InlineData( "5B", 1, 106, 1, "InvalidSyntax", 0 )]
