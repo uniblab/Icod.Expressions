@@ -92,7 +92,9 @@ internal sealed record PcreByteBackreference(
 
 internal sealed record PcreByteSubroutineCall( int Number, int Offset, ReadOnlyMemory<int> ReturnedCaptures ) : PcreByteNode;
 
-internal sealed record PcreByteAnchor( bool IsStart ) : PcreByteNode;
+internal sealed record PcreByteAnchor( bool IsStart ) : PcreByteNode {
+	internal bool IsDisabled { get; init; }
+}
 
 internal sealed record PcreByteSearchStart : PcreByteNode;
 
@@ -100,9 +102,12 @@ internal sealed record PcreByteMatchStartReset : PcreByteNode;
 
 internal sealed record PcreByteLineAnchor( bool IsStart ) : PcreByteNode {
 	internal bool AllowSubjectEnd { get; init; }
+	internal bool SuppressSubjectBoundary { get; init; }
 }
 
-internal sealed record PcreByteEndBeforeFinalLf( bool FragmentEnd = false ) : PcreByteNode;
+internal sealed record PcreByteEndBeforeFinalLf( bool FragmentEnd = false ) : PcreByteNode {
+	internal bool IsDisabled { get; init; }
+}
 
 internal sealed record PcreByteWordBoundary( bool IsBoundary, bool UnicodeWord = false ) : PcreByteNode;
 

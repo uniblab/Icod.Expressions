@@ -15,6 +15,10 @@ internal sealed record PcreByteOptions {
 	public bool NotEmpty { get; init; }
 	/// <summary>Reject an empty result at the requested offset, while permitting later empty results.</summary>
 	public bool NotEmptyAtStart { get; init; }
+	/// <summary>Suppress caret anchors at the subject start, retaining multiline internal newlines.</summary>
+	public bool NotBol { get; init; }
+	/// <summary>Suppress dollar anchors at the subject end, retaining multiline internal newlines.</summary>
+	public bool NotEol { get; init; }
 	/// <summary>Treat the complete owned pattern as literal text, including prefix and escape syntax.</summary>
 	public bool Literal { get; init; }
 	public bool Caseless { get; init; }

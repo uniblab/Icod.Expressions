@@ -1711,7 +1711,8 @@ internal sealed class PcreByteProgramCompiler {
 				CompileAssertion( assertion.Body, assertion.IsPositive, assertion.BranchLengths, assertion.Minimum, assertion.NonAtomic );
 				break;
 			case PcreByteAnchor anchor:
-				Emit( anchor.IsStart ? PcreByteOpcode.Start : PcreByteOpcode.End );
+				Emit( anchor.IsDisabled ? PcreByteOpcode.Fail
+					: anchor.IsStart ? PcreByteOpcode.Start : PcreByteOpcode.End );
 				break;
 			case PcreByteSearchStart:
 				Emit( PcreByteOpcode.SearchStart );
@@ -1721,10 +1722,12 @@ internal sealed class PcreByteProgramCompiler {
 				break;
 			case PcreByteLineAnchor lineAnchor:
 				Emit( lineAnchor.IsStart ? PcreByteOpcode.StartLine : PcreByteOpcode.EndLine,
-					lineAnchor.IsStart && lineAnchor.AllowSubjectEnd ? 1 : 0 );
+					lineAnchor.IsStart && lineAnchor.AllowSubjectEnd ? 1 : 0,
+					lineAnchor.SuppressSubjectBoundary ? 1 : 0 );
 				break;
 			case PcreByteEndBeforeFinalLf end:
-				Emit( PcreByteOpcode.EndBeforeFinalLf, end.FragmentEnd ? 1 : 0 );
+				Emit( end.IsDisabled ? PcreByteOpcode.Fail : PcreByteOpcode.EndBeforeFinalLf,
+					end.FragmentEnd ? 1 : 0 );
 				break;
 			case PcreByteGroup group:
 				Emit( PcreByteOpcode.CaptureStart, group.Number );
