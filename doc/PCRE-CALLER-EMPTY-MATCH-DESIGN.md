@@ -1,0 +1,84 @@
+# Caller-selected empty-match rejection
+
+## Intent and scope
+
+Continue issue #7 after merged PR248 by exposing default-false internal
+`PcreByteOptions.NotEmpty` and `NotEmptyAtStart`. These are the native match
+policies PCRE2_NOTEMPTY (4) and PCRE2_NOTEMPTY_ATSTART (8), selected once for an
+immutable compiled internal pattern. They are not new PCRE compile-option bits
+or a public per-call match-options API. Native reference fixtures pass these
+bits to Match, never to Compile. Source directives remain independent inputs.
+
+The library still builds for net8.0/net9.0/net10.0 in C#13; execute test cases
+only on net10.0 across Linux/Windows/macOS x64/ARM64, as requested in PR248.
+No SDK installation, Python, subagents or approval pauses. User owns merge,
+tag and publication. Grep migrates last; issues #7 and #102 remain open.
+
+## Approaches and choice
+
+Initialize the two existing start-setting booleans from caller options, then
+reuse the existing directive parser and program/matcher acceptance path. This
+is the chosen approach: it preserves original source ownership, diagnostics,
+instruction/capture/depth capacity, scoped success and work accounting.
+Prepending synthetic directives would break Literal and source offsets. A new
+match-time API or second acceptance path would duplicate policy and expand
+the provisional public architecture before that roadmap gate is ready.
+Standing authorization covers this bounded extension and inline execution.
+
+## Contract
+
+- NotEmpty rejects a result whose reported group0 endpoints are equal.
+- NotEmptyAtStart rejects that result only when its end equals the original
+  requested startOffset. Later empty results remain eligible. Reported K
+  resets matter; consumed input does not substitute for reported endpoints.
+- Both flags may be set; NotEmpty is stronger. Source NOTEMPTY/ATSTART
+  directives OR into caller policy and may not unset it. Local option reset,
+  recursion and subroutine scopes do not change either global policy.
+- Reject only final root acceptance, allowing existing saved paths to retry.
+  Inner assertions/callee ACCEPT keep their existing scoped behavior. Cuts,
+  labels, captures and candidate restart retain their existing semantics.
+- Anchored, EndAnchored, FirstLine, Literal, casing, word/line, newline/BSR,
+  strict UTF and tolerant fragments compose through the existing paths.
+  Literal permits these match policies; literal-looking directives stay data.
+- Cancellation, nonpositive work limits, source validation, subject validation
+  and invalid offsets retain their established priority. No early empty
+  rejection may bypass validation. No new work or structural quota is spent
+  merely for selecting the flags; rejected paths still spend normal VM work.
+- Default flags remain false. Own source and selected booleans at compile
+  time; later source/options mutation cannot alter a compiled pattern.
+
+## Integration and proof
+
+Production scope: PcreByteOptions.cs (two bool properties) and
+PcreByteStartSettings.cs (two caller initializers). The existing settings
+constructor carries these values into immutable PcreByteProgram metadata.
+No parser body, IR, opcode, matcher, journal, shared resource limit, exported
+API, dependency, packaging or workflow change is planned.
+
+PcreCallerEmptyMatchReferenceTests adds 805 cases: 718 protocol groups with
+24,912 independently preflighted native10.48/JIT0 matching/offset protocols,
+60 preserved compile diagnostics and 27 work/ownership/validation/capacity
+cases. Validate every native batch before managed comparison. Keep 430 native
+strict split-offset(-36) research rows outside the matching grid; strict
+subject/offset diagnostics have separate tests. Native no-match requires -1.
+Native spans use EndIndex-Index, retaining signed reset results, all captures
+and successful labels. Failed/partial labels remain a separate roadmap gate.
+
+Tests-only RED is expected to expose 519 missing-policy groups, six retry-work
+cases and three ownership cases: 528 failures, 87,132 passes, 87,660 total.
+All 86,855 earlier tests must pass. Freeze the new fixture after clean RED,
+before production; keep all 265 prior test files (260 C# files) hash-identical.
+Preserve frozen35 source blobs and 214 outcomes/120 methods per native result.
+
+All seven inventories precede final source qualification. Require six fresh
+net10 results at 87,660 each, zero failures/skips/compiler warnings/errors,
+all three library outputs on every native host and every configured supporting
+gate. Final review/GREEN/source/base/tree/proposed-merge identities belong on
+PR249 and only issue7 footer, without a documentation-only CI repeat.
+
+## Remaining work
+
+UTF code-unit execution, callouts, remaining syntax/directives and match/API
+choices, tolerant-surrogate exclusions, failed/partial labels, broader native
+optimizer/resources (#102), UTF16/exported API, realistic consumer/release
+gates and final Grep migration remain open. This is scoped component evidence.
