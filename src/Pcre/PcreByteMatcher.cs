@@ -665,7 +665,7 @@ internal static partial class PcreByteMatcher {
 							if ( position == excludedLineStart && ( instruction.First != 1 || position != input.Length ) ) {
 								failed = true; break;
 							}
-							if ( position == 0 || ( position > fragment.Start
+							if ( ( position == 0 && instruction.Second != 1 ) || ( position > fragment.Start
 							&& ( position < subjectEnd || position == subjectEnd && ( position < absoluteEnd || instruction.First == 1 ) )
 								&& ( program.Newline == PcreByteNewline.Any
 									? PcreByteNewlineExtensions.IsAnyBefore( input.Span, position, fragment.Start, program.Utf8 )
@@ -679,7 +679,7 @@ internal static partial class PcreByteMatcher {
 						case PcreByteOpcode.EndLine:
 							// JIT allows the LF after consumed CR under ANY/ANYCRLF;
 							// CRLF-only requires the complete pair. Bumpalong stays separate.
-							if ( position == absoluteEnd || ( position < subjectEnd
+							if ( ( position == absoluteEnd && instruction.Second != 1 ) || ( position < subjectEnd
 							&& ( program.Newline == PcreByteNewline.Any
 								? PcreByteNewlineExtensions.AnyLengthAt( input.Span, position, subjectEnd, program.Utf8 ) > 0
 								: program.Newline == PcreByteNewline.CrLf

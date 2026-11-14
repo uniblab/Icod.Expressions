@@ -37,6 +37,8 @@ internal sealed partial class PcreByteParser {
 	private readonly bool matchLine;
 	private readonly bool dollarEndOnly;
 	private readonly bool altCircumflex;
+	private readonly bool notBol;
+	private readonly bool notEol;
 	private readonly bool matchUnsetBackreference;
 	private readonly PcreByteNewline newline;
 	private readonly List<(int Number, int Offset)> backreferences = new();
@@ -85,6 +87,8 @@ internal sealed partial class PcreByteParser {
 		matchLine = options.MatchLine;
 		dollarEndOnly = options.DollarEndOnly;
 		altCircumflex = options.AltCircumflex;
+		notBol = options.NotBol;
+		notEol = options.NotEol;
 		matchUnsetBackreference = options.MatchUnsetBackreference;
 		utf8 = settings.Utf8;
 		ucp = settings.Ucp;

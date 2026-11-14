@@ -30,22 +30,22 @@
 **Files:** tests/Pcre/PcreCallerLineBoundaryReferenceTests.cs; tests/Pcre/PcreCallerLineBoundaryProtocols.Part1.cs; tests/Pcre/PcreCallerLineBoundaryProtocols.Part2.cs; this design and plan.
 **Interfaces:** native Match(subject, offset, PcreMatchOptions) versus managed Compile(source, options).Match(subject, offset); optional reflection setters permit the unchanged baseline build.
 
-- [ ] Pin1,023 groups/45,411 protocols and69 diagnostics; native batches precede managed comparison.
-- [ ] Add36 work/ownership/strict-validation/capture/depth/exact-instruction cases, with stable counters exercised on the tests-only baseline.
-- [ ] Publish draft PR250 with production identical to merged249.
-- [ ] Observe682 expected failures/88,190 passes/88,872 total/zero skips/compiler warnings/errors; all87,744 earlier tests pass.
-- [ ] Freeze all three fixture blobs and record exact RED source/tree/job evidence before production.
+- [x] Pin1,023 groups/45,411 protocols and69 diagnostics; native batches precede managed comparison.
+- [x] Add36 work/ownership/strict-validation/capture/depth/exact-instruction cases, with stable counters exercised on the tests-only baseline.
+- [x] Publish draft PR250 with production identical to merged249.
+- [x] Observe682 expected failures/88,190 passes/88,872 total/zero skips/compiler warnings/errors; all87,744 earlier tests pass.
+- [x] Freeze all three fixture blobs and record exact RED source/tree/job evidence before production.
 
 ### Task 2: typed anchor policy integration
 
 **Files:** src/Pcre/PcreByteOptions.cs; PcreByteParser.cs; PcreByteParser.Anchors.cs; PcreByteSyntax.cs; PcreByteProgram.cs; PcreByteMatcher.cs; seven inventories.
 **Interfaces:** readonly parser NotBol/NotEol; existing typed anchor metadata defaults false; existing instruction Second carries multiline boundary suppression.
 
-- [ ] Add/snapshot default-false caller flags, retaining Literal match-policy compatibility.
-- [ ] Annotate caret/dollar factories, including entry-scope line wrappers; retain original anchor types for parsing/width/diagnostic checks.
-- [ ] Emit Fail for disabled non-multiline anchors; preserve explicit escape anchors and instruction count.
-- [ ] Suppress only the applicable subject boundary for multiline anchors; preserve newline/fragment/scoped-end readers.
-- [ ] Update design/syntax/resource/Grep/roadmap and this design/plan before source qualification.
+- [x] Add/snapshot default-false caller flags, retaining Literal match-policy compatibility.
+- [x] Annotate caret/dollar factories, including entry-scope line wrappers; retain original anchor types for parsing/width/diagnostic checks.
+- [x] Emit Fail for disabled non-multiline anchors; preserve explicit escape anchors and instruction count.
+- [x] Suppress only the applicable subject boundary for multiline anchors; preserve newline/fragment/scoped-end readers.
+- [x] Update design/syntax/resource/Grep/roadmap and this design/plan before source qualification.
 - [ ] Require six net10 results at88,872 each, zero compiler warnings/errors/failures/skips,214 frozen/120 methods, all three library outputs and every supporting gate.
 
 ### Task 3: review and delivery
@@ -56,3 +56,5 @@
 - [ ] Review whole branch against all five boundaries; verify clean worktree, prior hashes and frozen35.
 - [ ] Record final evidence externally, preserve original2600-character issue7 prefix and mark ready.
 - [ ] Retire only this plan's identity-checked ledger; preserve branch/worktree. User merges/tags/publishes.
+
+Observed Task1 evidence and all three frozen blobs are recorded in the design. Task2 implementation follows the planned six-file boundary; final current-source CI and Task3 review/evidence remain delivery gates recorded externally.
