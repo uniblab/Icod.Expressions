@@ -11,7 +11,7 @@
 
 - Work from merged248 74af49bb62fcad01f79fdaff2fb26b29abf6611d/tree7e48200e810e252d9d45f035e7740ac73c36b85f; baseline86,855 tests.
 - Preserve all265 prior test files/260 C# files and all35 frozen production blobs.
-- Freeze new805-case fixture after clean tests-only RED, before production.
+- Freeze new841-case fixture after clean tests-only RED, before production.
 - Two production files only; no matcher/IR/opcode/journal/limit/API/dependency/workflow changes.
 - Library builds8/9/10; only net10 test execution across six native hosts;214 frozen outcomes/120 methods each.
 - User owns merge/tag/publish; inline/no agents/Python/local SDK installation; Grep last.
@@ -30,10 +30,10 @@
 **Files:** tests/Pcre/PcreCallerEmptyMatchReferenceTests.cs; this design and plan.
 **Interfaces:** native Match(subject, offset, PcreMatchOptions) versus managed Compile(source, PcreByteOptions).Match(subject, offset); optional reflection setter allows a genuine tests-only baseline.
 
-- [ ] Pin 718 native groups/24,912 protocols and60 diagnostics, validating native batches before managed comparison.
+- [ ] Pin 754 native groups/26,212 protocols and60 diagnostics, validating native batches before managed comparison.
 - [ ] Add27 work/ownership/validation/capacity cases; reported endpoints, scope/restart and caller/source/Literal composition cover all five review boundaries.
 - [ ] Publish tests-only draft PR249 against merged248; no production changes.
-- [ ] Observe clean net10 RED:528 failures/87,132 passes/87,660 total/zero skips/zero compiler warnings/errors; all86,855 previous tests pass.
+- [ ] Observe clean net10 RED:547 failures/87,149 passes/87,696 total/zero skips/zero compiler warnings/errors; all86,855 previous tests pass.
 - [ ] Record exact source, fixture hash and RED result; freeze fixture.
 
 ### Task 2: caller policy initialization
@@ -44,7 +44,7 @@
 - [ ] Add the two default-false properties and initialize notEmpty/options.NotEmpty and notEmptyAtStart/options.NotEmptyAtStart before prefix scanning.
 - [ ] Preserve Literal compatibility, OR source directives and all existing program/matcher/resource paths.
 - [ ] Update PCRE-DESIGN, syntax matrix, resource contract, Grep inventory, roadmap status and this design/plan before source qualification.
-- [ ] Publish source; require six net10 results/87,660 tests each, zero warnings/errors/failures/skips,214 frozen/120 methods and all three library outputs per host.
+- [ ] Publish source; require six net10 results/87,696 tests each, zero warnings/errors/failures/skips,214 frozen/120 methods and all three library outputs per host.
 - [ ] Verify every configured supporting gate, frozen35 and all prior/frozen test hashes.
 
 ### Task 3: author review and delivery

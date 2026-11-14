@@ -55,23 +55,23 @@ constructor carries these values into immutable PcreByteProgram metadata.
 No parser body, IR, opcode, matcher, journal, shared resource limit, exported
 API, dependency, packaging or workflow change is planned.
 
-PcreCallerEmptyMatchReferenceTests adds 805 cases: 718 protocol groups with
-24,912 independently preflighted native10.48/JIT0 matching/offset protocols,
+PcreCallerEmptyMatchReferenceTests adds 841 cases: 754 protocol groups with
+26,212 independently preflighted native10.48/JIT0 matching/offset protocols,
 60 preserved compile diagnostics and 27 work/ownership/validation/capacity
-cases. Validate every native batch before managed comparison. Keep 430 native
+cases. Validate every native batch before managed comparison. Keep 462 native
 strict split-offset(-36) research rows outside the matching grid; strict
 subject/offset diagnostics have separate tests. Native no-match requires -1.
 Native spans use EndIndex-Index, retaining signed reset results, all captures
 and successful labels. Failed/partial labels remain a separate roadmap gate.
 
-Tests-only RED is expected to expose 519 missing-policy groups, six retry-work
-cases and three ownership cases: 528 failures, 87,132 passes, 87,660 total.
+Tests-only RED is expected to expose 538 missing-policy groups, six retry-work
+cases and three ownership cases: 547 failures, 87,149 passes, 87,696 total.
 All 86,855 earlier tests must pass. Freeze the new fixture after clean RED,
 before production; keep all 265 prior test files (260 C# files) hash-identical.
 Preserve frozen35 source blobs and 214 outcomes/120 methods per native result.
 
 All seven inventories precede final source qualification. Require six fresh
-net10 results at 87,660 each, zero failures/skips/compiler warnings/errors,
+net10 results at 87,696 each, zero failures/skips/compiler warnings/errors,
 all three library outputs on every native host and every configured supporting
 gate. Final review/GREEN/source/base/tree/proposed-merge identities belong on
 PR249 and only issue7 footer, without a documentation-only CI repeat.
