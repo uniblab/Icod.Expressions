@@ -7,6 +7,8 @@ internal sealed record PcreByteOptions {
 	public int MatchWorkLimit { get; init; } = DefaultMatchWorkLimit;
 	/// <summary>Try only the requested candidate offset, retaining normal backtracking and reported resets.</summary>
 	public bool Anchored { get; init; }
+	/// <summary>Require root completion at the physical subject end, retaining scoped assertion and callee exits.</summary>
+	public bool EndAnchored { get; init; }
 	/// <summary>Treat the complete owned pattern as literal text, including prefix and escape syntax.</summary>
 	public bool Literal { get; init; }
 	public bool Caseless { get; init; }

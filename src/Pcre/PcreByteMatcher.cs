@@ -130,7 +130,7 @@ internal static partial class PcreByteMatcher {
 			// Native STARTLINE search begins at the requested byte, so a newline
 			// whose encoding began before it cannot supply the first line candidate.
 			var excludedLineStart = !program.Anchored && program.LineStartSearch ? PcreByteNewlineExtensions.PartialAnyNewlineEnd( input.Span, startOffset ) : -1;
-			if ( program.MatchInvalidUtf && !program.NotEmpty && !program.NotEmptyAtStart && program.Instructions.Length == 1
+			if ( program.MatchInvalidUtf && !program.EndAnchored && !program.NotEmpty && !program.NotEmptyAtStart && program.Instructions.Length == 1
 				&& program.Instructions[0].Opcode == PcreByteOpcode.Accept ) {
 				// PCRE2 permits an empty pattern at the requested byte offset,
 				// including inside a valid scalar or a malformed byte run.
@@ -761,6 +761,13 @@ internal static partial class PcreByteMatcher {
 								pc = instruction.First; // Bypass ReverseEnd/script-run/body suffixes.
 								break;
 							}
+							if ( program.EndAnchored && position != input.Length ) {
+								// A short root ACCEPT abandons this candidate, including cuts
+								// and alternatives. Scoped exits above retain their own meaning.
+								backtrack.Clear();
+								failed = true;
+								break;
+							}
 							// Root NOTEMPTY rejection is retryable, including synthetic closes.
 							goto case PcreByteOpcode.Accept;
 						case PcreByteOpcode.Return:
@@ -886,6 +893,11 @@ internal static partial class PcreByteMatcher {
 							}
 							break;
 						case PcreByteOpcode.Accept:
+							if ( program.EndAnchored && position != input.Length ) {
+								// Ordinary completion can retry a saved path that consumes more.
+								failed = true;
+								break;
+							}
 							var reportedStart = captureStarts[0];
 							// Reject at final acceptance so ordinary saved paths can retry.
 							// K may have moved the reported start beyond the candidate start.

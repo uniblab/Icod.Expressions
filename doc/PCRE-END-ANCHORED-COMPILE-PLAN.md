@@ -33,7 +33,7 @@ native0x20000000 plus independent Anchored0x80000000. Group explicit protocols.
 
 - [x] Preflight normal/early/scoped completion, recursion/cuts/labels, modes/UTF/offsets, diagnostics, work and capacity boundaries.
 - [x] Write pinned protocol batches and ownership/default/validation/work/capacity controls; keep all263 earlier test files fixed.
-- [ ] Publish tests-only draft PR247; inspect clean net8/net9/net10 RED with only missing-policy failures and freeze fixture before production.
+- [x] Publish tests-only draft PR247; inspect clean net8/net9/net10 RED with only missing-policy failures and freeze fixture before production.
 
 ## Task 2: immutable policy and root completion
 
@@ -42,9 +42,9 @@ PcreByteProgram.cs, PcreByteMatcher.cs; update seven inventories.
 **Interfaces:** bool PcreByteOptions.EndAnchored init, bool
 PcreByteProgram.EndAnchored init; compiler snapshots after ordinary compilation.
 
-- [ ] Add default-false option/program flag and snapshot without opcode or capacity cost.
-- [ ] Reject short root normal completion through shared backtracking. After scoped/synthetic-close handling, discard short root EarlyAccept choices/cuts and fail candidate. Disable tolerant empty shortcut under EndAnchored.
-- [ ] Include all seven inventories before source push.
+- [x] Add default-false option/program flag and snapshot without opcode or capacity cost.
+- [x] Reject short root normal completion through shared backtracking. After scoped/synthetic-close handling, discard short root EarlyAccept choices/cuts and fail candidate. Disable tolerant empty shortcut under EndAnchored.
+- [x] Include all seven inventories before source push.
 - [ ] Verify all18 results/supporting gates, prior263 hashes, frozen fixture/source and shared resource contracts; record evidence externally.
 
 ## Task 3: review and delivery
@@ -52,3 +52,9 @@ PcreByteProgram.EndAnchored init; compiler snapshots after ordinary compilation.
 - [ ] Author review whole branch against all five boundaries; no agents.
 - [ ] Verify clean worktree and exact source/base/tree/proposed-merge identities.
 - [ ] Record evidence on PR247 and only issue7 footer, mark ready and retire only this plan's ledger.
+
+## Tests-first checkpoint
+
+Tests-only [RED748](https://github.com/uniblab/Icod.Expressions/actions/runs/43585144086), source `7140659a6924969d2fa5dd4ea658cfc49bcc2719`, Linux ARM job132417911226: net8/net9/net10 each built with zero compiler warnings/errors and ran **385 expected failures / 85,865 passes / 86,250 total / zero skips**. Failures were384 missing-policy protocol groups and1 ownership case/framework, all after successful native assertions. All85,685 earlier tests and180 new controls passed. Freeze `2e39a5a936a8358973932a230d53f37abd7c9199` before production; no fixture correction or prior-test change was needed.
+
+Remaining qualification/closure boxes are tracked by final PR247/issue7 evidence after this source head; do not push a documentation-only CI repeat.

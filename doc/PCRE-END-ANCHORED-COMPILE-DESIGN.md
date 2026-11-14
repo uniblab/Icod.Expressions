@@ -54,3 +54,9 @@ References: pinned10.48 pcre2api.html ENDANCHORED and public literal mask;
 pcre2_jit_compile.c compile_fail_accept_matchingpath, normal matchingpath and
 restart_match/do_reset_match; native protocols distinguish completion paths.
 FIRSTLINE and other deferred policies remain separate increments.
+
+## Tests-first checkpoint
+
+Tests-only [RED748](https://github.com/uniblab/Icod.Expressions/actions/runs/43585144086), source `7140659a6924969d2fa5dd4ea658cfc49bcc2719`, Linux ARM job132417911226: net8/net9/net10 each built with zero compiler warnings/errors and ran **385 expected failures / 85,865 passes / 86,250 total / zero skips**. Failures were384 missing-policy protocol groups and1 ownership case/framework, all after successful native assertions. All85,685 earlier tests and180 new controls passed. Freeze `2e39a5a936a8358973932a230d53f37abd7c9199` before production; no fixture correction or prior-test change was needed.
+
+The565 tests retain4,956 explicit protocols in482 groups,65 compile diagnostics and18 supplemental cases. Final qualification/review/identities are external on PR247/issue7.
