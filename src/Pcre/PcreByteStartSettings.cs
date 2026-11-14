@@ -18,7 +18,7 @@ internal readonly record struct PcreByteStartSettings(
 		var offset = 0;
 		// PCRE processes an uninterrupted prefix before ordinary options/trivia.
 		// Keep the original source and body index for validation and diagnostics.
-		while ( true ) {
+		while ( !options.Literal ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			if ( TryConsume( source, ref offset, "(*UTF)"u8 )
 				|| TryConsume( source, ref offset, "(*UTF8)"u8 ) ) { utf8 = true; }
