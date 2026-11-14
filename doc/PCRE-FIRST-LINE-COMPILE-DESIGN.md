@@ -7,6 +7,12 @@ consume past that newline. A requested offset after an earlier newline begins
 a new search window. Caller Anchored makes FirstLine irrelevant; EndAnchored
 independently constrains root completion. Literal compilation is compatible.
 
+Native JIT explicit forward SKIP is a separate entry path: it can restart even
+with caller Anchored. For unanchored FirstLine, native first-unit/prefix filters
+can still enforce the window; proven unfiltered entry can bypass it. Preserve
+that distinction rather than applying the ordinary bumpalong gate to every
+forced restart. Broader optimizer proofs remain tracked by issue102.
+
 ## Approach
 
 Snapshot the option into init-only `PcreByteProgram.FirstLine` after ordinary
@@ -15,7 +21,15 @@ Before entering any later candidate, inspect the intervening input with existing
 newline and UTF readers; stop if a configured newline precedes that candidate.
 Charge each inspected scalar or malformed byte through Step. Check candidates
 after fragment/scalar selection and before COMMIT first-byte entry. All later
-SKIP, CRLF, inferred-line, fragment and empty-EOF retries pass this gate.
+CRLF, inferred-line, fragment and empty-EOF retries pass this gate. Forward SKIP
+targets carry a one-candidate forced-entry marker; honor them before anchored
+termination. Under FirstLine, bypass the frontier only for a bounded immutable
+root-entry proof. The proof recognizes transparent single-branch groups,
+opaque MARK/reference/call entry and terminal unrestricted atom/property or
+nullable paths, with at most four group levels/1,000 visits. Positive current-
+position assertions and restrictive/suffixed prefixes keep the window gate.
+The proof uses existing source-shape metadata; unknown broader shapes stay
+within the existing issue102 optimizer qualification boundary.
 
 Disable unobserved whole-subject byte/suffix search shortcuts under FirstLine,
 so they cannot charge candidates beyond the permitted window or bypass the
@@ -44,7 +58,7 @@ blobs and214 frozen outcomes/120 methods. C#13/net8/net9/net10, UTF8+LF;
 no Python/agents/local SDK installation. Reuse linked worktree; user owns
 merge/tag/publication; issue7/102 stay open and Grep last.
 
-Native10.48/JIT0 preflight pins5,689 matching/offset protocols in328 groups,
+Native10.48/JIT0 preflight pins8,041 matching/offset protocols in520 groups,
 65 compile diagnostics and9 work cases. Pin crossing/at-newline versus later
 candidate starts, all six newline conventions, nonzero/raw/split offsets,
 malformed fragments, labels/cuts/ACCEPT/recursion/resets, caller/source modes,
@@ -61,4 +75,17 @@ base/tree/proposed-merge evidence belongs on PR248 and only issue7 footer,
 without documentation-only CI repeats.
 
 References: pinned10.48 pcre2api.html FIRSTLINE/LITERAL; pcre2_jit_compile.c
-mainloop_entry, match_end_ptr and reset_match_label; native outcome protocols.
+mainloop_entry, match_end_ptr, reset_match/continue_match/reset_match_label and
+prefix entry filters; native outcome protocols.
+
+## Composition finding before production
+
+Initial tests-only RED750 (source5fdf2de12b27f50f89151559cf44ae3534946d00,
+Linux ARM132428400350) built all three frameworks with zero warnings/errors.
+Each ran206 failures/86,457 passes/86,663 total/zero skips. All86,250 earlier
+tests passed. Four additional protocol groups exposed the prior anchored-SKIP
+gap;199 groups/2 bounded-work cases/1 ownership case exposed FirstLine absence.
+Before any production change, expand the fixture from413 to605 cases, preserving
+every original expectation and adding forced-entry/filtered-entry controls,
+including explicit FirstLine=false anchored-SKIP regressions. Re-run clean RED
+and freeze the expanded fixture before implementing either boundary.

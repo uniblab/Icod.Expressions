@@ -21,7 +21,7 @@ only PR248/issue7 footer, without documentation-only CI repeats.
 
 1. Candidate at the newline and matches crossing it remain valid; later starts fail.
 2. Offset-relative window follows all six newline conventions, raw UTF and fragments.
-3. SKIP/CRLF/inferred-line/empty-EOF retries cannot escape; scope/recursion/resets remain normal.
+3. Ordinary retries retain the window; native forward SKIP honors anchored/filtered/unfiltered entry distinctions and normal scope/reset behavior.
 4. Anchored ignores FirstLine; EndAnchored and literal/caller/source policies compose.
 5. Owned/default state, validation priorities, bounded work/cancellation and capacity remain shared.
 
@@ -41,9 +41,12 @@ plus independent Anchored0x80000000 and EndAnchored0x20000000.
 PcreByteProgram.cs, PcreByteMatcher.cs; update seven inventories.
 **Interfaces:** bool PcreByteOptions.FirstLine init; bool
 PcreByteProgram.FirstLine init; compiler snapshots after ordinary compilation.
+Add bool PcreByteProgram.FirstLineSkipBypassesWindow from bounded
+HasUnfilteredFirstLineSkipEntry(PcreByteAlternatives root), without IR changes.
 
 - [ ] Add default-false option/program flag and snapshot without syntax/opcode/capacity cost.
-- [ ] Disable unobserved byte/suffix shortcuts under FirstLine. Gate every candidate after scalar selection and before COMMIT entry using a frontier from startOffset, existing newline/UTF readers and Step charges; ignore flag when Anchored.
+- [ ] Disable unobserved byte/suffix shortcuts under FirstLine. Gate ordinary candidate entry after scalar selection and before COMMIT entry using a frontier from startOffset, existing newline/UTF readers and Step charges; ignore flag when Anchored.
+- [ ] Honor explicit forward SKIP before anchored termination, allowing only its requested next entry. Bypass FirstLine only for a bounded proven-unfiltered root prefix; preserve filtered entry and ordinary-failure termination.
 - [ ] Include all seven inventories before source push.
 - [ ] Verify all18 results/supporting gates, prior264 hashes, frozen fixture/source and shared resources; record final evidence externally.
 
@@ -52,3 +55,12 @@ PcreByteProgram.FirstLine init; compiler snapshots after ordinary compilation.
 - [ ] Author review whole branch against five boundaries; no agents.
 - [ ] Verify clean worktree and exact source/base/tree/proposed-merge identities.
 - [ ] Record evidence on PR248/issue7 footer, mark ready and retire only this plan's ledger.
+
+## Composition finding before production
+
+RED750 exposed199 missing-window groups,2 bounded-work cases,1 ownership case
+and4 pre-existing anchored-SKIP protocol groups/framework; all86,250 prior tests
+passed. Expand tests before production with native filtered/unfiltered forward
+SKIP and explicit FirstLine=false anchored regressions. The four-file scope is
+unchanged; the additional immutable proof and forced-entry marker are now part
+of Task2. Require clean expanded RED and fixture freeze before implementation.
