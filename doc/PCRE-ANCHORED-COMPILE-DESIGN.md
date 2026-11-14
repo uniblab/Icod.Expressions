@@ -56,3 +56,9 @@ only issue7 footer, without a documentation-only source push.
 
 References: pinned10.48 `pcre2_jit_compile.c` anchored entry and mainloop gates,
 `pcre2_compile.c` public literal masks, and native outcome protocols.
+
+## Tests-first checkpoint
+
+Tests-only [RED746](https://github.com/uniblab/Icod.Expressions/actions/runs/43578255592), source `33ed1a4a6e5344fa53df7aeb03c6c462ab371706`, Linux ARM job132397293572: net8/net9/net10 each built with zero compiler warnings/errors and ran **131 expected failures / 85,554 passes / 85,685 total / zero skips**. Failures were128 protocol groups,2 bounded-byte-budget cases and1 ownership case/framework. Every pinned native assertion, all85,360 earlier tests and194 new controls passed. Freeze `95620f1478537b71880c07c64e20474c3de537ad` before production. Before clean RED, one new byte-range diagnostic control was corrected to preserve its existing hyphen offset2; native108/offset4 and all earlier tests remained unchanged.
+
+The325 tests cover2,215 explicit matching/offset protocols in242 source/options groups,65 compile-error controls and18 supplemental work/ownership/validation/capacity cases. Production stays within the four scoped files, adding program policy metadata without altering instruction streams or callee scope. Final qualification/review/identities are external on PR246/issue7.
