@@ -407,7 +407,7 @@ public sealed partial class PcreVariableLookbehindLimitReferenceTests {
 	}
 	private static PcreRegex8Bit Reference( byte[] source, int mode, uint limit, bool literal = false ) => new( source, Encoding.UTF8, new PcreRegexSettings {
 		Options = PcreOptions.Compiled | (PcreOptions)( ( ( mode & 1 ) != 0 ? 0x80000u : 0u ) | ( ( mode & 4 ) != 0 ? 0x4000000u : 0u ) | ( literal ? 0x2000000u : 0u ) ),
-		ExtraCompileOptions = (PcreExtraCompileOptions)( !literal && source.AsSpan().IndexOf( "\K"u8 ) >= 0 ? 64 : 0 ),
+		ExtraCompileOptions = (PcreExtraCompileOptions)( !literal && source.AsSpan().IndexOf( "\\K"u8 ) >= 0 ? 64 : 0 ),
 		MaxVarLookbehind = limit, ParensLimit = 512, NewLine = (PcreNewLine)2, BackslashR = (PcreBackslashR)1
 	} );
 	private static PcreCompiledBytePattern Compile( byte[] source, PcreByteOptions options ) {
