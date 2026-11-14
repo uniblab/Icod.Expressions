@@ -30,20 +30,20 @@
 **Files:** tests/Pcre/PcreCallerEmptyMatchReferenceTests.cs; this design and plan.
 **Interfaces:** native Match(subject, offset, PcreMatchOptions) versus managed Compile(source, PcreByteOptions).Match(subject, offset); optional reflection setter allows a genuine tests-only baseline.
 
-- [ ] Pin 754 native groups/26,212 protocols and60 diagnostics, validating native batches before managed comparison.
-- [ ] Add27 work/ownership/validation/capacity cases; reported endpoints, scope/restart and caller/source/Literal composition cover all five review boundaries.
-- [ ] Publish tests-only draft PR249 against merged248; no production changes.
-- [ ] Observe clean net10 RED:547 failures/87,149 passes/87,696 total/zero skips/zero compiler warnings/errors; all86,855 previous tests pass.
-- [ ] Record exact source, fixture hash and RED result; freeze fixture.
+- [x] Pin 754 native groups/26,212 protocols and60 diagnostics, validating native batches before managed comparison.
+- [x] Add27 work/ownership/validation/capacity cases; reported endpoints, scope/restart and caller/source/Literal composition cover all five review boundaries.
+- [x] Publish tests-only draft PR249 against merged248; no production changes.
+- [x] Observe clean net10 RED:547 failures/87,149 passes/87,696 total/zero skips/zero compiler warnings/errors; all86,855 previous tests pass.
+- [x] Record exact source, fixture hash and RED result; freeze fixture.
 
 ### Task 2: caller policy initialization
 
 **Files:** src/Pcre/PcreByteOptions.cs, src/Pcre/PcreByteStartSettings.cs; seven inventories.
 **Interfaces:** add public init-only internal-record bools NotEmpty/NotEmptyAtStart; existing settings constructor and program compiler consume owned bool values.
 
-- [ ] Add the two default-false properties and initialize notEmpty/options.NotEmpty and notEmptyAtStart/options.NotEmptyAtStart before prefix scanning.
-- [ ] Preserve Literal compatibility, OR source directives and all existing program/matcher/resource paths.
-- [ ] Update PCRE-DESIGN, syntax matrix, resource contract, Grep inventory, roadmap status and this design/plan before source qualification.
+- [x] Add the two default-false properties and initialize notEmpty/options.NotEmpty and notEmptyAtStart/options.NotEmptyAtStart before prefix scanning.
+- [x] Preserve Literal compatibility, OR source directives and all existing program/matcher/resource paths.
+- [x] Update PCRE-DESIGN, syntax matrix, resource contract, Grep inventory, roadmap status and this design/plan before source qualification.
 - [ ] Publish source; require six net10 results/87,696 tests each, zero warnings/errors/failures/skips,214 frozen/120 methods and all three library outputs per host.
 - [ ] Verify every configured supporting gate, frozen35 and all prior/frozen test hashes.
 
@@ -56,3 +56,9 @@
 - [ ] Verify clean worktree, immutable fixture/prior sources and exact source/base/tree/proposed-merge ordered parents.
 - [ ] Record final GREEN/review/identities on PR249 and only issue7 footer, preserving its original2600-character prefix.
 - [ ] Mark ready; retire only this plan's identity-checked ledger, preserving branch/worktree. Leave user merge/tag/publish.
+
+## Tests-first checkpoint
+
+Tests-only [RED757](https://github.com/uniblab/Icod.Expressions/actions/runs/43606687443), source `77824ef8a9f0e3c8b45fd2234ac729f1aedee165`, macOS ARM64 job132482835413: net10 built with zero compiler warnings/errors and ran **547 expected failures / 87,149 passes / 87,696 total / zero skips**. Exactly 538 missing-policy protocol groups, six retry-work and three ownership cases failed after successful native batches; all 86,855 earlier tests and 294 new controls passed. Freeze `e99bbdac4a0c2c33c22d1ffe1234bad7dc25de22` before production. Before clean RED, coverage review added 36 groups/1,300 protocols for assertion resets and caller-only local reset, retaining all original 805 expectations.
+
+Remaining qualification/review/delivery checkboxes are fulfilled by final PR249/issue7 evidence; do not push a documentation-only CI repeat.

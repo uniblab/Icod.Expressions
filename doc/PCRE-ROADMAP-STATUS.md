@@ -1,6 +1,6 @@
 # PCRE roadmap status
 
-Reviewed after merged PR247, with PR248 in progress. Issue #7 remains the delivery roadmap; the
+Reviewed after merged PR248, with PR249 in progress. Issue #7 remains the delivery roadmap; the
 [syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md),
 [resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) and
 [Grep fixture inventory](PCRE-GREP-CONSUMER-FIXTURES.md) define the detailed gates.
@@ -61,6 +61,7 @@ retaining each framework's complete suite and frozen-result qualification.
    PR246 adds caller-anchored candidate selection through immutable program policy.
    PR247 adds caller end-anchored root completion through the same policy metadata.
    PR248 adds caller first-line candidate windows through a bounded newline frontier.
+   PR249 adds caller empty-match rejection through existing global acceptance policy.
    UTF code-unit escape,
    remaining directives/verbs/callouts and other matrix gaps require their own
    pinned reference fixtures. Decide any intentional exclusions before release;
@@ -78,10 +79,10 @@ retaining each framework's complete suite and frozen-result qualification.
 
 ## Current increment and next syntax work
 
-PR247 merged atbb6056dfb4aa1fd9e3e1ed149eaaa9004cc35fb0;
-its86,250 tests/framework remain the baseline. Main43587678445/scripts43587678506 are green.
-PR248 adds first-line candidate windows as described below; final qualification/
-review/delivery identities are recorded on PR248/issue7.
+PR248 merged at74af49bb62fcad01f79fdaff2fb26b29abf6611d;
+its86,855 net10 tests remain the baseline. Main43605349078/scripts43605349020 are green.
+PR249 adds caller empty-result policies as described below; final qualification/
+review/delivery identities are recorded on PR249/issue7.
 
 ## PR234: backreferences blocking first-character search
 
@@ -746,3 +747,17 @@ Initial source4e24403e0e4c8f552dbaaf1e09b39ba672231b65/CI75243591726169 built cl
 The user changed tests/Icod.Expressions.Tests.csproj in commit0ab40ea6048c43d2c908d8eef1402a5acfde2bcc to target net10.0 only, then explicitly requested builds for net8.0/net9.0/net10.0 with test execution only on10. PR/main/tag workflows now retain all three library builds on all six native OS/architecture hosts, select net10.0 for full/frozen tests and parity/package smoke execution, and remove the Intel8/9 test jobs. Intel restores/builds the complete solution without TargetFrameworks overrides. The result contract expects net10.0; release prerequisites require all seven current main jobs, including Intel test and aggregation. Existing main-job acceptance/rejection checks were updated (RED against the old guard, then all nine checks GREEN); generic result-validation capabilities remain unchanged.
 
 Pre-policy engine source1ed02620bd83355a351570fe8af655c848309b84/CI75343592621873 passed all18 results at86,855 each. Final qualification after this user-directed configuration change requires six net10 results,214 frozen outcomes/120 methods each, zero failures/skips/compiler warnings/errors, all three library outputs per native host, supporting gates and all configured source-pinned compatibility jobs. The frozen605-case fixture68d9c25772810758954234e4df4b45c76677e3dd, all prior C# test sources and engine sources from1ed0262 remain unchanged. The user project edit and existing main-job gate fixture are intentional configuration changes. Final current-head evidence/review/identities remain external on PR248 and only issue7 footer; this policy supersedes the previous eighteen-current-result requirement. No merge/tag/publish action is authorized here.
+
+## PR249: caller-selected empty-match rejection
+
+Default-false internal caller NotEmpty and NotEmptyAtStart select native match policies4/8 once for an owned compiled pattern. NotEmpty rejects equal reported group0 endpoints; NotEmptyAtStart rejects them only at the original requested byte offset, permitting later empty results. K resets, including supported assertion resets and reversed spans, retain reported-endpoint semantics. Both flags may be set; source directives OR into them and local option resets cannot unset them. Native reference options are passed to Match, never treated as compile-option bits.
+
+Only PcreByteOptions.cs and PcreByteStartSettings.cs change in production: two booleans initialize the existing global settings before prefix scanning. Existing immutable program fields and root acceptance/backtracking implement the policy, retaining scoped assertion/callee ACCEPT, cuts, labels, captures, candidate restart and validation/work/ownership/capacity behavior. Literal accepts these match policies while literal-looking directives remain data. Anchored/EndAnchored/FirstLine, UTF/fragments, casing, word/line and newline/BSR compose normally. No parser body, IR/opcode/matcher/journal/shared-limit/exported API/dependency/packaging/workflow changes.
+
+Merged248 `74af49bb62fcad01f79fdaff2fb26b29abf6611d`/tree `7e48200e810e252d9d45f035e7740ac73c36b85f` has86,855 tests and265 prior files. Main43605349078/scripts43605349020 are green. PR249 adds841 tests for87,696; builds remain8/9/10 and test execution isnet10 only on six native hosts.
+
+The841 new cases comprise754 groups/26,212 native10.48/JIT0 matching-offset protocols,60 preserved compile diagnostics and27 work/ownership/validation/capacity cases. All native batches are checked before managed comparison; negative matches require no-match(-1).462 strict split-offset(-36) research rows stay outside the matching grid, with separate strict validation tests. All265 prior test files/260 C# sources and frozen35 blobs remain hash-identical. Full256 capture/depth and4095 versus4096 instruction boundaries remain shared.
+
+Tests-only [RED757](https://github.com/uniblab/Icod.Expressions/actions/runs/43606687443), source `77824ef8a9f0e3c8b45fd2234ac729f1aedee165`, macOS ARM64 job132482835413: net10 built with zero compiler warnings/errors and ran **547 expected failures / 87,149 passes / 87,696 total / zero skips**. Exactly 538 missing-policy protocol groups, six retry-work and three ownership cases failed after successful native batches; all 86,855 earlier tests and 294 new controls passed. Freeze `e99bbdac4a0c2c33c22d1ffe1234bad7dc25de22` before production. Before clean RED, coverage review added 36 groups/1,300 protocols for assertion resets and caller-only local reset, retaining all original 805 expectations.
+
+See [design](PCRE-CALLER-EMPTY-MATCH-DESIGN.md) and [plan](PCRE-CALLER-EMPTY-MATCH-PLAN.md). Final qualification requires six fresh net10 results at87,696 tests each, zero failures/skips/compiler warnings/errors,214 frozen outcomes/120 methods per result, all three library build outputs on each native host and every configured supporting gate. All seven inventories precede final source qualification; final GREEN/review/exact source/base/tree/proposed-merge identities belong on PR249 and only issue7 footer, without a documentation-only CI repeat. UTF-C execution, callouts, remaining syntax/directives/match/API choices, tolerant-surrogate exclusions, failed/partial labels, broader102, UTF16/exported API and realistic consumer/release gates remain open; Grep last. User owns merge/tag/publication.

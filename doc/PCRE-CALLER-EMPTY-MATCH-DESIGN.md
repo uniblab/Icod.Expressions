@@ -82,3 +82,9 @@ UTF code-unit execution, callouts, remaining syntax/directives and match/API
 choices, tolerant-surrogate exclusions, failed/partial labels, broader native
 optimizer/resources (#102), UTF16/exported API, realistic consumer/release
 gates and final Grep migration remain open. This is scoped component evidence.
+
+## Tests-first checkpoint
+
+Tests-only [RED757](https://github.com/uniblab/Icod.Expressions/actions/runs/43606687443), source `77824ef8a9f0e3c8b45fd2234ac729f1aedee165`, macOS ARM64 job132482835413: net10 built with zero compiler warnings/errors and ran **547 expected failures / 87,149 passes / 87,696 total / zero skips**. Exactly 538 missing-policy protocol groups, six retry-work and three ownership cases failed after successful native batches; all 86,855 earlier tests and 294 new controls passed. Freeze `e99bbdac4a0c2c33c22d1ffe1234bad7dc25de22` before production. Before clean RED, coverage review added 36 groups/1,300 protocols for assertion resets and caller-only local reset, retaining all original 805 expectations.
+
+Final six-result qualification/review/identities are recorded externally on PR249/issue7 after this source head.
