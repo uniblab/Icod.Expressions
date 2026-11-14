@@ -97,21 +97,20 @@ jobs:
         run: dotnet restore Icod.Expressions.sln
       - name: Build all target frameworks
         run: dotnet build Icod.Expressions.sln -c ${{ env.CONFIGURATION }} --no-restore -p:ContinuousIntegrationBuild=true
-      - name: Run full suite concurrently and verify frozen results
+      - name: Run .NET 10 full suite and verify frozen results
         shell: pwsh
         run: >-
           ./packaging/Invoke-Tests.ps1
           -Path tests/Icod.Expressions.Tests.csproj
           -Configuration '${{ env.CONFIGURATION }}'
+          -Framework net10.0
           -ContractPath packaging/test-results.json
 
       - name: Verify exact extraction parity
         shell: bash
         run: |
           set -e
-          for framework in net8.0 net9.0 net10.0; do
-            dotnet run --project tools/RegularExpressionParityBaseline/RegularExpressionParityBaseline.csproj -c ${{ env.CONFIGURATION }} -f "$framework" -- --verify doc/Icod.Expressions-A04-Parity-Baseline.jsonl
-          done
+          dotnet run --project tools/RegularExpressionParityBaseline/RegularExpressionParityBaseline.csproj -c ${{ env.CONFIGURATION }} -f net10.0 -- --verify doc/Icod.Expressions-A04-Parity-Baseline.jsonl
 
   package:
     needs: [metadata, validate]
@@ -133,9 +132,7 @@ jobs:
         run: |
           set -e
           sh tools/verify-a05-candidate.sh
-          for framework in net8.0 net9.0 net10.0; do
-            dotnet run --project tools/RegularExpressionParityBaseline/RegularExpressionParityBaseline.csproj -c ${{ env.CONFIGURATION }} -f "$framework" -- --verify doc/Icod.Expressions-A04-Parity-Baseline.jsonl
-          done
+          dotnet run --project tools/RegularExpressionParityBaseline/RegularExpressionParityBaseline.csproj -c ${{ env.CONFIGURATION }} -f net10.0 -- --verify doc/Icod.Expressions-A04-Parity-Baseline.jsonl
       - name: Pack the single library project
         run: dotnet pack Icod.Expressions.csproj -c ${{ env.CONFIGURATION }} --no-build --no-restore -o artifacts
       - name: Verify exact single package and nuspec version
@@ -166,9 +163,7 @@ jobs:
           export NUGET_PACKAGES="$RUNNER_TEMP/package-only-cache"
           dotnet restore samples/PackageSmoke/PackageSmoke.csproj --source artifacts
           dotnet build samples/PackageSmoke/PackageSmoke.csproj -c ${{ env.CONFIGURATION }} --no-restore
-          for framework in net8.0 net9.0 net10.0; do
-            dotnet run --project samples/PackageSmoke/PackageSmoke.csproj -c ${{ env.CONFIGURATION }} -f "$framework" --no-build --no-restore
-          done
+          dotnet run --project samples/PackageSmoke/PackageSmoke.csproj -c ${{ env.CONFIGURATION }} -f net10.0 --no-build --no-restore
       - uses: actions/upload-artifact@v4
         with:
           name: nuget-package

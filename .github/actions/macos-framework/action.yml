@@ -1,32 +1,29 @@
-name: Verify one native macOS Intel framework
-description: Build and verify one framework and publish its fresh full-suite result.
+name: Verify native macOS Intel tests
+description: Build all library frameworks and publish the selected test framework's fresh full-suite result.
 inputs:
   framework:
     required: true
-    description: Contract framework to run
+    description: Test framework to run
   configuration:
     required: true
     description: Staging or Release configuration
   sdk:
     required: true
-    description: SDK10 plus the selected framework SDK where needed
+    description: SDKs for library builds and the selected test runtime
 runs:
   using: composite
   steps:
     - uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ inputs.sdk }}
-    - name: Restore selected framework
+    - name: Restore all target frameworks
+      shell: bash
+      run: dotnet restore Icod.Expressions.sln
+    - name: Build all target frameworks
       shell: bash
       env:
-        FRAMEWORK: ${{ inputs.framework }}
-      run: dotnet restore Icod.Expressions.sln -p:TargetFrameworks="$FRAMEWORK"
-    - name: Build selected framework
-      shell: bash
-      env:
-        FRAMEWORK: ${{ inputs.framework }}
         CONFIGURATION: ${{ inputs.configuration }}
-      run: dotnet build Icod.Expressions.sln -c "$CONFIGURATION" --no-restore -p:TargetFrameworks="$FRAMEWORK" -p:ContinuousIntegrationBuild=true
+      run: dotnet build Icod.Expressions.sln -c "$CONFIGURATION" --no-restore -p:ContinuousIntegrationBuild=true
     - name: Run full suite and verify selected framework results
       shell: pwsh
       env:
@@ -46,7 +43,7 @@ runs:
         CONFIGURATION: ${{ inputs.configuration }}
       run: >-
         dotnet run --project tools/RegularExpressionParityBaseline/RegularExpressionParityBaseline.csproj
-        -c "$CONFIGURATION" -f "$FRAMEWORK" -p:TargetFrameworks="$FRAMEWORK"
+        -c "$CONFIGURATION" -f "$FRAMEWORK"
         -- --verify doc/Icod.Expressions-A04-Parity-Baseline.jsonl
     - uses: actions/upload-artifact@v4
       with:

@@ -74,3 +74,31 @@ Remaining qualification/closure boxes are tracked by final PR248/issue7 evidence
 ## UTF prefix qualification correction
 
 Initial source4e24403e0e4c8f552dbaaf1e09b39ba672231b65/CI75243591726169 built cleanly; Linux ARM132437783721 ran4 failures/86,851 passes/86,855 total/zero skips on all three frameworks. Only plain/named SKIP into dot-plus-B in tolerant UTF failed, with both EndAnchored policies. Native10.48 scan_prefix stops at UTF OP_ANY/OP_ALLANY before considering the suffix; the bounded proof now treats UTF dot as opaque regardless of suffix, retaining fixed-width byte suffix filtering. The four frozen regression groups provide RED; all264 earlier test files and fixture68d9c25772810758954234e4df4b45c76677e3dd remain unchanged. Broader prefix proofs stay in issue102. Final all18 qualification/review/identities remain external on PR248/issue7.
+
+## Task 4: requested temporary CI policy
+
+User commit0ab40ea6048c43d2c908d8eef1402a5acfde2bcc changes the test project
+to net10.0 only. The user then explicitly requested builds for8/9/10 with test
+execution only in10. This supersedes the earlier eighteen-result requirement
+for the final head. Preserve all engine/test-case source blobs and that user
+project change; allow the existing main-job verifier fixture to follow the new
+job set. Pre-policy source1ed0262 already passed all18 results on CI753.
+
+**Files:** PR/main/release workflows, macOS framework action, result contract,
+main-job prerequisite/fixture, README and seven inventories. No engine change.
+**Interfaces:** expectedFrameworks=[net10.0]; six native net10 results; seven
+required main jobs (five combined native jobs, one Intel test job, aggregate).
+
+- [x] Resync user commit without altering the frozen605-case fixture.
+- [x] Observe the updated main-job positive fixture fail against the old guard.
+- [x] Restrict test/parity/smoke execution to10; keep solution/package builds for8/9/10 on all six native hosts. Remove Intel8/9 test jobs and global TargetFrameworks overrides.
+- [x] Update the result contract and main-job guard, and verify the existing acceptance/rejection checks.
+- [x] Include the CI policy in README/inventories before source qualification.
+- [ ] Qualify six complete net10 results,214 frozen/120 methods each, zero failures/skips/compiler warnings/errors; verify all three library outputs on every native host and all configured compatibility/supporting gates.
+- [ ] Review final scope/identities, record current policy and evidence on PR248/issue7, mark ready and retire only this plan's ledger.
+
+## Requested temporary .NET 10 test policy
+
+The user changed tests/Icod.Expressions.Tests.csproj in commit0ab40ea6048c43d2c908d8eef1402a5acfde2bcc to target net10.0 only, then explicitly requested builds for net8.0/net9.0/net10.0 with test execution only on10. PR/main/tag workflows now retain all three library builds on all six native OS/architecture hosts, select net10.0 for full/frozen tests and parity/package smoke execution, and remove the Intel8/9 test jobs. Intel restores/builds the complete solution without TargetFrameworks overrides. The result contract expects net10.0; release prerequisites require all seven current main jobs, including Intel test and aggregation. Existing main-job acceptance/rejection checks were updated (RED against the old guard, then all nine checks GREEN); generic result-validation capabilities remain unchanged.
+
+Pre-policy engine source1ed02620bd83355a351570fe8af655c848309b84/CI75343592621873 passed all18 results at86,855 each. Final qualification after this user-directed configuration change requires six net10 results,214 frozen outcomes/120 methods each, zero failures/skips/compiler warnings/errors, all three library outputs per native host, supporting gates and all configured source-pinned compatibility jobs. The frozen605-case fixture68d9c25772810758954234e4df4b45c76677e3dd, all prior C# test sources and engine sources from1ed0262 remain unchanged. The user project edit and existing main-job gate fixture are intentional configuration changes. Final current-head evidence/review/identities remain external on PR248 and only issue7 footer; this policy supersedes the previous eighteen-current-result requirement. No merge/tag/publish action is authorized here.

@@ -110,10 +110,14 @@ On Linux/glibc, run the additional C-locale ASCII differential:
 dotnet run --project tools/PosixRegexDifferential/PosixRegexDifferential.csproj -c Staging
 ```
 
-The library, focused tests, and parity runner target `net8.0`, `net9.0`, and
-`net10.0` with C# 13. CI requires 214 focused tests: the original 193-test
+The library and parity runner target `net8.0`, `net9.0`, and `net10.0` with
+C# 13. For now, CI builds the library for all three frameworks and runs test
+cases and parity checks only on `net10.0` across all six OS/architecture
+combinations. Package smoke checks also run only on `net10.0`.
+The test project targets `net10.0` only.
+CI requires 214 focused tests: the original 193-test
 copy-time corpus, five consumer-shaped cases, and 16 A02 syntax-option cases.
-It also checks the original 44-case parity fixture on each framework across
+It also checks the original 44-case parity fixture on .NET 10 across
 Windows, Linux, and macOS. The copied production files and original tests
 retain their pinned Git blobs. Run `sh tools/verify-a05-candidate.sh` to check
 the consolidated source, corpus, and oracle-tool identities.
