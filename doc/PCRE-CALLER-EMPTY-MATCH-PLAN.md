@@ -11,8 +11,8 @@
 
 - Work from merged248 74af49bb62fcad01f79fdaff2fb26b29abf6611d/tree7e48200e810e252d9d45f035e7740ac73c36b85f; baseline86,855 tests.
 - Preserve all265 prior test files/260 C# files and all35 frozen production blobs.
-- Freeze new841-case fixture after clean tests-only RED, before production.
-- Two production files only; no matcher/IR/opcode/journal/limit/API/dependency/workflow changes.
+- Freeze new889-case fixture after clean tests-only RED, before production.
+- Four production files; bounded optional-literal commit metadata; no extra AST nodes/opcodes/frames/journal fields/limits/API/dependency/workflow changes.
 - Library builds8/9/10; only net10 test execution across six native hosts;214 frozen outcomes/120 methods each.
 - User owns merge/tag/publish; inline/no agents/Python/local SDK installation; Grep last.
 - Seven inventories before final source push; final evidence on PR249/issue7 footer only.
@@ -30,21 +30,22 @@
 **Files:** tests/Pcre/PcreCallerEmptyMatchReferenceTests.cs; this design and plan.
 **Interfaces:** native Match(subject, offset, PcreMatchOptions) versus managed Compile(source, PcreByteOptions).Match(subject, offset); optional reflection setter allows a genuine tests-only baseline.
 
-- [x] Pin 754 native groups/26,212 protocols and60 diagnostics, validating native batches before managed comparison.
-- [x] Add27 work/ownership/validation/capacity cases; reported endpoints, scope/restart and caller/source/Literal composition cover all five review boundaries.
+- [x] Pin 794 native groups/27,652 protocols and60 diagnostics, validating native batches before managed comparison.
+- [x] Add35 work/ownership/validation/capacity cases; reported endpoints, scope/restart and caller/source/Literal composition cover all five review boundaries.
 - [x] Publish tests-only draft PR249 against merged248; no production changes.
-- [x] Observe clean net10 RED:547 failures/87,149 passes/87,696 total/zero skips/zero compiler warnings/errors; all86,855 previous tests pass.
+- [x] Observe clean net10 RED:569 failures/87,175 passes/87,744 total/zero skips/zero compiler warnings/errors; all86,855 previous tests pass.
 - [x] Record exact source, fixture hash and RED result; freeze fixture.
 
 ### Task 2: caller policy initialization
 
-**Files:** src/Pcre/PcreByteOptions.cs, src/Pcre/PcreByteStartSettings.cs; seven inventories.
+**Files:** src/Pcre/PcreByteOptions.cs, src/Pcre/PcreByteStartSettings.cs, src/Pcre/PcreByteProgram.cs, src/Pcre/PcreByteMatcher.cs; seven inventories.
 **Interfaces:** add public init-only internal-record bools NotEmpty/NotEmptyAtStart; existing settings constructor and program compiler consume owned bool values.
 
 - [x] Add the two default-false properties and initialize notEmpty/options.NotEmpty and notEmptyAtStart/options.NotEmptyAtStart before prefix scanning.
+- [x] Mark only the proven single-root/no-callee terminal greedy literal query, in both shorthand/counted paths; commit its own fallback after consumption without extra instructions/frames/Step.
 - [x] Preserve Literal compatibility, OR source directives and all existing program/matcher/resource paths.
 - [x] Update PCRE-DESIGN, syntax matrix, resource contract, Grep inventory, roadmap status and this design/plan before source qualification.
-- [ ] Publish source; require six net10 results/87,696 tests each, zero warnings/errors/failures/skips,214 frozen/120 methods and all three library outputs per host.
+- [ ] Publish source; require six net10 results/87,744 tests each, zero warnings/errors/failures/skips,214 frozen/120 methods and all three library outputs per host.
 - [ ] Verify every configured supporting gate, frozen35 and all prior/frozen test hashes.
 
 ### Task 3: author review and delivery
@@ -57,7 +58,7 @@
 - [ ] Record final GREEN/review/identities on PR249 and only issue7 footer, preserving its original2600-character prefix.
 - [ ] Mark ready; retire only this plan's identity-checked ledger, preserving branch/worktree. Leave user merge/tag/publish.
 
-## Tests-first checkpoint
+## Initial tests-first checkpoint (superseded)
 
 Tests-only [RED757](https://github.com/uniblab/Icod.Expressions/actions/runs/43606687443), source `77824ef8a9f0e3c8b45fd2234ac729f1aedee165`, macOS ARM64 job132482835413: net10 built with zero compiler warnings/errors and ran **547 expected failures / 87,149 passes / 87,696 total / zero skips**. Exactly 538 missing-policy protocol groups, six retry-work and three ownership cases failed after successful native batches; all 86,855 earlier tests and 294 new controls passed. Freeze `e99bbdac4a0c2c33c22d1ffe1234bad7dc25de22` before production. Before clean RED, coverage review added 36 groups/1,300 protocols for assertion resets and caller-only local reset, retaining all original 805 expectations.
 
@@ -72,3 +73,9 @@ Initial production CI758/sourcefaf1a8c90a5ec839f1d8daede853aa6451e9e9a2 built wi
 Native auto_possessify/compare_opcodes commits a greedy iterator at OP_END; NO_AUTO_POSSESS changes (?=(A\K))A? under NOTEMPTY from no-match to reversed span1:-1, while lazy A?? and explicit (?:A|) retain that reversed result. The existing saved optional fallback caused the four protocol failures. Extend production to PcreByteProgram.cs/PcreByteMatcher.cs: for a single root branch without subroutine targets, and effective NOTEMPTY/ATSTART, prove only a direct trailing greedy0..1 literal repeat. Mark its existing literal instruction; after successful consumption discard exactly its immediately preceding optional Split fallback. Failed literals still take the zero branch, and lazy/group/class/call/nonterminal/wider shapes retain existing behavior (#102). Cover shorthand/count syntax, UTF/casing, explicit possessive and lazy/alternative controls. Keep instruction count, existing frame/journal shapes, opcodes, shared limits and successful-work charges unchanged; do not add atomic wrapper instructions.
 
 Before the corrected refreeze, add40 independently native-pinned groups plus8 source-budget/capacity controls, retaining all841 earlier case identities/assertions/native protocols. Final fixture:889 cases,794 groups/27,652 matching-offset protocols,60 diagnostics,35 supplemental cases;502 native strict split rows separated. Corrected tests-only baseline should run569 failures/87,175 passes/87,744 total/zero skips:558 missing caller-policy groups,2 existing source-NOTEMPTY terminal-query gaps,6 retry-work and3 ownership cases. Source-prefix budget controls reach the corrected exact/exhausted measurement before caller integration. Re-freeze only after that clean RED. This amendment supersedes the original two-file-only scope and initial fixture count; all265 pre-PR files stay immutable.
+
+## Corrected freeze evidence
+
+Corrected tests-only [RED760](https://github.com/uniblab/Icod.Expressions/actions/runs/43609311096), source `a89646740baac3ca1a03c2a26608e1b813f54eb4`, Linux x64 job132490648227: net10 built with zero compiler warnings/errors and ran **569 expected failures / 87,175 passes / 87,744 total / zero skips**. Exactly 558 missing caller-policy groups, two existing source-NOTEMPTY terminal-query gaps, six retry-work and three ownership cases failed after successful native batches; all 86,855 earlier tests and 320 new controls passed. Source-budget controls reached the corrected exact/exhausted checks before caller integration. Freeze `893128484f0a01f399c309b47019c3f8e4e14d8f` before production. The prior work-counter measurement was corrected without changing assertions or native expectations; all 841 earlier case identities remain, with 40 protocol groups/eight controls added before this corrected freeze.
+
+Final remaining qualification/review/delivery checkboxes are fulfilled externally on PR249/issue7; no documentation-only CI repeat.

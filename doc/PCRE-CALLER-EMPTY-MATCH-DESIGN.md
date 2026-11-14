@@ -49,32 +49,11 @@ Standing authorization covers this bounded extension and inline execution.
 
 ## Integration and proof
 
-Production scope: PcreByteOptions.cs (two bool properties) and
-PcreByteStartSettings.cs (two caller initializers). The existing settings
-constructor carries these values into immutable PcreByteProgram metadata.
-No parser body, IR, opcode, matcher, journal, shared resource limit, exported
-API, dependency, packaging or workflow change is planned.
+Four scoped production files initialize existing global settings and preserve native terminal-query parity. For one root branch without subroutine targets, effective NOTEMPTY/ATSTART and a direct trailing greedy 0..1 literal repeat, the compiler marks that literal instruction. Successful consumption discards only its immediately preceding optional Split fallback; a failed literal still takes the zero branch. Both shorthand and counted queries share the proof. Native auto_possessify commits greedy end-of-pattern iterators; NO_AUTO_POSSESS independently toggles the original mismatch. Lazy queries, explicit alternatives and explicit possessive forms retain their own behavior. No extra instructions, opcodes, frames, journal fields, quotas or successful-work charges. Wrapped/class/call/multiple-branch/wider proofs remain #102. Existing scoped acceptance, captures/cuts/labels, source ownership, validation and Literal/anchoring/UTF/casing/word/line/newline policies remain shared.
 
-PcreCallerEmptyMatchReferenceTests adds 841 cases: 754 protocol groups with
-26,212 independently preflighted native10.48/JIT0 matching/offset protocols,
-60 preserved compile diagnostics and 27 work/ownership/validation/capacity
-cases. Validate every native batch before managed comparison. Keep 462 native
-strict split-offset(-36) research rows outside the matching grid; strict
-subject/offset diagnostics have separate tests. Native no-match requires -1.
-Native spans use EndIndex-Index, retaining signed reset results, all captures
-and successful labels. Failed/partial labels remain a separate roadmap gate.
+The 889 cases comprise 794 groups/27,652 native10.48/JIT0 matching-offset protocols, 60 preserved compile diagnostics and 35 work/ownership/validation/capacity cases. Native batches precede managed comparisons; negative matching requires -1. All 265 prior test files/260 C# sources and frozen35 source blobs remain fixed. The 502 strict split-offset(-36) research rows stay outside matching, with separate validation tests. Full 256 capture/depth limits, 4095 versus 4096 literal instruction limits and terminal-query exact 4096-instruction capacity are pinned.
 
-Tests-only RED is expected to expose 538 missing-policy groups, six retry-work
-cases and three ownership cases: 547 failures, 87,149 passes, 87,696 total.
-All 86,855 earlier tests must pass. Freeze the new fixture after clean RED,
-before production; keep all 265 prior test files (260 C# files) hash-identical.
-Preserve frozen35 source blobs and 214 outcomes/120 methods per native result.
-
-All seven inventories precede final source qualification. Require six fresh
-net10 results at 87,696 each, zero failures/skips/compiler warnings/errors,
-all three library outputs on every native host and every configured supporting
-gate. Final review/GREEN/source/base/tree/proposed-merge identities belong on
-PR249 and only issue7 footer, without a documentation-only CI repeat.
+See [design](PCRE-CALLER-EMPTY-MATCH-DESIGN.md) and [plan](PCRE-CALLER-EMPTY-MATCH-PLAN.md). Final qualification requires six fresh net10 results at 87,744 tests each, zero failures/skips/compiler warnings/errors, 214 frozen outcomes/120 methods per result, all three library outputs per native host and every configured supporting gate. Builds remain net8/net9/net10; test execution only net10. All seven inventories precede final source qualification; final GREEN/review/exact source/base/tree/proposed-merge identities belong on PR249 and only issue7 footer, without a documentation-only CI repeat. UTF-C execution, callouts, remaining syntax/directives/match/API choices, tolerant-surrogate exclusions, failed/partial labels, broader #102, UTF16/exported API and realistic consumer/release gates remain open; Grep last. User owns merge/tag/publication.
 
 ## Remaining work
 
@@ -83,7 +62,7 @@ choices, tolerant-surrogate exclusions, failed/partial labels, broader native
 optimizer/resources (#102), UTF16/exported API, realistic consumer/release
 gates and final Grep migration remain open. This is scoped component evidence.
 
-## Tests-first checkpoint
+## Initial tests-first checkpoint (superseded)
 
 Tests-only [RED757](https://github.com/uniblab/Icod.Expressions/actions/runs/43606687443), source `77824ef8a9f0e3c8b45fd2234ac729f1aedee165`, macOS ARM64 job132482835413: net10 built with zero compiler warnings/errors and ran **547 expected failures / 87,149 passes / 87,696 total / zero skips**. Exactly 538 missing-policy protocol groups, six retry-work and three ownership cases failed after successful native batches; all 86,855 earlier tests and 294 new controls passed. Freeze `e99bbdac4a0c2c33c22d1ffe1234bad7dc25de22` before production. Before clean RED, coverage review added 36 groups/1,300 protocols for assertion resets and caller-only local reset, retaining all original 805 expectations.
 
@@ -98,3 +77,7 @@ Initial production CI758/sourcefaf1a8c90a5ec839f1d8daede853aa6451e9e9a2 built wi
 Native auto_possessify/compare_opcodes commits a greedy iterator at OP_END; NO_AUTO_POSSESS changes (?=(A\K))A? under NOTEMPTY from no-match to reversed span1:-1, while lazy A?? and explicit (?:A|) retain that reversed result. The existing saved optional fallback caused the four protocol failures. Extend production to PcreByteProgram.cs/PcreByteMatcher.cs: for a single root branch without subroutine targets, and effective NOTEMPTY/ATSTART, prove only a direct trailing greedy0..1 literal repeat. Mark its existing literal instruction; after successful consumption discard exactly its immediately preceding optional Split fallback. Failed literals still take the zero branch, and lazy/group/class/call/nonterminal/wider shapes retain existing behavior (#102). Cover shorthand/count syntax, UTF/casing, explicit possessive and lazy/alternative controls. Keep instruction count, existing frame/journal shapes, opcodes, shared limits and successful-work charges unchanged; do not add atomic wrapper instructions.
 
 Before the corrected refreeze, add40 independently native-pinned groups plus8 source-budget/capacity controls, retaining all841 earlier case identities/assertions/native protocols. Final fixture:889 cases,794 groups/27,652 matching-offset protocols,60 diagnostics,35 supplemental cases;502 native strict split rows separated. Corrected tests-only baseline should run569 failures/87,175 passes/87,744 total/zero skips:558 missing caller-policy groups,2 existing source-NOTEMPTY terminal-query gaps,6 retry-work and3 ownership cases. Source-prefix budget controls reach the corrected exact/exhausted measurement before caller integration. Re-freeze only after that clean RED. This amendment supersedes the original two-file-only scope and initial fixture count; all265 pre-PR files stay immutable.
+
+## Corrected freeze evidence
+
+Corrected tests-only [RED760](https://github.com/uniblab/Icod.Expressions/actions/runs/43609311096), source `a89646740baac3ca1a03c2a26608e1b813f54eb4`, Linux x64 job132490648227: net10 built with zero compiler warnings/errors and ran **569 expected failures / 87,175 passes / 87,744 total / zero skips**. Exactly 558 missing caller-policy groups, two existing source-NOTEMPTY terminal-query gaps, six retry-work and three ownership cases failed after successful native batches; all 86,855 earlier tests and 320 new controls passed. Source-budget controls reached the corrected exact/exhausted checks before caller integration. Freeze `893128484f0a01f399c309b47019c3f8e4e14d8f` before production. The prior work-counter measurement was corrected without changing assertions or native expectations; all 841 earlier case identities remain, with 40 protocol groups/eight controls added before this corrected freeze.
