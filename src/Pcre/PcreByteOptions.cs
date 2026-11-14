@@ -5,6 +5,8 @@ internal sealed record PcreByteOptions {
 	internal const int DefaultMatchWorkLimit = 1_000_000;
 
 	public int MatchWorkLimit { get; init; } = DefaultMatchWorkLimit;
+	/// <summary>Try only the requested candidate offset, retaining normal backtracking and reported resets.</summary>
+	public bool Anchored { get; init; }
 	/// <summary>Treat the complete owned pattern as literal text, including prefix and escape syntax.</summary>
 	public bool Literal { get; init; }
 	public bool Caseless { get; init; }

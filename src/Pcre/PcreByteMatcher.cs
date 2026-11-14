@@ -34,7 +34,7 @@ internal static partial class PcreByteMatcher {
 		var surrogateLiterals = program.MatchInvalidUtf && program.HasSurrogateLiterals;
 		// No candidate can reach the VM when the required first byte is absent.
 		// This is limited to unobserved, noncancellable exact byte searches.
-		var unobservedByteSearch = !program.Utf8 && !program.HasCaselessComparisons
+		var unobservedByteSearch = !program.Anchored && !program.Utf8 && !program.HasCaselessComparisons
 			&& !cancellationToken.CanBeCanceled && workObserver is null;
 		var leadingLiteral = -1;
 		var failedLiteralCost = 3;
@@ -69,7 +69,7 @@ internal static partial class PcreByteMatcher {
 				return new( null, null );
 			}
 		}
-		var unobservedUnicodeSearch = !cancellationToken.CanBeCanceled && workObserver is null
+		var unobservedUnicodeSearch = !program.Anchored && !cancellationToken.CanBeCanceled && workObserver is null
 			&& !program.RequiredLiteralSuffix.IsEmpty;
 		if ( unobservedUnicodeSearch && program.MatchInvalidUtf
 			&& MissingRequiredLiteralSuffixWithinBudget( program, input.Span, startOffset, matchWorkLimit ) ) {
@@ -129,7 +129,7 @@ internal static partial class PcreByteMatcher {
 			}
 			// Native STARTLINE search begins at the requested byte, so a newline
 			// whose encoding began before it cannot supply the first line candidate.
-			var excludedLineStart = program.LineStartSearch ? PcreByteNewlineExtensions.PartialAnyNewlineEnd( input.Span, startOffset ) : -1;
+			var excludedLineStart = !program.Anchored && program.LineStartSearch ? PcreByteNewlineExtensions.PartialAnyNewlineEnd( input.Span, startOffset ) : -1;
 			if ( program.MatchInvalidUtf && !program.NotEmpty && !program.NotEmptyAtStart && program.Instructions.Length == 1
 				&& program.Instructions[0].Opcode == PcreByteOpcode.Accept ) {
 				// PCRE2 permits an empty pattern at the requested byte offset,
@@ -175,7 +175,7 @@ internal static partial class PcreByteMatcher {
 			var regionalRun = new RegionalRun( -1, -1 );
 			var pruneLiteralEnd = -1;
 			// Keep the observed and cancellable path byte-for-byte accountable to Step().
-			var nullableInvalidCandidates = program.MatchInvalidUtf && program.CanMatchEmptyAtAnyOffset;
+			var nullableInvalidCandidates = !program.Anchored && program.MatchInvalidUtf && program.CanMatchEmptyAtAnyOffset;
 			var previousFragmentEnd = -1;
 			for ( var fragmentIndex = 0; fragmentIndex < fragments.Count; ) {
 				var fragment = fragments[fragmentIndex];
@@ -189,6 +189,7 @@ internal static partial class PcreByteMatcher {
 				} else { fragmentIndex++; }
 				previousFragmentEnd = fragment.End;
 				for ( var start = Math.Max( startOffset, fragment.Start ); start <= fragment.End; start++ ) {
+					if ( program.Anchored && start != startOffset ) { return new( null, null ); }
 					if ( program.Utf8 && start < fragment.End && ( input.Span[start] & 0xC0 ) == 0x80 ) {
 						continue; // Search candidate boundaries, never continuation bytes.
 					}
@@ -201,7 +202,7 @@ internal static partial class PcreByteMatcher {
 						SkipFailedLiteralCandidates( next );
 						start += next;
 					}
-					if ( program.CommitStartBytes is { } commitBytes ) {
+					if ( !program.Anchored && program.CommitStartBytes is { } commitBytes ) {
 						Step(); // Native first-code-unit entry precedes a leading COMMIT.
 						if ( start == input.Length || !commitBytes.Contains( input.Span[start] ) ) { continue; }
 					}
@@ -953,6 +954,8 @@ internal static partial class PcreByteMatcher {
 					}
 					if ( failed ) { break; }
 				}
+				// Anchoring constrains candidate selection, not the VM's recursive scopes.
+				if ( program.Anchored ) { return new( null, null ); }
 				if ( skipRestart > start ) {
 					// Native JIT forward SKIP goes directly to candidate entry,
 					// including LF after CR and fragment end/EOF. The for-loop

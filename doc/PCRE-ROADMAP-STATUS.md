@@ -1,6 +1,6 @@
 # PCRE roadmap status
 
-Reviewed after merged PR244, with PR245 in progress. Issue #7 remains the delivery roadmap; the
+Reviewed after merged PR245, with PR246 in progress. Issue #7 remains the delivery roadmap; the
 [syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md),
 [resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) and
 [Grep fixture inventory](PCRE-GREP-CONSUMER-FIXTURES.md) define the detailed gates.
@@ -58,6 +58,7 @@ retaining each framework's complete suite and frozen-result qualification.
    PR243 adds caller opt-in for match-start resets in supported assertions.
    PR244 adds ordinary escaped UTF literals through the validated scalar reader.
    PR245 adds whole-pattern literal compilation through canonical literal nodes.
+   PR246 adds caller-anchored candidate selection through immutable program policy.
    UTF code-unit escape,
    remaining directives/verbs/callouts and other matrix gaps require their own
    pinned reference fixtures. Decide any intentional exclusions before release;
@@ -75,10 +76,10 @@ retaining each framework's complete suite and frozen-result qualification.
 
 ## Current increment and next syntax work
 
-PR244 merged at075e6adc284187fd8716dc109af130fc6e533cb9;
-its81,727 tests/framework remain the baseline. PR245 adds caller literal
-compilation as described below. Final qualification and delivery evidence,
-including the main WindowsARM SDK-install retry, are recorded on PR245/issue7.
+PR245 merged at03c105b5a13890059f20ff51a074f67d180a20f6;
+its85,360 tests/framework remain the baseline. Main43575611111 and scripts
+43575611113 are green. PR246 adds caller-anchored compilation as described below;
+final qualification/review/delivery identities are recorded on PR246/issue7.
 
 ## PR234: backreferences blocking first-character search
 
@@ -697,3 +698,15 @@ Baseline244 `075e6adc284187fd8716dc109af130fc6e533cb9`/tree `328e5acad7569d300a7
 Tests-only [RED743](https://github.com/uniblab/Icod.Expressions/actions/runs/43483771907), source `02f144580c5af853578e682d3a5ae3a648252b2f`, Linux ARM job132086996194: net8/9/10 each built with zero compiler warnings/errors and ran **786 expected failures / 84,574 passes / 85,360 total / zero skips**. Failures were466 primary profiles,316 compatibility/error boundaries,1 work/ownership case and3 structural cases per framework. All81,727 earlier tests and2,847 new controls passed; every native assertion passed. Freeze `842c7045a4a7ed25d1f486f56702644eed8ac53c` before production. Before this clean RED, seven overlaps were deduplicated and the new helper's managed offset argument was corrected; no expected outcome was weakened.
 
 See [design](PCRE-LITERAL-COMPILE-DESIGN.md) and [plan](PCRE-LITERAL-COMPILE-PLAN.md). GNU/BRE/ERE, frozen35/214 outcomes/120methods, IR/opcodes/matcher/journal/shared limits/exported API/dependencies/workflows stay fixed. Final all18 native results and every supporting gate, author review and exact source/base/tree/proposed-merge identities belong on PR245 and only issue7 footer; no documentation-only CI push. UTF-C execution, remaining syntax/modes/callouts/directives, broader102, UTF16/public API and consumer/release gates remain open; Grep last.
+
+## PR246: caller-selected anchored compilation
+
+Default-false caller `Anchored` implements PCRE2_ANCHORED0x80000000 by trying only the requested candidate byte offset. Alternatives, backtracking, assertions, recursive root0/callees, ACCEPT/cuts and labels remain normal at that candidate. A reported start moved by backslash-K may differ from the original candidate. Caller literal compilation, casing, source prefixes and word/line/newline policies remain shared.
+
+The compiler snapshots the option into immutable program policy metadata after ordinary compilation. The matcher gates unanchored byte/suffix/COMMIT entry, admits only the requested candidate and stops after its failure before SKIP/fragment/CRLF retries. Existing UTF/offset validation and fragment context remain intact. The parser, IR nodes/opcodes, scopes/journal and shared ceilings are unchanged; no source-level backslash-G wrapper or subject slicing changes recursion or capacity.
+
+Merged245 `03c105b5a13890059f20ff51a074f67d180a20f6`/tree `4868b519b9205cf6327fc501f86e041836ccf023` has85,360 tests/framework and262 prior files. Main43575611111/scripts43575611113 are green. PR246 adds325 tests for85,685/framework; all earlier hashes remain fixed. All seven inventories precede source qualification, with final evidence external on PR246/issue7.
+
+Tests-only [RED746](https://github.com/uniblab/Icod.Expressions/actions/runs/43578255592), source `33ed1a4a6e5344fa53df7aeb03c6c462ab371706`, Linux ARM job132397293572: net8/net9/net10 each built with zero compiler warnings/errors and ran **131 expected failures / 85,554 passes / 85,685 total / zero skips**. Failures were128 protocol groups,2 bounded-byte-budget cases and1 ownership case/framework. Every pinned native assertion, all85,360 earlier tests and194 new controls passed. Freeze `95620f1478537b71880c07c64e20474c3de537ad` before production. Before clean RED, one new byte-range diagnostic control was corrected to preserve its existing hyphen offset2; native108/offset4 and all earlier tests remained unchanged.
+
+See [design](PCRE-ANCHORED-COMPILE-DESIGN.md) and [plan](PCRE-ANCHORED-COMPILE-PLAN.md). All262 prior test files and frozen35 production blobs remain hash-fixed; GNU/BRE/ERE and214 frozen outcomes/120 methods are preserved. Final all18 native results, every configured supporting gate, whole-branch author review and exact source/base/tree/proposed-merge identities belong on PR246 and only issue7 footer, without a documentation-only CI push. ENDANCHORED/FIRSTLINE, UTF-C execution, callouts, remaining syntax/modes/directives, tolerant-surrogate exclusions, failed/partial labels, broader102, NO_UTF_CHECK/UTF16/public API and consumer/release gates remain open; Grep last.
