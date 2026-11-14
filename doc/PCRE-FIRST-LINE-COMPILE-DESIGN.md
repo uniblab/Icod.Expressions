@@ -27,7 +27,8 @@ termination. Under FirstLine, bypass the frontier only for a bounded immutable
 root-entry proof. The proof recognizes transparent single-branch groups,
 opaque MARK/reference/call entry and terminal unrestricted atom/property or
 nullable paths, with at most four group levels/1,000 visits. Positive current-
-position assertions and restrictive/suffixed prefixes keep the window gate.
+position assertions and restrictive fixed-width byte prefixes keep the gate;
+UTF dot terminates native prefix study even when followed by a suffix.
 The proof uses existing source-shape metadata; unknown broader shapes stay
 within the existing issue102 optimizer qualification boundary.
 
@@ -95,3 +96,7 @@ and freeze the expanded fixture before implementing either boundary.
 Expanded tests-only [RED751](https://github.com/uniblab/Icod.Expressions/actions/runs/43590798617), source `77ed49eca15e2f9c2a77ca9feda7917f485b21fa`, Linux ARM132434872721: net8/net9/net10 each built with zero compiler warnings/errors and ran **368 expected failures /86,487 passes /86,855 total /zero skips**. Failures were341 missing-window groups,24 anchored-SKIP groups,2 bounded-work cases and1 ownership case/framework, all after successful native assertions. All86,250 earlier tests and237 new controls passed. Freeze `68d9c25772810758954234e4df4b45c76677e3dd` before production. Initial RED750 exposed four anchored-SKIP groups beyond the original FirstLine predictions; the fixture was expanded from413 to605 before production, preserving every original expectation and all prior test files.
 
 The605 tests retain8,041 protocols in520 groups,65 diagnostics and20 supplemental cases. Final qualification/review/identities remain external on PR248/issue7.
+
+## UTF prefix qualification correction
+
+Initial source4e24403e0e4c8f552dbaaf1e09b39ba672231b65/CI75243591726169 built cleanly; Linux ARM132437783721 ran4 failures/86,851 passes/86,855 total/zero skips on all three frameworks. Only plain/named SKIP into dot-plus-B in tolerant UTF failed, with both EndAnchored policies. Native10.48 scan_prefix stops at UTF OP_ANY/OP_ALLANY before considering the suffix; the bounded proof now treats UTF dot as opaque regardless of suffix, retaining fixed-width byte suffix filtering. The four frozen regression groups provide RED; all264 earlier test files and fixture68d9c25772810758954234e4df4b45c76677e3dd remain unchanged. Broader prefix proofs stay in issue102. Final all18 qualification/review/identities remain external on PR248/issue7.

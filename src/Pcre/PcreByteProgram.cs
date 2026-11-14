@@ -1826,6 +1826,8 @@ internal sealed class PcreByteProgramCompiler {
 					case PcreByteRepeat { Minimum: 0, Child: PcreByteLiteral }: break;
 					case PcreBytePathMark or PcreByteBackreference or PcreByteSubroutineCall or PcreByteAccept:
 						return true; // Native study/prefix scanning stops before any character.
+					case PcreByteAny when utf8:
+						return true; // Native UTF prefix study stops at variable-width dot.
 					case PcreByteAny or PcreByteGrapheme:
 						return pending.Count == 0;
 					case PcreByteClass characterClass:
