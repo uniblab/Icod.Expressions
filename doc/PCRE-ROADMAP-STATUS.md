@@ -1,6 +1,6 @@
 # PCRE roadmap status
 
-Reviewed after merged PR246, with PR247 in progress. Issue #7 remains the delivery roadmap; the
+Reviewed after merged PR247, with PR248 in progress. Issue #7 remains the delivery roadmap; the
 [syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md),
 [resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) and
 [Grep fixture inventory](PCRE-GREP-CONSUMER-FIXTURES.md) define the detailed gates.
@@ -60,6 +60,7 @@ retaining each framework's complete suite and frozen-result qualification.
    PR245 adds whole-pattern literal compilation through canonical literal nodes.
    PR246 adds caller-anchored candidate selection through immutable program policy.
    PR247 adds caller end-anchored root completion through the same policy metadata.
+   PR248 adds caller first-line candidate windows through a bounded newline frontier.
    UTF code-unit escape,
    remaining directives/verbs/callouts and other matrix gaps require their own
    pinned reference fixtures. Decide any intentional exclusions before release;
@@ -77,10 +78,10 @@ retaining each framework's complete suite and frozen-result qualification.
 
 ## Current increment and next syntax work
 
-PR246 merged at153273df6fd58266599e0dc495f15da4f51b3bda;
-its85,685 tests/framework remain the baseline. Main43583523079 and scripts
-43583523076 are green. PR247 adds end-anchored compilation as described below;
-final qualification/review/delivery identities are recorded on PR247/issue7.
+PR247 merged atbb6056dfb4aa1fd9e3e1ed149eaaa9004cc35fb0;
+its86,250 tests/framework remain the baseline. Main43587678445/scripts43587678506 are green.
+PR248 adds first-line candidate windows as described below; final qualification/
+review/delivery identities are recorded on PR248/issue7.
 
 ## PR234: backreferences blocking first-character search
 
@@ -723,3 +724,25 @@ Merged246 `153273df6fd58266599e0dc495f15da4f51b3bda`/tree `62a2e3ee4994368a362a0
 Tests-only [RED748](https://github.com/uniblab/Icod.Expressions/actions/runs/43585144086), source `7140659a6924969d2fa5dd4ea658cfc49bcc2719`, Linux ARM job132417911226: net8/net9/net10 each built with zero compiler warnings/errors and ran **385 expected failures / 85,865 passes / 86,250 total / zero skips**. Failures were384 missing-policy protocol groups and1 ownership case/framework, all after successful native assertions. All85,685 earlier tests and180 new controls passed. Freeze `2e39a5a936a8358973932a230d53f37abd7c9199` before production; no fixture correction or prior-test change was needed.
 
 See [design](PCRE-END-ANCHORED-COMPILE-DESIGN.md) and [plan](PCRE-END-ANCHORED-COMPILE-PLAN.md). All263 prior test files and frozen35 production blobs remain hash-fixed; GNU/BRE/ERE and214 frozen outcomes/120 methods are preserved. Final all18 native results, configured supporting gates, whole-branch author review and exact source/base/tree/proposed-merge identities belong on PR247 and only issue7 footer, without a documentation-only CI push. FIRSTLINE, UTF-C execution, callouts, remaining syntax/modes/directives, tolerant-surrogate exclusions, failed/partial labels, broader102, NO_UTF_CHECK/UTF16/public API and consumer/release gates remain open; Grep last.
+
+## PR248: caller-selected first-line compilation
+
+Default-false caller `FirstLine` implements PCRE2_FIRSTLINE0x100. Unanchored candidate starts are limited to positions before or at the first configured newline following the requested offset. Matches can consume across that newline, and reported backslash-K starts may lie beyond it. A later requested offset selects a new window. Caller Anchored ignores the policy; EndAnchored independently constrains completion. Literal/casing/UTF/source/word/line policies compose normally.
+
+The compiler snapshots FirstLine alongside the existing anchoring flags after ordinary compilation. A Step-accounted incremental newline frontier from startOffset gates all later candidate entry before COMMIT first-byte checks, including CRLF/inferred-line/fragment/empty-EOF retries. Explicit forward SKIP is honored before anchored termination; proven unfiltered SKIP entry can bypass FirstLine as in native JIT, while filtered entry keeps the window. A bounded root proof uses existing source shape, four group levels and1,000 visits; broader optimizer shapes remain issue102. Existing newline/UTF readers preserve complete scalar/pair recognition and malformed raw offsets. Unobserved byte/suffix shortcuts are disabled under FirstLine so work accounting cannot cross the window. The first requested candidate spends no frontier work; input consumption and lookbehind remain unrestricted by this start policy. Parser/root0/callee IR/opcodes/scopes/journal/shared ceilings remain unchanged.
+
+Merged247 `bb6056dfb4aa1fd9e3e1ed149eaaa9004cc35fb0`/tree `8a1e5efa9cfdc4c2b359ea6c0ed5c57db472950f` has86,250 tests/framework and264 earlier files. Main43587678445/scripts43587678506 are green. PR248 adds605 tests for86,855/framework. All prior hashes remain fixed; all seven inventories precede source qualification, with final evidence external on PR248/issue7.
+
+Expanded tests-only [RED751](https://github.com/uniblab/Icod.Expressions/actions/runs/43590798617), source `77ed49eca15e2f9c2a77ca9feda7917f485b21fa`, Linux ARM132434872721: net8/net9/net10 each built with zero compiler warnings/errors and ran **368 expected failures /86,487 passes /86,855 total /zero skips**. Failures were341 missing-window groups,24 anchored-SKIP groups,2 bounded-work cases and1 ownership case/framework, all after successful native assertions. All86,250 earlier tests and237 new controls passed. Freeze `68d9c25772810758954234e4df4b45c76677e3dd` before production. Initial RED750 exposed four anchored-SKIP groups beyond the original FirstLine predictions; the fixture was expanded from413 to605 before production, preserving every original expectation and all prior test files.
+
+See [design](PCRE-FIRST-LINE-COMPILE-DESIGN.md) and [plan](PCRE-FIRST-LINE-COMPILE-PLAN.md). All264 earlier test files and frozen35 production blobs remain hash-fixed; GNU/BRE/ERE and214 frozen outcomes/120 methods are preserved. Final all18 results/supporting gates, whole-branch author review and exact source/base/tree/proposed-merge identities belong on PR248 and only issue7 footer, without a documentation-only CI push. UTF-C, callouts, remaining syntax/modes/directives, tolerant-surrogate exclusions, failed/partial labels, broader102, NO_UTF_CHECK/UTF16/public API and realistic consumer/release gates remain open; Grep last.
+
+## UTF prefix qualification correction
+
+Initial source4e24403e0e4c8f552dbaaf1e09b39ba672231b65/CI75243591726169 built cleanly; Linux ARM132437783721 ran4 failures/86,851 passes/86,855 total/zero skips on all three frameworks. Only plain/named SKIP into dot-plus-B in tolerant UTF failed, with both EndAnchored policies. Native10.48 scan_prefix stops at UTF OP_ANY/OP_ALLANY before considering the suffix; the bounded proof now treats UTF dot as opaque regardless of suffix, retaining fixed-width byte suffix filtering. The four frozen regression groups provide RED; all264 earlier test files and fixture68d9c25772810758954234e4df4b45c76677e3dd remain unchanged. Broader prefix proofs stay in issue102. Final all18 qualification/review/identities remain external on PR248/issue7.
+
+## Requested temporary .NET 10 test policy
+
+The user changed tests/Icod.Expressions.Tests.csproj in commit0ab40ea6048c43d2c908d8eef1402a5acfde2bcc to target net10.0 only, then explicitly requested builds for net8.0/net9.0/net10.0 with test execution only on10. PR/main/tag workflows now retain all three library builds on all six native OS/architecture hosts, select net10.0 for full/frozen tests and parity/package smoke execution, and remove the Intel8/9 test jobs. Intel restores/builds the complete solution without TargetFrameworks overrides. The result contract expects net10.0; release prerequisites require all seven current main jobs, including Intel test and aggregation. Existing main-job acceptance/rejection checks were updated (RED against the old guard, then all nine checks GREEN); generic result-validation capabilities remain unchanged.
+
+Pre-policy engine source1ed02620bd83355a351570fe8af655c848309b84/CI75343592621873 passed all18 results at86,855 each. Final qualification after this user-directed configuration change requires six net10 results,214 frozen outcomes/120 methods each, zero failures/skips/compiler warnings/errors, all three library outputs per native host, supporting gates and all configured source-pinned compatibility jobs. The frozen605-case fixture68d9c25772810758954234e4df4b45c76677e3dd, all prior C# test sources and engine sources from1ed0262 remain unchanged. The user project edit and existing main-job gate fixture are intentional configuration changes. Final current-head evidence/review/identities remain external on PR248 and only issue7 footer; this policy supersedes the previous eighteen-current-result requirement. No merge/tag/publish action is authorized here.

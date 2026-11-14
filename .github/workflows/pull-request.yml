@@ -68,12 +68,13 @@ jobs:
         run: dotnet restore Icod.Expressions.sln
       - name: Build all target frameworks
         run: dotnet build Icod.Expressions.sln -c ${{ env.CONFIGURATION }} --no-restore -p:ContinuousIntegrationBuild=true
-      - name: Run full suite concurrently and verify frozen results
+      - name: Run .NET 10 full suite and verify frozen results
         shell: pwsh
         run: >-
           ./packaging/Invoke-Tests.ps1
           -Path tests/Icod.Expressions.Tests.csproj
           -Configuration '${{ env.CONFIGURATION }}'
+          -Framework net10.0
           -ContractPath packaging/test-results.json
 
       - name: Verify frozen source manifest in Git Bash
@@ -126,9 +127,7 @@ jobs:
         shell: bash
         run: |
           set -e
-          for framework in net8.0 net9.0 net10.0; do
-            dotnet run --project tools/RegularExpressionParityBaseline/RegularExpressionParityBaseline.csproj -c ${{ env.CONFIGURATION }} -f "$framework" -- --verify doc/Icod.Expressions-A04-Parity-Baseline.jsonl
-          done
+          dotnet run --project tools/RegularExpressionParityBaseline/RegularExpressionParityBaseline.csproj -c ${{ env.CONFIGURATION }} -f net10.0 -- --verify doc/Icod.Expressions-A04-Parity-Baseline.jsonl
       - name: Compare POSIX ASCII cases with glibc
         if: matrix.os == 'ubuntu-latest'
         run: dotnet run --project tools/PosixRegexDifferential/PosixRegexDifferential.csproj -c Staging
@@ -155,9 +154,7 @@ jobs:
         shell: bash
         run: |
           set -e
-          for framework in net8.0 net9.0 net10.0; do
-            dotnet run --project samples/PackageSmoke/PackageSmoke.csproj -c Staging --no-build --no-restore -f "$framework"
-          done
+          dotnet run --project samples/PackageSmoke/PackageSmoke.csproj -c Staging --no-build --no-restore -f net10.0
 
   compatibility:
     needs: classify
@@ -207,16 +204,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - framework: net8.0
+          - framework: net10.0
             sdk: |
               8.0.x
-              10.0.x
-          - framework: net9.0
-            sdk: |
               9.0.x
               10.0.x
-          - framework: net10.0
-            sdk: 10.0.x
     name: macOS x64 ${{ matrix.framework }}
     runs-on: macos-15-intel
     steps:
@@ -247,7 +239,7 @@ jobs:
           pattern: macos-x64-*
           merge-multiple: true
           path: artifacts/macos-test-results
-      - name: Verify complete three-framework Intel results
+      - name: Verify complete Intel .NET 10 results
         shell: pwsh
         run: >-
           ./packaging/VerifyTestResults.ps1

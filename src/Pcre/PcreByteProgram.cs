@@ -71,6 +71,8 @@ internal sealed record PcreByteProgram(
 ) {
 	internal bool Anchored { get; init; }
 	internal bool EndAnchored { get; init; }
+	internal bool FirstLine { get; init; }
+	internal bool FirstLineSkipBypassesWindow { get; init; }
 	internal int ScalarExpressionStackDepth { get; init; }
 	internal bool TurkishCasing { get; init; }
 	internal PcreByteSet? CommitStartBytes { get; init; }
@@ -197,6 +199,8 @@ internal sealed class PcreByteProgramCompiler {
 			bytePrefix.Unconditional, utfCrLfStartClass, notEmpty, notEmptyAtStart,
 			matchInvalidUtf && newline == PcreByteNewline.Any && HasLineStartSearch( root ), ucp, bytePrefix.Literal ) {
 			ScalarExpressionStackDepth = scalarExpressionStackDepth, CommitStartBytes = commitBytes, TurkishCasing = turkishCasing,
+			FirstLineSkipBypassesWindow = instructions.Any( item => item.Opcode is PcreByteOpcode.Skip or PcreByteOpcode.SkipNamed )
+				&& HasUnfilteredFirstLineSkipEntry( root ),
 			PathMarkSlot = pathMarkSlot, TrackPathMarks = hasNamedSkip, HasSurrogateLiterals = hasSurrogateLiterals
 		};
 	}
@@ -1781,6 +1785,86 @@ internal sealed class PcreByteProgramCompiler {
 	private static ReadOnlyMemory<byte> VisibleControlName( ReadOnlyMemory<byte> name ) {
 		var terminator = name.Span.IndexOf( (byte)0 );
 		return terminator >= 0 ? name.Slice( 0, terminator ) : name;
+	}
+
+	private bool HasUnfilteredFirstLineSkipEntry( PcreByteAlternatives root ) {
+		// Forward SKIP enters native continue_match directly. Only a later
+		// first-unit/prefix filter can enforce FIRSTLINE there. Prove a bounded
+		// unfiltered root path; do not generalize the wider issue102 study.
+		var visits = 0;
+		foreach ( var branch in root.Branches ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( IsUnfiltered( branch ) ) { return true; }
+		}
+		return false;
+
+		bool IsUnfiltered( IReadOnlyList<PcreByteNode> branch ) {
+			var pending = new Stack<(PcreByteNode Node, int Depth)>();
+			if ( !AddNodes( branch, 0 ) ) { return false; }
+			while ( pending.TryPop( out var item ) ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				if ( ++visits > MaximumStartClassVisits ) { return false; }
+				switch ( item.Node ) {
+					case PcreByteGroup group:
+						if ( group.Body.Branches.Count != 1 || !AddNodes( group.Body.Branches[0], item.Depth + 1 ) ) { return false; }
+						break;
+					case PcreByteNoncapturingGroup group:
+						if ( group.Body.Branches.Count != 1 || !AddNodes( group.Body.Branches[0], item.Depth + 1 ) ) { return false; }
+						break;
+					case PcreByteAtomic atomic: pending.Push( (atomic.Child, item.Depth) ); break;
+					case PcreByteStaticConditional conditional:
+						var selected = conditional.Value ? 0 : 1;
+						if ( selected < conditional.Body.Branches.Count && !AddNodes( conditional.Body.Branches[selected], item.Depth + 1 ) ) { return false; }
+						break;
+					case PcreByteMatchStartReset or PcreByteAnchor or PcreByteSearchStart
+						or PcreByteEndBeforeFinalLf or PcreByteWordBoundary or PcreByteLookbehind:
+						break;
+					case PcreByteLiteralAssertion assertion when !assertion.IsPositive || assertion.IsBehind || assertion.Bytes.IsEmpty:
+						break;
+					case PcreByteLookahead { IsPositive: false }: break;
+					case PcreByteRepeat { Maximum: 0 }: break;
+					case PcreByteRepeat { Minimum: 0, Child: PcreByteLiteral }: break;
+					case PcreBytePathMark or PcreByteBackreference or PcreByteSubroutineCall or PcreByteAccept:
+						return true; // Native study/prefix scanning stops before any character.
+					case PcreByteAny when utf8:
+						return true; // Native UTF prefix study stops at variable-width dot.
+					case PcreByteAny or PcreByteGrapheme:
+						return pending.Count == 0;
+					case PcreByteClass characterClass:
+						// Builtin byte types have native start bitmaps, unlike NOT,
+						// terminal property/ALLANY atoms with the same prefix shape.
+						return pending.Count == 0 && characterClass.PrefixAny
+							&& characterClass.Set != PcreByteSet.Word && characterClass.Set != PcreByteSet.Word.Complement()
+							&& characterClass.Set != PcreByteSet.Digit && characterClass.Set != PcreByteSet.Digit.Complement()
+							&& characterClass.Set != PcreByteSet.WhiteSpace && characterClass.Set != PcreByteSet.WhiteSpace.Complement();
+					case PcreByteScalarClass { Kind: PcreByteScalarClassKind.Letter }:
+						return pending.Count == 0;
+					case PcreByteScalarSet set when pending.Count == 0:
+						if ( set.Negated && set.Source == PcreByteScalarSetSource.Literal ) { return true; }
+						foreach ( var predicate in set.Predicates.Span ) {
+							cancellationToken.ThrowIfCancellationRequested();
+							if ( ++visits > MaximumStartClassVisits ) { return false; }
+							if ( predicate.Kind == PcreByteScalarClassKind.Letter ) { return true; }
+						}
+						if ( !set.Negated && set.Predicates.Length == 2 ) {
+							var first = set.Predicates.Span[0];
+							var second = set.Predicates.Span[1];
+							return first.Kind == second.Kind && first.Category == second.Category
+								&& first.PropertyValue == second.PropertyValue && first.Negated != second.Negated;
+						}
+						return false;
+					default: return false;
+				}
+			}
+			return true; // A complete nullable path cannot supply a first-unit filter.
+
+			bool AddNodes( IReadOnlyList<PcreByteNode> nodes, int depth ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				if ( depth > 4 || nodes.Count > MaximumStartClassVisits - visits - pending.Count ) { return false; }
+				for ( var index = nodes.Count - 1; index >= 0; index-- ) { pending.Push( (nodes[index], depth) ); }
+				return true;
+			}
+		}
 	}
 
 	private PcreByteSet? FindCommitStartBytes( PcreByteAlternatives root ) {

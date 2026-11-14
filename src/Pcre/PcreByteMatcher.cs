@@ -34,7 +34,7 @@ internal static partial class PcreByteMatcher {
 		var surrogateLiterals = program.MatchInvalidUtf && program.HasSurrogateLiterals;
 		// No candidate can reach the VM when the required first byte is absent.
 		// This is limited to unobserved, noncancellable exact byte searches.
-		var unobservedByteSearch = !program.Anchored && !program.Utf8 && !program.HasCaselessComparisons
+		var unobservedByteSearch = !program.Anchored && !program.FirstLine && !program.Utf8 && !program.HasCaselessComparisons
 			&& !cancellationToken.CanBeCanceled && workObserver is null;
 		var leadingLiteral = -1;
 		var failedLiteralCost = 3;
@@ -69,7 +69,7 @@ internal static partial class PcreByteMatcher {
 				return new( null, null );
 			}
 		}
-		var unobservedUnicodeSearch = !program.Anchored && !cancellationToken.CanBeCanceled && workObserver is null
+		var unobservedUnicodeSearch = !program.Anchored && !program.FirstLine && !cancellationToken.CanBeCanceled && workObserver is null
 			&& !program.RequiredLiteralSuffix.IsEmpty;
 		if ( unobservedUnicodeSearch && program.MatchInvalidUtf
 			&& MissingRequiredLiteralSuffixWithinBudget( program, input.Span, startOffset, matchWorkLimit ) ) {
@@ -177,6 +177,8 @@ internal static partial class PcreByteMatcher {
 			// Keep the observed and cancellable path byte-for-byte accountable to Step().
 			var nullableInvalidCandidates = !program.Anchored && program.MatchInvalidUtf && program.CanMatchEmptyAtAnyOffset;
 			var previousFragmentEnd = -1;
+			var firstLinePosition = startOffset;
+			var forcedSkipStart = -1;
 			for ( var fragmentIndex = 0; fragmentIndex < fragments.Count; ) {
 				var fragment = fragments[fragmentIndex];
 				if ( nullableInvalidCandidates && previousFragmentEnd >= 0
@@ -189,10 +191,26 @@ internal static partial class PcreByteMatcher {
 				} else { fragmentIndex++; }
 				previousFragmentEnd = fragment.End;
 				for ( var start = Math.Max( startOffset, fragment.Start ); start <= fragment.End; start++ ) {
-					if ( program.Anchored && start != startOffset ) { return new( null, null ); }
+					if ( program.Anchored && start != startOffset && start != forcedSkipStart ) { return new( null, null ); }
 					if ( program.Utf8 && start < fragment.End && ( input.Span[start] & 0xC0 ) == 0x80 ) {
 						continue; // Search candidate boundaries, never continuation bytes.
 					}
+					if ( program.FirstLine && !program.Anchored
+						&& !( start == forcedSkipStart && program.FirstLineSkipBypassesWindow ) ) {
+						while ( firstLinePosition < start ) {
+							Step(); // Inspect one intervening scalar or malformed byte.
+							var atNewline = program.Newline == PcreByteNewline.Any
+								? PcreByteNewlineExtensions.AnyLengthAt( input.Span, firstLinePosition, input.Length, program.Utf8 ) > 0
+								: program.Newline == PcreByteNewline.CrLf
+								? PcreByteNewlineExtensions.IsCrLf( input.Span, firstLinePosition, input.Length )
+								: input.Span[firstLinePosition] == program.NewlineCharacter
+									|| program.AnyCrLfNewline && input.Span[firstLinePosition] == (byte)'\r';
+							if ( atNewline ) { return new( null, null ); }
+							firstLinePosition += program.Utf8 && PcreUtf8.TryReadLiteral( input.Span, firstLinePosition,
+								surrogateLiterals, out _, out var firstLineWidth ) ? firstLineWidth : 1;
+						}
+					}
+					forcedSkipStart = -1; // Only an explicit forward SKIP admits this entry.
 					if ( leadingLiteral >= 0 ) {
 						var next = input.Span.Slice( start, fragment.End - start ).IndexOf( (byte)leadingLiteral );
 						if ( next < 0 ) {
@@ -966,15 +984,18 @@ internal static partial class PcreByteMatcher {
 					}
 					if ( failed ) { break; }
 				}
-				// Anchoring constrains candidate selection, not the VM's recursive scopes.
-				if ( program.Anchored ) { return new( null, null ); }
 				if ( skipRestart > start ) {
+					// Native reset_match enters a forward target directly, even when
+					// caller-anchored. A later ordinary failure still terminates it.
+					forcedSkipStart = skipRestart;
 					// Native JIT forward SKIP goes directly to candidate entry,
 					// including LF after CR and fragment end/EOF. The for-loop
 					// increment supplies the final byte; scalar targets were consumed.
 					start = skipRestart - 1;
 					continue;
 				}
+				// Anchoring constrains ordinary candidate retries, not forced SKIP entry.
+				if ( program.Anchored ) { return new( null, null ); }
 				if ( program.UtfCrLfStartClass && !program.ExplicitNewline
 					&& ( program.Newline is PcreByteNewline.AnyCrLf or PcreByteNewline.CrLf or PcreByteNewline.Any )
 					&& utfRepeatEnd > start && utfRepeatEnd < fragment.End - 1
