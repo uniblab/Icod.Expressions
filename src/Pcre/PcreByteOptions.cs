@@ -25,6 +25,8 @@ internal sealed record PcreByteOptions {
 	public bool NotEol { get; init; }
 	/// <summary>Treat the complete owned pattern as literal text, including prefix and escape syntax.</summary>
 	public bool Literal { get; init; }
+	/// <summary>Preserve repeat fallback paths otherwise removed by automatic possessification.</summary>
+	public bool NoAutoPossess { get; init; }
 	public bool Caseless { get; init; }
 	/// <summary>Initialize restricted comparisons without enabling caseless matching.</summary>
 	public bool CaselessRestricted { get; init; }
@@ -110,7 +112,7 @@ internal sealed record PcreByteOptions {
 		|| AltVerbNames || ExtendedMore || AltExtendedClass || AllowSurrogateEscapes
 		|| BadEscapeIsLiteral || EscapedCrIsLf || ExtraAltBsux || AllowLookaroundBackslashK
 		|| AsciiBsD || AsciiBsS || AsciiBsW || AsciiPosix || AsciiDigit || PythonOctal
-		|| NoBackslashZero || NeverCallout;
+		|| NoBackslashZero || NeverCallout || NoAutoPossess;
 
 	/// <summary>Test-only progress hook used to cancel a running match deterministically.</summary>
 	internal Action<int>? WorkObserver { get; init; }

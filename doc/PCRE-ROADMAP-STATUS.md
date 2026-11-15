@@ -1,6 +1,6 @@
 # PCRE roadmap status
 
-Reviewed after merged PR251, with PR252 in progress. Issue #7 remains the delivery roadmap; the
+Reviewed after merged PR252, with PR253 in progress. Issue #7 remains the delivery roadmap; the
 [syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md),
 [resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) and
 [Grep fixture inventory](PCRE-GREP-CONSUMER-FIXTURES.md) define the detailed gates.
@@ -790,3 +790,9 @@ The1,135 cases comprise576 groups/19,240 native10.48/JIT0 match-offset protocols
 ### PR252 corrected oracle qualification
 
 PR252 oracle qualification was restarted because PCRE.NET drops zero-valued native pattern-length settings. Direct PCRE2 zero expectations are unchanged; the test-only positive-limit bridge is proven equivalent across193 profiles/6,562 direct-native rows. Corrected RED43640343531 verifies336 managed failures/90,367 passes/90,703 total and every native preflight before refreezing commonaea2a3360f7761ccdb86329eebe267133bf51ff0. All prior/new assertions and data remain; see the design for the superseded initial proof and exact corrected source/tree/job evidence.
+
+## PR253: caller control of automatic possessification
+
+PR252 merged as `7e55bbf2044b788bb5be6ec27f5d4a75fcfd317c`, tree `fb7b7dacee2c9c8e49992d1770beb85fcd5a70fa`, ordered parents base251 `6da239a485720ccd7299a67c4c7e7e3c8901056d` then reviewed252 `6515433c9a9d930f9848f96f3b55ef5b8eb1fe47`. Main43695122735/scripts43695122742 are green; 90,703 tests are the baseline. PR253 adds caller NoAutoPossess through the existing compile proof. Broader automatic possessification, optimization controls/source directives and other syntax/match/API/consumer/release gates remain separately scoped.
+
+The 876 new cases pin 796 matching groups / 28,380 native PCRE2 10.48/JIT0 match-offset protocols, 57 compile diagnostics and 23 priority/work/ownership/validation/capacity cases. Separate 1,064 strict split-offset (-36) research rows from matching. Native batches precede managed comparisons. See [design](PCRE-NO-AUTO-POSSESS-DESIGN.md) and [plan](PCRE-NO-AUTO-POSSESS-PLAN.md) for RED/frozen evidence. Require six fresh net10 results with 91,579 passes each, zero failures/skips/compiler warnings/errors, 214 frozen outcomes / 120 methods each, all net8/net9/net10 library outputs and every configured supporting gate. All seven inventories precede final source qualification. Final GREEN/whole-branch author review/source/base/tree/proposed-merge identities belong on PR253 and issue7 footer only, preserving its original2600-character prefix; no docs-only CI repeat. Remaining UTF-code-unit/callout/syntax/directive/match/API/optimizer (#102)/consumer/release gates stay open; Grep last; user owns merge/tag/publication.
