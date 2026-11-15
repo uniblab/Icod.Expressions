@@ -28,9 +28,9 @@
 **Files:** create tests/Pcre/PcreNoStartOptimizeReferenceTests.cs and PcreNoStartOptimizeProtocols.Part1.cs/Part2.cs; current design/plan.
 **Interfaces:** native compile bit0x10000; optional reflection setter on baseline internal options; existing NoAutoPossess/MaxPatternLength.
 
-- [x] Pin562 groups/68 diagnostics/28 supplementary cases; native batches before managed comparisons.
+- [x] Pin547 groups/68 diagnostics/28 supplementary cases; native batches before managed comparisons.
 - [ ] Publish draft255 with production identical to merged254.
-- [ ] Observe130 managed failures/92,883 passes/93,013 total, exact failure keys and post-native frames, zero skips/compiler warnings/errors.
+- [ ] Observe139 managed failures/92,859 passes/92,998 total, exact failure keys and post-native frames, zero skips/compiler warnings/errors.
 - [ ] Freeze3 new C# blobs with source/tree/job evidence before production.
 
 ### Task2: caller option and proof/accelerator gates
@@ -42,7 +42,7 @@
 - [ ] Gate UTF start/repeat/byte-prefix/suffix/COMMIT/PRUNE-cache/line-start metadata; resolve FIRSTLINE forced-SKIP bypass; keep NoAuto proof and intrinsic newline/empty facts independent.
 - [ ] Disable private unobserved byte/required-suffix accelerators once at setup.
 - [ ] Update all seven inventories before final source push.
-- [ ] Require six fresh93,013 net10 results/214 frozen/120 methods, all3 library outputs/supporting gates.
+- [ ] Require six fresh92,998 net10 results/214 frozen/120 methods, all3 library outputs/supporting gates.
 
 ### Task3: review and delivery
 
@@ -52,3 +52,5 @@
 - [ ] Whole-branch author review against five boundaries; clean diff/frozen/prior checks.
 - [ ] Record final GREEN/review/identities externally; mark ready/readback without docs-only CI repeat.
 - [ ] Retire only this plan's identity-checked ledger; preserve branch/worktree.
+
+Refined Task1 scope/native evidence is recorded in the design before freeze. Task2 also resolves a synthetic requested-byte candidate for COMMIT when start study is disabled; default-mode proof availability remains unchanged.

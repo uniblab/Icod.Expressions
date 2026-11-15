@@ -6,8 +6,34 @@ Four production files: PcreByteOptions.cs adds the caller bool outside Literal c
 
 Approaches considered: disable only first-byte COMMIT filtering, which misses CRLF entry, PRUNE cache and FIRSTLINE restart effects; or add a runtime policy branch inside every opcode, which adds work without need. Select existing proof/metadata gates at compile time and two accelerator guards at match setup. Caller false keeps all current behavior. Source (*NO_START_OPT), separate dot-star anchoring, broader default optimizer availability, callouts, UTF code-unit matching and consumer/API/release gates remain later work. Standing autonomous inline authorization applies; no agents/Python/SDK installs/approval pauses. User merges/tags/publishes; Grep last.
 
-Native research pins630 profiles:562 accepted groups/42,124 match-offset protocols and68 diagnostics;536 strict split-offset(-36) rows are separate. Cover byte/strict/tolerant UTF, LF/ANYCRLF/ANY, first-unit/prefix/start-class/repeat filtering, COMMIT/PRUNE/SKIP/named SKIP, FIRSTLINE/Anchored/EndAnchored, signed captures/marks, independent NoAutoPossess, literal compatibility, source/caller lockouts and original-byte length priority. Add28 work/ownership/unobserved-budget/validation/no-read/capacity cases:658 new/93,013 total. Expected tests-only RED:124 native policy-delta groups plus3 work and3 ownership cases =130 failures/92,883 passes/zero skips/compiler warnings/errors. All92,355 prior tests and528 new controls pass. Native preflights precede managed comparisons. Freeze3 new C# blobs after clean RED; preserve all281 prior test files/276 C# sources and frozen35 production blobs.
+Native research pins615 profiles:547 accepted groups/42,792 match-offset protocols and68 diagnostics;882 strict split-offset(-36) rows are separate. Cover byte/strict/tolerant UTF, LF/ANYCRLF/ANY, first-unit/prefix/start-class/repeat filtering, COMMIT/PRUNE/SKIP/named SKIP, FIRSTLINE/Anchored/EndAnchored, signed captures/marks, independent NoAutoPossess, literal compatibility, source/caller lockouts and original-byte length priority. Add28 work/ownership/unobserved-budget/validation/no-read/capacity cases:643 new/92,998 total. Expected tests-only RED:133 required-policy groups plus3 work and3 ownership cases =139 failures/92,859 passes/zero skips/compiler warnings/errors. All92,355 prior tests and504 new controls pass. Native preflights precede managed comparisons. Freeze3 new C# blobs after clean RED; preserve all281 prior test files/276 C# sources and frozen35 production blobs.
 
 Review boundaries: all native-sensitive proofs and private setup accelerators, including detect_early_fail; independent explicit anchors/possessification and intrinsic newline/fragment semantics; FIRSTLINE and forced SKIP entry versus ordinary candidate windows; Literal/length/UTF/lockout priority and compiled source/flag ownership; signed captures/marks, exact observed/unobserved budgets/cancellation and full storage capacities.
 
-All seven inventories precede final source qualification. Require six fresh net10 results with93,013 passes/214 frozen outcomes/120 methods each, all net8/net9/net10 library outputs, zero failures/skips/compiler warnings/errors and supporting gates. Final GREEN/whole-branch author review/exact source/base/tree/proposed-merge evidence belongs on PR255 and issue7 footer only, preserving original2600-character prefix; no docs-only CI repeat. Keep7/102 open; Grep last; user merges/tags/publishes.
+All seven inventories precede final source qualification. Require six fresh net10 results with92,998 passes/214 frozen outcomes/120 methods each, all net8/net9/net10 library outputs, zero failures/skips/compiler warnings/errors and supporting gates. Final GREEN/whole-branch author review/exact source/base/tree/proposed-merge evidence belongs on PR255 and issue7 footer only, preserving original2600-character prefix; no docs-only CI repeat. Keep7/102 open; Grep last; user merges/tags/publishes.
+
+## Refined scope before fixture freeze
+
+Initial tests-only source `eae3ceb877c63df9ba37c9962f51f63c04c67a28`, tree `f312812a8a637963e0aae6ce28bbde025e28f8e7`, [run43704205944](https://github.com/uniblab/Icod.Expressions/actions/runs/43704205944), Linux x64 job132781680384, reported144 managed failures/92,869 passes/93,013 total, zero skips/compiler warnings/errors. Every native preflight passed. Fourteen default-mode research profiles hit pre-existing start-study/recovery gaps; the independent dot-star tolerant-UTF profile hit an existing inferred-anchoring gap in both flag modes. Those15 profiles remain permanently recorded in that original tests-only commit/run and in the table below under the wider issue102 work. No production was changed. Default-mode coverage in this increment is restricted to existing proof availability, preserving all281 earlier test files.
+
+The retained NoStartOptimize=true COMMIT/alternative cases at a requested UTF continuation byte belong to the new unfiltered policy: a zero-width COMMIT must be able to cut before consumption fails. Resolve synthetic requested-byte admission from hasCommit when start study is disabled, without changing the default-mode availability boundary. Four UTF optional-class profiles already followed the unoptimized path before this option; retain them as controls. Add Unicode line-separator partial-offset rows to exercise STARTLINE suppression directly. All retained original native expected rows and all assertion/helper code remain unchanged; no new C# blob is frozen until refined RED is clean.
+
+| Deferred research pattern | Mode | NoStartOptimize | Subject/requested byte | Native index | Merged-base index |
+| --- | ---: | --- | --- | ---: | ---: |
+| `(?s).*A` | 5 | false | `C3A941` at1 | -1 | 2 |
+| `(?s).*A` | 5 | true | `C3A941` at1 | -1 | 2 |
+| `(*ANY)[\t-\f]*A` | 0 | false | `0D0A0D0A41` at0 | 4 | 3 |
+| `(*ANYCRLF)([\t-\f]+)A` | 0 | false | `0D0A0D0A41` at0 | -1 | 3 |
+| `(*ANYCRLF)[\t-\f]*A` | 0 | false | `0D0A0D0A41` at0 | 4 | 3 |
+| `(*ANY)(*COMMIT)(?:A|B)` | 5 | false | `C3A941` at1 | -1 | 2 |
+| `(*ANY)[\t-\f]*A` | 1 | false | `410D0A41` at1 | 2 | 3 |
+| `(*ANYCRLF)[\t-\f]+A` | 0 | false | `0D0A0D0A41` at0 | -1 | 3 |
+| `(*ANY)[\t-\f]+A` | 0 | false | `0D0A0D0A41` at0 | -1 | 3 |
+| `(*ANY)[\t-\f]*A` | 5 | false | `410D0A41` at1 | 2 | 3 |
+| `(*COMMIT)(?:A|B)` | 5 | false | `C3A941` at1 | -1 | 2 |
+| `(*ANYCRLF)(*COMMIT)(?:A|B)` | 5 | false | `C3A941` at1 | -1 | 2 |
+| `(*ANYCRLF)[\t-\f]*A` | 1 | false | `410D0A41` at1 | 2 | 3 |
+| `(*ANYCRLF)[\t-\f]*A` | 5 | false | `410D0A41` at1 | 2 | 3 |
+| `(*ANY)([\t-\f]+)A` | 0 | false | `0D0A0D0A41` at0 | -1 | 3 |
+
+Mode1 is UTF,4 is tolerant UTF,5 combines them; the table is evidence of deferred default optimizer/independent anchoring availability, not an expected result for the new flag. Native byte offsets remain authoritative.
