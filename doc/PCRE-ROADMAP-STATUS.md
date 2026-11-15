@@ -1,6 +1,6 @@
 # PCRE roadmap status
 
-Reviewed after merged PR250, with PR251 in progress. Issue #7 remains the delivery roadmap; the
+Reviewed after merged PR251, with PR252 in progress. Issue #7 remains the delivery roadmap; the
 [syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md),
 [resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) and
 [Grep fixture inventory](PCRE-GREP-CONSUMER-FIXTURES.md) define the detailed gates.
@@ -64,6 +64,7 @@ retaining each framework's complete suite and frozen-result qualification.
    PR249 adds caller empty-match rejection through existing global acceptance policy.
    PR250 adds caller NotBol/NotEol through typed caret/dollar provenance.
    PR251 adds caller variable-lookbehind ceilings through existing width analysis.
+   PR252 adds caller pattern byte-length admission before ownership copying/parsing.
    UTF code-unit escape,
    remaining directives/verbs/callouts and other matrix gaps require their own
    pinned reference fixtures. Decide any intentional exclusions before release;
@@ -81,10 +82,10 @@ retaining each framework's complete suite and frozen-result qualification.
 
 ## Current increment and next syntax work
 
-PR250 merged at505c3acf2c729bb5be531cc4399bad2b7f52c44a;
-its88,872 net10 tests remain the baseline. Main43632261155/scripts43632261161 are green.
-PR251 adds caller variable-lookbehind ceilings as described below; final qualification/
-review/delivery identities are recorded on PR251/issue7.
+PR251 merged at6da239a485720ccd7299a67c4c7e7e3c8901056d;
+its89,568 net10 tests remain the baseline. Main43637643801/scripts43637643663 are green.
+PR252 adds caller pattern byte-length limits as described below; final qualification/
+review/delivery identities are recorded on PR252/issue7.
 
 ## PR234: backreferences blocking first-character search
 
@@ -779,3 +780,13 @@ See [design](PCRE-CALLER-LINE-BOUNDARIES-DESIGN.md) and [plan](PCRE-CALLER-LINE-
 PR250 merged as505c3acf2c729bb5be531cc4399bad2b7f52c44a/tree7488f706f55c0f3ae3c898068fd7819f2f0daee3, with ordered parents eb9751a then2aec54e. Main43632261155/scripts43632261161 are green;88,872 tests are the baseline. PR251 adds caller MaxVarLookbehind through the existing width analysis. Offset-limit research exposed native JIT optimizer-inferred anchoring/FIRSTLINE interactions; defer that separate integration to the wider optimizer work.
 
 The696 cases comprise410 groups/15,174 native10.48/JIT0 match-offset protocols,267 compile diagnostics and19 work/ownership/validation/capacity controls;294 strict split-offset rows remain separate. Native batches precede managed comparison; signed captures and successful labels are pinned. See [design](PCRE-VARIABLE-LOOKBEHIND-LIMIT-DESIGN.md) and [plan](PCRE-VARIABLE-LOOKBEHIND-LIMIT-PLAN.md) for exact baseline evidence/frozen blobs. Require six fresh net10 results at89,568 passes each, zero failures/skips/compiler warnings/errors,214 frozen outcomes/120 methods per result, all3 library outputs and every configured supporting gate. Builds remain C#13/net8/net9/net10; tests only net10. All seven inventories precede final source qualification. Final GREEN/author review/source/base/tree/proposed-merge evidence belongs on PR251 and only issue7 footer, preserving its original2600-character prefix, with no docs-only CI repeat. Remaining syntax/UTF-code-unit/callout/directive/match/API/optimizer (#102)/consumer/release gates remain open; Grep last; user owns merge/tag/publication.
+
+## PR252: caller pattern byte-length limit
+
+PR251 merged as6da239a485720ccd7299a67c4c7e7e3c8901056d/tree1906a545b08ee5e05545c2a678006809354f4978, ordered parents505c3ac then6ceac5d. Main43637643801/scripts43637643663 are green;89,568 tests are the baseline. PR252 adds caller pattern byte-length admission at the existing compile boundary. Other compile-context/match/API/optimizer and consumer decisions remain separately scoped.
+
+The1,135 cases comprise576 groups/19,240 native10.48/JIT0 match-offset protocols,535 compile diagnostics and24 memory-view/no-read/ownership/priority/work/capacity cases;392 strict split-offset rows remain separate. Native batches precede managed comparisons. See [design](PCRE-PATTERN-LENGTH-LIMIT-DESIGN.md) and [plan](PCRE-PATTERN-LENGTH-LIMIT-PLAN.md) for exact RED/frozen evidence. Require six fresh net10 results at90,703 passes each, zero failures/skips/compiler warnings/errors,214 frozen outcomes/120 methods each, all3 library outputs and every configured supporting gate. Builds remain C#13/net8/net9/net10; tests only10. All seven inventories precede final source qualification; final GREEN/whole-branch author review/source/base/tree/proposed-merge identities belong on PR252 and only issue7 footer, preserving its original2600-character prefix, with no docs-only CI repeat. Remaining UTF-code-unit/callout/syntax/directive/match/API/optimizer (#102)/consumer/release gates stay open; Grep last; user owns merge/tag/publication.
+
+### PR252 corrected oracle qualification
+
+PR252 oracle qualification was restarted because PCRE.NET drops zero-valued native pattern-length settings. Direct PCRE2 zero expectations are unchanged; the test-only positive-limit bridge is proven equivalent across193 profiles/6,562 direct-native rows. Corrected RED43640343531 verifies336 managed failures/90,367 passes/90,703 total and every native preflight before refreezing commonaea2a3360f7761ccdb86329eebe267133bf51ff0. All prior/new assertions and data remain; see the design for the superseded initial proof and exact corrected source/tree/job evidence.

@@ -4060,3 +4060,20 @@ See [design](PCRE-CALLER-LINE-BOUNDARIES-DESIGN.md) and [plan](PCRE-CALLER-LINE-
 This is a caller compile-context policy, not a source directive or public per-match API. Literal compilation accepts it. Unbounded/cyclic widths and fake MAX_VARLOOKBEHIND directives keep their diagnostics.
 
 The696 cases comprise410 groups/15,174 native10.48/JIT0 match-offset protocols,267 compile diagnostics and19 work/ownership/validation/capacity controls;294 strict split-offset rows remain separate. Native batches precede managed comparison; signed captures and successful labels are pinned. See [design](PCRE-VARIABLE-LOOKBEHIND-LIMIT-DESIGN.md) and [plan](PCRE-VARIABLE-LOOKBEHIND-LIMIT-PLAN.md) for exact baseline evidence/frozen blobs. Require six fresh net10 results at89,568 passes each, zero failures/skips/compiler warnings/errors,214 frozen outcomes/120 methods per result, all3 library outputs and every configured supporting gate. Builds remain C#13/net8/net9/net10; tests only net10. All seven inventories precede final source qualification. Final GREEN/author review/source/base/tree/proposed-merge evidence belongs on PR251 and only issue7 footer, preserving its original2600-character prefix, with no docs-only CI repeat. Remaining syntax/UTF-code-unit/callout/directive/match/API/optimizer (#102)/consumer/release gates remain open; Grep last; user owns merge/tag/publication.
+
+## PR252: caller pattern byte-length limit
+
+| Caller MaxPatternLength | Admission | Subsequent behavior |
+| --- | --- | --- |
+|null | Original unrestricted admission | Existing syntax/UTF/restriction diagnostics |
+|0 | Empty original source only | Empty regexp is permitted; nonempty directives/comments still count |
+|Exact original byte length or greater | Inclusive admission | Original parsing, guards and shared resource limits |
+|Less than original byte length | PatternLengthLimitExceeded at0 (native188) | No source read/copy/prefix/UTF/parser access |
+
+Count supplied bytes, including UTF8/NUL/trivia/directives/quotes, rather than scalars, UTF16 units, backing memory or compiler-inserted word/line guards. Literal conflicts/native192 precede length; otherwise exceeded length precedes syntax/UTF/caller restriction errors. Context uint-max remains safe and does not lift other ceilings.
+
+The1,135 cases comprise576 groups/19,240 native10.48/JIT0 match-offset protocols,535 compile diagnostics and24 memory-view/no-read/ownership/priority/work/capacity cases;392 strict split-offset rows remain separate. Native batches precede managed comparisons. See [design](PCRE-PATTERN-LENGTH-LIMIT-DESIGN.md) and [plan](PCRE-PATTERN-LENGTH-LIMIT-PLAN.md) for exact RED/frozen evidence. Require six fresh net10 results at90,703 passes each, zero failures/skips/compiler warnings/errors,214 frozen outcomes/120 methods each, all3 library outputs and every configured supporting gate. Builds remain C#13/net8/net9/net10; tests only10. All seven inventories precede final source qualification; final GREEN/whole-branch author review/source/base/tree/proposed-merge identities belong on PR252 and only issue7 footer, preserving its original2600-character prefix, with no docs-only CI repeat. Remaining UTF-code-unit/callout/syntax/directive/match/API/optimizer (#102)/consumer/release gates stay open; Grep last; user owns merge/tag/publication.
+
+### PR252 corrected oracle qualification
+
+PR252 oracle qualification was restarted because PCRE.NET drops zero-valued native pattern-length settings. Direct PCRE2 zero expectations are unchanged; the test-only positive-limit bridge is proven equivalent across193 profiles/6,562 direct-native rows. Corrected RED43640343531 verifies336 managed failures/90,367 passes/90,703 total and every native preflight before refreezing commonaea2a3360f7761ccdb86329eebe267133bf51ff0. All prior/new assertions and data remain; see the design for the superseded initial proof and exact corrected source/tree/job evidence.
