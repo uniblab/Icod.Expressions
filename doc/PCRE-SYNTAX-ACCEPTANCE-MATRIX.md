@@ -4089,3 +4089,17 @@ PR252 oracle qualification was restarted because PCRE.NET drops zero-valued nati
 The caller flag remains global across source option resets. Native controls cover counted/lazy/possessive repeats, byte/strict/tolerant UTF, prefix empty policies, Anchored/EndAnchored/FirstLine, captures/marks and wrapped/class/callee shapes. True-only wider-shape controls do not claim broader default automatic possessification. Source (*NO_AUTO_POSSESS) and broader optimizer proofs remain later work.
 
 The 876 new cases pin 796 matching groups / 28,380 native PCRE2 10.48/JIT0 match-offset protocols, 57 compile diagnostics and 23 priority/work/ownership/validation/capacity cases. Separate 1,064 strict split-offset (-36) research rows from matching. Native batches precede managed comparisons. See [design](PCRE-NO-AUTO-POSSESS-DESIGN.md) and [plan](PCRE-NO-AUTO-POSSESS-PLAN.md) for RED/frozen evidence. Require six fresh net10 results with 91,579 passes each, zero failures/skips/compiler warnings/errors, 214 frozen outcomes / 120 methods each, all net8/net9/net10 library outputs and every configured supporting gate. All seven inventories precede final source qualification. Final GREEN/whole-branch author review/source/base/tree/proposed-merge identities belong on PR253 and issue7 footer only, preserving its original2600-character prefix; no docs-only CI repeat. Remaining UTF-code-unit/callout/syntax/directive/match/API/optimizer (#102)/consumer/release gates stay open; Grep last; user owns merge/tag/publication.
+
+## PR254: source prefix for automatic possessification control
+
+| Source context | Behavior |
+| --- | --- |
+| Exact uppercase prefix in uninterrupted initial run | Disable existing bounded automatic possessification proof globally |
+| Repeated/interleaved supported start prefixes | Idempotent OR with caller flag; other settings keep their existing precedence |
+| After ordinary body/options/trivia | Existing misplaced-directive parser diagnostic at original byte offset |
+| Literal, quoted, class or comment text | Source prefix remains inert in that context |
+| Malformed spelling/case/name/termination | Existing parser diagnostic retained |
+
+Explicit possessive quantifiers and atomic groups retain commits. Prefix recognition introduces no local re-enable form or broader optimizer parity. Original-byte length includes all prefix bytes; whole-source UTF and caller lockouts retain original offsets.
+
+The 776 new cases pin 576 groups / 34,560 native PCRE2 10.48/JIT0 match-offset protocols,164 diagnostics and36 work/ownership/view/no-read/priority/capacity cases. Keep1,404 strict split-offset(-36) research rows separate. See [design](PCRE-NO-AUTO-POSSESS-PREFIX-DESIGN.md) and [plan](PCRE-NO-AUTO-POSSESS-PREFIX-PLAN.md) for native-first RED/frozen evidence. Require six fresh net10 results at92,355 passes each, zero failures/skips/compiler warnings/errors,214 frozen outcomes/120 methods each, all net8/net9/net10 library outputs and every configured supporting gate. All seven inventories precede final source qualification. Final GREEN/whole-branch author review/exact source/base/tree/proposed-merge identities belong on PR254 and issue7 footer only, preserving its original2600-character prefix; no docs-only CI repeat. Remaining syntax/UTF-code-unit/callout/directive/match/API/optimizer (#102)/consumer/release gates stay open; Grep last; user owns merge/tag/publication.

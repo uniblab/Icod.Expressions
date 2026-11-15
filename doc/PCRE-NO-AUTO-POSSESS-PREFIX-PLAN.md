@@ -29,18 +29,18 @@
 **Interfaces:** existing caller NoAutoPossess/MaxPatternLength, native source prefix, compile bit0x4000 and match flags0/4/8/12.
 
 - [x] Pin576 matching groups/164 diagnostics/36 supplementary cases, native assertions before managed comparisons.
-- [ ] Publish draft254 with production identical to merged253.
-- [ ] Observe584 managed failures/91,771 passes/92,355 total; verify exact failure keys and post-native assertion frames, zero skips/compiler warnings/errors.
-- [ ] Freeze3 new C# blobs with exact source/tree/job evidence before production.
+- [x] Publish draft254 with production identical to merged253.
+- [x] Observe584 managed failures/91,771 passes/92,355 total; verify exact failure keys and post-native assertion frames, zero skips/compiler warnings/errors.
+- [x] Freeze3 new C# blobs with exact source/tree/job evidence before production.
 
 ### Task2: resolve global source prefix
 
 **Files:** src/Pcre/PcreByteStartSettings.cs and PcreByteCompiler.cs; seven inventories.
 **Interfaces:** bool NoAutoPossess on start settings, caller initialization/exact-prefix consumption, resolved bool to existing PcreByteProgramCompiler.
 
-- [ ] Add setting initialized from options.NoAutoPossess and set true on exact prefix; preserve original source/body offset and Literal bypass.
-- [ ] Pass settings.NoAutoPossess to existing program constructor without modifying matcher/emission.
-- [ ] Update all seven inventories before final source push.
+- [x] Add setting initialized from options.NoAutoPossess and set true on exact prefix; preserve original source/body offset and Literal bypass.
+- [x] Pass settings.NoAutoPossess to existing program constructor without modifying matcher/emission.
+- [x] Update all seven inventories before final source push.
 - [ ] Require six fresh92,355 net10 results/214 frozen/120 methods, all3 library outputs/supporting gates.
 
 ### Task3: review and delivery
@@ -51,3 +51,5 @@
 - [ ] Whole-branch author review across five boundaries; clean diff/frozen/prior checks.
 - [ ] Record final GREEN/review/identities externally, mark ready/readback without docs-only CI repeat.
 - [ ] Retire only this plan's identity-checked ledger; preserve branch/worktree.
+
+Observed Task1 proof/frozen blobs are recorded in the design. Task2 implementation is complete; current-source qualification and Task3 review/delivery remain external gates.
