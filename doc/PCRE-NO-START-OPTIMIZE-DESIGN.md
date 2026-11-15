@@ -37,3 +37,9 @@ The retained NoStartOptimize=true COMMIT/alternative cases at a requested UTF co
 | `(*ANY)([\t-\f]+)A` | 0 | false | `0D0A0D0A41` at0 | -1 | 3 |
 
 Mode1 is UTF,4 is tolerant UTF,5 combines them; the table is evidence of deferred default optimizer/independent anchoring availability, not an expected result for the new flag. Native byte offsets remain authoritative.
+
+## Observed refined RED and fixture freeze
+
+Tests-only [RED](https://github.com/uniblab/Icod.Expressions/actions/runs/43705844206), source `16ffee63cd595525faf1bb508e8b0846282fb007`, tree `c578625e6bc73410bb84cce9fd0d843b10a9d367`, Linux x64 job132786612009: **139 managed failures / 92,859 passes / 92,998 total / zero skips/compiler warnings/errors**. All139 failure entries belong to this fixture:133 protocol groups,3 unfiltered-COMMIT budget/cancellation cases and3 compiled source/flag/mark ownership cases. Every failed protocol group reaches Compare after its complete native batch; supplementary failures likewise follow native assertions. No native preflight failed. All92,355 prior tests and504 new controls pass; production is identical to merged254.
+
+Freeze before production: reference `f21b21d5ca1fe4901e2d7fbcc7350006f827e360`; part1 `1f9cccab76cc643654273f18f5811d8dd0fc0673`; part2 `a25523381d8a84b3079f1aab580ab6b3d5269eda`. Preserve all281 prior test files/276 C# sources and frozen35 production blobs. The initial research gaps above remain outside this increment; none of the frozen expectations or helpers may be rewritten to obtain GREEN.

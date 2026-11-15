@@ -29,19 +29,19 @@
 **Interfaces:** native compile bit0x10000; optional reflection setter on baseline internal options; existing NoAutoPossess/MaxPatternLength.
 
 - [x] Pin547 groups/68 diagnostics/28 supplementary cases; native batches before managed comparisons.
-- [ ] Publish draft255 with production identical to merged254.
-- [ ] Observe139 managed failures/92,859 passes/92,998 total, exact failure keys and post-native frames, zero skips/compiler warnings/errors.
-- [ ] Freeze3 new C# blobs with source/tree/job evidence before production.
+- [x] Publish draft255 with production identical to merged254.
+- [x] Observe139 managed failures/92,859 passes/92,998 total, exact failure keys and post-native frames, zero skips/compiler warnings/errors.
+- [x] Freeze3 new C# blobs with source/tree/job evidence before production.
 
 ### Task2: caller option and proof/accelerator gates
 
 **Files:** src/Pcre/PcreByteOptions.cs, PcreByteCompiler.cs, PcreByteProgram.cs, PcreByteMatcher.cs; seven inventories.
 **Interfaces:** bool NoStartOptimize defaultfalse; program/compiler copy; existing proof discovery and setup fast paths.
 
-- [ ] Add Literal-compatible caller bool and pass it into program construction.
-- [ ] Gate UTF start/repeat/byte-prefix/suffix/COMMIT/PRUNE-cache/line-start metadata; resolve FIRSTLINE forced-SKIP bypass; keep NoAuto proof and intrinsic newline/empty facts independent.
-- [ ] Disable private unobserved byte/required-suffix accelerators once at setup.
-- [ ] Update all seven inventories before final source push.
+- [x] Add Literal-compatible caller bool and pass it into program construction.
+- [x] Gate UTF start/repeat/byte-prefix/suffix/COMMIT/PRUNE-cache/line-start metadata; resolve FIRSTLINE forced-SKIP bypass; keep NoAuto proof and intrinsic newline/empty facts independent.
+- [x] Disable private unobserved byte/required-suffix accelerators once at setup.
+- [x] Update all seven inventories before final source push.
 - [ ] Require six fresh92,998 net10 results/214 frozen/120 methods, all3 library outputs/supporting gates.
 
 ### Task3: review and delivery
@@ -54,3 +54,5 @@
 - [ ] Retire only this plan's identity-checked ledger; preserve branch/worktree.
 
 Refined Task1 scope/native evidence is recorded in the design before freeze. Task2 also resolves a synthetic requested-byte candidate for COMMIT when start study is disabled; default-mode proof availability remains unchanged.
+
+Observed Task1 RED and frozen blobs are recorded in the design. Task2 source and all seven inventories are implemented; qualification and Task3 author review/delivery remain external gates.

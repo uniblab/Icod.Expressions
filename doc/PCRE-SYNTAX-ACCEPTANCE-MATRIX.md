@@ -4103,3 +4103,18 @@ The 876 new cases pin 796 matching groups / 28,380 native PCRE2 10.48/JIT0 match
 Explicit possessive quantifiers and atomic groups retain commits. Prefix recognition introduces no local re-enable form or broader optimizer parity. Original-byte length includes all prefix bytes; whole-source UTF and caller lockouts retain original offsets.
 
 The 776 new cases pin 576 groups / 34,560 native PCRE2 10.48/JIT0 match-offset protocols,164 diagnostics and36 work/ownership/view/no-read/priority/capacity cases. Keep1,404 strict split-offset(-36) research rows separate. See [design](PCRE-NO-AUTO-POSSESS-PREFIX-DESIGN.md) and [plan](PCRE-NO-AUTO-POSSESS-PREFIX-PLAN.md) for native-first RED/frozen evidence. Require six fresh net10 results at92,355 passes each, zero failures/skips/compiler warnings/errors,214 frozen outcomes/120 methods each, all net8/net9/net10 library outputs and every configured supporting gate. All seven inventories precede final source qualification. Final GREEN/whole-branch author review/exact source/base/tree/proposed-merge identities belong on PR254 and issue7 footer only, preserving its original2600-character prefix; no docs-only CI repeat. Remaining syntax/UTF-code-unit/callout/directive/match/API/optimizer (#102)/consumer/release gates stay open; Grep last; user owns merge/tag/publication.
+
+## PR255: caller control of start optimizations
+
+| Caller/source context | Behavior |
+| --- | --- |
+| NoStartOptimize false or omitted | Preserve current proof availability and search behavior |
+| NoStartOptimize true | Suppress existing start-sensitive proofs, PRUNE cache and both private candidate accelerators |
+| Literal with caller NoStartOptimize | Accepted; source text remains literal |
+| NoAutoPossess, explicit possessive/atomic scopes, explicit anchors | Independent existing behavior retained |
+| FIRSTLINE with explicit forward SKIP | Unfiltered forced entry bypasses the window; ordinary candidate windows remain |
+| Source (*NO_START_OPT) | Still unsupported; caller control only in this increment |
+
+The owned flag cannot be changed by source option resets or mutation of caller options after compilation. Preserve intrinsic newline/nullable-fragment semantics. A COMMIT at a requested continuation/malformed byte can cut before consumption fails when study is disabled. Wider default start-study/recovery and independent dot-star anchoring profiles remain recorded under issue102.
+
+The 643 new cases pin 547 accepted groups / 42,792 native PCRE2 10.48/JIT0 match-offset protocols, 68 compile diagnostics and 28 work/ownership/unobserved-budget/validation/no-read/capacity cases. Keep 882 strict split-offset (-36) research rows separate. The refined tests-only RED has 139 expected managed failures / 92,859 passes / 92,998 total; all prior tests and native preflights pass. Frozen fixtures and deferred research profiles are recorded in [design](PCRE-NO-START-OPTIMIZE-DESIGN.md); execution follows the [plan](PCRE-NO-START-OPTIMIZE-PLAN.md). Require six fresh native net10 results with 92,998 passes / zero failures/skips/compiler warnings/errors, 214 frozen outcomes / 120 methods each, all net8/net9/net10 library outputs and all configured supporting gates. Final GREEN/author-review/source/base/tree/proposed-merge evidence belongs on PR255 and issue7 footer, preserving the original2600-character prefix; no docs-only CI repeat. Keep #7/#102 open; Grep last; user owns merge/tag/publication.
