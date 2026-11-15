@@ -232,7 +232,12 @@ internal sealed class PcreByteProgramCompiler {
 		// The parser wraps a possessive atom directly; an explicit atomic group
 		// retains its group node and is deliberately outside this bounded proof.
 		if ( leading is PcreByteAtomic atomic ) { leading = atomic.Child; }
-		if ( leading is not PcreByteRepeat { Minimum: 0, Maximum: int.MaxValue, Child: PcreByteAny { DotAll: true } } ) { return false; }
+		if ( leading is not PcreByteRepeat { Minimum: 0, Maximum: int.MaxValue } star ) { return false; }
+		// Byte dots and native-equivalent ALLANY classes retain Exact prefix
+		// provenance; arbitrary full bitmaps/property classes do not qualify.
+		if ( star.Child is not PcreByteAny { DotAll: true }
+			&& !( !utf8 && star.Child is PcreByteClass { PrefixKind: PcreByteClassPrefix.Exact } bytes
+				&& bytes.Set == PcreByteSet.AllBytes ) ) { return false; }
 		// Native anchoring is independent of start study. Its global PRUNE/SKIP
 		// flag includes erased repeats and DEFINE bodies, so inspect retained AST.
 		var pending = new Stack<PcreByteNode>();
