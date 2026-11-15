@@ -101,6 +101,7 @@ internal sealed class PcreByteProgramCompiler {
 	private readonly bool utf8;
 	private readonly bool ucp;
 	private readonly bool turkishCasing;
+	private readonly bool noAutoPossess;
 	private readonly bool matchInvalidUtf;
 	private readonly PcreByteNewline newline;
 	private readonly bool bsrAnyCrLf;
@@ -132,11 +133,12 @@ internal sealed class PcreByteProgramCompiler {
 
 	internal PcreByteProgramCompiler( CancellationToken cancellationToken, bool utf8, bool matchInvalidUtf,
 		PcreByteNewline newline, bool bsrAnyCrLf, bool notEmpty, bool notEmptyAtStart, bool ucp, bool hasThen = false, bool hasNamedSkip = false,
-		bool turkishCasing = false ) {
+		bool turkishCasing = false, bool noAutoPossess = false ) {
 		this.cancellationToken = cancellationToken;
 		this.utf8 = utf8;
 		this.ucp = ucp;
 		this.turkishCasing = turkishCasing;
+		this.noAutoPossess = noAutoPossess;
 		this.hasThen = hasThen;
 		this.hasNamedSkip = hasNamedSkip;
 		this.matchInvalidUtf = matchInvalidUtf;
@@ -149,7 +151,7 @@ internal sealed class PcreByteProgramCompiler {
 	internal PcreByteProgram Compile( PcreByteAlternatives root, IReadOnlyDictionary<int, PcreByteGroup> targets ) {
 		// Native auto_possessify commits greedy literal queries at OP_END.
 		// Keep the proof at one direct root tail without any called copy.
-		if ( ( notEmpty || notEmptyAtStart ) && targets.Count == 0 && root.Branches.Count == 1 ) {
+		if ( !noAutoPossess && ( notEmpty || notEmptyAtStart ) && targets.Count == 0 && root.Branches.Count == 1 ) {
 			var branch = root.Branches[0];
 			if ( branch.Count > 0 && branch[^1] is PcreByteRepeat {
 				Minimum: 0, Maximum: 1, Greedy: true, Child: PcreByteLiteral

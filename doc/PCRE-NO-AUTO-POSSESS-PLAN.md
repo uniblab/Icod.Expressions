@@ -28,17 +28,17 @@
 **Interfaces:** native compile bit0x4000; optional reflection for baseline options; empty match flags0/4/8/12.
 
 - [x] Pin796 matching groups/57 diagnostics/23 supplementary cases; native preflight before managed comparisons.
-- [ ] Publish tests-only draft253 with production identical to merged252.
-- [ ] Observe110 expected managed failures/91,469 passes/91,579 total/zero skips/compiler warnings/errors; check exact failure keys and post-native stack boundaries.
-- [ ] Freeze3 new C# blobs with source/tree/job identities before production.
+- [x] Publish tests-only draft253 with production identical to merged252.
+- [x] Observe110 expected managed failures/91,469 passes/91,579 total/zero skips/compiler warnings/errors; check exact failure keys and post-native stack boundaries.
+- [x] Freeze3 new C# blobs with source/tree/job identities before production.
 
 ### Task2: compile-proof gate
 
 **Files:** src/Pcre/PcreByteOptions.cs, PcreByteCompiler.cs, PcreByteProgram.cs; seven inventories.
 **Interfaces:** bool NoAutoPossess defaultfalse; constructor copy; !noAutoPossess gate; HasLiteralOptionConflict.
 
-- [ ] Add option/Literal conflict and pass to program compiler; suppress bounded proof only.
-- [ ] Update all seven inventories before source qualification.
+- [x] Add option/Literal conflict and pass to program compiler; suppress bounded proof only.
+- [x] Update all seven inventories before source qualification.
 - [ ] Require six fresh91,579 native net10 results/214 frozen/120 methods, all3 library outputs and supporting gates.
 
 ### Task3: review and delivery
@@ -49,3 +49,5 @@
 - [ ] Author whole-branch review against five boundaries; clean diff/frozen/prior checks.
 - [ ] Record final GREEN/review/identities externally; mark ready/readback without docs-only CI repeat.
 - [ ] Retire only this plan's identity-checked ledger, preserving branch/worktree.
+
+Observed Task1 proof and frozen blobs are recorded in the design. Task2 implementation is complete; current-head six-host/supporting qualification and Task3 review/delivery evidence remain external gates.
