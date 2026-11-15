@@ -63,7 +63,7 @@ internal sealed partial class PcreByteParser {
 		PcreByteStartSettings settings, CancellationToken cancellationToken ) {
 		this.source = source;
 		literal = options.Literal;
-		noStartOptimize = options.NoStartOptimize;
+		noStartOptimize = settings.NoStartOptimize;
 		caseless = options.Caseless;
 		dotAll = options.DotAll;
 		multiline = options.Multiline;

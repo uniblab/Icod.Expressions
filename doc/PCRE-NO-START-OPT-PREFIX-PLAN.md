@@ -29,18 +29,18 @@
 **Interfaces:** existing NoStartOptimize/NoAutoPossess/MaxPatternLength; native bit0x10000, start source prefix and match flags0/4/8/12.
 
 - [x] Independently reproduce547 merged255 native groups/42,792 protocols; pin622 new groups/46,726 protocols and110 diagnostics, separating192 split offsets.
-- [ ] Generate36 supplementary cases and publish draft256 with production identical to merged255.
-- [ ] Observe636 expected failures/93,130 passes/93,766 total; match failure keys/post-native frames, zero skips/compiler warnings/errors.
-- [ ] Freeze3 new C# blobs with exact source/tree/job evidence before production.
+- [x] Generate36 supplementary cases and publish draft256 with production identical to merged255.
+- [x] Observe636 expected failures/93,130 passes/93,766 total; match failure keys/post-native frames, zero skips/compiler warnings/errors.
+- [x] Freeze3 new C# blobs with exact source/tree/job evidence before production.
 
 ### Task2: resolve source prefix
 
 **Files:** src/Pcre/PcreByteStartSettings.cs, PcreByteCompiler.cs, PcreByteParser.cs; seven inventories.
 **Interfaces:** bool NoStartOptimize on start settings, initialized from options, set true on exact prefix and consumed by both existing compile-policy snapshots.
 
-- [ ] Initialize/scan/return the global bool without changing original bytes/body offset or Literal bypass.
-- [ ] Route settings.NoStartOptimize to program construction and parser metadata; keep existing proof/matcher implementation fixed.
-- [ ] Update all seven inventories before final source push.
+- [x] Initialize/scan/return the global bool without changing original bytes/body offset or Literal bypass.
+- [x] Route settings.NoStartOptimize to program construction and parser metadata; keep existing proof/matcher implementation fixed.
+- [x] Update all seven inventories before final source push.
 - [ ] Require six fresh93,766 net10 results/214 frozen/120 methods, all3 library outputs/supporting gates.
 
 ### Task3: review and delivery
@@ -51,3 +51,5 @@
 - [ ] Whole-branch author review across five boundaries; clean diff/frozen/prior checks.
 - [ ] Record final GREEN/review/identities externally; mark ready/readback without docs-only CI repeat.
 - [ ] Retire only this plan's identity-checked ledger; preserve branch/worktree.
+
+Corrected RED/frozen evidence is recorded in the design. Task2 source and all seven inventories are implemented; exact-source qualification and Task3 author review/delivery remain external gates.
