@@ -34,7 +34,7 @@ internal static partial class PcreByteMatcher {
 		var surrogateLiterals = program.MatchInvalidUtf && program.HasSurrogateLiterals;
 		// No candidate can reach the VM when the required first byte is absent.
 		// This is limited to unobserved, noncancellable exact byte searches.
-		var unobservedByteSearch = !program.Anchored && !program.FirstLine && !program.Utf8 && !program.HasCaselessComparisons
+		var unobservedByteSearch = !program.NoStartOptimize && !program.Anchored && !program.FirstLine && !program.Utf8 && !program.HasCaselessComparisons
 			&& !cancellationToken.CanBeCanceled && workObserver is null;
 		var leadingLiteral = -1;
 		var failedLiteralCost = 3;
@@ -69,7 +69,7 @@ internal static partial class PcreByteMatcher {
 				return new( null, null );
 			}
 		}
-		var unobservedUnicodeSearch = !program.Anchored && !program.FirstLine && !cancellationToken.CanBeCanceled && workObserver is null
+		var unobservedUnicodeSearch = !program.NoStartOptimize && !program.Anchored && !program.FirstLine && !cancellationToken.CanBeCanceled && workObserver is null
 			&& !program.RequiredLiteralSuffix.IsEmpty;
 		if ( unobservedUnicodeSearch && program.MatchInvalidUtf
 			&& MissingRequiredLiteralSuffixWithinBudget( program, input.Span, startOffset, matchWorkLimit ) ) {

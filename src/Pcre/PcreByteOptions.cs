@@ -27,6 +27,8 @@ internal sealed record PcreByteOptions {
 	public bool Literal { get; init; }
 	/// <summary>Preserve repeat fallback paths otherwise removed by automatic possessification.</summary>
 	public bool NoAutoPossess { get; init; }
+	/// <summary>Disable start-sensitive search proofs and private candidate accelerators.</summary>
+	public bool NoStartOptimize { get; init; }
 	public bool Caseless { get; init; }
 	/// <summary>Initialize restricted comparisons without enabling caseless matching.</summary>
 	public bool CaselessRestricted { get; init; }

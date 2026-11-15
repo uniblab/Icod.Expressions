@@ -74,6 +74,7 @@ internal sealed record PcreByteProgram(
 	internal bool Anchored { get; init; }
 	internal bool EndAnchored { get; init; }
 	internal bool FirstLine { get; init; }
+	internal bool NoStartOptimize { get; init; }
 	internal bool FirstLineSkipBypassesWindow { get; init; }
 	internal int ScalarExpressionStackDepth { get; init; }
 	internal bool TurkishCasing { get; init; }
@@ -102,6 +103,7 @@ internal sealed class PcreByteProgramCompiler {
 	private readonly bool ucp;
 	private readonly bool turkishCasing;
 	private readonly bool noAutoPossess;
+	private readonly bool noStartOptimize;
 	private readonly bool matchInvalidUtf;
 	private readonly PcreByteNewline newline;
 	private readonly bool bsrAnyCrLf;
@@ -133,12 +135,13 @@ internal sealed class PcreByteProgramCompiler {
 
 	internal PcreByteProgramCompiler( CancellationToken cancellationToken, bool utf8, bool matchInvalidUtf,
 		PcreByteNewline newline, bool bsrAnyCrLf, bool notEmpty, bool notEmptyAtStart, bool ucp, bool hasThen = false, bool hasNamedSkip = false,
-		bool turkishCasing = false, bool noAutoPossess = false ) {
+		bool turkishCasing = false, bool noAutoPossess = false, bool noStartOptimize = false ) {
 		this.cancellationToken = cancellationToken;
 		this.utf8 = utf8;
 		this.ucp = ucp;
 		this.turkishCasing = turkishCasing;
 		this.noAutoPossess = noAutoPossess;
+		this.noStartOptimize = noStartOptimize;
 		this.hasThen = hasThen;
 		this.hasNamedSkip = hasNamedSkip;
 		this.matchInvalidUtf = matchInvalidUtf;
@@ -157,21 +160,21 @@ internal sealed class PcreByteProgramCompiler {
 				Minimum: 0, Maximum: 1, Greedy: true, Child: PcreByteLiteral
 			} optional ) { terminalOptionalLiteral = optional; }
 		}
-		(utfCrLfLeadingStarAtom, skipUtfCrLfLeadingStar) = utf8 ? FindUtfCrLfRootStarAtom( root ) : default;
-		(utfCrLfLeadingRepeatSet, skipUtfCrLfLeadingRepeat) = utf8 ? FindUtfCrLfLeadingRepeat( root ) : default;
+		(utfCrLfLeadingStarAtom, skipUtfCrLfLeadingStar) = utf8 && !noStartOptimize ? FindUtfCrLfRootStarAtom( root ) : default;
+		(utfCrLfLeadingRepeatSet, skipUtfCrLfLeadingRepeat) = utf8 && !noStartOptimize ? FindUtfCrLfLeadingRepeat( root ) : default;
 		utfCrLfJoinedNullablePrefix = false;
-		if ( utf8 && utfCrLfLeadingRepeatSet is null ) {
+		if ( utf8 && !noStartOptimize && utfCrLfLeadingRepeatSet is null ) {
 			utfCrLfLeadingRepeatSet = FindUtfCrLfJoinedRepeat( root );
 			skipUtfCrLfLeadingRepeat = false;
 			utfCrLfJoinedNullablePrefix = utfCrLfLeadingRepeatSet is not null;
 		}
 		// Preserve a proven first-star owner before plain classes as well as PLUS.
-		var utfCrLfStartClass = utf8 && HasUtfCrLfStartClass( root );
+		var utfCrLfStartClass = utf8 && !noStartOptimize && HasUtfCrLfStartClass( root );
 		if ( utfCrLfLeadingRepeatSet is null && !utfCrLfStartClass ) {
 			utfCrLfLeadingStarAtom = null;
 			skipUtfCrLfLeadingStar = false;
 		}
-		pruneLiteralCacheRepeat = FindPruneLiteralCache( root );
+		pruneLiteralCacheRepeat = noStartOptimize ? null : FindPruneLiteralCache( root );
 		CompileAlternatives( root );
 		while ( compileWork.TryPop( out var next ) ) {
 			cancellationToken.ThrowIfCancellationRequested();
@@ -202,18 +205,20 @@ internal sealed class PcreByteProgramCompiler {
 			// this callee's own bytecode contains a local-quit control verb.
 			if ( restoresLabel ) { instructions[call.Instruction] = instructions[call.Instruction] with { PropertyValue = 1 }; }
 		}
-		var bytePrefix = utf8 ? default : FindByteCrLfPrefix( root );
+		var bytePrefix = utf8 || noStartOptimize ? default : FindByteCrLfPrefix( root );
 		// A first-byte cut may trigger on a malformed lead: admit a zero-width
 		// synthetic candidate, while the fragment still forbids consumption.
-		var commitBytes = hasCommit ? FindCommitStartBytes( root ) : null;
+		var commitBytes = hasCommit && !noStartOptimize ? FindCommitStartBytes( root ) : null;
 		ValidateSurrogateLiteralProgram();
 		return new( instructions.ToArray(), markCount, hasCaselessComparisons, utf8, matchInvalidUtf,
-			FindRequiredLiteralSuffix( root ), newline, HasExplicitNewline( root ), hasEarlyAccept || commitBytes.HasValue || CanMatchEmptyAtAnyOffset( root ),
+			noStartOptimize ? default : FindRequiredLiteralSuffix( root ), newline, HasExplicitNewline( root ),
+			hasEarlyAccept || commitBytes.HasValue || noStartOptimize && hasCommit || CanMatchEmptyAtAnyOffset( root ),
 			bytePrefix.Unconditional, utfCrLfStartClass, notEmpty, notEmptyAtStart,
-			matchInvalidUtf && newline == PcreByteNewline.Any && HasLineStartSearch( root ), ucp, bytePrefix.Literal ) {
+			matchInvalidUtf && !noStartOptimize && newline == PcreByteNewline.Any && HasLineStartSearch( root ), ucp, bytePrefix.Literal ) {
+			NoStartOptimize = noStartOptimize,
 			ScalarExpressionStackDepth = scalarExpressionStackDepth, CommitStartBytes = commitBytes, TurkishCasing = turkishCasing,
 			FirstLineSkipBypassesWindow = instructions.Any( item => item.Opcode is PcreByteOpcode.Skip or PcreByteOpcode.SkipNamed )
-				&& HasUnfilteredFirstLineSkipEntry( root ),
+				&& ( noStartOptimize || HasUnfilteredFirstLineSkipEntry( root ) ),
 			PathMarkSlot = pathMarkSlot, TrackPathMarks = hasNamedSkip, HasSurrogateLiterals = hasSurrogateLiterals
 		};
 	}

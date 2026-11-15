@@ -17,6 +17,7 @@ internal sealed partial class PcreByteParser {
 	private readonly byte[] source;
 	private readonly CancellationToken cancellationToken;
 	private readonly bool literal;
+	private readonly bool noStartOptimize;
 	private readonly bool utf8;
 	private readonly bool ucp;
 	private readonly bool turkishCasing;
@@ -62,6 +63,7 @@ internal sealed partial class PcreByteParser {
 		PcreByteStartSettings settings, CancellationToken cancellationToken ) {
 		this.source = source;
 		literal = options.Literal;
+		noStartOptimize = options.NoStartOptimize;
 		caseless = options.Caseless;
 		dotAll = options.DotAll;
 		multiline = options.Multiline;
@@ -512,7 +514,8 @@ internal sealed partial class PcreByteParser {
 				if ( end.Value is (byte)'\r' or (byte)'\n' ) { explicitNewline = true; }
 				// Preserve existing positive interior-range continuation until the
 				// broader native start-bitmap/prefix behavior is implemented (#99).
-				if ( !negated && ( item.Value.Value <= (byte)'\n' && end.Value.Value >= (byte)'\n'
+				// This is a start-study workaround, not intrinsic newline provenance.
+				if ( !noStartOptimize && !negated && ( item.Value.Value <= (byte)'\n' && end.Value.Value >= (byte)'\n'
 					|| item.Value.Value <= (byte)'\r' && end.Value.Value >= (byte)'\r' ) ) {
 					explicitNewline = true;
 				}
