@@ -14,7 +14,7 @@ public sealed class PcreSyntaxAcceptanceTests {
 	[InlineData( "(*LIMIT_MATCH=10)a", 0, false )]
 	[InlineData( "(*LIMIT_HEAP=10)a", 0, false )]
 	[InlineData( "(*NO_JIT)a", 0, false )]
-	[InlineData( "(*NO_START_OPT)a", 0, true )]
+	[InlineData( "(*NO_DOTSTAR_ANCHOR)a", 0, true )]
 	[InlineData( "a(?C2)", 1, false )]
 	[InlineData( "(?i)(?C2)", 4, false )]
 	[InlineData( "(?C3)", 0, false )]

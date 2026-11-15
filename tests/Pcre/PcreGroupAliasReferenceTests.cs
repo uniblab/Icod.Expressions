@@ -109,7 +109,7 @@ public sealed class PcreGroupAliasReferenceTests {
 
 	[Theory]
 	[InlineData( "(*NO_JIT)a" )]
-	[InlineData( "(*NO_START_OPT)a" )]
+	[InlineData( "(*NO_DOTSTAR_ANCHOR)a" )]
 	[InlineData( "(*LIMIT_MATCH=10)" )]
 	public void OtherValidNativeConstructsAreNeverReinterpretedAsAtomicAliases( string pattern ) {
 		Reference( pattern );

@@ -10,7 +10,7 @@
 ## Global Constraints
 
 - Base50b53f0f8896235004d879546e660e9640830867/treea40723746f8f42d24d3cca0029ac0db40f7203ce;92,998 baseline.
-- Preserve284 prior test files/279 C# sources/frozen35; freeze3 new C# blobs after clean RED.
+- Preserve281 prior test files/276 C# sources/frozen35; only3 documented pending-syntax InlineData tokens may change in prior tests. Freeze3 new C# blobs after clean RED.
 - Three production files: PcreByteStartSettings.cs, PcreByteCompiler.cs, PcreByteParser.cs; no grammar/AST/matcher/program-emitter/proof/limit/API/dependency/workflow changes.
 - Exact uppercase, uninterrupted start-only, repeated/interleaved/idempotent global OR; Literal bypasses scanning.
 - Seven inventories before final qualification; final evidence on PR256/issue7 footer; user merges/tags/publishes; Grep last.
@@ -35,12 +35,13 @@
 
 ### Task2: resolve source prefix
 
-**Files:** src/Pcre/PcreByteStartSettings.cs, PcreByteCompiler.cs, PcreByteParser.cs; seven inventories.
+**Files:** src/Pcre/PcreByteStartSettings.cs, PcreByteCompiler.cs, PcreByteParser.cs; three pending-syntax inventory rows in PcreGroupAliasReferenceTests.cs, PcreFailureVerbReferenceTests.cs and PcreSyntaxAcceptanceTests.cs; seven documents.
 **Interfaces:** bool NoStartOptimize on start settings, initialized from options, set true on exact prefix and consumed by both existing compile-policy snapshots.
 
 - [x] Initialize/scan/return the global bool without changing original bytes/body offset or Literal bypass.
 - [x] Route settings.NoStartOptimize to program construction and parser metadata; keep existing proof/matcher implementation fixed.
 - [x] Update all seven inventories before final source push.
+- [x] Refresh only3 obsolete pending-syntax InlineData directive tokens to NoDotstarAnchor after source qualification exposes intended acceptance, retaining all assertion/helper bodies and frozen new fixtures.
 - [ ] Require six fresh93,766 net10 results/214 frozen/120 methods, all3 library outputs/supporting gates.
 
 ### Task3: review and delivery
@@ -53,3 +54,5 @@
 - [ ] Retire only this plan's identity-checked ledger; preserve branch/worktree.
 
 Corrected RED/frozen evidence is recorded in the design. Task2 source and all seven inventories are implemented; exact-source qualification and Task3 author review/delivery remain external gates.
+
+Qualification found3 obsolete rejection inventory rows after all768 new cases passed; the narrowly scoped token substitutions are documented in the design and require a fresh exact-source GREEN run.
