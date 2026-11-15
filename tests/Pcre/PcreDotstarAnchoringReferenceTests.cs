@@ -169,14 +169,14 @@ public sealed partial class PcreDotstarAnchoringReferenceTests {
 	[InlineData( 3, true )]
 	public void ProofKeepsFullCapacitiesAndFallsBackWithoutQuota( int selection, bool enabled ) {
 		var body = selection switch {
-			0 => new string( 'A', 4092 ),
+			0 => new string( 'A', 4090 ),
 			1 => String.Concat( String.Concat( Enumerable.Repeat( "()", 256 ) ), "A" ),
 			2 => String.Concat( String.Concat( Enumerable.Repeat( "(?:", 256 ) ), "A", new string( ')', 256 ) ),
 			_ => String.Concat( String.Concat( Enumerable.Repeat( "(?:A){0}", 2200 ) ), "A" )
 		};
 		var source = Encoding.ASCII.GetBytes( String.Concat( "(?s).*?", body ) );
 		var subject = Encoding.ASCII.GetBytes( selection == 0 ? body : "A" );
-		var spans = selection == 0 ? "0:4092" : selection == 1 ? String.Concat( "0:1,", String.Join( ",", Enumerable.Repeat( "0:0", 256 ) ) ) : "0:1";
+		var spans = selection == 0 ? "0:4090" : selection == 1 ? String.Concat( "0:1,", String.Join( ",", Enumerable.Repeat( "0:0", 256 ) ) ) : "0:1";
 		var native = Reference( source, 0, enabled );
 		AssertNative( native, subject, 0, 0, spans, "" );
 		Compare( native, subject, 0, 0, Compile( source, Options( 0, enabled ) ).Match( subject ), "capacity and bounded proof fallback" );
@@ -186,9 +186,9 @@ public sealed partial class PcreDotstarAnchoringReferenceTests {
 	[InlineData( false )]
 	[InlineData( true )]
 	public void InferenceDoesNotRelaxInstructionLimit( bool enabled ) {
-		var source = Encoding.ASCII.GetBytes( String.Concat( "(?s).*?", new string( 'A', 4093 ) ) );
-		var subject = Encoding.ASCII.GetBytes( new string( 'A', 4093 ) );
-		AssertNative( Reference( source, 0, enabled ), subject, 0, 0, "0:4093", "" );
+		var source = Encoding.ASCII.GetBytes( String.Concat( "(?s).*?", new string( 'A', 4091 ) ) );
+		var subject = Encoding.ASCII.GetBytes( new string( 'A', 4091 ) );
+		AssertNative( Reference( source, 0, enabled ), subject, 0, 0, "0:4091", "" );
 		var actual = PcreByteCompiler.Compile( source, Options( 0, enabled ) );
 		Assert.Null( actual.Pattern );
 		Assert.Equal( PcreByteDiagnosticCode.PatternRepeatLimitExceeded, actual.Diagnostic?.Code );
