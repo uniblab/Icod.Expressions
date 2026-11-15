@@ -1,0 +1,379 @@
+using System.Buffers;
+using System.Text;
+using Icod.Expressions.Pcre;
+using PCRE;
+using Xunit;
+
+namespace Icod.Expressions.Tests.Pcre;
+
+public sealed partial class PcreNoStartOptPrefixReferenceTests {
+	private const string Directive = "(*NO_START_OPT)";
+	[Theory]
+	[InlineData( "282A4E4F5F53544152545F4F50542928", 0, false, -1L, 114, 16, "InvalidSyntax", 15 )]
+	[InlineData( "282A4E4F5F53544152545F4F5054295B", 0, false, -1L, 106, 16, "InvalidSyntax", 15 )]
+	[InlineData( "282A4E4F5F53544152545F4F5054295C", 0, false, -1L, 101, 16, "InvalidSyntax", 15 )]
+	[InlineData( "282A4E4F5F53544152545F4F505429417B322C317D", 0, false, -1L, 104, 20, "InvalidSyntax", 16 )]
+	[InlineData( "41282A4E4F5F53544152545F4F505429", 0, false, -1L, 160, 15, "UnsupportedSyntax", 1 )]
+	[InlineData( "283F3A282A4E4F5F53544152545F4F5054294129", 0, false, -1L, 160, 17, "UnsupportedSyntax", 3 )]
+	[InlineData( "283F6929282A4E4F5F53544152545F4F50542941", 0, false, -1L, 160, 18, "UnsupportedSyntax", 4 )]
+	[InlineData( "20282A4E4F5F53544152545F4F505429", 0, false, -1L, 160, 15, "UnsupportedSyntax", 1 )]
+	[InlineData( "282A4E4F5F53544152545F4F50543A582941", 0, false, -1L, 160, 14, "UnsupportedSyntax", 0 )]
+	[InlineData( "282A4E4F53544152544F50542941", 0, false, -1L, 160, 12, "UnsupportedSyntax", 0 )]
+	[InlineData( "282A6E6F5F73746172745F6F70742941", 0, false, -1L, 195, 15, "UnsupportedSyntax", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F5054", 0, false, -1L, 160, 14, "UnsupportedSyntax", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F5054494D495A452941", 0, false, -1L, 160, 19, "UnsupportedSyntax", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F5054294141", 0, false, 16L, 188, 0, "PatternLengthLimitExceeded", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F50542941", 0, false, 1L, 188, 0, "PatternLengthLimitExceeded", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F50542928", 0, true, -1L, 114, 16, "InvalidSyntax", 15 )]
+	[InlineData( "282A4E4F5F53544152545F4F5054295B", 0, true, -1L, 106, 16, "InvalidSyntax", 15 )]
+	[InlineData( "282A4E4F5F53544152545F4F5054295C", 0, true, -1L, 101, 16, "InvalidSyntax", 15 )]
+	[InlineData( "282A4E4F5F53544152545F4F505429417B322C317D", 0, true, -1L, 104, 20, "InvalidSyntax", 16 )]
+	[InlineData( "41282A4E4F5F53544152545F4F505429", 0, true, -1L, 160, 15, "UnsupportedSyntax", 1 )]
+	[InlineData( "283F3A282A4E4F5F53544152545F4F5054294129", 0, true, -1L, 160, 17, "UnsupportedSyntax", 3 )]
+	[InlineData( "283F6929282A4E4F5F53544152545F4F50542941", 0, true, -1L, 160, 18, "UnsupportedSyntax", 4 )]
+	[InlineData( "20282A4E4F5F53544152545F4F505429", 0, true, -1L, 160, 15, "UnsupportedSyntax", 1 )]
+	[InlineData( "282A4E4F5F53544152545F4F50543A582941", 0, true, -1L, 160, 14, "UnsupportedSyntax", 0 )]
+	[InlineData( "282A4E4F53544152544F50542941", 0, true, -1L, 160, 12, "UnsupportedSyntax", 0 )]
+	[InlineData( "282A6E6F5F73746172745F6F70742941", 0, true, -1L, 195, 15, "UnsupportedSyntax", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F5054", 0, true, -1L, 160, 14, "UnsupportedSyntax", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F5054494D495A452941", 0, true, -1L, 160, 19, "UnsupportedSyntax", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F5054294141", 0, true, 16L, 188, 0, "PatternLengthLimitExceeded", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F50542941", 0, true, 1L, 188, 0, "PatternLengthLimitExceeded", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F50542928", 1, false, -1L, 114, 16, "InvalidSyntax", 15 )]
+	[InlineData( "282A4E4F5F53544152545F4F5054295B", 1, false, -1L, 106, 16, "InvalidSyntax", 15 )]
+	[InlineData( "282A4E4F5F53544152545F4F5054295C", 1, false, -1L, 101, 16, "InvalidSyntax", 15 )]
+	[InlineData( "282A4E4F5F53544152545F4F505429417B322C317D", 1, false, -1L, 104, 20, "InvalidSyntax", 16 )]
+	[InlineData( "41282A4E4F5F53544152545F4F505429", 1, false, -1L, 160, 15, "UnsupportedSyntax", 1 )]
+	[InlineData( "283F3A282A4E4F5F53544152545F4F5054294129", 1, false, -1L, 160, 17, "UnsupportedSyntax", 3 )]
+	[InlineData( "283F6929282A4E4F5F53544152545F4F50542941", 1, false, -1L, 160, 18, "UnsupportedSyntax", 4 )]
+	[InlineData( "20282A4E4F5F53544152545F4F505429", 1, false, -1L, 160, 15, "UnsupportedSyntax", 1 )]
+	[InlineData( "282A4E4F5F53544152545F4F50543A582941", 1, false, -1L, 160, 14, "UnsupportedSyntax", 0 )]
+	[InlineData( "282A4E4F53544152544F50542941", 1, false, -1L, 160, 12, "UnsupportedSyntax", 0 )]
+	[InlineData( "282A6E6F5F73746172745F6F70742941", 1, false, -1L, 195, 15, "UnsupportedSyntax", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F5054", 1, false, -1L, 160, 14, "UnsupportedSyntax", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F5054494D495A452941", 1, false, -1L, 160, 19, "UnsupportedSyntax", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F5054294141", 1, false, 16L, 188, 0, "PatternLengthLimitExceeded", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F50542941", 1, false, 1L, 188, 0, "PatternLengthLimitExceeded", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F50542928", 1, true, -1L, 114, 16, "InvalidSyntax", 15 )]
+	[InlineData( "282A4E4F5F53544152545F4F5054295B", 1, true, -1L, 106, 16, "InvalidSyntax", 15 )]
+	[InlineData( "282A4E4F5F53544152545F4F5054295C", 1, true, -1L, 101, 16, "InvalidSyntax", 15 )]
+	[InlineData( "282A4E4F5F53544152545F4F505429417B322C317D", 1, true, -1L, 104, 20, "InvalidSyntax", 16 )]
+	[InlineData( "41282A4E4F5F53544152545F4F505429", 1, true, -1L, 160, 15, "UnsupportedSyntax", 1 )]
+	[InlineData( "283F3A282A4E4F5F53544152545F4F5054294129", 1, true, -1L, 160, 17, "UnsupportedSyntax", 3 )]
+	[InlineData( "283F6929282A4E4F5F53544152545F4F50542941", 1, true, -1L, 160, 18, "UnsupportedSyntax", 4 )]
+	[InlineData( "20282A4E4F5F53544152545F4F505429", 1, true, -1L, 160, 15, "UnsupportedSyntax", 1 )]
+	[InlineData( "282A4E4F5F53544152545F4F50543A582941", 1, true, -1L, 160, 14, "UnsupportedSyntax", 0 )]
+	[InlineData( "282A4E4F53544152544F50542941", 1, true, -1L, 160, 12, "UnsupportedSyntax", 0 )]
+	[InlineData( "282A6E6F5F73746172745F6F70742941", 1, true, -1L, 195, 15, "UnsupportedSyntax", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F5054", 1, true, -1L, 160, 14, "UnsupportedSyntax", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F5054494D495A452941", 1, true, -1L, 160, 19, "UnsupportedSyntax", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F5054294141", 1, true, 16L, 188, 0, "PatternLengthLimitExceeded", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F50542941", 1, true, 1L, 188, 0, "PatternLengthLimitExceeded", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F50542928", 5, false, -1L, 114, 16, "InvalidSyntax", 15 )]
+	[InlineData( "282A4E4F5F53544152545F4F5054295B", 5, false, -1L, 106, 16, "InvalidSyntax", 15 )]
+	[InlineData( "282A4E4F5F53544152545F4F5054295C", 5, false, -1L, 101, 16, "InvalidSyntax", 15 )]
+	[InlineData( "282A4E4F5F53544152545F4F505429417B322C317D", 5, false, -1L, 104, 20, "InvalidSyntax", 16 )]
+	[InlineData( "41282A4E4F5F53544152545F4F505429", 5, false, -1L, 160, 15, "UnsupportedSyntax", 1 )]
+	[InlineData( "283F3A282A4E4F5F53544152545F4F5054294129", 5, false, -1L, 160, 17, "UnsupportedSyntax", 3 )]
+	[InlineData( "283F6929282A4E4F5F53544152545F4F50542941", 5, false, -1L, 160, 18, "UnsupportedSyntax", 4 )]
+	[InlineData( "20282A4E4F5F53544152545F4F505429", 5, false, -1L, 160, 15, "UnsupportedSyntax", 1 )]
+	[InlineData( "282A4E4F5F53544152545F4F50543A582941", 5, false, -1L, 160, 14, "UnsupportedSyntax", 0 )]
+	[InlineData( "282A4E4F53544152544F50542941", 5, false, -1L, 160, 12, "UnsupportedSyntax", 0 )]
+	[InlineData( "282A6E6F5F73746172745F6F70742941", 5, false, -1L, 195, 15, "UnsupportedSyntax", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F5054", 5, false, -1L, 160, 14, "UnsupportedSyntax", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F5054494D495A452941", 5, false, -1L, 160, 19, "UnsupportedSyntax", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F5054294141", 5, false, 16L, 188, 0, "PatternLengthLimitExceeded", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F50542941", 5, false, 1L, 188, 0, "PatternLengthLimitExceeded", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F50542928", 5, true, -1L, 114, 16, "InvalidSyntax", 15 )]
+	[InlineData( "282A4E4F5F53544152545F4F5054295B", 5, true, -1L, 106, 16, "InvalidSyntax", 15 )]
+	[InlineData( "282A4E4F5F53544152545F4F5054295C", 5, true, -1L, 101, 16, "InvalidSyntax", 15 )]
+	[InlineData( "282A4E4F5F53544152545F4F505429417B322C317D", 5, true, -1L, 104, 20, "InvalidSyntax", 16 )]
+	[InlineData( "41282A4E4F5F53544152545F4F505429", 5, true, -1L, 160, 15, "UnsupportedSyntax", 1 )]
+	[InlineData( "283F3A282A4E4F5F53544152545F4F5054294129", 5, true, -1L, 160, 17, "UnsupportedSyntax", 3 )]
+	[InlineData( "283F6929282A4E4F5F53544152545F4F50542941", 5, true, -1L, 160, 18, "UnsupportedSyntax", 4 )]
+	[InlineData( "20282A4E4F5F53544152545F4F505429", 5, true, -1L, 160, 15, "UnsupportedSyntax", 1 )]
+	[InlineData( "282A4E4F5F53544152545F4F50543A582941", 5, true, -1L, 160, 14, "UnsupportedSyntax", 0 )]
+	[InlineData( "282A4E4F53544152544F50542941", 5, true, -1L, 160, 12, "UnsupportedSyntax", 0 )]
+	[InlineData( "282A6E6F5F73746172745F6F70742941", 5, true, -1L, 195, 15, "UnsupportedSyntax", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F5054", 5, true, -1L, 160, 14, "UnsupportedSyntax", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F5054494D495A452941", 5, true, -1L, 160, 19, "UnsupportedSyntax", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F5054294141", 5, true, 16L, 188, 0, "PatternLengthLimitExceeded", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F50542941", 5, true, 1L, 188, 0, "PatternLengthLimitExceeded", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F505429FF", 1, false, -1L, -23, 15, "InvalidUtf8Pattern", 15 )]
+	[InlineData( "282A4E4F5F53544152545F4F505429282A5554462941", 65, false, -1L, 174, 21, "InvalidSyntax", 21 )]
+	[InlineData( "282A4E4F5F53544152545F4F505429282A5543502941", 129, false, -1L, 175, 21, "InvalidSyntax", 21 )]
+	[InlineData( "282A4E4F5F53544152545F4F505429FF", 1, true, -1L, -23, 15, "InvalidUtf8Pattern", 15 )]
+	[InlineData( "282A4E4F5F53544152545F4F505429282A5554462941", 65, true, -1L, 174, 21, "InvalidSyntax", 21 )]
+	[InlineData( "282A4E4F5F53544152545F4F505429282A5543502941", 129, true, -1L, 175, 21, "InvalidSyntax", 21 )]
+	[InlineData( "282A4E4F5F53544152545F4F505429FF", 5, false, -1L, -23, 15, "InvalidUtf8Pattern", 15 )]
+	[InlineData( "282A4E4F5F53544152545F4F505429282A5554462941", 69, false, -1L, 174, 21, "InvalidSyntax", 21 )]
+	[InlineData( "282A4E4F5F53544152545F4F505429282A5543502941", 133, false, -1L, 175, 21, "InvalidSyntax", 21 )]
+	[InlineData( "282A4E4F5F53544152545F4F505429FF", 5, true, -1L, -23, 15, "InvalidUtf8Pattern", 15 )]
+	[InlineData( "282A4E4F5F53544152545F4F505429282A5554462941", 69, true, -1L, 174, 21, "InvalidSyntax", 21 )]
+	[InlineData( "282A4E4F5F53544152545F4F505429282A5543502941", 133, true, -1L, 175, 21, "InvalidSyntax", 21 )]
+	[InlineData( "282A4E4F5F53544152545F4F50542941", 48, false, 1L, 192, 0, "InvalidSyntax", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F50542941", 16, false, 15L, 188, 0, "PatternLengthLimitExceeded", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F50542941", 48, true, 1L, 192, 0, "InvalidSyntax", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F50542941", 16, true, 15L, 188, 0, "PatternLengthLimitExceeded", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F50542941", 49, false, 1L, 192, 0, "InvalidSyntax", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F50542941", 17, false, 15L, 188, 0, "PatternLengthLimitExceeded", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F50542941", 49, true, 1L, 192, 0, "InvalidSyntax", 0 )]
+	[InlineData( "282A4E4F5F53544152545F4F50542941", 17, true, 15L, 188, 0, "PatternLengthLimitExceeded", 0 )]
+	public void PrefixPreservesDiagnosticPriority( string hex, int mode, bool enabled, long maximum, int nativeCode, int nativeOffset, string code, int offset ) {
+		var source = Convert.FromHexString( hex );
+		var native = Assert.Throws<PcrePatternException>( () => Reference( source, mode, enabled, 0, maximum ) );
+		Assert.Equal( nativeCode, (int)native.ErrorCode );
+		Assert.EndsWith( $" at offset {nativeOffset}.", native.Message );
+		var actual = PcreByteCompiler.Compile( source, Options( mode, enabled, 0, 0, maximum ) );
+		Assert.Null( actual.Pattern );
+		Assert.Equal( code, actual.Diagnostic?.Code.ToString() );
+		Assert.Equal( offset, actual.Diagnostic?.ByteOffset );
+	}
+
+	[Theory]
+	[InlineData( 0, false )]
+	[InlineData( 0, true )]
+	[InlineData( 1, false )]
+	[InlineData( 1, true )]
+	public void CallerBudgetsBeforePrefixIntegration( int mode, bool enabled ) {
+		var source = "A"u8.ToArray();
+		var native = Reference( source, mode, enabled );
+		AssertNative( native, source, 0, 0, "0:1", "" );
+		var steps = new List<int>();
+		var options = Options( mode, enabled ) with { WorkObserver = steps.Add };
+		Compare( native, source, 0, 0, Compile( source, options ).Match( source ), "caller work" );
+		AssertBudget( source, source, options, native, 0, steps );
+	}
+
+	[Theory]
+	[InlineData( 0, false, 1 )]
+	[InlineData( 0, true, 1 )]
+	[InlineData( 1, false, 1 )]
+	[InlineData( 1, true, 1 )]
+	[InlineData( 0, false, 256 )]
+	[InlineData( 0, true, 256 )]
+	[InlineData( 1, false, 256 )]
+	[InlineData( 1, true, 256 )]
+	public void PrefixChainPreservesWorkBudgets( int mode, bool enabled, int count ) {
+		var source = Encoding.UTF8.GetBytes( String.Concat( String.Concat( Enumerable.Repeat( Directive, count ) ), "A" ) );
+		var subject = "A"u8.ToArray();
+		var native = Reference( source, mode, enabled );
+		AssertNative( native, subject, 0, 0, "0:1", "" );
+		var steps = new List<int>();
+		var plain = new List<int>();
+		var options = Options( mode, enabled ) with { WorkObserver = steps.Add };
+		Compare( native, subject, 0, 0, Compile( source, options ).Match( subject ), "prefix work" );
+		Compare( native, subject, 0, 0, Compile( subject, Options( mode, true ) with { WorkObserver = plain.Add } ).Match( subject ), "body work" );
+		Assert.Equal( plain, steps );
+		AssertBudget( source, subject, options, native, 0, steps );
+	}
+
+	[Theory]
+	[InlineData( 0, false )]
+	[InlineData( 0, true )]
+	[InlineData( 1, false )]
+	[InlineData( 1, true )]
+	[InlineData( 5, false )]
+	[InlineData( 5, true )]
+	public void PrefixRetryBudgetsAndCancellation( int mode, bool enabled ) {
+		var source = Encoding.UTF8.GetBytes( String.Concat( Directive, "(*COMMIT)A" ) );
+		var subject = "BA"u8.ToArray();
+		var native = Reference( source, mode, enabled );
+		AssertNative( native, subject, 0, 0, "", "" );
+		var steps = new List<int>();
+		var options = Options( mode, enabled ) with { WorkObserver = steps.Add };
+		Compare( native, subject, 0, 0, Compile( source, options ).Match( subject ), "prefix cut" );
+		AssertBudget( source, subject, options, native, 0, steps );
+	}
+
+	private static void AssertBudget( byte[] source, byte[] subject, PcreByteOptions options, PcreRegex8Bit native, int empty, List<int> steps ) {
+		Assert.Equal( Enumerable.Range( 1, steps.Count ), steps );
+		var workCount = steps.Count;
+		Compare( native, subject, 0, empty, Compile( source, options with { MatchWorkLimit = workCount } ).Match( subject ), "exact work" );
+		var exhausted = Compile( source, options with { MatchWorkLimit = workCount - 1 } ).Match( subject );
+		Assert.Null( exhausted.Match );
+		Assert.Equal( PcreByteDiagnosticCode.MatchWorkLimitExceeded, exhausted.Diagnostic?.Code );
+		using var cancellation = new CancellationTokenSource();
+		var cancellable = Compile( source, options with { WorkObserver = count => { if ( count == 2 ) { cancellation.Cancel(); } } } );
+		Assert.Throws<OperationCanceledException>( () => cancellable.Match( subject, cancellationToken: cancellation.Token ) );
+	}
+
+	[Theory]
+	[InlineData( 0, false )]
+	[InlineData( 0, true )]
+	[InlineData( 1, false )]
+	[InlineData( 1, true )]
+	[InlineData( 5, false )]
+	[InlineData( 5, true )]
+	public void CompiledPatternOwnsPrefixViewAndMark( int mode, bool enabled ) {
+		var pattern = Encoding.UTF8.GetBytes( String.Concat( Directive, "(*MARK:N)(*COMMIT)A" ) );
+		var source = new byte[pattern.Length + 2];
+		Array.Fill( source, (byte)0xFF );
+		pattern.CopyTo( source, 1 );
+		var rejected = "BA"u8.ToArray();
+		var accepted = "A"u8.ToArray();
+		var native = Reference( pattern, mode, enabled );
+		AssertNative( native, rejected, 0, 0, "", "" );
+		AssertNative( native, accepted, 0, 0, "0:1", "4E" );
+		var options = Options( mode, enabled );
+		var actual = PcreByteCompiler.Compile( source.AsMemory( 1, pattern.Length ), options );
+		Assert.True( actual.IsSuccess, actual.Diagnostic?.Message );
+		var compiled = Assert.IsType<PcreCompiledBytePattern>( actual.Pattern );
+		Array.Fill( source, (byte)'x' );
+		typeof( PcreByteOptions ).GetProperty( "NoStartOptimize" )!.SetValue( options, false );
+		Compare( native, rejected, 0, 0, compiled.Match( rejected ), "owned prefix cut" );
+		Compare( native, accepted, 0, 0, compiled.Match( accepted ), "owned prefix view/mark" );
+	}
+
+	[Theory]
+	[InlineData( 0, false )]
+	[InlineData( 0, true )]
+	[InlineData( 1, false )]
+	[InlineData( 1, true )]
+	[InlineData( 2, false )]
+	[InlineData( 2, true )]
+	public void PrefixKeepsFullCapacities( int selection, bool enabled ) {
+		var body = selection switch {
+			0 => new string( 'A', 4095 ),
+			1 => String.Concat( String.Concat( Enumerable.Repeat( "()", 256 ) ), "A" ),
+			_ => String.Concat( String.Concat( Enumerable.Repeat( "(?:", 256 ) ), "A", new string( ')', 256 ) )
+		};
+		var source = Encoding.ASCII.GetBytes( String.Concat( Directive, body ) );
+		var subject = selection == 0 ? Encoding.ASCII.GetBytes( body ) : "A"u8.ToArray();
+		var spans = selection == 0 ? "0:4095" : selection == 1 ? String.Concat( "0:1,", String.Join( ",", Enumerable.Repeat( "0:0", 256 ) ) ) : "0:1";
+		var native = Reference( source, 0, enabled );
+		AssertNative( native, subject, 0, 0, spans, "" );
+		Compare( native, subject, 0, 0, Compile( source, Options( 0, enabled ) ).Match( subject ), "prefix capacities" );
+	}
+
+	[Theory]
+	[InlineData( false )]
+	[InlineData( true )]
+	public void PrefixDoesNotRelaxInstructionLimit( bool enabled ) {
+		var source = Encoding.ASCII.GetBytes( String.Concat( Directive, new string( 'A', 4096 ) ) );
+		var subject = Encoding.ASCII.GetBytes( new string( 'A', 4096 ) );
+		AssertNative( Reference( source, 0, enabled ), subject, 0, 0, "0:4096", "" );
+		var actual = PcreByteCompiler.Compile( source, Options( 0, enabled ) );
+		Assert.Null( actual.Pattern );
+		Assert.Equal( PcreByteDiagnosticCode.PatternRepeatLimitExceeded, actual.Diagnostic?.Code );
+	}
+
+	[Theory]
+	[InlineData( false )]
+	[InlineData( true )]
+	public void CallerValidationPriorityBeforePrefixIntegration( bool enabled ) {
+		var source = Encoding.ASCII.GetBytes( String.Concat( Directive, "A" ) );
+		var subject = "A"u8.ToArray();
+		var options = Options( 1, enabled );
+		var native = Reference( source, 1, enabled );
+		AssertNative( native, subject, 0, 0, "0:1", "" );
+		var compiled = Compile( source, options );
+		Assert.Equal( PcreByteDiagnosticCode.InvalidUtf8Subject, compiled.Match( new byte[] { 0xFF } ).Diagnostic?.Code );
+		Assert.Equal( PcreByteDiagnosticCode.InvalidStartOffset, compiled.Match( "é"u8.ToArray(), 1 ).Diagnostic?.Code );
+		Assert.Equal( PcreByteDiagnosticCode.InvalidStartOffset, compiled.Match( new byte[] { 0xFF }, -1 ).Diagnostic?.Code );
+		using var cancellation = new CancellationTokenSource();
+		cancellation.Cancel();
+		Assert.Throws<OperationCanceledException>( () => compiled.Match( new byte[] { 0xFF }, -1, cancellation.Token ) );
+		Assert.Throws<OperationCanceledException>( () => PcreByteCompiler.Compile( source, options, cancellation.Token ) );
+	}
+
+	[Theory]
+	[InlineData( false )]
+	[InlineData( true )]
+	public void RejectedPrefixMemoryIsNeverRead( bool enabled ) {
+		var source = Encoding.ASCII.GetBytes( String.Concat( Directive, "A" ) );
+		var length = Assert.Throws<PcrePatternException>( () => Reference( source, 0, enabled, 0, 1 ) );
+		Assert.Equal( 188, (int)length.ErrorCode );
+		Assert.EndsWith( " at offset 0.", length.Message );
+		var conflict = Assert.Throws<PcrePatternException>( () => Reference( source, 48, enabled, 0, 1 ) );
+		Assert.Equal( 192, (int)conflict.ErrorCode );
+		Assert.EndsWith( " at offset 0.", conflict.Message );
+		using var memory = new UnreadablePatternMemory();
+		var options = Options( 0, enabled, 0, 0, 1 );
+		using var cancellation = new CancellationTokenSource();
+		cancellation.Cancel();
+		Assert.Throws<OperationCanceledException>( () => PcreByteCompiler.Compile( memory.Pattern, options, cancellation.Token ) );
+		Assert.Equal( PcreByteDiagnosticCode.InvalidWorkLimit, PcreByteCompiler.Compile( memory.Pattern, options with { MatchWorkLimit = 0 } ).Diagnostic?.Code );
+		Assert.Equal( PcreByteDiagnosticCode.InvalidSyntax, PcreByteCompiler.Compile( memory.Pattern, options with { Literal = true, Multiline = true } ).Diagnostic?.Code );
+		var actual = PcreByteCompiler.Compile( memory.Pattern, options );
+		Assert.Null( actual.Pattern );
+		Assert.Equal( PcreByteDiagnosticCode.PatternLengthLimitExceeded, actual.Diagnostic?.Code );
+		Assert.False( memory.ReadRequested );
+	}
+	private sealed class UnreadablePatternMemory : MemoryManager<byte> {
+		internal bool ReadRequested { get; private set; }
+		internal ReadOnlyMemory<byte> Pattern => CreateMemory( Directive.Length + 1 );
+		public override Span<byte> GetSpan() {
+			ReadRequested = true;
+			throw new InvalidOperationException( "rejected prefix memory must not be read" );
+		}
+		public override MemoryHandle Pin( int elementIndex = 0 ) => throw new NotSupportedException();
+		public override void Unpin() { }
+		protected override void Dispose( bool disposing ) { }
+	}
+
+	private static void AssertProtocols( string hex, int mode, bool enabled, int empty, int policy, long maximum, string protocols ) {
+		var source = Convert.FromHexString( hex );
+		var cases = protocols.Split( ';' ).Select( Protocol.Parse ).ToArray();
+		var native = Reference( source, mode, enabled, policy, maximum );
+		foreach ( var item in cases ) { AssertNative( native, item.Subject, item.Offset, empty, item.Spans, item.Mark ); }
+		var compiled = Compile( source, Options( mode, enabled, empty, policy, maximum ) );
+		foreach ( var item in cases ) { Compare( native, item.Subject, item.Offset, empty, compiled.Match( item.Subject, item.Offset ), $"{hex}/{mode}/{enabled}/{empty}/{policy}/{maximum}/{Convert.ToHexString( item.Subject )}/{item.Offset}" ); }
+	}
+	private readonly record struct Protocol( byte[] Subject, int Offset, string Spans, string Mark ) {
+		internal static Protocol Parse( string value ) {
+			var parts = value.Split( '/' );
+			return new( Convert.FromHexString( parts[0] ), Int32.Parse( parts[1] ), parts[2], parts[3] );
+		}
+	}
+	private static PcreByteOptions Options( int mode, bool enabled, int empty = 0, int policy = 0, long maximum = -1 ) => new() {
+		Utf8 = ( mode & 1 ) != 0, MatchInvalidUtf = ( mode & 4 ) != 0, Caseless = ( mode & 8 ) != 0,
+		Literal = ( mode & 16 ) != 0, Multiline = ( mode & 32 ) != 0, NeverUtf = ( mode & 64 ) != 0,
+		NeverUcp = ( mode & 128 ) != 0, NeverBackslashC = ( mode & 256 ) != 0, NeverCallout = ( mode & 512 ) != 0,
+		AllowLookaroundBackslashK = ( mode & 1024 ) != 0, Extended = ( mode & 32768 ) != 0, NoAutoPossess = ( mode & 2048 ) != 0,
+		MatchWord = ( mode & 4096 ) != 0, MatchLine = ( mode & 8192 ) != 0, Ucp = ( mode & 16384 ) != 0,
+		NotEmpty = ( empty & 1 ) != 0, NotEmptyAtStart = ( empty & 2 ) != 0,
+		Anchored = ( policy & 1 ) != 0, EndAnchored = ( policy & 2 ) != 0, FirstLine = ( policy & 4 ) != 0,
+		NoStartOptimize = enabled, MaxPatternLength = maximum < 0 ? null : (uint)maximum
+	};
+	private static PcreRegex8Bit Reference( byte[] source, int mode, bool enabled, int policy = 0, long maximum = -1 ) => new( source, Encoding.UTF8, new PcreRegexSettings {
+		Options = PcreOptions.Compiled | (PcreOptions)( ( enabled ? 0x10000u : 0u ) | ( ( mode & 1 ) != 0 ? 0x80000u : 0u )
+			| ( ( mode & 4 ) != 0 ? 0x4000000u : 0u ) | ( ( mode & 8 ) != 0 ? 8u : 0u ) | ( ( mode & 16 ) != 0 ? 0x2000000u : 0u )
+			| ( ( mode & 32 ) != 0 ? 0x400u : 0u ) | ( ( mode & 64 ) != 0 ? 0x1000u : 0u ) | ( ( mode & 128 ) != 0 ? 0x800u : 0u )
+			| ( ( mode & 256 ) != 0 ? 0x100000u : 0u ) | ( ( mode & 2048 ) != 0 ? 0x4000u : 0u ) | ( ( mode & 32768 ) != 0 ? 0x80u : 0u ) | ( ( mode & 16384 ) != 0 ? 0x20000u : 0u )
+			| ( ( policy & 1 ) != 0 ? 0x80000000u : 0u ) | ( ( policy & 2 ) != 0 ? 0x20000000u : 0u ) | ( ( policy & 4 ) != 0 ? 0x100u : 0u ) ),
+		ExtraCompileOptions = (PcreExtraCompileOptions)( ( ( mode & 1024 ) != 0 ? 64 : 0 ) | ( ( mode & 512 ) != 0 ? 0x8000 : 0 ) | ( ( mode & 4096 ) != 0 ? 4 : 0 ) | ( ( mode & 8192 ) != 0 ? 8 : 0 ) ),
+		MaxPatternLength = maximum < 0 ? null : (uint)maximum, ParensLimit = 512, NewLine = (PcreNewLine)2, BackslashR = (PcreBackslashR)1
+	} );
+	private static PcreCompiledBytePattern Compile( byte[] source, PcreByteOptions options ) {
+		var actual = PcreByteCompiler.Compile( source, options );
+		Assert.True( actual.IsSuccess, actual.Diagnostic?.Message );
+		return Assert.IsType<PcreCompiledBytePattern>( actual.Pattern );
+	}
+	private static PcreMatchOptions MatchOptions( int empty ) => (PcreMatchOptions)( empty * 4 );
+	private static void AssertNative( PcreRegex8Bit native, byte[] subject, int offset, int empty, string spans, string mark ) {
+		var match = native.Match( subject, offset, MatchOptions( empty ) );
+		Assert.Equal( spans.Length > 0, match.Success );
+		if ( !match.Success ) { return; }
+		Assert.Equal( mark, Convert.ToHexString( match.Mark.ToArray() ) );
+		var groups = spans.Split( ',' );
+		Assert.Equal( groups.Length, match.Groups.Count );
+		for ( var group = 0; group < groups.Length; group++ ) {
+			var capture = match.Groups[group];
+			Assert.Equal( groups[group], capture.Success ? $"{capture.Index}:{capture.EndIndex - capture.Index}" : "-" );
+		}
+	}
+	private static void Compare( PcreRegex8Bit native, byte[] subject, int offset, int empty, PcreByteMatchResult actual, string detail ) {
+		var expected = native.Match( subject, offset, MatchOptions( empty ) );
+		Assert.True( actual.IsSuccess, $"{detail}: {actual.Diagnostic?.Message}" );
+		Assert.True( ( expected.Success ? expected.Index : -1 ) == ( actual.Match?.ByteIndex ?? -1 ), $"{detail}: expected index {( expected.Success ? expected.Index : -1 )}, actual {actual.Match?.ByteIndex ?? -1}" );
+		if ( !expected.Success ) { return; }
+		Assert.Equal( expected.EndIndex - expected.Index, actual.Match!.ByteLength );
+		Assert.Equal( expected.Mark.ToArray(), actual.Match.MarkName.ToArray() );
+		Assert.Equal( expected.Groups.Count, actual.Match.Captures.Count );
+		for ( var group = 0; group < expected.Groups.Count; group++ ) {
+			var capture = expected.Groups[group];
+			Assert.Equal( capture.Success ? new PcreByteCapture( capture.Index, capture.EndIndex - capture.Index ) : null, actual.Match.Captures[group] );
+		}
+	}
+}
