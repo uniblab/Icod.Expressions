@@ -72,6 +72,7 @@ internal sealed record PcreByteProgram(
 	bool LineStartSearch, bool Ucp, PcreBytePrefixLiteral? ByteCrLfPrefixLiteral
 ) {
 	internal bool Anchored { get; init; }
+	internal bool DotStarAnchored { get; init; }
 	internal bool EndAnchored { get; init; }
 	internal bool FirstLine { get; init; }
 	internal bool NoStartOptimize { get; init; }
@@ -216,11 +217,71 @@ internal sealed class PcreByteProgramCompiler {
 			bytePrefix.Unconditional, utfCrLfStartClass, notEmpty, notEmptyAtStart,
 			matchInvalidUtf && !noStartOptimize && newline == PcreByteNewline.Any && HasLineStartSearch( root ), ucp, bytePrefix.Literal ) {
 			NoStartOptimize = noStartOptimize,
+			DotStarAnchored = targets.Count == 0 && HasDirectDotStarAnchor( root ),
 			ScalarExpressionStackDepth = scalarExpressionStackDepth, CommitStartBytes = commitBytes, TurkishCasing = turkishCasing,
 			FirstLineSkipBypassesWindow = instructions.Any( item => item.Opcode is PcreByteOpcode.Skip or PcreByteOpcode.SkipNamed )
 				&& ( noStartOptimize || HasUnfilteredFirstLineSkipEntry( root ) ),
 			PathMarkSlot = pathMarkSlot, TrackPathMarks = hasNamedSkip, HasSurrogateLiterals = hasSurrogateLiterals
 		};
+	}
+
+	private bool HasDirectDotStarAnchor( PcreByteAlternatives root ) {
+		cancellationToken.ThrowIfCancellationRequested();
+		if ( root.Branches.Count != 1 || root.Branches[0].Count == 0 ) { return false; }
+		var leading = root.Branches[0][0];
+		// The parser wraps a possessive atom directly; an explicit atomic group
+		// retains its group node and is deliberately outside this bounded proof.
+		if ( leading is PcreByteAtomic atomic ) { leading = atomic.Child; }
+		if ( leading is not PcreByteRepeat { Minimum: 0, Maximum: int.MaxValue, Child: PcreByteAny { DotAll: true } } ) { return false; }
+		// Native anchoring is independent of start study. Its global PRUNE/SKIP
+		// flag includes erased repeats and DEFINE bodies, so inspect retained AST.
+		var pending = new Stack<PcreByteNode>();
+		var visited = new HashSet<PcreByteNode>( ReferenceEqualityComparer.Instance );
+		if ( !AddBody( root ) ) { return false; }
+		while ( pending.TryPop( out var node ) ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( !visited.Add( node ) ) { continue; }
+			switch ( node ) {
+				case PcreBytePrune or PcreByteSkip or PcreByteNamedSkip or PcreByteSubroutineCall: return false;
+				case PcreByteGroup group: if ( !AddBody( group.Body ) ) { return false; } break;
+				case PcreByteNoncapturingGroup group: if ( !AddBody( group.Body ) ) { return false; } break;
+				case PcreByteLookahead assertion: if ( !AddBody( assertion.Body ) ) { return false; } break;
+				case PcreByteLookbehind assertion: if ( !AddBody( assertion.Body ) ) { return false; } break;
+				case PcreByteCaptureConditional conditional: if ( !AddBody( conditional.Body ) ) { return false; } break;
+				case PcreByteRecursionConditional conditional: if ( !AddBody( conditional.Body ) ) { return false; } break;
+				case PcreByteStaticConditional conditional: if ( !AddBody( conditional.Body ) ) { return false; } break;
+				case PcreByteAssertionConditional conditional:
+					if ( !AddBody( conditional.Body ) || !Push( conditional.Assertion ) ) { return false; }
+					break;
+				case PcreByteAtomic nested: if ( !Push( nested.Child ) ) { return false; } break;
+				case PcreByteScriptRun run: if ( !Push( run.Child ) ) { return false; } break;
+				case PcreByteRepeat repeat: if ( !Push( repeat.Child ) ) { return false; } break;
+				case PcreByteLiteral or PcreByteAny or PcreByteNewlineSequence or PcreByteGrapheme
+					or PcreByteFailure or PcreByteAccept or PcreByteCommit or PcreByteThen or PcreBytePathMark
+					or PcreByteScalarClass or PcreByteScalarSet or PcreByteScalarExpression or PcreByteClass
+					or PcreByteBackreference or PcreByteAnchor or PcreByteSearchStart or PcreByteMatchStartReset
+					or PcreByteLineAnchor or PcreByteEndBeforeFinalLf or PcreByteWordBoundary or PcreByteLiteralAssertion:
+					break;
+				default: return false;
+			}
+		}
+		return true;
+
+		bool Push( PcreByteNode node ) {
+			if ( visited.Count + pending.Count >= MaximumInstructions ) { return false; }
+			pending.Push( node );
+			return true;
+		}
+		bool AddBody( PcreByteAlternatives alternatives ) {
+			foreach ( var branch in alternatives.Branches ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				// Proof exhaustion declines inference; it must not reject a pattern
+				// whose erased syntax fits the existing bytecode/visit capacities.
+				if ( branch.Count > MaximumInstructions - visited.Count - pending.Count ) { return false; }
+				foreach ( var item in branch ) { pending.Push( item ); }
+			}
+			return true;
+		}
 	}
 
 	private void ValidateSurrogateLiteralProgram() {
