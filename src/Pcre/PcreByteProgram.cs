@@ -344,10 +344,16 @@ internal sealed class PcreByteProgramCompiler {
 			Ranges.IsEmpty: true, Predicates.Length: 2 } set ) { return false; }
 		var first = set.Predicates.Span[0];
 		var second = set.Predicates.Span[1];
-		return first.Kind is ( PcreByteScalarClassKind.AsciiDigit or PcreByteScalarClassKind.AsciiWord or PcreByteScalarClassKind.AsciiSpace )
-			&& first.Kind == second.Kind && first.Negated != second.Negated
-			&& first.Category is null && second.Category is null
-			&& first.PropertyValue == 0 && second.PropertyValue == 0;
+		if ( first.Negated == second.Negated || first.Category is not null || second.Category is not null
+			|| first.PropertyValue != 0 || second.PropertyValue != 0 ) { return false; }
+		var positive = first;
+		var negative = second;
+		if ( first.Negated ) { positive = second; negative = first; }
+		// Unicode decimal digits also fill the ASCII holes left by a negated
+		// ASCII digit shorthand/POSIX class; only the negative side must be ASCII.
+		return negative.Kind is ( PcreByteScalarClassKind.AsciiDigit or PcreByteScalarClassKind.AsciiWord or PcreByteScalarClassKind.AsciiSpace )
+			&& ( positive.Kind == negative.Kind || negative.Kind == PcreByteScalarClassKind.AsciiDigit
+				&& positive.Kind == PcreByteScalarClassKind.DecimalDigit );
 	}
 
 	private void ValidateSurrogateLiteralProgram() {
