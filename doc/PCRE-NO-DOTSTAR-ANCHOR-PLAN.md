@@ -51,3 +51,10 @@
 - [ ] All configured Unicode/extraction/glibc/corpus/API/workload/package/consumer/script/classifier gates; Intel aggregate same single result.
 - [ ] Exact source/tree/base/proposed-merge parent identity, whole-branch author review and clean preservation checks.
 - [ ] Update PR258/issue7 footer, preserve original prefix, mark ready and read back; user retains merge/tag/publication; no docs-only CI repeat.
+
+
+## Reference-wrapper boundary correction before freeze
+
+Initial tests-only source22923786a927795d5b463309613b044247ec2e14/treeee042f4231953fbae59985896b0fa462d3e987b6, [run43848299352](https://github.com/uniblab/Icod.Expressions/actions/runs/43848299352), Linux x64 job133234016101:157 failures/94,876 passes/95,033 total/zero skips/compiler warnings/errors. All149 predicted feature failures occur:78 protocol keys exactly match native counter-oracle differences,48 Literal conflicts and23 supplemental cases. All94,323 prior tests pass. Eight extra failures occur in native preflight for disabled-flag Literal length controls: the direct C API enforces limit0, but the pinned PCRE.NET wrapper does not enforce it in these cases, so no exception is thrown.
+
+Correct only those eight new fixture inputs from one-byte41/limit0 to two-byte4141/limit1. Eight independent C preflights retain native188/offset0; managed expectations, all509 protocol groups, all helper/assertion bodies, other diagnostics, prior files and production stay fixed. Positive limits match the existing working reference fixtures. Corrected RED must show149 feature failures/94,884 passes/95,033 total before freezing.
