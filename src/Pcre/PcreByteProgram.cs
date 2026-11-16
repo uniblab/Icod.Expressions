@@ -354,10 +354,15 @@ internal sealed class PcreByteProgramCompiler {
 			return predicate is { Kind: PcreByteScalarClassKind.AnyScalar, Category: null, PropertyValue: 0 }
 				&& predicate.Negated == set.Negated;
 		}
-		if ( set.Negated || set.Predicates.Length != 2 ) { return false; }
+		if ( set.Predicates.Length != 2 ) { return false; }
 		var first = set.Predicates.Span[0];
 		var second = set.Predicates.Span[1];
-		if ( first.Negated == second.Negated || first.Category is not null || second.Category is not null
+		if ( first is { Kind: PcreByteScalarClassKind.AnyScalar, Category: null, PropertyValue: 0 }
+			&& second is { Kind: PcreByteScalarClassKind.AnyScalar, Category: null, PropertyValue: 0 } ) {
+			if ( set.Negated ) { return first.Negated && second.Negated; }
+			return !first.Negated || !second.Negated;
+		}
+		if ( set.Negated || first.Negated == second.Negated || first.Category is not null || second.Category is not null
 			|| first.PropertyValue != 0 || second.PropertyValue != 0 ) { return false; }
 		var positive = first;
 		var negative = second;
