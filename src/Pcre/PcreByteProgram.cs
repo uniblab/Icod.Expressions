@@ -257,12 +257,12 @@ internal sealed class PcreByteProgramCompiler {
 				// retains its group node and stays outside this proof.
 				if ( leading is PcreByteAtomic atomic ) { leading = atomic.Child; }
 				if ( leading is not PcreByteRepeat { Minimum: 0, Maximum: int.MaxValue } star ) { return false; }
-				// Extend the Any/byte proof only for source-proven UTF complements;
+				// Extend the Any/byte proof only for source-proven UTF forms;
 				// semantic universality alone does not identify native ALLANY.
 				if ( star.Child is not PcreByteAny { DotAll: true }
 					&& !( !utf8 && star.Child is PcreByteClass { PrefixKind: PcreByteClassPrefix.Exact } bytes
 						&& bytes.Set == PcreByteSet.AllBytes )
-					&& !( utf8 && IsComplementAllAny( star.Child ) ) ) { return false; }
+					&& !( utf8 && IsUtfAllAny( star.Child ) ) ) { return false; }
 			}
 		}
 		// Every leading path must pass the global native reference map, so
@@ -337,11 +337,19 @@ internal sealed class PcreByteProgramCompiler {
 		}
 	}
 
-	private static bool IsComplementAllAny( PcreByteNode node ) {
+	private static bool IsUtfAllAny( PcreByteNode node ) {
+		// Native positive PT_ANY atoms and singleton classes lower to ALLANY.
+		if ( node is PcreByteScalarClass { Kind: PcreByteScalarClassKind.AnyScalar,
+			Negated: false, Category: null, PropertyValue: 0 } ) { return true; }
 		// Native ASCII specials/POSIX and horizontal/vertical list complements
 		// lower to ALLANY; Unicode property pairs can retain XCLASS provenance.
 		if ( node is not PcreByteScalarSet { Source: PcreByteScalarSetSource.Class, Negated: false,
-			Ranges.IsEmpty: true, Predicates.Length: 2 } set ) { return false; }
+			Ranges.IsEmpty: true } set ) { return false; }
+		if ( set.Predicates.Length == 1 ) {
+			return set.Predicates.Span[0] is { Kind: PcreByteScalarClassKind.AnyScalar,
+				Negated: false, Category: null, PropertyValue: 0 };
+		}
+		if ( set.Predicates.Length != 2 ) { return false; }
 		var first = set.Predicates.Span[0];
 		var second = set.Predicates.Span[1];
 		if ( first.Negated == second.Negated || first.Category is not null || second.Category is not null
