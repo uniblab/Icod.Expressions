@@ -338,18 +338,20 @@ internal sealed class PcreByteProgramCompiler {
 	}
 
 	private static bool IsUtfAllAny( PcreByteNode node ) {
-		// Native positive PT_ANY atoms and singleton classes lower to ALLANY.
+		// Native positive PT_ANY atoms lower to ALLANY.
 		if ( node is PcreByteScalarClass { Kind: PcreByteScalarClassKind.AnyScalar,
 			Negated: false, Category: null, PropertyValue: 0 } ) { return true; }
 		// Native ASCII specials/POSIX and horizontal/vertical list complements
 		// lower to ALLANY; Unicode property pairs can retain XCLASS provenance.
-		if ( node is not PcreByteScalarSet { Source: PcreByteScalarSetSource.Class, Negated: false,
+		if ( node is not PcreByteScalarSet { Source: PcreByteScalarSetSource.Class,
 			Ranges.IsEmpty: true } set ) { return false; }
 		if ( set.Predicates.Length == 1 ) {
-			return set.Predicates.Span[0] is { Kind: PcreByteScalarClassKind.AnyScalar,
-				Negated: false, Category: null, PropertyValue: 0 };
+			// Equal outer/predicate Any negation flags leave the universal set.
+			var predicate = set.Predicates.Span[0];
+			return predicate is { Kind: PcreByteScalarClassKind.AnyScalar, Category: null, PropertyValue: 0 }
+				&& predicate.Negated == set.Negated;
 		}
-		if ( set.Predicates.Length != 2 ) { return false; }
+		if ( set.Negated || set.Predicates.Length != 2 ) { return false; }
 		var first = set.Predicates.Span[0];
 		var second = set.Predicates.Span[1];
 		if ( first.Negated == second.Negated || first.Category is not null || second.Category is not null
