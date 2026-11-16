@@ -105,6 +105,7 @@ internal sealed class PcreByteProgramCompiler {
 	private readonly bool turkishCasing;
 	private readonly bool noAutoPossess;
 	private readonly bool noStartOptimize;
+	private readonly bool noDotStarAnchor;
 	private readonly bool matchInvalidUtf;
 	private readonly PcreByteNewline newline;
 	private readonly bool bsrAnyCrLf;
@@ -136,13 +137,14 @@ internal sealed class PcreByteProgramCompiler {
 
 	internal PcreByteProgramCompiler( CancellationToken cancellationToken, bool utf8, bool matchInvalidUtf,
 		PcreByteNewline newline, bool bsrAnyCrLf, bool notEmpty, bool notEmptyAtStart, bool ucp, bool hasThen = false, bool hasNamedSkip = false,
-		bool turkishCasing = false, bool noAutoPossess = false, bool noStartOptimize = false ) {
+		bool turkishCasing = false, bool noAutoPossess = false, bool noStartOptimize = false, bool noDotStarAnchor = false ) {
 		this.cancellationToken = cancellationToken;
 		this.utf8 = utf8;
 		this.ucp = ucp;
 		this.turkishCasing = turkishCasing;
 		this.noAutoPossess = noAutoPossess;
 		this.noStartOptimize = noStartOptimize;
+		this.noDotStarAnchor = noDotStarAnchor;
 		this.hasThen = hasThen;
 		this.hasNamedSkip = hasNamedSkip;
 		this.matchInvalidUtf = matchInvalidUtf;
@@ -211,13 +213,16 @@ internal sealed class PcreByteProgramCompiler {
 		// synthetic candidate, while the fragment still forbids consumption.
 		var commitBytes = hasCommit && !noStartOptimize ? FindCommitStartBytes( root ) : null;
 		ValidateSurrogateLiteralProgram();
+		// A disabled anchor still permits a zero-width COMMIT at the requested
+		// byte before UTF consumption. Retain only its bounded entry proof.
+		var dotStarEntry = targets.Count == 0 && ( !noDotStarAnchor || hasCommit ) && HasDirectDotStarAnchor( root );
 		return new( instructions.ToArray(), markCount, hasCaselessComparisons, utf8, matchInvalidUtf,
 			noStartOptimize ? default : FindRequiredLiteralSuffix( root ), newline, HasExplicitNewline( root ),
-			hasEarlyAccept || commitBytes.HasValue || noStartOptimize && hasCommit || CanMatchEmptyAtAnyOffset( root ),
+			hasEarlyAccept || commitBytes.HasValue || hasCommit && ( noStartOptimize || noDotStarAnchor && dotStarEntry ) || CanMatchEmptyAtAnyOffset( root ),
 			bytePrefix.Unconditional, utfCrLfStartClass, notEmpty, notEmptyAtStart,
 			matchInvalidUtf && !noStartOptimize && newline == PcreByteNewline.Any && HasLineStartSearch( root ), ucp, bytePrefix.Literal ) {
 			NoStartOptimize = noStartOptimize,
-			DotStarAnchored = targets.Count == 0 && HasDirectDotStarAnchor( root ),
+			DotStarAnchored = !noDotStarAnchor && dotStarEntry,
 			ScalarExpressionStackDepth = scalarExpressionStackDepth, CommitStartBytes = commitBytes, TurkishCasing = turkishCasing,
 			FirstLineSkipBypassesWindow = instructions.Any( item => item.Opcode is PcreByteOpcode.Skip or PcreByteOpcode.SkipNamed )
 				&& ( noStartOptimize || HasUnfilteredFirstLineSkipEntry( root ) ),
