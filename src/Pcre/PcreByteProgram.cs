@@ -257,11 +257,12 @@ internal sealed class PcreByteProgramCompiler {
 				// retains its group node and stays outside this proof.
 				if ( leading is PcreByteAtomic atomic ) { leading = atomic.Child; }
 				if ( leading is not PcreByteRepeat { Minimum: 0, Maximum: int.MaxValue } star ) { return false; }
-				// Preserve native ALLANY provenance; arbitrary full bitmaps and
-				// UTF scalar/property classes do not qualify.
+				// Extend the Any/byte proof only for source-proven UTF ASCII pairs;
+				// semantic universality alone does not identify native ALLANY.
 				if ( star.Child is not PcreByteAny { DotAll: true }
 					&& !( !utf8 && star.Child is PcreByteClass { PrefixKind: PcreByteClassPrefix.Exact } bytes
-						&& bytes.Set == PcreByteSet.AllBytes ) ) { return false; }
+						&& bytes.Set == PcreByteSet.AllBytes )
+					&& !( utf8 && IsAsciiComplementAllAny( star.Child ) ) ) { return false; }
 			}
 		}
 		// Every leading path must pass the global native reference map, so
@@ -334,6 +335,19 @@ internal sealed class PcreByteProgramCompiler {
 			}
 			return true;
 		}
+	}
+
+	private static bool IsAsciiComplementAllAny( PcreByteNode node ) {
+		// Native bitmap ASCII specials/POSIX pairs lower to ALLANY; Unicode
+		// property pairs can remain XCLASS despite a universal semantic union.
+		if ( node is not PcreByteScalarSet { Source: PcreByteScalarSetSource.Class, Negated: false,
+			Ranges.IsEmpty: true, Predicates.Length: 2 } set ) { return false; }
+		var first = set.Predicates.Span[0];
+		var second = set.Predicates.Span[1];
+		return first.Kind is ( PcreByteScalarClassKind.AsciiDigit or PcreByteScalarClassKind.AsciiWord or PcreByteScalarClassKind.AsciiSpace )
+			&& first.Kind == second.Kind && first.Negated != second.Negated
+			&& first.Category is null && second.Category is null
+			&& first.PropertyValue == 0 && second.PropertyValue == 0;
 	}
 
 	private void ValidateSurrogateLiteralProgram() {
