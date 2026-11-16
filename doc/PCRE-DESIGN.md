@@ -3751,3 +3751,27 @@ No documentation-only commit or repeat after final GREEN. #7/#102 stay open;
 Grep last; user owns merging/tagging/publication. Additional members/duplicates/
 range unions/property mixtures/algebra and wider #102/API/consumer/release work
 remain separately scoped.
+
+
+This exact pair proof extends native opcode provenance without normalizing matching nodes.
+
+
+## PR267: UTF Any-predicate pair star anchoring
+
+Ordinary Class/no ranges/exactly two AnyScalar predicates (null categories,
+zero property values) now qualify for native ALLANY anchoring when the outer
+class is positive and either predicate is positive, or when the outer class is
+negative and both predicates are negative. Preserve direct/singleton Any,
+full-range and all other complement rules. Only IsUtfAllAny changes; class
+instructions/work and all traversal/policy/resource boundaries remain fixed.
+
+Pin 305 groups/36,436 native PCRE2 10.48 JIT0 protocols, 15 diagnostic and 34
+supplementary cases: 354 new cases/98,091 total. Exact tests-only RED is
+86 failures/98,005 passes; freeze all three new C# blobs before production and
+preserve 310 prior files/305 C# sources/frozen35. Full native/RED/freeze/author
+review records are in the [design](PCRE-UTF-ANY-PAIR-STAR-ANCHOR-DESIGN.md) and
+[plan](PCRE-UTF-ANY-PAIR-STAR-ANCHOR-PLAN.md). All seven inventories precede
+final qualification. Six native net10 suites/all three library targets/support
+gates remain required; final evidence/identities belong on
+[PR267](https://github.com/uniblab/Icod.Expressions/pull/267) and issue7 footer.
+No documentation-only repeat after final GREEN. #7/#102 stay open; Grep last.

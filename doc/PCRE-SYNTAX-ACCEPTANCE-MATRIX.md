@@ -4340,3 +4340,14 @@ See [design](PCRE-UTF-FULLRANGE-STAR-ANCHOR-DESIGN.md),
 [PR266](https://github.com/uniblab/Icod.Expressions/pull/266) for native fixtures,
 validation, review and final qualification evidence. All seven inventories
 precede final qualification; final evidence remains on the PR and issue7 footer.
+
+
+## PR267: UTF Any-predicate pair star anchoring
+
+Already accepted ordinary two-Any classes gain native ALLANY anchoring:
+a positive outer class requires either positive Any; a negative outer class
+requires both predicates negative. Direct Any, singleton/full-range forms and
+other complement rules retain their eligibility. No new syntax is admitted.
+See [design](PCRE-UTF-ANY-PAIR-STAR-ANCHOR-DESIGN.md),
+[plan](PCRE-UTF-ANY-PAIR-STAR-ANCHOR-PLAN.md) and
+[PR267](https://github.com/uniblab/Icod.Expressions/pull/267) for qualification.

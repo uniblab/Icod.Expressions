@@ -4612,3 +4612,14 @@ No documentation-only commit or repeat after final GREEN. #7/#102 stay open;
 Grep last; user owns merging/tagging/publication. Additional members/duplicates/
 range unions/property mixtures/algebra and wider #102/API/consumer/release work
 remain separately scoped.
+
+
+## PR267: UTF Any-predicate pair star anchoring
+
+The exact two-Any proof uses constant-time metadata checks. Existing strict
+whole-subject validation, cancellation priority, work charging and instruction,
+capture and depth capacities remain fixed. Matching nodes are preserved.
+See [design](PCRE-UTF-ANY-PAIR-STAR-ANCHOR-DESIGN.md),
+[plan](PCRE-UTF-ANY-PAIR-STAR-ANCHOR-PLAN.md) and
+[PR267](https://github.com/uniblab/Icod.Expressions/pull/267) for the native
+fixtures, frozen tests and qualification evidence.

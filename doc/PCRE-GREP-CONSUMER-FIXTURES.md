@@ -4450,3 +4450,14 @@ No documentation-only commit or repeat after final GREEN. #7/#102 stay open;
 Grep last; user owns merging/tagging/publication. Additional members/duplicates/
 range unions/property mixtures/algebra and wider #102/API/consumer/release work
 remain separately scoped.
+
+
+## PR267: UTF Any-predicate pair star anchoring
+
+Existing two-Any classes gain native UTF ALLANY anchoring for positive outer
+classes containing either positive Any, and negative outer classes containing
+two negative Any predicates. Matching instructions and byte-offset contracts
+are preserved. See the [design](PCRE-UTF-ANY-PAIR-STAR-ANCHOR-DESIGN.md),
+[plan](PCRE-UTF-ANY-PAIR-STAR-ANCHOR-PLAN.md) and
+[PR267](https://github.com/uniblab/Icod.Expressions/pull/267) for the new
+native fixtures and qualification evidence. Grep remains the last consumer.
