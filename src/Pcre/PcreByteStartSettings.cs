@@ -3,7 +3,7 @@ namespace Icod.Expressions.Pcre;
 /// <summary>Global prefix choices resolved once before whole-pattern validation.</summary>
 internal readonly record struct PcreByteStartSettings(
 	bool Utf8, bool Ucp, PcreByteNewline Newline, bool BsrAnyCrLf, bool NotEmpty, bool NotEmptyAtStart, int BodyOffset,
-	bool CaselessRestricted, bool TurkishCasing, bool NoAutoPossess, bool NoStartOptimize
+	bool CaselessRestricted, bool TurkishCasing, bool NoAutoPossess, bool NoStartOptimize, bool NoDotStarAnchor
 ) {
 	internal static PcreByteStartSettings Parse( ReadOnlySpan<byte> source, PcreByteOptions options,
 		CancellationToken cancellationToken ) {
@@ -17,6 +17,7 @@ internal readonly record struct PcreByteStartSettings(
 		var turkishCasing = options.TurkishCasing;
 		var noAutoPossess = options.NoAutoPossess;
 		var noStartOptimize = options.NoStartOptimize;
+		var noDotStarAnchor = options.NoDotStarAnchor;
 		var offset = 0;
 		// PCRE processes an uninterrupted prefix before ordinary options/trivia.
 		// Keep the original source and body index for validation and diagnostics.
@@ -29,6 +30,7 @@ internal readonly record struct PcreByteStartSettings(
 			else if ( TryConsume( source, ref offset, "(*TURKISH_CASING)"u8 ) ) { turkishCasing = true; }
 			else if ( TryConsume( source, ref offset, "(*NO_AUTO_POSSESS)"u8 ) ) { noAutoPossess = true; }
 			else if ( TryConsume( source, ref offset, "(*NO_START_OPT)"u8 ) ) { noStartOptimize = true; }
+			else if ( TryConsume( source, ref offset, "(*NO_DOTSTAR_ANCHOR)"u8 ) ) { noDotStarAnchor = true; }
 			else if ( TryConsume( source, ref offset, "(*LF)"u8 ) ) { newline = PcreByteNewline.Lf; }
 			else if ( TryConsume( source, ref offset, "(*ANYCRLF)"u8 ) ) { newline = PcreByteNewline.AnyCrLf; }
 			else if ( TryConsume( source, ref offset, "(*CR)"u8 ) ) { newline = PcreByteNewline.Cr; }
@@ -41,7 +43,7 @@ internal readonly record struct PcreByteStartSettings(
 			else if ( TryConsume( source, ref offset, "(*NOTEMPTY_ATSTART)"u8 ) ) { notEmptyAtStart = true; }
 			else { break; }
 		}
-		return new( utf8, ucp, newline, bsrAnyCrLf, notEmpty, notEmptyAtStart, offset, caselessRestricted, turkishCasing, noAutoPossess, noStartOptimize );
+		return new( utf8, ucp, newline, bsrAnyCrLf, notEmpty, notEmptyAtStart, offset, caselessRestricted, turkishCasing, noAutoPossess, noStartOptimize, noDotStarAnchor );
 	}
 
 	private static bool TryConsume( ReadOnlySpan<byte> source, ref int offset, ReadOnlySpan<byte> directive ) {
