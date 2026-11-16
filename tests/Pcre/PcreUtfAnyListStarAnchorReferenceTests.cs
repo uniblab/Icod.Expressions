@@ -199,6 +199,24 @@ public sealed partial class PcreUtfAnyListStarAnchorReferenceTests {
 		}
 	}
 
+
+	[Fact]
+	public void AnyListAggregateExhaustionPreservesDeclinedInferenceWork() {
+		var first = String.Concat( "[", String.Concat( Enumerable.Repeat( @"\P{Any}", 2047 ) ), @"\p{Any}]*?Z" );
+		var second = String.Concat( "[", String.Concat( Enumerable.Repeat( @"\P{Any}", 2048 ) ), @"\p{Any}]*?Z" );
+		var source = Encoding.ASCII.GetBytes( String.Concat( "(?:", first, "|", second, ")" ) );
+		var subject = "AA"u8.ToArray();
+		var native = Reference( source, 65541, false );
+		AssertNative( native, subject, 0, 0, "", "" );
+		var inferred = new List<int>();
+		var declined = new List<int>();
+		var options = Options( 65541, false ) with { WorkObserver = inferred.Add };
+		Compare( native, subject, 0, 0, Compile( source, options ).Match( subject ), "aggregate inference fallback" );
+		Compare( native, subject, 0, 0, Compile( source, Options( 65541, true ) with { WorkObserver = declined.Add } ).Match( subject ), "explicit declined inference" );
+		Assert.Equal( declined, inferred );
+		AssertBudget( source, subject, options, native, inferred );
+	}
+
 	private static void AssertBudget( byte[] source, byte[] subject, PcreByteOptions options, PcreRegex8Bit native, List<int> steps, int offset = 0 ) {
 		Assert.Equal( Enumerable.Range( 1, steps.Count ), steps );
 		var count = steps.Count;

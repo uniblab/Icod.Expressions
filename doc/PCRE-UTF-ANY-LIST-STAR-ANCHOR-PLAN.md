@@ -46,11 +46,18 @@ Final evidence external; no docs-only repeat after GREEN; #7/#102 open, Grep las
 ## Native-first inventory
 
 Reproduced305 merged267 groups/36,436 protocols with JIT_COMPLETE0.
-New393 groups/46,776 native protocols,15 diagnostics/46 supplementary cases:
-454 new cases/98,545 total. Exclude11,781 strict-validation research rows
+New393 groups/46,776 native protocols,15 diagnostics/47 supplementary cases:
+455 new cases/98,546 total. Exclude11,781 strict-validation research rows
 (6,358 malformed whole subjects/5,423 split offsets). Four new C# files:
 reference plus three protocol partials. Native boundary preflights cover4096/
 4097 member admission and aggregate4096/4097 visits. Exact expected RED is
 117 failures (107 matching/6 work/1 owned-source/2 single-list boundary/1
-aggregate boundary),98,428 passes/98,545 total; all98,091 prior tests and337
+aggregate boundary),98,429 passes/98,546 total; all98,091 prior tests and338
 new controls must pass. Freeze all four C# files before production.
+
+Before freezing, add one aggregate-exhaustion work/budget regression: two
+separately admissible lists consume4097 total predicate visits. With start
+study disabled, ordinary valid-subject no-match work must equal explicit
+NoDotStarAnchor fallback, with exact/exhausted/observed-unobserved budgets.
+This catches an erroneous per-list reset of the shared proof budget.
+Production remains unchanged; confirm the updated tests-only RED before freeze.
