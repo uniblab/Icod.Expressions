@@ -123,6 +123,7 @@ public sealed partial class PcreNoDotStarAnchorPrefixReferenceTests {
 		Assert.Equal( nativeCode, (int)native.ErrorCode );
 		Assert.EndsWith( $" at offset {nativeOffset}.", native.Message );
 		var actual = PcreByteCompiler.Compile( source, Options( mode, enabled, 0, 0, maximum ) );
+		Assert.True( actual.Diagnostic is not null, $"diagnostic {diagnostic}: expected an error" );
 		Assert.Null( actual.Pattern );
 		Assert.Equal( code, actual.Diagnostic?.Code.ToString() );
 		Assert.Equal( offset, actual.Diagnostic?.ByteOffset );
@@ -320,13 +321,13 @@ public sealed partial class PcreNoDotStarAnchorPrefixReferenceTests {
 		protected override void Dispose( bool disposing ) { }
 	}
 
-	private static void AssertProtocols( string hex, int mode, bool enabled, int empty, int policy, long maximum, string protocols ) {
+	private static void AssertProtocols( string hex, int mode, bool enabled, int empty, int policy, long maximum, string protocols, int profile ) {
 		var source = Convert.FromHexString( hex );
 		var cases = protocols.Split( ';' ).Select( Protocol.Parse ).ToArray();
 		var native = Reference( source, mode, enabled, policy, maximum );
 		foreach ( var item in cases ) { AssertNative( native, item.Subject, item.Offset, empty, item.Spans, item.Mark ); }
 		var compiled = Compile( source, Options( mode, enabled, empty, policy, maximum ) );
-		foreach ( var item in cases ) { Compare( native, item.Subject, item.Offset, empty, compiled.Match( item.Subject, item.Offset ), $"{hex}/{mode}/{enabled}/{empty}/{policy}/{maximum}/{Convert.ToHexString( item.Subject )}/{item.Offset}" ); }
+		foreach ( var item in cases ) { Compare( native, item.Subject, item.Offset, empty, compiled.Match( item.Subject, item.Offset ), $"{profile}/{hex}/{mode}/{enabled}/{empty}/{policy}/{maximum}/{Convert.ToHexString( item.Subject )}/{item.Offset}" ); }
 	}
 	private readonly record struct Protocol( byte[] Subject, int Offset, string Spans, string Mark ) {
 		internal static Protocol Parse( string value ) {

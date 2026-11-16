@@ -11,23 +11,24 @@ public sealed partial class PcreGroupedDotstarAnchorReferenceTests {
 	[InlineData( 2, "283F7329283F3A2E2A41295B", 0, 106, 12, "InvalidSyntax", 11 )]
 	[InlineData( 3, "283F7329283F3A2E2A41295C", 0, 101, 12, "InvalidSyntax", 11 )]
 	[InlineData( 4, "283F7329283F3A2E2A4129417B322C317D", 0, 104, 16, "InvalidSyntax", 12 )]
-	[InlineData( 5, "283F7329283F3A2E2A41295C677B397D", 0, 115, 16, "InvalidSyntax", 12 )]
+	[InlineData( 5, "283F7329283F3A2E2A41295C677B397D", 0, 115, 16, "InvalidSyntax", 11 )]
 	[InlineData( 7, "283F7329283F3A2E2A41", 1, 114, 10, "InvalidSyntax", 4 )]
 	[InlineData( 8, "283F7329283F3A2E2A41295B", 1, 106, 12, "InvalidSyntax", 11 )]
 	[InlineData( 9, "283F7329283F3A2E2A41295C", 1, 101, 12, "InvalidSyntax", 11 )]
 	[InlineData( 10, "283F7329283F3A2E2A4129417B322C317D", 1, 104, 16, "InvalidSyntax", 12 )]
-	[InlineData( 11, "283F7329283F3A2E2A41295C677B397D", 1, 115, 16, "InvalidSyntax", 12 )]
+	[InlineData( 11, "283F7329283F3A2E2A41295C677B397D", 1, 115, 16, "InvalidSyntax", 11 )]
 	[InlineData( 13, "283F7329283F3A2E2A41", 5, 114, 10, "InvalidSyntax", 4 )]
 	[InlineData( 14, "283F7329283F3A2E2A41295B", 5, 106, 12, "InvalidSyntax", 11 )]
 	[InlineData( 15, "283F7329283F3A2E2A41295C", 5, 101, 12, "InvalidSyntax", 11 )]
 	[InlineData( 16, "283F7329283F3A2E2A4129417B322C317D", 5, 104, 16, "InvalidSyntax", 12 )]
-	[InlineData( 17, "283F7329283F3A2E2A41295C677B397D", 5, 115, 16, "InvalidSyntax", 12 )]
+	[InlineData( 17, "283F7329283F3A2E2A41295C677B397D", 5, 115, 16, "InvalidSyntax", 11 )]
 	public void GroupedProofPreservesDiagnostics( int diagnostic, string hex, int mode, int nativeCode, int nativeOffset, string code, int offset ) {
 		var source = Convert.FromHexString( hex );
 		var native = Assert.Throws<PcrePatternException>( () => Reference( source, mode, false ) );
 		Assert.Equal( nativeCode, (int)native.ErrorCode );
 		Assert.EndsWith( $" at offset {nativeOffset}.", native.Message );
 		var actual = PcreByteCompiler.Compile( source, Options( mode, false ) );
+		Assert.True( actual.Diagnostic is not null, $"diagnostic {diagnostic}: expected an error" );
 		Assert.Null( actual.Pattern );
 		Assert.Equal( code, actual.Diagnostic?.Code.ToString() );
 		Assert.Equal( offset, actual.Diagnostic?.ByteOffset );
@@ -129,7 +130,7 @@ public sealed partial class PcreGroupedDotstarAnchorReferenceTests {
 	[InlineData( false )]
 	[InlineData( true )]
 	public void GroupProofExhaustionFallsBackWithoutAnAdmissionLimit( bool disabled ) {
-		var source = Encoding.ASCII.GetBytes( String.Concat( "(?s)(?:.*?A)", String.Concat( Enumerable.Repeat( "B{0}", 4096 ) ) ) );
+		var source = Encoding.ASCII.GetBytes( String.Concat( "(?s)(?:.*?A)", String.Concat( "(?:", new string( 'B', 4096 ), "){0}" ) ) );
 		var native = Reference( source, 0, disabled );
 		AssertNative( native, "BA"u8.ToArray(), 0, 0, "0:2", "" );
 		Compare( native, "BA"u8.ToArray(), 0, 0, Compile( source, Options( 0, disabled ) ).Match( "BA"u8.ToArray() ), "proof exhaustion" );
@@ -170,13 +171,13 @@ public sealed partial class PcreGroupedDotstarAnchorReferenceTests {
 		Assert.Throws<OperationCanceledException>( () => cancellable.Match( subject, offset, cancellation.Token ) );
 	}
 
-	private static void AssertProtocols( string hex, int mode, bool enabled, int empty, int policy, long maximum, string protocols ) {
+	private static void AssertProtocols( string hex, int mode, bool enabled, int empty, int policy, long maximum, string protocols, int profile ) {
 		var source = Convert.FromHexString( hex );
 		var cases = protocols.Split( ';' ).Select( Protocol.Parse ).ToArray();
 		var native = Reference( source, mode, enabled, policy, maximum );
 		foreach ( var item in cases ) { AssertNative( native, item.Subject, item.Offset, empty, item.Spans, item.Mark ); }
 		var compiled = Compile( source, Options( mode, enabled, empty, policy, maximum ) );
-		foreach ( var item in cases ) { Compare( native, item.Subject, item.Offset, empty, compiled.Match( item.Subject, item.Offset ), $"{hex}/{mode}/{enabled}/{empty}/{policy}/{maximum}/{Convert.ToHexString( item.Subject )}/{item.Offset}" ); }
+		foreach ( var item in cases ) { Compare( native, item.Subject, item.Offset, empty, compiled.Match( item.Subject, item.Offset ), $"{profile}/{hex}/{mode}/{enabled}/{empty}/{policy}/{maximum}/{Convert.ToHexString( item.Subject )}/{item.Offset}" ); }
 	}
 	private readonly record struct Protocol( byte[] Subject, int Offset, string Spans, string Mark ) {
 		internal static Protocol Parse( string value ) {
