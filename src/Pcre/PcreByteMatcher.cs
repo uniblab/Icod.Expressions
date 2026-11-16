@@ -31,10 +31,11 @@ internal static partial class PcreByteMatcher {
 				"start byte offset is outside the input"
 			) );
 		}
+		var anchored = program.Anchored || program.DotStarAnchored;
 		var surrogateLiterals = program.MatchInvalidUtf && program.HasSurrogateLiterals;
 		// No candidate can reach the VM when the required first byte is absent.
 		// This is limited to unobserved, noncancellable exact byte searches.
-		var unobservedByteSearch = !program.NoStartOptimize && !program.Anchored && !program.FirstLine && !program.Utf8 && !program.HasCaselessComparisons
+		var unobservedByteSearch = !program.NoStartOptimize && !anchored && !program.FirstLine && !program.Utf8 && !program.HasCaselessComparisons
 			&& !cancellationToken.CanBeCanceled && workObserver is null;
 		var leadingLiteral = -1;
 		var failedLiteralCost = 3;
@@ -69,7 +70,7 @@ internal static partial class PcreByteMatcher {
 				return new( null, null );
 			}
 		}
-		var unobservedUnicodeSearch = !program.NoStartOptimize && !program.Anchored && !program.FirstLine && !cancellationToken.CanBeCanceled && workObserver is null
+		var unobservedUnicodeSearch = !program.NoStartOptimize && !anchored && !program.FirstLine && !cancellationToken.CanBeCanceled && workObserver is null
 			&& !program.RequiredLiteralSuffix.IsEmpty;
 		if ( unobservedUnicodeSearch && program.MatchInvalidUtf
 			&& MissingRequiredLiteralSuffixWithinBudget( program, input.Span, startOffset, matchWorkLimit ) ) {
@@ -129,7 +130,7 @@ internal static partial class PcreByteMatcher {
 			}
 			// Native STARTLINE search begins at the requested byte, so a newline
 			// whose encoding began before it cannot supply the first line candidate.
-			var excludedLineStart = !program.Anchored && program.LineStartSearch ? PcreByteNewlineExtensions.PartialAnyNewlineEnd( input.Span, startOffset ) : -1;
+			var excludedLineStart = !anchored && program.LineStartSearch ? PcreByteNewlineExtensions.PartialAnyNewlineEnd( input.Span, startOffset ) : -1;
 			if ( program.MatchInvalidUtf && !program.EndAnchored && !program.NotEmpty && !program.NotEmptyAtStart && program.Instructions.Length == 1
 				&& program.Instructions[0].Opcode == PcreByteOpcode.Accept ) {
 				// PCRE2 permits an empty pattern at the requested byte offset,
@@ -175,7 +176,7 @@ internal static partial class PcreByteMatcher {
 			var regionalRun = new RegionalRun( -1, -1 );
 			var pruneLiteralEnd = -1;
 			// Keep the observed and cancellable path byte-for-byte accountable to Step().
-			var nullableInvalidCandidates = !program.Anchored && program.MatchInvalidUtf && program.CanMatchEmptyAtAnyOffset;
+			var nullableInvalidCandidates = !anchored && program.MatchInvalidUtf && program.CanMatchEmptyAtAnyOffset;
 			var previousFragmentEnd = -1;
 			var firstLinePosition = startOffset;
 			var forcedSkipStart = -1;
@@ -191,11 +192,11 @@ internal static partial class PcreByteMatcher {
 				} else { fragmentIndex++; }
 				previousFragmentEnd = fragment.End;
 				for ( var start = Math.Max( startOffset, fragment.Start ); start <= fragment.End; start++ ) {
-					if ( program.Anchored && start != startOffset && start != forcedSkipStart ) { return new( null, null ); }
+					if ( anchored && start != startOffset && start != forcedSkipStart ) { return new( null, null ); }
 					if ( program.Utf8 && start < fragment.End && ( input.Span[start] & 0xC0 ) == 0x80 ) {
 						continue; // Search candidate boundaries, never continuation bytes.
 					}
-					if ( program.FirstLine && !program.Anchored
+					if ( program.FirstLine && !anchored
 						&& !( start == forcedSkipStart && program.FirstLineSkipBypassesWindow ) ) {
 						while ( firstLinePosition < start ) {
 							Step(); // Inspect one intervening scalar or malformed byte.
@@ -220,7 +221,7 @@ internal static partial class PcreByteMatcher {
 						SkipFailedLiteralCandidates( next );
 						start += next;
 					}
-					if ( !program.Anchored && program.CommitStartBytes is { } commitBytes ) {
+					if ( !anchored && program.CommitStartBytes is { } commitBytes ) {
 						Step(); // Native first-code-unit entry precedes a leading COMMIT.
 						if ( start == input.Length || !commitBytes.Contains( input.Span[start] ) ) { continue; }
 					}
@@ -1001,7 +1002,7 @@ internal static partial class PcreByteMatcher {
 					continue;
 				}
 				// Anchoring constrains ordinary candidate retries, not forced SKIP entry.
-				if ( program.Anchored ) { return new( null, null ); }
+				if ( anchored ) { return new( null, null ); }
 				if ( program.UtfCrLfStartClass && !program.ExplicitNewline
 					&& ( program.Newline is PcreByteNewline.AnyCrLf or PcreByteNewline.CrLf or PcreByteNewline.Any )
 					&& utfRepeatEnd > start && utfRepeatEnd < fragment.End - 1
