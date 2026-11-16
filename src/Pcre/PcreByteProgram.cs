@@ -232,30 +232,40 @@ internal sealed class PcreByteProgramCompiler {
 
 	private bool HasLeadingDotStarAnchor( PcreByteAlternatives root ) {
 		cancellationToken.ThrowIfCancellationRequested();
-		var entry = root;
+		var entries = new Stack<PcreByteAlternatives>();
+		entries.Push( root );
 		var entryVisits = 0;
 		uint enclosingCaptures = 0;
-		PcreByteNode leading;
-		while ( true ) {
+		while ( entries.TryPop( out var entry ) ) {
 			cancellationToken.ThrowIfCancellationRequested();
-			if ( ++entryVisits > MaximumInstructions || entry.Branches.Count != 1 || entry.Branches[0].Count == 0 ) { return false; }
-			leading = entry.Branches[0][0];
-			if ( leading is PcreByteGroup capture ) {
-				enclosingCaptures |= CaptureBit( capture.Number );
-				entry = capture.Body;
-			} else if ( leading is PcreByteNoncapturingGroup group ) {
-				entry = group.Body;
-			} else { break; }
+			if ( entry.Branches.Count == 0 || entry.Branches.Count > MaximumInstructions - entryVisits - entries.Count ) { return false; }
+			foreach ( var branch in entry.Branches ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				entryVisits++;
+				if ( branch.Count == 0 ) { return false; }
+				var leading = branch[0];
+				if ( leading is PcreByteGroup capture ) {
+					enclosingCaptures |= CaptureBit( capture.Number );
+					if ( !AddEntry( capture.Body ) ) { return false; }
+					continue;
+				}
+				if ( leading is PcreByteNoncapturingGroup group ) {
+					if ( !AddEntry( group.Body ) ) { return false; }
+					continue;
+				}
+				// A possessive atom is wrapped directly; an explicit atomic group
+				// retains its group node and stays outside this proof.
+				if ( leading is PcreByteAtomic atomic ) { leading = atomic.Child; }
+				if ( leading is not PcreByteRepeat { Minimum: 0, Maximum: int.MaxValue } star ) { return false; }
+				// Preserve native ALLANY provenance; arbitrary full bitmaps and
+				// UTF scalar/property classes do not qualify.
+				if ( star.Child is not PcreByteAny { DotAll: true }
+					&& !( !utf8 && star.Child is PcreByteClass { PrefixKind: PcreByteClassPrefix.Exact } bytes
+						&& bytes.Set == PcreByteSet.AllBytes ) ) { return false; }
+			}
 		}
-		// The parser wraps a possessive atom directly; an explicit atomic group
-		// retains its group node and is deliberately outside this bounded proof.
-		if ( leading is PcreByteAtomic atomic ) { leading = atomic.Child; }
-		if ( leading is not PcreByteRepeat { Minimum: 0, Maximum: int.MaxValue } star ) { return false; }
-		// Byte dots and native-equivalent ALLANY classes retain Exact prefix
-		// provenance; arbitrary full bitmaps/property classes do not qualify.
-		if ( star.Child is not PcreByteAny { DotAll: true }
-			&& !( !utf8 && star.Child is PcreByteClass { PrefixKind: PcreByteClassPrefix.Exact } bytes
-				&& bytes.Set == PcreByteSet.AllBytes ) ) { return false; }
+		// Every leading path must pass the global native reference map, so
+		// testing their enclosing-capture union is equivalent to each path.
 		// Native anchoring is independent of start study. Its global PRUNE/SKIP
 		// flag includes erased repeats and DEFINE bodies, so inspect retained AST.
 		var pending = new Stack<PcreByteNode>();
@@ -296,6 +306,12 @@ internal sealed class PcreByteProgramCompiler {
 			}
 		}
 		return true;
+
+		bool AddEntry( PcreByteAlternatives alternatives ) {
+			if ( entryVisits + entries.Count >= MaximumInstructions ) { return false; }
+			entries.Push( alternatives );
+			return true;
+		}
 
 		// Native is_anchored/backref_map share bit0 for capture numbers32+.
 		static uint CaptureBit( int number ) {
