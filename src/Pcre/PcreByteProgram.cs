@@ -257,12 +257,12 @@ internal sealed class PcreByteProgramCompiler {
 				// retains its group node and stays outside this proof.
 				if ( leading is PcreByteAtomic atomic ) { leading = atomic.Child; }
 				if ( leading is not PcreByteRepeat { Minimum: 0, Maximum: int.MaxValue } star ) { return false; }
-				// Extend the Any/byte proof only for source-proven UTF ASCII pairs;
+				// Extend the Any/byte proof only for source-proven UTF complements;
 				// semantic universality alone does not identify native ALLANY.
 				if ( star.Child is not PcreByteAny { DotAll: true }
 					&& !( !utf8 && star.Child is PcreByteClass { PrefixKind: PcreByteClassPrefix.Exact } bytes
 						&& bytes.Set == PcreByteSet.AllBytes )
-					&& !( utf8 && IsAsciiComplementAllAny( star.Child ) ) ) { return false; }
+					&& !( utf8 && IsComplementAllAny( star.Child ) ) ) { return false; }
 			}
 		}
 		// Every leading path must pass the global native reference map, so
@@ -337,9 +337,9 @@ internal sealed class PcreByteProgramCompiler {
 		}
 	}
 
-	private static bool IsAsciiComplementAllAny( PcreByteNode node ) {
-		// Native bitmap ASCII specials/POSIX pairs lower to ALLANY; Unicode
-		// property pairs can remain XCLASS despite a universal semantic union.
+	private static bool IsComplementAllAny( PcreByteNode node ) {
+		// Native ASCII specials/POSIX and horizontal/vertical list complements
+		// lower to ALLANY; Unicode property pairs can retain XCLASS provenance.
 		if ( node is not PcreByteScalarSet { Source: PcreByteScalarSetSource.Class, Negated: false,
 			Ranges.IsEmpty: true, Predicates.Length: 2 } set ) { return false; }
 		var first = set.Predicates.Span[0];
@@ -351,7 +351,8 @@ internal sealed class PcreByteProgramCompiler {
 		if ( first.Negated ) { positive = second; negative = first; }
 		// Unicode decimal digits also fill the ASCII holes left by a negated
 		// ASCII digit shorthand/POSIX class; only the negative side must be ASCII.
-		return negative.Kind is ( PcreByteScalarClassKind.AsciiDigit or PcreByteScalarClassKind.AsciiWord or PcreByteScalarClassKind.AsciiSpace )
+		return negative.Kind is ( PcreByteScalarClassKind.AsciiDigit or PcreByteScalarClassKind.AsciiWord or PcreByteScalarClassKind.AsciiSpace
+			or PcreByteScalarClassKind.HorizontalSpace or PcreByteScalarClassKind.VerticalSpace )
 			&& ( positive.Kind == negative.Kind || negative.Kind == PcreByteScalarClassKind.AsciiDigit
 				&& positive.Kind == PcreByteScalarClassKind.DecimalDigit );
 	}
