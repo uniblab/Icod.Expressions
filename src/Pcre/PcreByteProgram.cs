@@ -215,7 +215,7 @@ internal sealed class PcreByteProgramCompiler {
 		ValidateSurrogateLiteralProgram();
 		// A disabled anchor still permits a zero-width COMMIT at the requested
 		// byte before UTF consumption. Retain only its bounded entry proof.
-		var dotStarEntry = targets.Count == 0 && ( !noDotStarAnchor || hasCommit ) && HasDirectDotStarAnchor( root );
+		var dotStarEntry = targets.Count == 0 && ( !noDotStarAnchor || hasCommit ) && HasLeadingDotStarAnchor( root );
 		return new( instructions.ToArray(), markCount, hasCaselessComparisons, utf8, matchInvalidUtf,
 			noStartOptimize ? default : FindRequiredLiteralSuffix( root ), newline, HasExplicitNewline( root ),
 			hasEarlyAccept || commitBytes.HasValue || hasCommit && ( noStartOptimize || noDotStarAnchor && dotStarEntry ) || CanMatchEmptyAtAnyOffset( root ),
@@ -230,10 +230,23 @@ internal sealed class PcreByteProgramCompiler {
 		};
 	}
 
-	private bool HasDirectDotStarAnchor( PcreByteAlternatives root ) {
+	private bool HasLeadingDotStarAnchor( PcreByteAlternatives root ) {
 		cancellationToken.ThrowIfCancellationRequested();
-		if ( root.Branches.Count != 1 || root.Branches[0].Count == 0 ) { return false; }
-		var leading = root.Branches[0][0];
+		var entry = root;
+		var entryVisits = 0;
+		uint enclosingCaptures = 0;
+		PcreByteNode leading;
+		while ( true ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( ++entryVisits > MaximumInstructions || entry.Branches.Count != 1 || entry.Branches[0].Count == 0 ) { return false; }
+			leading = entry.Branches[0][0];
+			if ( leading is PcreByteGroup capture ) {
+				enclosingCaptures |= CaptureBit( capture.Number );
+				entry = capture.Body;
+			} else if ( leading is PcreByteNoncapturingGroup group ) {
+				entry = group.Body;
+			} else { break; }
+		}
 		// The parser wraps a possessive atom directly; an explicit atomic group
 		// retains its group node and is deliberately outside this bounded proof.
 		if ( leading is PcreByteAtomic atomic ) { leading = atomic.Child; }
@@ -253,6 +266,13 @@ internal sealed class PcreByteProgramCompiler {
 			if ( !visited.Add( node ) ) { continue; }
 			switch ( node ) {
 				case PcreBytePrune or PcreByteSkip or PcreByteNamedSkip or PcreByteSubroutineCall: return false;
+				case PcreByteBackreference reference:
+					if ( ( enclosingCaptures & CaptureBit( reference.Number ) ) != 0 ) { return false; }
+					foreach ( var number in reference.DuplicateNumbers.Span ) {
+						cancellationToken.ThrowIfCancellationRequested();
+						if ( ( enclosingCaptures & CaptureBit( number ) ) != 0 ) { return false; }
+					}
+					break;
 				case PcreByteGroup group: if ( !AddBody( group.Body ) ) { return false; } break;
 				case PcreByteNoncapturingGroup group: if ( !AddBody( group.Body ) ) { return false; } break;
 				case PcreByteLookahead assertion: if ( !AddBody( assertion.Body ) ) { return false; } break;
@@ -269,13 +289,19 @@ internal sealed class PcreByteProgramCompiler {
 				case PcreByteLiteral or PcreByteAny or PcreByteNewlineSequence or PcreByteGrapheme
 					or PcreByteFailure or PcreByteAccept or PcreByteCommit or PcreByteThen or PcreBytePathMark
 					or PcreByteScalarClass or PcreByteScalarSet or PcreByteScalarExpression or PcreByteClass
-					or PcreByteBackreference or PcreByteAnchor or PcreByteSearchStart or PcreByteMatchStartReset
+					or PcreByteAnchor or PcreByteSearchStart or PcreByteMatchStartReset
 					or PcreByteLineAnchor or PcreByteEndBeforeFinalLf or PcreByteWordBoundary or PcreByteLiteralAssertion:
 					break;
 				default: return false;
 			}
 		}
 		return true;
+
+		// Native is_anchored/backref_map share bit0 for capture numbers32+.
+		static uint CaptureBit( int number ) {
+			if ( number >= 32 ) { return 1u; }
+			return 1u << number;
+		}
 
 		bool Push( PcreByteNode node ) {
 			if ( visited.Count + pending.Count >= MaximumInstructions ) { return false; }
