@@ -149,6 +149,7 @@ public sealed partial class PcreUtfFullrangeStarAnchorReferenceTests {
 		AssertNative( native, "B"u8.ToArray(), 0, 0, "0:1", "" );
 		var compiled = Compile( source, options );
 		Assert.Equal( PcreByteDiagnosticCode.InvalidUtf8Subject, compiled.Match( new byte[] { 0xFF } ).Diagnostic?.Code );
+		Assert.Equal( PcreByteDiagnosticCode.InvalidUtf8Subject, compiled.Match( new byte[] { 0xFF, (byte)'B' }, 1 ).Diagnostic?.Code );
 		Assert.Equal( PcreByteDiagnosticCode.InvalidStartOffset, compiled.Match( "é"u8.ToArray(), 1 ).Diagnostic?.Code );
 		Assert.Equal( PcreByteDiagnosticCode.InvalidStartOffset, compiled.Match( new byte[] { 0xFF }, -1 ).Diagnostic?.Code );
 		using var cancellation = new CancellationTokenSource();
