@@ -29,6 +29,8 @@ internal sealed record PcreByteOptions {
 	public bool NoAutoPossess { get; init; }
 	/// <summary>Disable start-sensitive search proofs and private candidate accelerators.</summary>
 	public bool NoStartOptimize { get; init; }
+	/// <summary>Disable inferred dot-star anchoring while retaining explicit anchors and independent start study.</summary>
+	public bool NoDotStarAnchor { get; init; }
 	public bool Caseless { get; init; }
 	/// <summary>Initialize restricted comparisons without enabling caseless matching.</summary>
 	public bool CaselessRestricted { get; init; }
@@ -114,7 +116,7 @@ internal sealed record PcreByteOptions {
 		|| AltVerbNames || ExtendedMore || AltExtendedClass || AllowSurrogateEscapes
 		|| BadEscapeIsLiteral || EscapedCrIsLf || ExtraAltBsux || AllowLookaroundBackslashK
 		|| AsciiBsD || AsciiBsS || AsciiBsW || AsciiPosix || AsciiDigit || PythonOctal
-		|| NoBackslashZero || NeverCallout || NoAutoPossess;
+		|| NoBackslashZero || NeverCallout || NoAutoPossess || NoDotStarAnchor;
 
 	/// <summary>Test-only progress hook used to cancel a running match deterministically.</summary>
 	internal Action<int>? WorkObserver { get; init; }
