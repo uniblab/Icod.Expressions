@@ -4325,3 +4325,18 @@ Freeze before production:reference6edf26795d16f40a050604359a2fc18289c85d97;proto
 Implementation and whole-branch author review before qualification: PcreByteProgram.cs only keeps exact ordinary Class/no ranges/one AnyScalar/null category/zero property value and compares predicate.Negated==set.Negated. This preserves positive singleton Any and recognizes the double negation. Move outer-negation rejection to the two-predicate branch; keep direct positive Any and every prior complement condition unchanged. Zero or>2 predicates decline; non-Any singletons decline; every negated two-predicate set declines. Native PT_ANY class lowering, not arbitrary semantic universality, supports this exact rule. No node normalization/new allocation/borrowed lifetime/quota or admission change. Byte Exact full-class inference and all instruction/work metadata remain fixed.
 
 Reviewed all plan boundaries: source/kind/count/range/negation parity and property/loose-alias controls; existing direct/positive Any and ASCII/horizontal/vertical/mixed-decimal complements; grouped alternatives/dependency31-32 bits/global cuts/targets; source/caller NoDot/COMMIT/start/possessification; exact observed-unobserved budgets/owned slices/signed captures/marks/diagnostics/validation/cancellation/full capacities/proof exhaustion; frozen/source/tree preservation. Parser/AST/emitter/matcher/VM/API/dependencies/workflows fixed. No introduced unresolved critical/important/minor findings. Local frozen-source/corpus/A05/classifier/main-job/diff gates pass. All seven inventories precede final qualification; final GREEN/review/source/base/tree/merge evidence remains external.
+
+
+## PR266: UTF full scalar-range star anchoring
+
+Already accepted positive ordinary classes with no predicates and one stored
+range from U+0000 through U+10FFFF now qualify for native ALLANY star anchoring.
+Examples are [\x{0}-\x{10FFFF}]*B, [\0-\x{10ffff}]*B and
+[\x00-\x{10FFFF}]*B. Negated and near-full ranges retain their existing rules.
+Existing case closure may produce the same exact stored interval; this change
+adds no syntax, normalization, admission relaxation or instruction rewrite.
+See [design](PCRE-UTF-FULLRANGE-STAR-ANCHOR-DESIGN.md),
+[plan](PCRE-UTF-FULLRANGE-STAR-ANCHOR-PLAN.md) and
+[PR266](https://github.com/uniblab/Icod.Expressions/pull/266) for native fixtures,
+validation, review and final qualification evidence. All seven inventories
+precede final qualification; final evidence remains on the PR and issue7 footer.

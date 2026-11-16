@@ -341,10 +341,13 @@ internal sealed class PcreByteProgramCompiler {
 		// Native positive PT_ANY atoms lower to ALLANY.
 		if ( node is PcreByteScalarClass { Kind: PcreByteScalarClassKind.AnyScalar,
 			Negated: false, Category: null, PropertyValue: 0 } ) { return true; }
+		if ( node is not PcreByteScalarSet { Source: PcreByteScalarSetSource.Class } set ) { return false; }
+		// Native fills the byte bitmap and higher characters for this exact range.
+		if ( !set.Negated && set.Predicates.IsEmpty && set.Ranges.Length == 1
+			&& set.Ranges.Span[0] is { Start: 0, End: 0x10FFFF } ) { return true; }
+		if ( !set.Ranges.IsEmpty ) { return false; }
 		// Native ASCII specials/POSIX and horizontal/vertical list complements
 		// lower to ALLANY; Unicode property pairs can retain XCLASS provenance.
-		if ( node is not PcreByteScalarSet { Source: PcreByteScalarSetSource.Class,
-			Ranges.IsEmpty: true } set ) { return false; }
 		if ( set.Predicates.Length == 1 ) {
 			// Equal outer/predicate Any negation flags leave the universal set.
 			var predicate = set.Predicates.Span[0];
