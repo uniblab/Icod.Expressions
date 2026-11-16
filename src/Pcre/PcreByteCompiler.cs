@@ -58,7 +58,7 @@ internal static class PcreByteCompiler {
 				cancellationToken, settings.Utf8, options.MatchInvalidUtf, settings.Newline,
 				settings.BsrAnyCrLf, settings.NotEmpty, settings.NotEmptyAtStart, settings.Ucp, parser.HasThen, parser.HasNamedSkip,
 				settings.TurkishCasing, noAutoPossess: settings.NoAutoPossess, noStartOptimize: settings.NoStartOptimize,
-				noDotStarAnchor: options.NoDotStarAnchor
+				noDotStarAnchor: settings.NoDotStarAnchor
 			).Compile( root, parser.SubroutineTargets ) with {
 				Anchored = options.Anchored, EndAnchored = options.EndAnchored, FirstLine = options.FirstLine
 			};
