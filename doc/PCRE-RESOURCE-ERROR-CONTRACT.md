@@ -4633,3 +4633,16 @@ See the [design](PCRE-UTF-ANY-LIST-STAR-ANCHOR-DESIGN.md),
 [plan](PCRE-UTF-ANY-LIST-STAR-ANCHOR-PLAN.md) and
 [PR268](https://github.com/uniblab/Icod.Expressions/pull/268) for native,
 frozen-test, review and qualification evidence. #7/#102 stay open; Grep last.
+
+
+## PR270: positive Any in mixed UTF star classes
+
+Range-bearing and longer mixed classes retain the shared 4096-predicate
+compile-proof budget, per-visit cancellation and exhaustion-as-fallback. Mixed
+pairs keep constant-time proof; instructions, runtime work and public limits
+remain unchanged. Exact/aggregate and one-range-member boundaries are pinned.
+
+See the [design](PCRE-UTF-ANY-MIXED-STAR-ANCHOR-DESIGN.md),
+[plan](PCRE-UTF-ANY-MIXED-STAR-ANCHOR-PLAN.md) and
+[PR270](https://github.com/uniblab/Icod.Expressions/pull/270) for native,
+frozen-test, review and qualification evidence. #7/#102 stay open; Grep last.

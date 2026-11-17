@@ -346,16 +346,19 @@ internal sealed class PcreByteProgramCompiler {
 		// Native fills the byte bitmap and higher characters for this exact range.
 		if ( !set.Negated && set.Predicates.IsEmpty && set.Ranges.Length == 1
 			&& set.Ranges.Span[0] is { Start: 0, End: 0x10FFFF } ) { return true; }
-		if ( !set.Ranges.IsEmpty ) { return false; }
-		if ( set.Predicates.Length > 2 ) {
-			// Share bounded compile work across leading paths. Exhaustion only
-			// declines inference; all members must retain native Any provenance.
+		if ( set.Negated && !set.Ranges.IsEmpty ) { return false; }
+		if ( !set.Ranges.IsEmpty || set.Predicates.Length > 2 ) {
+			// Share bounded compile work across leading paths. Positive Any
+			// dominates a union; a negative outer class needs only negative Any.
 			if ( set.Predicates.Length > remainingPredicateVisits ) { return false; }
 			var hasPositive = false;
 			foreach ( var predicate in set.Predicates.Span ) {
 				cancellationToken.ThrowIfCancellationRequested();
 				remainingPredicateVisits--;
-				if ( predicate is not { Kind: PcreByteScalarClassKind.AnyScalar, Category: null, PropertyValue: 0 } ) { return false; }
+				if ( predicate is not { Kind: PcreByteScalarClassKind.AnyScalar, Category: null, PropertyValue: 0 } ) {
+					if ( set.Negated ) { return false; }
+					continue;
+				}
 				hasPositive |= !predicate.Negated;
 			}
 			if ( set.Negated ) { return !hasPositive; }
@@ -372,6 +375,8 @@ internal sealed class PcreByteProgramCompiler {
 		if ( set.Predicates.Length != 2 ) { return false; }
 		var first = set.Predicates.Span[0];
 		var second = set.Predicates.Span[1];
+		if ( !set.Negated && ( first is { Kind: PcreByteScalarClassKind.AnyScalar, Negated: false, Category: null, PropertyValue: 0 }
+			|| second is { Kind: PcreByteScalarClassKind.AnyScalar, Negated: false, Category: null, PropertyValue: 0 } ) ) { return true; }
 		if ( first is { Kind: PcreByteScalarClassKind.AnyScalar, Category: null, PropertyValue: 0 }
 			&& second is { Kind: PcreByteScalarClassKind.AnyScalar, Category: null, PropertyValue: 0 } ) {
 			if ( set.Negated ) { return first.Negated && second.Negated; }

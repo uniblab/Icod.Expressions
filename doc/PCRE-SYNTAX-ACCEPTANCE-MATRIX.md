@@ -4361,3 +4361,17 @@ See the [design](PCRE-UTF-ANY-LIST-STAR-ANCHOR-DESIGN.md),
 [plan](PCRE-UTF-ANY-LIST-STAR-ANCHOR-PLAN.md) and
 [PR268](https://github.com/uniblab/Icod.Expressions/pull/268) for native,
 frozen-test, review and qualification evidence. #7/#102 stay open; Grep last.
+
+
+## PR270: positive Any in mixed UTF star classes
+
+For an ordinary positive UTF Class, an exact positive Any member establishes
+ALLANY provenance in mixed pairs and bounded longer/range classes. Negative
+outer classes retain their existing rules. Negative Any, general universality,
+full-range mixtures without Any and algebra remain outside this extension;
+syntax admission is unchanged.
+
+See the [design](PCRE-UTF-ANY-MIXED-STAR-ANCHOR-DESIGN.md),
+[plan](PCRE-UTF-ANY-MIXED-STAR-ANCHOR-PLAN.md) and
+[PR270](https://github.com/uniblab/Icod.Expressions/pull/270) for native,
+frozen-test, review and qualification evidence. #7/#102 stay open; Grep last.
