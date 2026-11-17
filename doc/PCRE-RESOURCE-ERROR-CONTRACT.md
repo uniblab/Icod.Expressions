@@ -1,5 +1,34 @@
 # PCRE error and resource contract checkpoint
 
+## PR273: complete range unions in UTF star classes
+
+Ordinary positive UTF classes whose retained ranges jointly cover the complete
+0..0x10FFFF interval qualify for native ALLANY star anchoring. Reordered,
+overlapping and literal-bridged unions use bounded complete-list frontier
+passes, without sorting or allocation. Holes, including a surrogate-only gap,
+negative outer classes and general algebra remain outside this proof.
+
+A new compile-local 4096-visit coverage budget is shared across leading paths
+and passes, independently of the existing predicate/member counters. Precheck
+each whole list, check cancellation and charge every visit, scan past early
+coverage, and stop on no progress or insufficient budget. Explicit full-range
+members remain owned by the old member proof. Retain the existing predicate
+precheck and complete scan even when coverage independently succeeds, so no
+successful old Any proof loses its original charges. Declined coverage retains
+the old result; instructions, runtime work and public limits are unchanged.
+
+530 matching groups/29,225 native protocols,15 diagnostics and76 supplementary
+cases add621 tests (100,961 total). Preserve331 prior test files/326 C# sources
+and frozen35. Native-first RED/frozen-source/author-review evidence is in the
+[design](PCRE-UTF-RANGE-UNION-STAR-ANCHOR-DESIGN.md),
+[plan](PCRE-UTF-RANGE-UNION-STAR-ANCHOR-PLAN.md) and
+[PR273](https://github.com/uniblab/Icod.Expressions/pull/273).
+Build net8/net9/net10; execute net10 only on six native hosts. All seven
+inventories precede final qualification; final evidence and identities remain
+on the PR without source/docs edits after GREEN. #7/#102 stay open; Grep last;
+user owns merge/tags/package publication. Issue7's footer remains untouched.
+
+
 ## PR272: explicit full-range members in UTF star classes
 
 An ordinary positive UTF class with multiple retained ranges now preserves

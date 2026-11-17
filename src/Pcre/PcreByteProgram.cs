@@ -237,6 +237,7 @@ internal sealed class PcreByteProgramCompiler {
 		var entryVisits = 0;
 		var remainingPredicateVisits = MaximumInstructions;
 		var remainingRangeVisits = MaximumInstructions;
+		var remainingRangeUnionVisits = MaximumInstructions;
 		uint enclosingCaptures = 0;
 		while ( entries.TryPop( out var entry ) ) {
 			cancellationToken.ThrowIfCancellationRequested();
@@ -264,7 +265,8 @@ internal sealed class PcreByteProgramCompiler {
 				if ( star.Child is not PcreByteAny { DotAll: true }
 					&& !( !utf8 && star.Child is PcreByteClass { PrefixKind: PcreByteClassPrefix.Exact } bytes
 						&& bytes.Set == PcreByteSet.AllBytes )
-					&& !( utf8 && IsUtfAllAny( star.Child, ref remainingPredicateVisits, ref remainingRangeVisits, cancellationToken ) ) ) { return false; }
+					&& !( utf8 && IsUtfAllAny( star.Child, ref remainingPredicateVisits, ref remainingRangeVisits,
+						ref remainingRangeUnionVisits, cancellationToken ) ) ) { return false; }
 			}
 		}
 		// Every leading path must pass the global native reference map, so
@@ -339,7 +341,8 @@ internal sealed class PcreByteProgramCompiler {
 		}
 	}
 
-	private static bool IsUtfAllAny( PcreByteNode node, ref int remainingPredicateVisits, ref int remainingRangeVisits, CancellationToken cancellationToken ) {
+	private static bool IsUtfAllAny( PcreByteNode node, ref int remainingPredicateVisits, ref int remainingRangeVisits,
+		ref int remainingRangeUnionVisits, CancellationToken cancellationToken ) {
 		// Native positive PT_ANY atoms lower to ALLANY.
 		if ( node is PcreByteScalarClass { Kind: PcreByteScalarClassKind.AnyScalar,
 			Negated: false, Category: null, PropertyValue: 0 } ) { return true; }
@@ -359,11 +362,14 @@ internal sealed class PcreByteProgramCompiler {
 			}
 			if ( hasFullRange ) { return true; }
 		}
+		// Preserve the predicate scan and its charges even when coverage succeeds.
+		var hasFullRangeUnion = !set.Negated && set.Ranges.Length > 1
+			&& HasUtfFullRangeUnion( set.Ranges, ref remainingRangeUnionVisits, cancellationToken );
 		if ( set.Negated && !set.Ranges.IsEmpty ) { return false; }
 		if ( !set.Ranges.IsEmpty || set.Predicates.Length > 2 ) {
 			// Share bounded compile work across leading paths. Positive Any
 			// dominates a union; a negative outer class needs only negative Any.
-			if ( set.Predicates.Length > remainingPredicateVisits ) { return false; }
+			if ( set.Predicates.Length > remainingPredicateVisits ) { return hasFullRangeUnion; }
 			var hasPositive = false;
 			foreach ( var predicate in set.Predicates.Span ) {
 				cancellationToken.ThrowIfCancellationRequested();
@@ -375,7 +381,7 @@ internal sealed class PcreByteProgramCompiler {
 				hasPositive |= !predicate.Negated;
 			}
 			if ( set.Negated ) { return !hasPositive; }
-			return hasPositive;
+			return hasPositive || hasFullRangeUnion;
 		}
 		// Native ASCII specials/POSIX and horizontal/vertical list complements
 		// lower to ALLANY; Unicode property pairs can retain XCLASS provenance.
@@ -406,6 +412,27 @@ internal sealed class PcreByteProgramCompiler {
 			or PcreByteScalarClassKind.HorizontalSpace or PcreByteScalarClassKind.VerticalSpace )
 			&& ( positive.Kind == negative.Kind || negative.Kind == PcreByteScalarClassKind.AsciiDigit
 				&& positive.Kind == PcreByteScalarClassKind.DecimalDigit );
+	}
+
+	private static bool HasUtfFullRangeUnion( ReadOnlyMemory<PcreByteScalarRange> ranges,
+		ref int remainingVisits, CancellationToken cancellationToken ) {
+		if ( ranges.IsEmpty ) { return false; }
+		var coveredEnd = -1;
+		while ( ranges.Length <= remainingVisits ) {
+			var previousEnd = coveredEnd;
+			var hasFullMember = false;
+			foreach ( var range in ranges.Span ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				remainingVisits--;
+				hasFullMember |= range is { Start: 0, End: 0x10FFFF };
+				if ( range.Start <= coveredEnd + 1 ) { coveredEnd = Math.Max( coveredEnd, range.End ); }
+			}
+			// Explicit full-range members retain the existing proof's budget.
+			if ( hasFullMember ) { return false; }
+			if ( coveredEnd == 0x10FFFF ) { return true; }
+			if ( coveredEnd == previousEnd ) { return false; }
+		}
+		return false;
 	}
 
 	private void ValidateSurrogateLiteralProgram() {
