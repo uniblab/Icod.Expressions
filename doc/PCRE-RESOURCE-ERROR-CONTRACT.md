@@ -4623,3 +4623,13 @@ See [design](PCRE-UTF-ANY-PAIR-STAR-ANCHOR-DESIGN.md),
 [plan](PCRE-UTF-ANY-PAIR-STAR-ANCHOR-PLAN.md) and
 [PR267](https://github.com/uniblab/Icod.Expressions/pull/267) for the native
 fixtures, frozen tests and qualification evidence.
+
+
+## PR268: bounded UTF Any-only list star anchoring
+
+Longer UTF Any-only leading classes share a compiler-local 4096-predicate proof budget. Check cancellation per visit; exhaustion declines inference without rejecting syntax. Matching work, instructions and public quotas remain unchanged.
+
+See the [design](PCRE-UTF-ANY-LIST-STAR-ANCHOR-DESIGN.md),
+[plan](PCRE-UTF-ANY-LIST-STAR-ANCHOR-PLAN.md) and
+[PR268](https://github.com/uniblab/Icod.Expressions/pull/268) for native,
+frozen-test, review and qualification evidence. #7/#102 stay open; Grep last.

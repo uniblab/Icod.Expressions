@@ -3775,3 +3775,13 @@ final qualification. Six native net10 suites/all three library targets/support
 gates remain required; final evidence/identities belong on
 [PR267](https://github.com/uniblab/Icod.Expressions/pull/267) and issue7 footer.
 No documentation-only repeat after final GREEN. #7/#102 stay open; Grep last.
+
+
+## PR268: bounded UTF Any-only list star anchoring
+
+Extend native ALLANY star anchoring to ordinary UTF Any-only lists of more than two predicates, with no ranges and exact Any metadata. A shared 4096-visit compile budget bounds the scan; existing constant-time paths remain unchanged.
+
+See the [design](PCRE-UTF-ANY-LIST-STAR-ANCHOR-DESIGN.md),
+[plan](PCRE-UTF-ANY-LIST-STAR-ANCHOR-PLAN.md) and
+[PR268](https://github.com/uniblab/Icod.Expressions/pull/268) for native,
+frozen-test, review and qualification evidence. #7/#102 stay open; Grep last.

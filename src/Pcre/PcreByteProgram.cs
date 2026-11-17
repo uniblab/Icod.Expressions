@@ -235,6 +235,7 @@ internal sealed class PcreByteProgramCompiler {
 		var entries = new Stack<PcreByteAlternatives>();
 		entries.Push( root );
 		var entryVisits = 0;
+		var remainingPredicateVisits = MaximumInstructions;
 		uint enclosingCaptures = 0;
 		while ( entries.TryPop( out var entry ) ) {
 			cancellationToken.ThrowIfCancellationRequested();
@@ -262,7 +263,7 @@ internal sealed class PcreByteProgramCompiler {
 				if ( star.Child is not PcreByteAny { DotAll: true }
 					&& !( !utf8 && star.Child is PcreByteClass { PrefixKind: PcreByteClassPrefix.Exact } bytes
 						&& bytes.Set == PcreByteSet.AllBytes )
-					&& !( utf8 && IsUtfAllAny( star.Child ) ) ) { return false; }
+					&& !( utf8 && IsUtfAllAny( star.Child, ref remainingPredicateVisits, cancellationToken ) ) ) { return false; }
 			}
 		}
 		// Every leading path must pass the global native reference map, so
@@ -337,7 +338,7 @@ internal sealed class PcreByteProgramCompiler {
 		}
 	}
 
-	private static bool IsUtfAllAny( PcreByteNode node ) {
+	private static bool IsUtfAllAny( PcreByteNode node, ref int remainingPredicateVisits, CancellationToken cancellationToken ) {
 		// Native positive PT_ANY atoms lower to ALLANY.
 		if ( node is PcreByteScalarClass { Kind: PcreByteScalarClassKind.AnyScalar,
 			Negated: false, Category: null, PropertyValue: 0 } ) { return true; }
@@ -346,6 +347,20 @@ internal sealed class PcreByteProgramCompiler {
 		if ( !set.Negated && set.Predicates.IsEmpty && set.Ranges.Length == 1
 			&& set.Ranges.Span[0] is { Start: 0, End: 0x10FFFF } ) { return true; }
 		if ( !set.Ranges.IsEmpty ) { return false; }
+		if ( set.Predicates.Length > 2 ) {
+			// Share bounded compile work across leading paths. Exhaustion only
+			// declines inference; all members must retain native Any provenance.
+			if ( set.Predicates.Length > remainingPredicateVisits ) { return false; }
+			var hasPositive = false;
+			foreach ( var predicate in set.Predicates.Span ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				remainingPredicateVisits--;
+				if ( predicate is not { Kind: PcreByteScalarClassKind.AnyScalar, Category: null, PropertyValue: 0 } ) { return false; }
+				hasPositive |= !predicate.Negated;
+			}
+			if ( set.Negated ) { return !hasPositive; }
+			return hasPositive;
+		}
 		// Native ASCII specials/POSIX and horizontal/vertical list complements
 		// lower to ALLANY; Unicode property pairs can retain XCLASS provenance.
 		if ( set.Predicates.Length == 1 ) {

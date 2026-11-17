@@ -4461,3 +4461,13 @@ are preserved. See the [design](PCRE-UTF-ANY-PAIR-STAR-ANCHOR-DESIGN.md),
 [plan](PCRE-UTF-ANY-PAIR-STAR-ANCHOR-PLAN.md) and
 [PR267](https://github.com/uniblab/Icod.Expressions/pull/267) for the new
 native fixtures and qualification evidence. Grep remains the last consumer.
+
+
+## PR268: bounded UTF Any-only list star anchoring
+
+Pin 393 groups/46,776 native protocols plus 15 diagnostic and 47 supplementary cases for bounded UTF Any-only list star anchoring. This adds 455 tests (98,546 total); consumer migration remains deferred.
+
+See the [design](PCRE-UTF-ANY-LIST-STAR-ANCHOR-DESIGN.md),
+[plan](PCRE-UTF-ANY-LIST-STAR-ANCHOR-PLAN.md) and
+[PR268](https://github.com/uniblab/Icod.Expressions/pull/268) for native,
+frozen-test, review and qualification evidence. #7/#102 stay open; Grep last.
