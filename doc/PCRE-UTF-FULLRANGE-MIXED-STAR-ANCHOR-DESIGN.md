@@ -82,3 +82,38 @@ to the planned full-range-plus-property source. Recompute all579 native
 groups/69,072 protocols; outcomes remain literal native pins, JIT0. No prior
 file, resource expectation or production source changes. Observe corrected
 RED228/99,587/99,815 before freezing all five C# blobs.
+
+## Frozen RED and implementation review
+
+Corrected tests-only head8f80fb4a2797b9f3bb717557727e012eee3fa50f,
+tree8cf524425a312fe49ddbadfec05aa9d3d0f64d86, run44113511785, Linux x64
+134145508682: exactly228 failures/99,587 passes/99,815 total. All211 matching
+identities and17 supplementary failures match; all99,166 prior tests and421
+new controls pass. All3 library targets build, zero skips/compiler/analyzer
+warning/error codes. Freeze before production:
+
+- tests/Pcre/PcreUtfFullRangeMixedStarAnchorProtocols1.cs: e0857b45609ea51b57807d71f9e859138aa3ad90
+- tests/Pcre/PcreUtfFullRangeMixedStarAnchorProtocols2.cs: 159639302dc82294a8c1fe112b4207d5205a01f3
+- tests/Pcre/PcreUtfFullRangeMixedStarAnchorProtocols3.cs: 312beb79d2f7fc9e492adc3c442ab89fc2124cfb
+- tests/Pcre/PcreUtfFullRangeMixedStarAnchorProtocols4.cs: 9a70383d365122cfce8a3b17ea134b5e5d8010c6
+- tests/Pcre/PcreUtfFullRangeMixedStarAnchorReferenceTests.cs: 664225a607add9e013c5d1ae8d4e556b0be820ae
+
+Change only IsUtfAllAny in PcreByteProgram.cs: remove the empty-predicate
+condition from the existing exact positive full-range Class fast path, with
+a comment explaining union dominance. Preserve Class provenance, positive
+outer polarity, exactly one retained range and exact endpoints0/0x10FFFF.
+No predicate scan/charge or new allocation/state/instruction. Existing
+positive-Any/list paths, shared4096 visits, per-visit cancellation and
+exhaustion fallback are unchanged. Caller cancellation still guards each
+leading branch. Entry/global-AST/capture31/32/cut/call/target and NoDot/COMMIT/
+start/possessification gates remain intact. No parser/AST/VM/API/dependency/
+workflow/admission/public-limit or runtime-work changes.
+
+Inline whole-branch author review checked positive/negative/source/range
+boundaries, retained shape after existing case closure, predicate counts
+through4097, uncharged proof both before and after a4096-member list,
+work/limits/cancellation/ownership/capacities/validation and all native pins.
+No outstanding defect. Preserve322 prior files/317 C# sources and frozen35.
+All seven inventories precede final qualification; final results and source/
+merge identities remain external on the PR, with no source/docs edits after
+final GREEN. Issue7 footer stays untouched under its existing block.

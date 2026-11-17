@@ -4375,3 +4375,18 @@ See the [design](PCRE-UTF-ANY-MIXED-STAR-ANCHOR-DESIGN.md),
 [plan](PCRE-UTF-ANY-MIXED-STAR-ANCHOR-PLAN.md) and
 [PR270](https://github.com/uniblab/Icod.Expressions/pull/270) for native,
 frozen-test, review and qualification evidence. #7/#102 stay open; Grep last.
+
+## PR271: full-range dominance with UTF properties
+
+An ordinary positive UTF class with exactly one retained range0..0x10FFFF
+keeps native ALLANY star anchoring when property predicates are also present.
+The existing constant-time proof ignores redundant union predicates and
+consumes no shared predicate visits, including after the4096-visit budget.
+Retained source/negation/range guards, entry/global-AST limits and runtime
+work/state/admission remain unchanged. Native579 groups/69,072 protocols,
+15 diagnostics and55 supplementary cases add649 tests (99,815 total).
+Build net8/net9/net10; execute net10 only on six native hosts.
+[Design](PCRE-UTF-FULLRANGE-MIXED-STAR-ANCHOR-DESIGN.md) /
+[plan](PCRE-UTF-FULLRANGE-MIXED-STAR-ANCHOR-PLAN.md) /
+[PR271](https://github.com/uniblab/Icod.Expressions/pull/271).
+#7/#102 remain open; Grep last.
