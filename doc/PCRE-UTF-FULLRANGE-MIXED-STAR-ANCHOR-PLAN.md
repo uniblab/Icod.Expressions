@@ -44,3 +44,16 @@ Expected tests-only RED228:211 matching identities,6 work,1 owned-source,
 6 predicate-count,2 after-budget,1 before-budget and1 work-boundary failure.
 Expect99,587 passes; all99,166 prior tests and421 new controls stay green.
 Freeze all five new C# blobs only after observing that exact RED.
+
+## Pre-freeze fixture correction
+
+Initial tests-only head d7bc98f47de07863eaa8ed18d4217fa8a69bf072,
+run44112346787/Linux134141040126:188 failures/99,627 passes/99,815 total,
+zero skips or compiler/analyzer warning/error codes. All17 supplementary
+failures matched;171 of211 predicted matching cases failed, with no unexpected
+failures. The other40 still used an already-supported positive Any form in
+one generated member order. Correct those80 profiles (strict and tolerant)
+to the planned full-range-plus-property source. Recompute all579 native
+groups/69,072 protocols; outcomes remain literal native pins, JIT0. No prior
+file, resource expectation or production source changes. Observe corrected
+RED228/99,587/99,815 before freezing all five C# blobs.
