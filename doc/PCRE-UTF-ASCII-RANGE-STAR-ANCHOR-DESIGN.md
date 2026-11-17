@@ -76,6 +76,35 @@ must pass. Reconcile exact observed identities and freeze all three new C#
 Git blobs before production. Native assertions precede managed comparison;
 no malformed-whole-subject or split-offset strict rows are matching claims.
 
+## Observed RED and pre-production freeze
+
+Tests-only headc316f33cf3b8a5cd46bad7f88d45f1ec463b9873,
+tree763de422e116046463833141dd0208488e649a0a; proposed merge
+92be7d20df9bc8cb2db2ca4fe0bd4344f0dbe931 has ordered base/source parents
+and the identical content tree. Run44155913703/Windows x64 job134296472987
+confirms exactly68 failures/101,166 passes/101,234 total, zero skips and
+zero compiler/analyzer warnings/errors. All44 matching and24 supplementary
+identities match the prediction; every failure is in the new reference class
+and none has an AssertNative stack frame. All100,961 prior tests and205 new
+controls pass. Strict research exclusions:476 malformed-whole-subject and
+374 split-offset rows, excluded before native matching.
+
+Matching IDs:3/5/7/11/13/15/19/21/23/27/29/31/35/37/39/43/45/47/51/53/55/
+59/61/63/67/69/71/75/77/79/129/133/139/141/143/145/146/155/163/165/167/
+169/171/180. Supplementary:8 work,2 ownership,1 combined admission,
+1 repeated-pass admission,1 shared admission,3 old-budget independence,
+6 established-path preservation,1 oversized-list and1 no-progress boundary.
+
+Freeze these Git blobs before production:
+
+- Protocols1 d6921082685c492a72076a1f157f161abe4bcc1b
+- Protocols2 449b69df7e9d0402b095602263bc6030fb86858b
+- ReferenceTests 02abe1a086c12000dc62e49d3dc4964d3a80b397
+
+All337 prior test files/332 C# sources and frozen35 are unchanged. No test
+edits follow this checkpoint. Additional deferred OffsetLimit research is
+preserved in [its own note](PCRE-OFFSET-LIMIT-RESEARCH.md); no API is added.
+
 ## Delivery gate
 
 Whole-branch author review, old-test/frozen identity checks, local support

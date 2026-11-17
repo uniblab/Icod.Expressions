@@ -12,16 +12,16 @@ Grep last; issue7's publication-blocked footer unchanged.
 - [x] Reproduce merged273's530 groups/29,225 protocols on exact native pins.
 - [x] Capture186 matching groups/11,090 protocols,15 diagnostics and72
   supplementary cases; complete46 dynamic groups/138 literal preflights.
-- [ ] Publish tests-only draft, reconcile expected68 RED identities and
+- [x] Publish tests-only draft, reconcile expected68 RED identities and
   freeze all three new C# Git blobs before production.
 
 ## Task2: bounded proof and review
 
-- [ ] Add one independent shared4096 combined predicate/range-pass budget
+- [x] Add one independent shared4096 combined predicate/range-pass budget
   and an allocation-free, cancellation-aware ASCII/high-range proof.
-- [ ] Preserve every old proof's result/charges, exact-source guards,
+- [x] Preserve every old proof's result/charges, exact-source guards,
   exhaustion fallback, global bounds and runtime work/state contracts.
-- [ ] Review whole branch, preserve all old tests/frozen35 and pass support
+- [x] Review whole branch, preserve all old tests/frozen35 and pass support
   gates; update all seven inventories before final qualification.
 - [ ] Upload exact reviewed tree under a branch-head lease.
 
@@ -34,3 +34,13 @@ Grep last; issue7's publication-blocked footer unchanged.
 
 Final Task3 completion belongs in the PR body so no documentation-only
 commit invalidates the final GREEN source identity.
+
+Observed RED44155913703/Windows x64 job134296472987 agrees exactly with
+68 predicted failures/101,166 passes/zero skips and build warnings/errors.
+All100,961 prior tests and205 controls pass; all three new C# Git blobs are
+frozen in the design before production. Whole-branch author review confirms
+overflow-safe combined admission, complete cancellation-aware passes,
+empty/no-progress termination, source ownership and all old proof charges.
+No unresolved introduced finding remains. Local A05/classifier/main-job and
+whitespace gates pass. All seven inventories precede final qualification;
+no tests changed after RED.

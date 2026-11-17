@@ -238,6 +238,7 @@ internal sealed class PcreByteProgramCompiler {
 		var remainingPredicateVisits = MaximumInstructions;
 		var remainingRangeVisits = MaximumInstructions;
 		var remainingRangeUnionVisits = MaximumInstructions;
+		var remainingAsciiRangeVisits = MaximumInstructions;
 		uint enclosingCaptures = 0;
 		while ( entries.TryPop( out var entry ) ) {
 			cancellationToken.ThrowIfCancellationRequested();
@@ -266,7 +267,7 @@ internal sealed class PcreByteProgramCompiler {
 					&& !( !utf8 && star.Child is PcreByteClass { PrefixKind: PcreByteClassPrefix.Exact } bytes
 						&& bytes.Set == PcreByteSet.AllBytes )
 					&& !( utf8 && IsUtfAllAny( star.Child, ref remainingPredicateVisits, ref remainingRangeVisits,
-						ref remainingRangeUnionVisits, cancellationToken ) ) ) { return false; }
+						ref remainingRangeUnionVisits, ref remainingAsciiRangeVisits, cancellationToken ) ) ) { return false; }
 			}
 		}
 		// Every leading path must pass the global native reference map, so
@@ -342,7 +343,7 @@ internal sealed class PcreByteProgramCompiler {
 	}
 
 	private static bool IsUtfAllAny( PcreByteNode node, ref int remainingPredicateVisits, ref int remainingRangeVisits,
-		ref int remainingRangeUnionVisits, CancellationToken cancellationToken ) {
+		ref int remainingRangeUnionVisits, ref int remainingAsciiRangeVisits, CancellationToken cancellationToken ) {
 		// Native positive PT_ANY atoms lower to ALLANY.
 		if ( node is PcreByteScalarClass { Kind: PcreByteScalarClassKind.AnyScalar,
 			Negated: false, Category: null, PropertyValue: 0 } ) { return true; }
@@ -365,11 +366,13 @@ internal sealed class PcreByteProgramCompiler {
 		// Preserve the predicate scan and its charges even when coverage succeeds.
 		var hasFullRangeUnion = !set.Negated && set.Ranges.Length > 1
 			&& HasUtfFullRangeUnion( set.Ranges, ref remainingRangeUnionVisits, cancellationToken );
+		var hasAsciiRangeUnion = !hasFullRangeUnion && !set.Negated
+			&& HasUtfAsciiRangeUnion( set, ref remainingAsciiRangeVisits, cancellationToken );
 		if ( set.Negated && !set.Ranges.IsEmpty ) { return false; }
 		if ( !set.Ranges.IsEmpty || set.Predicates.Length > 2 ) {
 			// Share bounded compile work across leading paths. Positive Any
 			// dominates a union; a negative outer class needs only negative Any.
-			if ( set.Predicates.Length > remainingPredicateVisits ) { return hasFullRangeUnion; }
+			if ( set.Predicates.Length > remainingPredicateVisits ) { return hasFullRangeUnion || hasAsciiRangeUnion; }
 			var hasPositive = false;
 			foreach ( var predicate in set.Predicates.Span ) {
 				cancellationToken.ThrowIfCancellationRequested();
@@ -381,7 +384,7 @@ internal sealed class PcreByteProgramCompiler {
 				hasPositive |= !predicate.Negated;
 			}
 			if ( set.Negated ) { return !hasPositive; }
-			return hasPositive || hasFullRangeUnion;
+			return hasPositive || hasFullRangeUnion || hasAsciiRangeUnion;
 		}
 		// Native ASCII specials/POSIX and horizontal/vertical list complements
 		// lower to ALLANY; Unicode property pairs can retain XCLASS provenance.
@@ -429,6 +432,37 @@ internal sealed class PcreByteProgramCompiler {
 			}
 			// Explicit full-range members retain the existing proof's budget.
 			if ( hasFullMember ) { return false; }
+			if ( coveredEnd == 0x10FFFF ) { return true; }
+			if ( coveredEnd == previousEnd ) { return false; }
+		}
+		return false;
+	}
+
+	private static bool HasUtfAsciiRangeUnion( PcreByteScalarSet set,
+		ref int remainingVisits, CancellationToken cancellationToken ) {
+		if ( set.Ranges.IsEmpty || set.Predicates.IsEmpty
+			|| set.Predicates.Length > remainingVisits
+			|| set.Ranges.Length > remainingVisits - set.Predicates.Length ) { return false; }
+		var hasAscii = false;
+		foreach ( var predicate in set.Predicates.Span ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			remainingVisits--;
+			hasAscii |= predicate is { Kind: PcreByteScalarClassKind.Ascii,
+				Negated: false, Category: null, PropertyValue: 0 };
+		}
+		if ( !hasAscii ) { return false; }
+		var coveredEnd = 127;
+		while ( set.Ranges.Length <= remainingVisits ) {
+			var previousEnd = coveredEnd;
+			var hasLowRange = false;
+			foreach ( var range in set.Ranges.Span ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				remainingVisits--;
+				hasLowRange |= range.Start < 128;
+				if ( range.Start <= coveredEnd + 1 ) { coveredEnd = Math.Max( coveredEnd, range.End ); }
+			}
+			// Low ranges retain the established literal-union proof's budget.
+			if ( hasLowRange ) { return false; }
 			if ( coveredEnd == 0x10FFFF ) { return true; }
 			if ( coveredEnd == previousEnd ) { return false; }
 		}

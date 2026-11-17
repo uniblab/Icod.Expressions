@@ -1,5 +1,35 @@
 # PCRE error and resource contract checkpoint
 
+## PR274: ASCII plus high ranges in UTF star classes
+
+Positive ordinary UTF classes with an exact positive ASCII predicate and
+retained ranges covering128..0x10FFFF now preserve native ALLANY star entry.
+Reordered/split/overlapping ranges and property aliases retain native byte
+spans at tolerant split offsets. Negative outer/negative-only ASCII, gaps,
+case-closed source cohorts and ranges below128 stay outside the new proof.
+
+A fourth independent compile-local4096 budget counts every predicate and
+complete range pass across leading paths. Precheck the complete first combined
+list, then every whole range pass; scan past early ASCII/coverage, check
+cancellation and stop on no progress or exhaustion. Lower ranges cannot
+rescue an exhausted literal-union proof. Preserve every old constant/member/
+union/predicate result and charge, including successful old Any scans.
+Runtime state/work, instructions, admission and public limits are unchanged.
+
+186 matching groups/11,090 native protocols,15 diagnostics and72 supplementary
+cases add273 tests (101,234 total). Tests-only RED is exactly68 failures/
+101,166 passes; all100,961 old tests and205 new controls pass. Three new C#
+blobs are frozen before production;337 prior test files/332 C# sources and
+frozen35 remain unchanged. See [design](PCRE-UTF-ASCII-RANGE-STAR-ANCHOR-DESIGN.md),
+[plan](PCRE-UTF-ASCII-RANGE-STAR-ANCHOR-PLAN.md) and
+[PR274](https://github.com/uniblab/Icod.Expressions/pull/274).
+Build net8/net9/net10, execute net10 only on six native hosts. All seven
+inventories precede final qualification; final evidence/identities remain on
+the PR without source/docs edits after GREEN. #7/#102 remain open; Grep last;
+user owns merge/tags/package publication. Issue7 footer unchanged. Deferred
+[OffsetLimit research](PCRE-OFFSET-LIMIT-RESEARCH.md) adds no public API.
+
+
 ## PR273: complete range unions in UTF star classes
 
 Ordinary positive UTF classes whose retained ranges jointly cover the complete
