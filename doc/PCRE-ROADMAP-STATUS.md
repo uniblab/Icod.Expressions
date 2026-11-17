@@ -1139,3 +1139,16 @@ See the [design](PCRE-UTF-ANY-LIST-STAR-ANCHOR-DESIGN.md),
 [plan](PCRE-UTF-ANY-LIST-STAR-ANCHOR-PLAN.md) and
 [PR268](https://github.com/uniblab/Icod.Expressions/pull/268) for native,
 frozen-test, review and qualification evidence. #7/#102 stay open; Grep last.
+
+
+## PR270: positive Any in mixed UTF star classes
+
+Follow merged #269 with bounded positive Any dominance in ordinary UTF
+classes containing other properties or ranges. Add 620 tests (99,166 total).
+Main269 is green with its dedicated Gnulib host and eight-job completion guard;
+broader optimizer, API, release and consumer work remains open.
+
+See the [design](PCRE-UTF-ANY-MIXED-STAR-ANCHOR-DESIGN.md),
+[plan](PCRE-UTF-ANY-MIXED-STAR-ANCHOR-PLAN.md) and
+[PR270](https://github.com/uniblab/Icod.Expressions/pull/270) for native,
+frozen-test, review and qualification evidence. #7/#102 stay open; Grep last.

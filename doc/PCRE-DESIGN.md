@@ -3785,3 +3785,15 @@ See the [design](PCRE-UTF-ANY-LIST-STAR-ANCHOR-DESIGN.md),
 [plan](PCRE-UTF-ANY-LIST-STAR-ANCHOR-PLAN.md) and
 [PR268](https://github.com/uniblab/Icod.Expressions/pull/268) for native,
 frozen-test, review and qualification evidence. #7/#102 stay open; Grep last.
+
+
+## PR270: positive Any in mixed UTF star classes
+
+Positive Any now establishes native ALLANY star anchoring in an ordinary
+positive UTF class even with other properties or ranges. Preserve old fast
+paths; longer/range classes share the existing 4096-predicate proof budget.
+
+See the [design](PCRE-UTF-ANY-MIXED-STAR-ANCHOR-DESIGN.md),
+[plan](PCRE-UTF-ANY-MIXED-STAR-ANCHOR-PLAN.md) and
+[PR270](https://github.com/uniblab/Icod.Expressions/pull/270) for native,
+frozen-test, review and qualification evidence. #7/#102 stay open; Grep last.

@@ -4471,3 +4471,15 @@ See the [design](PCRE-UTF-ANY-LIST-STAR-ANCHOR-DESIGN.md),
 [plan](PCRE-UTF-ANY-LIST-STAR-ANCHOR-PLAN.md) and
 [PR268](https://github.com/uniblab/Icod.Expressions/pull/268) for native,
 frozen-test, review and qualification evidence. #7/#102 stay open; Grep last.
+
+
+## PR270: positive Any in mixed UTF star classes
+
+Pin 551 groups/65,782 native protocols, 15 diagnostics and 54 supplementary
+cases for positive Any in mixed UTF star classes: 620 new tests, 99,166 total.
+The corrected tests-only RED is 215 failures; all five new C# blobs are frozen.
+
+See the [design](PCRE-UTF-ANY-MIXED-STAR-ANCHOR-DESIGN.md),
+[plan](PCRE-UTF-ANY-MIXED-STAR-ANCHOR-PLAN.md) and
+[PR270](https://github.com/uniblab/Icod.Expressions/pull/270) for native,
+frozen-test, review and qualification evidence. #7/#102 stay open; Grep last.
