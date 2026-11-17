@@ -1,5 +1,32 @@
 # Recent UTF proof progress
 
+## PR272: explicit full-range members in UTF star classes
+
+An ordinary positive UTF class with multiple retained ranges now preserves
+native ALLANY star anchoring when an admitted member is exactly 0..0x10FFFF.
+For example, `[\x00-\x{10FFFF}x]*?B` preserves the native miss on tolerant
+UTF `éB` from byte offset1. The uncharged single-range path remains first.
+The new complete-list scan checks cancellation and charges every admitted
+member against an independent 4096-range budget shared across leading paths.
+Oversized lists are prechecked without partial charge; declined range proofs
+fall through to the existing Any/predicate rules and their original charges.
+Negative outer classes, near-full ranges and general coverage/algebra retain
+their existing rules. Instructions, runtime work, admission and public limits
+are unchanged.
+
+Native 455 matching groups/55,384 protocols, 15 diagnostics and 55 supplementary
+cases add 525 tests (100,340 total). Tests-only RED is exactly 152 failures/
+100,188 passes, with all 99,815 prior tests and 373 new controls passing;
+all four new C# blobs are frozen before production. Preserve 327 prior test
+files/322 C# sources/frozen35. Build net8/net9/net10; execute net10 only on six
+native hosts. Full qualification and source identities remain external on
+[PR272](https://github.com/uniblab/Icod.Expressions/pull/272).
+[Design](PCRE-UTF-FULLRANGE-MEMBER-STAR-ANCHOR-DESIGN.md) /
+[plan](PCRE-UTF-FULLRANGE-MEMBER-STAR-ANCHOR-PLAN.md).
+#7/#102 remain open; Grep last; user owns merge/tag/publication. Issue7's
+footer remains untouched under its existing publication block.
+
+
 Continues [issue102](https://github.com/uniblab/Icod.Expressions/issues/102).
 Its description reached GitHub's body limit. Earlier history remains there;
 this index preserves the recent links and gives subsequent tranches room to grow.
@@ -67,9 +94,10 @@ audit. A row is not a claim that an unreviewed PR is merged or release-ready.
 | [203](https://github.com/uniblab/Icod.Expressions/pull/203) | 888 | 40499 | Negated-range negative assertions: endpoint-implicit ranges and newline-admitting native controls |
 | [204](https://github.com/uniblab/Icod.Expressions/pull/204) | 2560 | 43059 | Negative scalar-class assertions: newline membership and Unicode predicate unions |
 | [205](https://github.com/uniblab/Icod.Expressions/pull/205) | 2720 | 45779 | Bounded regular negative assertion bodies: sequences, alternatives, groups and repeats |
+| [272](https://github.com/uniblab/Icod.Expressions/pull/272) | 525 | 100340 | Explicit full-range members in UTF star classes |
 
 Before a tranche is ready: six native OS/architecture Staging jobs, full suite
-and frozen214 on net8/9/10, no failed/skipped tests or compiler warnings/errors,
+and frozen214 on net10 only, builds for net8/net9/net10, no failed/skipped tests or compiler warnings/errors,
 all configured gates, seven equal component workloads, immutable tests and
 frozen35 source checks. Full source-pinned Compatibility has its own configured
 path gate; a skipped job is not a completed full qualification.
