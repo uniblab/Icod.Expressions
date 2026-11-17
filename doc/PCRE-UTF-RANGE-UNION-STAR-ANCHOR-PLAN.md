@@ -16,21 +16,22 @@ Grep last; issue7 footer unchanged under its existing publication block.
   plus6 COMMIT groups/12 checks and4 predicate-budget groups/12 checks.
 - [x] Publish tests-only draft; verify RED199/100,758/100,957 with all prior
   tests passing and no unrelated failure, then freeze all five new C# blobs.
-- [ ] Preserve those five blobs; publish the sixth file's four successful-old-
+- [x] Preserve those five blobs; publish the sixth file's four successful-old-
   predicate-charge controls, verify extended RED199/100,762/100,961 and freeze
   its Git blob before uploading any production change.
 
 ## Task2: coverage proof and review
 
-- [ ] Add only a compile-local shared4096 coverage counter and a bounded,
+- [x] Add only a compile-local shared4096 coverage counter and a bounded,
   cancellation-aware complete-pass frontier proof in PcreByteProgram.cs.
-- [ ] Keep old constant/member/predicate paths and charges, refuse explicit
+- [x] Keep old constant/member/predicate paths and charges, refuse explicit
   full-range members in the new proof, preserve exhaustion-as-fallback and
   retain old predicate visits even when coverage independently succeeds.
-- [ ] Review the whole branch against every design boundary; preserve old
+- [x] Review the whole branch against every design boundary; preserve old
   tests/source/frozen identities and pass local support/whitespace gates.
-- [ ] Update all seven inventories before final qualification and upload
-  the exact reviewed tree using a branch-head lease.
+- [x] Update all seven inventories before final qualification.
+- [ ] Upload the exact reviewed tree using a branch-head lease; record the
+  final source identity and Task3 completion externally on PR273.
 
 ## Task3: qualify and deliver
 
@@ -58,3 +59,15 @@ existing predicate-budget charges after successful coverage. The first five
 test files are unchanged. Production is restored to the tests-only base while
 extended RED runs; the independent coverage result must never bypass the old
 predicate scan. Extended corpus:621 new tests/100,961 total, same199 failures.
+
+Extended RED44134667566/Linux134221089886 confirms exactly199 identical failure
+identities/100,762 passes/zero skips or build warnings/errors. All four added
+controls pass. Freeze sixth blob605613a48c88816232a06cfbac6f8611067b84c4;
+all six C# files and all prior tests remain unchanged before production.
+
+Implementation review confirms allocation-free complete coverage passes,
+bounded progress/empty-list handling, independent budgets and full preservation
+of existing predicate visits when coverage succeeds. The pre-upload finding is
+resolved; no unresolved introduced finding remains. All seven inventories and
+local support gates precede final native qualification. No test changes follow
+the extended RED/freeze.

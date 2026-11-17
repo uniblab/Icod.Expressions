@@ -148,6 +148,55 @@ all199 existing managed failure identities and pass100,762 of100,961 tests.
 The unuploaded production sketch was saved and removed before this second
 tests-only checkpoint. Freeze the sixth blob after that result.
 
+## Extended RED and sixth-file freeze
+
+Extended tests-only head c0b452cdf81ddfbe39b0e5309812452d5b2c3e17, tree
+1bcc97374327d4b863536ac9a91f3e83b5472bf7, run44134667566/Linux x64
+job134221089886: exactly199 failures/100,762 passes/100,961 total, zero skips
+and zero compiler/analyzer warnings/errors. Failure identities are identical
+to the first RED. All four predicate-charge controls pass, every100,340 prior
+test and422 new controls pass, and all five previously frozen blobs match.
+No test-source correction was needed.
+
+Freeze before production: tests/Pcre/PcreUtfRangeUnionStarAnchorPredicateBudgetTests.cs
+is Git blob605613a48c88816232a06cfbac6f8611067b84c4. All six new C# files,
+all331 prior test files/326 C# sources and frozen35 are now frozen together.
+Production remains unchanged at this second checkpoint.
+
+## Implementation and whole-branch author review
+
+Only PcreByteProgram.cs changes production. A third local4096 counter is
+passed by reference into IsUtfAllAny. Direct Any, exact single-full-range and
+admitted explicit-full-member paths keep their early returns and old charges.
+HasUtfFullRangeUnion rejects empty lists, prechecks complete passes, checks
+cancellation/charges each member, tracks a monotone covered endpoint, rejects
+explicit full members before accepting coverage, and stops on no progress or
+budget exhaustion. The caller restricts this proof to positive ordinary
+classes with multiple ranges. Endpoints from canonical UTF parsing are bounded
+to0..0x10FFFF, so coveredEnd+1 cannot overflow.
+
+Coverage is held as a flag while the old predicate precheck/scan still runs.
+An exhausted old predicate precheck can return that independent flag; an
+admitted positive predicate scan returns hasPositive||hasFullRangeUnion after
+retaining every old visit. Negative paths and constant singleton/pair paths
+keep their existing results. This resolves the pre-upload charge review
+finding and passes the same source-level checks before qualification.
+
+Reviewed source/polarity/hole/surrogate/case boundaries; arbitrary ordering,
+overlap, bridges, complete scans/early coverage/no progress; single/shared and
+independent4096/4097 budgets; old-member refusal and every fallback; capture
+31/32 maps, global cuts/calls/targets and entry/AST limits; NoDot/COMMIT/start/
+possessification; exact work/limits, ownership/captures/marks, diagnostics,
+validation/cancellation and instruction/capture/depth capacities. No unresolved
+introduced review finding remains. All six new files and all prior tests are
+unchanged. Parser/AST/emitter/matcher/VM/API/dependencies/workflows remain fixed.
+
+All seven inventories and frozen-source/corpus/A05/classifier/main-job/
+whitespace checks precede final source qualification. Final source publication,
+GREEN, identities and ready readback complete the plan externally on PR273;
+no source/docs edits follow final GREEN. #7/#102 stay open, issue7's footer
+stays unchanged, and the user owns merge/tags/package publication.
+
 ## Review, qualification and delivery
 
 Review the whole branch inline against the range/source/polarity/hole/case
