@@ -1,5 +1,32 @@
 # PCRE syntax acceptance matrix
 
+## PR272: explicit full-range members in UTF star classes
+
+An ordinary positive UTF class with multiple retained ranges now preserves
+native ALLANY star anchoring when an admitted member is exactly 0..0x10FFFF.
+For example, `[\x00-\x{10FFFF}x]*?B` preserves the native miss on tolerant
+UTF `éB` from byte offset1. The uncharged single-range path remains first.
+The new complete-list scan checks cancellation and charges every admitted
+member against an independent 4096-range budget shared across leading paths.
+Oversized lists are prechecked without partial charge; declined range proofs
+fall through to the existing Any/predicate rules and their original charges.
+Negative outer classes, near-full ranges and general coverage/algebra retain
+their existing rules. Instructions, runtime work, admission and public limits
+are unchanged.
+
+Native 455 matching groups/55,384 protocols, 15 diagnostics and 55 supplementary
+cases add 525 tests (100,340 total). Tests-only RED is exactly 152 failures/
+100,188 passes, with all 99,815 prior tests and 373 new controls passing;
+all four new C# blobs are frozen before production. Preserve 327 prior test
+files/322 C# sources/frozen35. Build net8/net9/net10; execute net10 only on six
+native hosts. Full qualification and source identities remain external on
+[PR272](https://github.com/uniblab/Icod.Expressions/pull/272).
+[Design](PCRE-UTF-FULLRANGE-MEMBER-STAR-ANCHOR-DESIGN.md) /
+[plan](PCRE-UTF-FULLRANGE-MEMBER-STAR-ANCHOR-PLAN.md).
+#7/#102 remain open; Grep last; user owns merge/tag/publication. Issue7's
+footer remains untouched under its existing publication block.
+
+
 **Status:** issue #7 checkpoint against Grep's pinned PCRE.NET 1.6.0 /
 PCRE2 10.48 behavior. This is an internal engine inventory, not a public PCRE
 compatibility promise or authorization to migrate Grep.

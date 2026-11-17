@@ -7,22 +7,23 @@ Spec: [design](PCRE-UTF-FULLRANGE-MEMBER-STAR-ANCHOR-DESIGN.md).
 ## Task1: native fixtures and freeze
 
 - [x] Reproduce579 merged271 groups/69,072 protocols and native preflight.
-- [ ] Add literal native matching, diagnostic, ownership/work/capacity and
+- [x] Add literal native matching, diagnostic, ownership/work/capacity and
   range-count/shared-budget/fallback fixtures from the design.
-- [ ] Publish tests-only draft, verify exact RED with all prior tests passing,
+- [x] Publish tests-only draft, verify exact RED with all prior tests passing,
   freeze every new C# Git blob before production.
 
 ## Task2: bounded member proof and review
 
-- [ ] Extend only IsUtfAllAny/caller with an independent shared4096 range
+- [x] Extend only IsUtfAllAny/caller with an independent shared4096 range
   budget, complete prechecked scans/cancellation, and exact full-range member.
-- [ ] Preserve all old fast paths and predicate charges; declined/exhausted
+- [x] Preserve all old fast paths and predicate charges; declined/exhausted
   range proof falls through to the established Any/predicate proof.
-- [ ] Inline whole-branch review of source/polarity/range boundaries, case
+- [x] Inline whole-branch review of source/polarity/range boundaries, case
   closure, first/middle/last visits, shared4096/4097 and old-path fallback.
-- [ ] Preserve327 prior test files/322 C# sources/frozen35; frozen/corpus/A05/
-  classifier/main-job/whitespace gates and all seven inventories; publish
-  exact reviewed source using a branch-head lease.
+- [x] Preserve327 prior test files/322 C# sources/frozen35; frozen/corpus/A05/
+  classifier/main-job/whitespace gates and all seven inventories.
+- [ ] Publish exact reviewed source using a branch-head lease; record source
+  identity and final Task3 completion externally on PR272.
 
 ## Task3: qualify and deliver
 
@@ -45,3 +46,15 @@ Expected RED152:137 matching identities and15 supplementary failures
 1 independent-predicate budget,3 established paths after range exhaustion,
 1 oversized-list Any fallback). Expect100,188 passes: all99,815 prior tests
 and373 new controls. Freeze all four new C# blobs after exact RED.
+
+## Resumed implementation checkpoint
+
+Exact RED is confirmed on run44118987690/Linux134164806556. The design records
+all137 matching identities, all15 supplementary failure categories and the
+four frozen Git blobs before production. No fixture correction is required.
+The reviewed change adds only the shared range counter and full-list scan;
+old fast paths, predicate charges and fallback remain intact. All seven
+inventories precede qualification. Final publication/qualification/ready
+evidence completes the remaining checklist externally on PR272 so the tested
+source tree remains fixed. The workspace has no SDK; use native CI without
+local SDK installation. Issue7's existing footer publication block remains.

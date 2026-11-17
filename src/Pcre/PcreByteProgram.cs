@@ -236,6 +236,7 @@ internal sealed class PcreByteProgramCompiler {
 		entries.Push( root );
 		var entryVisits = 0;
 		var remainingPredicateVisits = MaximumInstructions;
+		var remainingRangeVisits = MaximumInstructions;
 		uint enclosingCaptures = 0;
 		while ( entries.TryPop( out var entry ) ) {
 			cancellationToken.ThrowIfCancellationRequested();
@@ -263,7 +264,7 @@ internal sealed class PcreByteProgramCompiler {
 				if ( star.Child is not PcreByteAny { DotAll: true }
 					&& !( !utf8 && star.Child is PcreByteClass { PrefixKind: PcreByteClassPrefix.Exact } bytes
 						&& bytes.Set == PcreByteSet.AllBytes )
-					&& !( utf8 && IsUtfAllAny( star.Child, ref remainingPredicateVisits, cancellationToken ) ) ) { return false; }
+					&& !( utf8 && IsUtfAllAny( star.Child, ref remainingPredicateVisits, ref remainingRangeVisits, cancellationToken ) ) ) { return false; }
 			}
 		}
 		// Every leading path must pass the global native reference map, so
@@ -338,7 +339,7 @@ internal sealed class PcreByteProgramCompiler {
 		}
 	}
 
-	private static bool IsUtfAllAny( PcreByteNode node, ref int remainingPredicateVisits, CancellationToken cancellationToken ) {
+	private static bool IsUtfAllAny( PcreByteNode node, ref int remainingPredicateVisits, ref int remainingRangeVisits, CancellationToken cancellationToken ) {
 		// Native positive PT_ANY atoms lower to ALLANY.
 		if ( node is PcreByteScalarClass { Kind: PcreByteScalarClassKind.AnyScalar,
 			Negated: false, Category: null, PropertyValue: 0 } ) { return true; }
@@ -347,6 +348,17 @@ internal sealed class PcreByteProgramCompiler {
 		// other union predicates cannot remove any members from it.
 		if ( !set.Negated && set.Ranges.Length == 1
 			&& set.Ranges.Span[0] is { Start: 0, End: 0x10FFFF } ) { return true; }
+		// Precheck and scan the complete list, even after finding a full range.
+		// A declined range proof still permits the established predicate proof.
+		if ( !set.Negated && set.Ranges.Length > 1 && set.Ranges.Length <= remainingRangeVisits ) {
+			var hasFullRange = false;
+			foreach ( var range in set.Ranges.Span ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				remainingRangeVisits--;
+				hasFullRange |= range is { Start: 0, End: 0x10FFFF };
+			}
+			if ( hasFullRange ) { return true; }
+		}
 		if ( set.Negated && !set.Ranges.IsEmpty ) { return false; }
 		if ( !set.Ranges.IsEmpty || set.Predicates.Length > 2 ) {
 			// Share bounded compile work across leading paths. Positive Any

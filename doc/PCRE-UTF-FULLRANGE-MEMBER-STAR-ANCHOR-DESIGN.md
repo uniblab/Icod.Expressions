@@ -77,3 +77,62 @@ Expected RED152:137 matching identities and15 supplementary failures
 1 independent-predicate budget,3 established paths after range exhaustion,
 1 oversized-list Any fallback). Expect100,188 passes: all99,815 prior tests
 and373 new controls. Freeze all four new C# blobs after exact RED.
+
+## Observed RED and frozen tests
+
+Tests-only head956c9f129a5d482c97a1cf7497014ddca7d0b2c6,
+tree dae67e696f68d4800cf30cce6cf2dee7d1a6fd5a, proposed merge
+69183a85ee67f44a726b37d7a13a916c0b5fb954. Run44118987690/Linux x64
+job134164806556 reports exactly152 failures/100,188 passes/100,340 total,
+zero skips and zero compiler/analyzer warnings/errors. All137 matching
+identities and15 supplementary failures match the expected categories;
+every failure belongs to the new reference class. All99,815 prior tests and
+373 new controls pass. No fixture correction is needed.
+
+Freeze before production; paths are under tests/Pcre/:
+
+| File | Git blob |
+| --- | --- |
+| PcreUtfFullRangeMemberStarAnchorProtocols1.cs | ea3da1af8d8731f65785faf121b90f8f9e2a0c43 |
+| PcreUtfFullRangeMemberStarAnchorProtocols2.cs | 28d25956458bd091076bb1cb7efbcb166e65d571 |
+| PcreUtfFullRangeMemberStarAnchorProtocols3.cs | 5b112712b48fb832b9b8214e893c00e2c4745868 |
+| PcreUtfFullRangeMemberStarAnchorReferenceTests.cs | 9f0aa7ed94301a0d3739a18af4d2fe500e76d2fc |
+
+All327 prior test files/322 C# sources and frozen35 match the base. Local
+frozen-source/corpus/A05/classifier/main-job checks pass before production.
+No local SDK is present; final compilation and execution use the configured
+native CI hosts without installing an SDK in this workspace.
+
+The137 matching failure profile IDs are:
+7,8,19,20,34,35,46,47,61,62,73,74,83,85,87,89,91,93,95,101,107,117,118,123,124,125,129,130,138,145,146,152,153,154,155,160,161,163,167,169,171,173,175,177,179,181,183,185,187,189,191,193,195,197,199,201,203,205,207,209,211,213,215,217,219,221,223,225,227,229,231,233,235,237,239,241,243,245,247,249,251,253,255,257,259,261,263,265,267,269,271,273,275,277,279,281,283,285,287,289,291,293,295,297,299,301,303,305,307,309,311,312,314,316,318,320,322,324,326,328,330,332,334,336,338,340,342,344,346,348,350,353,355,357,359,365,367.
+
+## Implementation review before final qualification
+
+Only PcreByteProgram.cs changes production behavior. HasLeadingDotStarAnchor
+creates a second compile-local counter initialized to MaximumInstructions and
+passes it by reference alongside the unchanged predicate counter. IsUtfAllAny
+retains its direct Any and uncharged exact-single-full-range paths first.
+Only positive ordinary Class sets with more than one range and an affordable
+complete list enter the new scan. Each visit checks cancellation and decrements
+the range counter; an exact full-range member sets a flag without ending the
+scan. A successful complete scan returns true; every declined or unsuccessful
+scan continues through the existing predicate rules without changing their
+charges. No negative-outer list is scanned. Both counters stay nonnegative;
+oversized lists consume no partial range budget.
+
+Whole-branch author review covers first/middle/last members, duplicate and
+overlapping ranges, near-full/negative/source/algebra boundaries and casing;
+single/shared4096/4097 visits, independent predicate exhaustion, complete scans
+and positive-Any fallback; capture31/32 dependency maps, global cuts/calls/
+targets and entry/AST limits; NoDot/COMMIT/start/possessification policies;
+exact work/budgets, owned slices/captures/marks, validation/cancellation,
+diagnostics, instruction4090/4091 and capture/depth256 capacities. Existing
+parser/AST/emitter/matcher/VM/API/dependencies/workflows and every prior test
+remain unchanged. No introduced unresolved review findings.
+
+All seven inventories are updated before final qualification. Final native
+GREEN, exact reviewed source/base/tree/proposed-merge identities, support-gate
+results and ready readback belong on PR272; Task3 completion is recorded there
+without a documentation-only CI repeat. #7/#102 remain open and issue7's footer
+stays untouched. The six full suites, frozen214 outcomes/120 methods and all
+three library targets remain mandatory before ready status.
