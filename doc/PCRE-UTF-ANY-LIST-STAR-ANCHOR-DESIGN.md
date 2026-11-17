@@ -75,3 +75,47 @@ study disabled, ordinary valid-subject no-match work must equal explicit
 NoDotStarAnchor fallback, with exact/exhausted/observed-unobserved budgets.
 This catches an erroneous per-list reset of the shared proof budget.
 Production remains unchanged; confirm the updated tests-only RED before freeze.
+
+## Frozen RED and implementation review
+
+Tests-only head 7b7ef49672bc90703e21a75d1ac1694571324878, tree
+be40721b647b534254e37b0706cc664ab0badacc, proposed merge
+a6cf6bac9ec986356fe21d14afc04025650fa3eb. Native run43983371169,
+Linux x64 job133705412667: exactly117 failures/98,429 passes/98,546 total,
+zero skips/compiler or analyzer warning/error codes. All107 matching profile
+identities and10 resource/ownership/boundary failures match the native-first
+expectation. All98,091 prior tests and338 new controls pass. Freeze before
+production:
+
+- tests/Pcre/PcreUtfAnyListStarAnchorProtocols1.cs: b1c79fa002e866cca325602a116550dfa9e33480
+- tests/Pcre/PcreUtfAnyListStarAnchorProtocols2.cs: 86bb2851fd1595a2235f554e272220ef45c2fa15
+- tests/Pcre/PcreUtfAnyListStarAnchorProtocols3.cs: 5f1821c33a516c840e3ef024c276ced03bdb8190
+- tests/Pcre/PcreUtfAnyListStarAnchorReferenceTests.cs: 68d79ff761a94b2f85fc3277367cac754b051b79
+
+PcreByteProgram.cs is the sole production change. The new local4096 predicate
+budget is shared across leading paths and passed by ref with cancellation.
+The longer-list branch requires ordinary Class provenance, no ranges, exact
+Any metadata for every visited member, and enough remaining visits before
+scanning. Every scan checks cancellation/charges one compile visit. The final
+positive-member aggregate implements both outer-negation cases. A late mixed
+member declines proof even after an earlier positive member. Existing direct,
+full-range, singleton, pair/complement paths remain unchanged and uncharged.
+Exhaustion returns false without admission error or new public quota.
+
+Inline author review: entry/global-AST bounds, capture31/32 map, all cuts/calls,
+target and NoDot/COMMIT/start/possessification gates remain intact. No parser,
+AST, matcher, VM, API, dependency, workflow, runtime allocation/state/work
+charge or class instruction changes. Prior tests and frozen35 stay identical.
+The new aggregate-exhaustion work test detects a per-list budget reset.
+Final source qualification remains pending; retain its evidence externally.
+
+Local prequalification gates pass: frozen35 source, frozen corpus, A05 candidate,
+CI classifier, complete main jobs/eight rejection cases, whitespace, prior313
+test identities and all four new frozen C# blobs. Inline author review found
+no outstanding defect. All seven inventories updated before source qualification.
+
+Publication status: automatic approval review blocked the large shared design
+inventory payload as potentially non-public disclosure. Preserve the exact
+five-inventory addition patch locally; publish code and these own-scope records
+for unaffected qualification. Final delivery waits for explicit approval of
+that exact patch and fresh qualification of its resulting head.
