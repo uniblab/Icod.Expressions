@@ -240,6 +240,7 @@ internal sealed class PcreByteProgramCompiler {
 		var remainingRangeUnionVisits = MaximumInstructions;
 		var remainingAsciiRangeVisits = MaximumInstructions;
 		var remainingPosixAsciiVisits = MaximumInstructions;
+		var remainingMixedAsciiVisits = MaximumInstructions;
 		uint enclosingCaptures = 0;
 		while ( entries.TryPop( out var entry ) ) {
 			cancellationToken.ThrowIfCancellationRequested();
@@ -269,7 +270,7 @@ internal sealed class PcreByteProgramCompiler {
 						&& bytes.Set == PcreByteSet.AllBytes )
 					&& !( utf8 && IsUtfAllAny( star.Child, ref remainingPredicateVisits, ref remainingRangeVisits,
 						ref remainingRangeUnionVisits, ref remainingAsciiRangeVisits, ref remainingPosixAsciiVisits,
-						cancellationToken ) ) ) { return false; }
+						ref remainingMixedAsciiVisits, cancellationToken ) ) ) { return false; }
 			}
 		}
 		// Every leading path must pass the global native reference map, so
@@ -342,6 +343,16 @@ internal sealed class PcreByteProgramCompiler {
 			}
 			return true;
 		}
+	}
+
+	private static bool IsUtfAllAny( PcreByteNode node, ref int remainingPredicateVisits, ref int remainingRangeVisits,
+		ref int remainingRangeUnionVisits, ref int remainingAsciiRangeVisits, ref int remainingPosixAsciiVisits,
+		ref int remainingMixedAsciiVisits, CancellationToken cancellationToken ) {
+		if ( IsUtfAllAny( node, ref remainingPredicateVisits, ref remainingRangeVisits,
+			ref remainingRangeUnionVisits, ref remainingAsciiRangeVisits, ref remainingPosixAsciiVisits,
+			cancellationToken ) ) { return true; }
+		return node is PcreByteScalarSet { Source: PcreByteScalarSetSource.Class, Negated: false } set
+			&& HasUtfMixedAsciiPair( set, ref remainingMixedAsciiVisits, cancellationToken );
 	}
 
 	private static bool IsUtfAllAny( PcreByteNode node, ref int remainingPredicateVisits, ref int remainingRangeVisits,
@@ -516,6 +527,24 @@ internal sealed class PcreByteProgramCompiler {
 			if ( coveredEnd == previousEnd ) { return false; }
 		}
 		return false;
+	}
+
+	private static bool HasUtfMixedAsciiPair( PcreByteScalarSet set,
+		ref int remainingVisits, CancellationToken cancellationToken ) {
+		if ( set.Predicates.IsEmpty || set.Predicates.Length > remainingVisits ) { return false; }
+		if ( !PcreUnicodeProperties.TryGetBinary( "ASCII", out var asciiProperty ) ) { return false; }
+		var hasBinaryAscii = false;
+		var hasNegativeAscii = false;
+		foreach ( var predicate in set.Predicates.Span ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			remainingVisits--;
+			hasBinaryAscii |= predicate is { Kind: PcreByteScalarClassKind.BinaryProperty,
+				Negated: false, Category: null } && predicate.PropertyValue == asciiProperty;
+			hasNegativeAscii |= predicate is { Kind: PcreByteScalarClassKind.Ascii,
+				Negated: true, Category: null, PropertyValue: 0 };
+		}
+		// The mixed pair is universal independently of every literal range.
+		return hasBinaryAscii && hasNegativeAscii;
 	}
 
 	private void ValidateSurrogateLiteralProgram() {

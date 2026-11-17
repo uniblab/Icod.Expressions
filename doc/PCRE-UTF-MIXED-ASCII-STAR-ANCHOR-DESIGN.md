@@ -82,6 +82,41 @@ All101,959 old tests and323 new controls must pass. Reconcile exact identities
 and freeze all five new C# blobs before production; native assertions precede
 managed comparison. Never edit existing test expectations.
 
+## Observed RED and pre-production freeze
+
+Tests-only head3c2c0705e957d1294cc986d2e9181b9fa8c605b5,
+tree297ae31dd9f27c096585bb97a47eeba55ecf75cc, proposed merge
+fce9b125fa5f5efda651f1186c7831ca379d9383 has ordered base/source parents
+and an identical tree. Run44202431085/Linux x64 job134459671708 confirms
+109 failures/102,282 passes/102,391 total, zero skips/compiler warnings/errors.
+All79 matching and30 supplementary identities match. Every failure is in the
+new reference class; none has an AssertNative frame. All101,959 old tests
+and323 new controls pass.
+
+Matching IDs:
+3/5/7/11/13/17/19/21/25/27/31/33/35/39/41/45/47/49/53/55
+59/61/63/67/69/73/75/77/81/83/87/89/91/95/97/101/103/105/109/111
+115/117/119/123/125/129/131/133/137/139/143/145/147/151/153/157/159/161/165/167
+265/269/275/277/279/281/282/291/299/301/303/305/307/309/311/313/315/317/319
+
+Freeze all five Git blobs before production:
+
+- PcreUtfMixedAsciiStarAnchorProtocols1.cs 65cd6dec5dccdd07d5fda591eac7e039081e4a0a
+- PcreUtfMixedAsciiStarAnchorProtocols2.cs 9a26aaa746745de10a31f091424408d5109baeb8
+- PcreUtfMixedAsciiStarAnchorProtocols3.cs 7d5a83cfd210669ba8c0af5ec9fda543f384fc26
+- PcreUtfMixedAsciiStarAnchorProtocols4.cs 0d49f56a79e67c433ac17aa56406d8ac824be4fe
+- PcreUtfMixedAsciiStarAnchorReferenceTests.cs 20e74f1d0f56ce20ddd2b15c34e932cabe9677e4
+
+All347 prior test files/342 C# sources/frozen35 remain unchanged. No test
+edits follow this checkpoint. Expected GREEN total remains102,391.
+
+Strict research exclusions before matching:1008 malformed-whole-subject rows
+and864 split offsets. Whole-branch author review verifies exact polarity and
+catalogue identity, unchanged established overload/helper bodies and charges,
+complete cancellation-aware scans and literal-range independence. No
+unresolved introduced finding remains. All seven inventories and local
+support gates precede the final qualification.
+
 ## Delivery gate
 
 Whole-branch author review, old/frozen identity checks, local support gates and
