@@ -1129,3 +1129,13 @@ final qualification. Six native net10 suites/all three library targets/support
 gates remain required; final evidence/identities belong on
 [PR267](https://github.com/uniblab/Icod.Expressions/pull/267) and issue7 footer.
 No documentation-only repeat after final GREEN. #7/#102 stay open; Grep last.
+
+
+## PR268: bounded UTF Any-only list star anchoring
+
+Continue merged #267 with bounded UTF Any-only list star anchoring. Preserve existing fast paths and admission. The suite adds 455 tests, reaching 98,546; optimizer compatibility and broader delivery work remain open.
+
+See the [design](PCRE-UTF-ANY-LIST-STAR-ANCHOR-DESIGN.md),
+[plan](PCRE-UTF-ANY-LIST-STAR-ANCHOR-PLAN.md) and
+[PR268](https://github.com/uniblab/Icod.Expressions/pull/268) for native,
+frozen-test, review and qualification evidence. #7/#102 stay open; Grep last.
