@@ -195,8 +195,17 @@ jobs:
       - name: Run source-pinned consumer binaries across platforms with scratch bridge
         shell: pwsh
         run: ./tools/ConsumerBridgeProbe/run-cross-platform.ps1 -PackageFeed artifacts
+
+  gnulib_oracle:
+    needs: classify
+    if: needs.classify.outputs.full_compatibility == 'true'
+    name: Pinned Gnulib oracle
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify frozen oracle and A05 identities
+        run: sh tools/verify-a05-candidate.sh
       - name: Run pinned Gnulib included regex oracle
-        if: matrix.os == 'ubuntu-latest'
         run: sh tools/GnulibRegexOracle/run.sh
 
   macos_x64_tests:
