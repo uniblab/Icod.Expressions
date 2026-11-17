@@ -343,8 +343,9 @@ internal sealed class PcreByteProgramCompiler {
 		if ( node is PcreByteScalarClass { Kind: PcreByteScalarClassKind.AnyScalar,
 			Negated: false, Category: null, PropertyValue: 0 } ) { return true; }
 		if ( node is not PcreByteScalarSet { Source: PcreByteScalarSetSource.Class } set ) { return false; }
-		// Native fills the byte bitmap and higher characters for this exact range.
-		if ( !set.Negated && set.Predicates.IsEmpty && set.Ranges.Length == 1
+		// Native fills the byte bitmap and higher characters for this exact range;
+		// other union predicates cannot remove any members from it.
+		if ( !set.Negated && set.Ranges.Length == 1
 			&& set.Ranges.Span[0] is { Start: 0, End: 0x10FFFF } ) { return true; }
 		if ( set.Negated && !set.Ranges.IsEmpty ) { return false; }
 		if ( !set.Ranges.IsEmpty || set.Predicates.Length > 2 ) {
