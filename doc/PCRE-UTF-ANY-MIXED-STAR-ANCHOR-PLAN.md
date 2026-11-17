@@ -75,3 +75,16 @@ to actual base b595a96ba1bc842fcbdadab4f2b45efdaa5bd46e before freezing.
 Main now requires eight successful jobs; the shell guard has13 rejection cases.
 Issue7 footer publication remains blocked without explicit approval; leave it
 untouched and keep qualification evidence on the PR.
+
+## Pre-freeze diagnostic correction
+
+Initial tests-only head a9f20cc7fc0b5a497794a5da2df73f79285d38b8,
+run44091436736/Linux134067259346:218 failures/98,948 passes/99,166 total,
+zero skips/compiler or analyzer warnings/errors. All203 matching failure
+identities matched the native-first expectation; all98,546 prior tests pass.
+Three extra failures are fixture errors in diagnostic5/10/15: I selected the
+preceding B atom instead of the opening quantifier brace. The frozen prior
+fixtures independently pin the quantifier opener. Correct only those three
+managed expected offsets (13→14,27→28,27→28); native codes/offsets and all
+matching/resource expectations stay unchanged. Production remains unchanged.
+Observe corrected RED215/98,951/99,166 before freezing all five C# blobs.
