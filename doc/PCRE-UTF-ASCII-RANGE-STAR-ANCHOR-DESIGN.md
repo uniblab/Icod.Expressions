@@ -41,7 +41,9 @@ range/predicate lists are nonempty. Before scanning, precheck the complete
 predicate list plus first range pass using subtraction to avoid overflow.
 An oversized first combined list consumes no partial budget. Visit every
 admitted predicate with cancellation and one charge; identify only exact
-positive Ascii/Category:null/PropertyValue:0. If absent, keep old fallback.
+positive BinaryProperty/Category:null with the ASCII ID resolved from the
+pinned catalogue. POSIX Ascii is a separate node and is not added here.
+If the positive binary property is absent, keep old fallback.
 
 Start coveredEnd=127. Precheck each whole range pass, then visit every member
 with cancellation and one charge, extending when Start<=coveredEnd+1.
@@ -104,6 +106,14 @@ Freeze these Git blobs before production:
 All337 prior test files/332 C# sources and frozen35 are unchanged. No test
 edits follow this checkpoint. Additional deferred OffsetLimit research is
 preserved in [its own note](PCRE-OFFSET-LIMIT-RESEARCH.md); no API is added.
+
+The first source run44157731557/Linux x64 job134302896303 still reports the
+same68 failures/101,166 passes/zero skips or compiler warnings/errors. The
+first implementation mistakenly tested the POSIX Ascii node; ParseUnicodeProperty
+uses BinaryProperty with an ID from PcreUnicodeProperties instead. Correct
+only that identity lookup in the admitted predicate scan, preserving budgets
+and all frozen tests. The name resolves through the pinned catalogue rather
+than a hard-coded numeric ID; no parser/catalogue or POSIX scope change.
 
 ## Delivery gate
 

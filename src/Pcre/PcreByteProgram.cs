@@ -443,12 +443,13 @@ internal sealed class PcreByteProgramCompiler {
 		if ( set.Ranges.IsEmpty || set.Predicates.IsEmpty
 			|| set.Predicates.Length > remainingVisits
 			|| set.Ranges.Length > remainingVisits - set.Predicates.Length ) { return false; }
+		if ( !PcreUnicodeProperties.TryGetBinary( "ASCII", out var asciiProperty ) ) { return false; }
 		var hasAscii = false;
 		foreach ( var predicate in set.Predicates.Span ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			remainingVisits--;
-			hasAscii |= predicate is { Kind: PcreByteScalarClassKind.Ascii,
-				Negated: false, Category: null, PropertyValue: 0 };
+			hasAscii |= predicate is { Kind: PcreByteScalarClassKind.BinaryProperty,
+				Negated: false, Category: null } && predicate.PropertyValue == asciiProperty;
 		}
 		if ( !hasAscii ) { return false; }
 		var coveredEnd = 127;

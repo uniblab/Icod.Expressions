@@ -44,3 +44,9 @@ empty/no-progress termination, source ownership and all old proof charges.
 No unresolved introduced finding remains. Local A05/classifier/main-job and
 whitespace gates pass. All seven inventories precede final qualification;
 no tests changed after RED.
+
+First source run44157731557/Linux x64 job134302896303 retained the exact68
+RED identities. Review traced the mismatch to POSIX Ascii versus the binary
+ASCII property node emitted by ParseUnicodeProperty. Correct the compiler's
+predicate identity via the pinned catalogue lookup; preserve scan costs,
+source scope and all frozen tests. Fresh qualification follows the correction.
