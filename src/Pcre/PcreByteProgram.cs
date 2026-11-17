@@ -239,6 +239,7 @@ internal sealed class PcreByteProgramCompiler {
 		var remainingRangeVisits = MaximumInstructions;
 		var remainingRangeUnionVisits = MaximumInstructions;
 		var remainingAsciiRangeVisits = MaximumInstructions;
+		var remainingPosixAsciiVisits = MaximumInstructions;
 		uint enclosingCaptures = 0;
 		while ( entries.TryPop( out var entry ) ) {
 			cancellationToken.ThrowIfCancellationRequested();
@@ -267,7 +268,8 @@ internal sealed class PcreByteProgramCompiler {
 					&& !( !utf8 && star.Child is PcreByteClass { PrefixKind: PcreByteClassPrefix.Exact } bytes
 						&& bytes.Set == PcreByteSet.AllBytes )
 					&& !( utf8 && IsUtfAllAny( star.Child, ref remainingPredicateVisits, ref remainingRangeVisits,
-						ref remainingRangeUnionVisits, ref remainingAsciiRangeVisits, cancellationToken ) ) ) { return false; }
+						ref remainingRangeUnionVisits, ref remainingAsciiRangeVisits, ref remainingPosixAsciiVisits,
+						cancellationToken ) ) ) { return false; }
 			}
 		}
 		// Every leading path must pass the global native reference map, so
@@ -340,6 +342,16 @@ internal sealed class PcreByteProgramCompiler {
 			}
 			return true;
 		}
+	}
+
+	private static bool IsUtfAllAny( PcreByteNode node, ref int remainingPredicateVisits, ref int remainingRangeVisits,
+		ref int remainingRangeUnionVisits, ref int remainingAsciiRangeVisits, ref int remainingPosixAsciiVisits,
+		CancellationToken cancellationToken ) {
+		// Preserve every established proof and its charges before POSIX ASCII.
+		if ( IsUtfAllAny( node, ref remainingPredicateVisits, ref remainingRangeVisits,
+			ref remainingRangeUnionVisits, ref remainingAsciiRangeVisits, cancellationToken ) ) { return true; }
+		return node is PcreByteScalarSet { Source: PcreByteScalarSetSource.Class, Negated: false } set
+			&& HasUtfPosixAsciiUnion( set, ref remainingPosixAsciiVisits, cancellationToken );
 	}
 
 	private static bool IsUtfAllAny( PcreByteNode node, ref int remainingPredicateVisits, ref int remainingRangeVisits,
@@ -465,6 +477,42 @@ internal sealed class PcreByteProgramCompiler {
 			// Low ranges retain the established literal-union proof's budget.
 			if ( hasLowRange ) { return false; }
 			if ( coveredEnd == 0x10FFFF ) { return true; }
+			if ( coveredEnd == previousEnd ) { return false; }
+		}
+		return false;
+	}
+
+	private static bool HasUtfPosixAsciiUnion( PcreByteScalarSet set,
+		ref int remainingVisits, CancellationToken cancellationToken ) {
+		if ( set.Predicates.IsEmpty || set.Predicates.Length > remainingVisits
+			|| set.Ranges.Length > remainingVisits - set.Predicates.Length ) { return false; }
+		var hasPositive = false;
+		var hasNegative = false;
+		foreach ( var predicate in set.Predicates.Span ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			remainingVisits--;
+			if ( predicate is not { Kind: PcreByteScalarClassKind.Ascii, Category: null, PropertyValue: 0 } ) { continue; }
+			hasPositive |= !predicate.Negated;
+			hasNegative |= predicate.Negated;
+		}
+		if ( !hasPositive && !hasNegative ) { return false; }
+		if ( set.Ranges.IsEmpty ) { return hasPositive && hasNegative; }
+		var coveredEnd = hasPositive ? 127 : -1;
+		var requiredEnd = hasNegative ? 127 : 0x10FFFF;
+		while ( set.Ranges.Length <= remainingVisits ) {
+			var previousEnd = coveredEnd;
+			var hasOutsideRange = false;
+			foreach ( var range in set.Ranges.Span ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				remainingVisits--;
+				hasOutsideRange |= hasPositive ? range.Start < 128 : range.End > 127;
+				if ( range.Start <= coveredEnd + 1 ) { coveredEnd = Math.Max( coveredEnd, range.End ); }
+			}
+			// A complement pair is universal independently of its literal ranges.
+			if ( hasPositive && hasNegative ) { return true; }
+			// One-sided ranges retain their established source-domain budgets.
+			if ( hasOutsideRange ) { return false; }
+			if ( coveredEnd == requiredEnd ) { return true; }
 			if ( coveredEnd == previousEnd ) { return false; }
 		}
 		return false;

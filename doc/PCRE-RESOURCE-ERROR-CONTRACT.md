@@ -1,5 +1,37 @@
 # PCRE error and resource contract checkpoint
 
+## PR275: POSIX ASCII unions in UTF star classes
+
+Positive ordinary UTF classes preserve native ALLANY star entry for POSIX
+ASCII complement pairs, positive ASCII plus128..0x10FFFF literal coverage,
+and negated ASCII plus0..127 coverage. Exact POSIX Ascii nodes remain distinct
+from binary ASCII properties, whose semantically equivalent unions can retain
+XCLASS provenance. Mixed-source and case-closed one-sided cohorts remain
+separate valid-aligned controls without raw split/malformed parity claims.
+
+A fifth independent compile-local4096 counter bounds complete predicate and
+range passes across leading paths. An overload invokes the unchanged four-
+counter proof first and returns its success, preserving every existing path
+and charge without consuming new work. Only old failures attempt the positive
+Source:Class POSIX proof. Whole-list prechecks, per-visit cancellation, complete
+scans past early pairs/coverage and no-progress/exhaustion fallback remain.
+One-sided source-domain guards preserve older literal-union budget ownership.
+Instructions, runtime state/work, admission and public limits are unchanged.
+
+506 matching groups/30,390 native protocols,45 diagnostics and174 supplementary
+cases add725 tests (101,959 total). Tests-only RED exactly173 failures/101,786
+passes, with all101,234 old tests and552 new controls passing. Seven new C#
+blobs are frozen before production;340 prior test files/335 C# sources and
+frozen35 are unchanged. Native-first evidence, source guards and review gates
+are in the [design](PCRE-UTF-POSIX-ASCII-STAR-ANCHOR-DESIGN.md),
+[plan](PCRE-UTF-POSIX-ASCII-STAR-ANCHOR-PLAN.md) and
+[PR275](https://github.com/uniblab/Icod.Expressions/pull/275).
+Build net8/net9/net10, execute net10 only on six native hosts. All seven
+inventories precede final qualification; final identities/evidence stay on the
+PR without source/docs edits after GREEN. #7/#102 remain open; Grep last;
+user owns merge/tags/package publication. Issue7 footer unchanged.
+
+
 ## PR274: ASCII plus high ranges in UTF star classes
 
 Positive ordinary UTF classes with an exact positive ASCII predicate and
