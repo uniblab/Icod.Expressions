@@ -53,9 +53,13 @@ was otherwise established. This prevents the new budget from rescuing an
 exhausted old member proof and preserves every frozen272 boundary/work case.
 Old successful member/constant paths return before coverage is attempted.
 
-Every unsuccessful, declined or exhausted coverage proof continues to the
-established Any/predicate inference. Neither old counter is charged by these
-additional passes. Preserve source/outer-negation/exact endpoint guards,
+Compute coverage as an additional result without bypassing established
+Any/predicate prechecks or visits. Even a successful coverage proof must keep
+the original predicate charges when positive Any already established the old
+proof. An exhausted predicate budget may still use independent range coverage;
+a later predicate-only class retains its original exhausted-budget fallback.
+Every unsuccessful or declined coverage proof keeps the old result. Neither
+old counter is charged by these additional passes. Preserve source/outer-negation/exact endpoint guards,
 casing closure, entry/global-AST bounds, capture31/32 maps, cuts/calls/targets,
 NoDot/COMMIT/start/possessification and all validation/cancellation priorities.
 No parser, AST, VM, API, dependencies, workflows, syntax admission, instructions,
@@ -63,8 +67,8 @@ runtime allocation/state/work charge or public limit changes.
 
 ## Native-first fixtures and expected RED
 
-530 matching groups /29,225 protocols,15 diagnostics and72 supplementary
-cases add617 tests, reaching100,957. The new fixtures vary complete/reordered/
+530 matching groups /29,225 protocols,15 diagnostics and76 supplementary
+cases add621 tests, reaching100,961. The new fixtures vary complete/reordered/
 overlapping/bridged unions, properties, casing/UCP/scopes, stars/captures/
 references/cuts/targets/policies/marks and owned sources. Exclude5,225 strict
 research rows before native matching:2,926 malformed-whole-subject rows and
@@ -81,14 +85,68 @@ claiming malformed-UTF inference parity. Include exact observed/unobserved
 work limits, cancellation, diagnostics, instruction4090/4091, capture/depth256
 and erased/global-AST fallback.
 
-Expected tests-only RED:196 failures /100,761 passes /100,957 total, zero skips.
-173 matching identities differ from native disabled-anchor behavior without an
-old Any/caseless fast path. Add23 supplementary failures:8 work,2 ownership,
+Expected extended tests-only RED:199 failures /100,762 passes /100,961 total, zero skips.
+176 matching identities require the new proof, including three COMMIT entry
+cases that do not differ under the native disabled-anchor comparison. The
+initial196 prediction omitted these three, without changing any fixture.
+Add23 supplementary failures:8 work,2 ownership,
 2 coverage boundaries,1 shared boundary,1 member-budget independence-of-passes,
 1 exhausted-member independence,1 exhausted-predicate independence,5 old-path
 fallback cases,1 oversized-list fallback and1 no-progress budget boundary.
-All100,340 prior tests and421 new controls must pass. Check exact identities
-and freeze all five new C# Git blobs before production; do not edit prior tests.
+All100,340 prior tests and422 new controls must pass. Check exact identities
+and freeze all six new C# Git blobs before production; do not edit prior tests.
+
+## Observed RED and pre-production freeze
+
+Tests-only head2e9828fb4f0d530cf8fa7af7c4bbb5a5b511652e, tree
+81d5e229c5ba29477bfaab38f307b2f0f363faf7, proposed merge
+c59e47e0b18884b5277c656f390027e89750e1b2. Run44132407409, Linux x64
+job134212743286:199 failures/100,758 passes/100,957 total, zero skips and
+zero compiler/analyzer warnings/errors. Every failure is in the new reference
+class; none has a native-assertion stack frame. All23 supplementary identities
+match the prediction. All100,340 prior tests and418 new controls pass.
+
+The three additional matching IDs101/125/138 are lazy-star COMMIT suffixes.
+Native prevents retry from a split UTF offset even when NoDotStarAnchor is
+enabled. The existing bounded dot-star entry proof also preserves the
+zero-consumption COMMIT attempt at the requested byte; the new range-union
+proof must feed that same existing metadata. Six explicit native compilations
+/12 literal checks confirm the split miss and aligned2:1 match under both
+policies. This changes the predicted failure inventory, not test expectations
+or production scope. The full matching failure IDs are:
+7,8,19,20,34,35,46,47,61,62,73,74,83,85,87,89,91,93,95,101,107,117,118,123,124,125,129,130,138,145,146,152,153,154,155,160,161,167,169,171,173,175,177,179,181,183,185,187,189,191,193,195,197,199,201,203,205,207,209,211,213,215,217,219,221,223,225,227,229,231,233,235,237,239,241,243,245,247,249,251,253,255,257,259,261,263,265,267,269,271,273,275,277,279,281,283,285,287,289,291,293,295,297,299,301,303,305,307,309,311,312,314,316,318,320,322,324,326,328,330,332,334,336,338,340,342,344,346,348,350,353,355,357,359,365,367,413,415,417,419,1002,1004,1006,1010,1012,1014,1018,1020,1022,1026,1028,1030,1034,1036,1038,1042,1044,1046,1050,1052,1054,1058,1060,1062,1114,1116,1118,1122,1124,1126,1130,1132,1134,1138,1140,1142.
+
+Freeze these five Git blobs before production; paths are under tests/Pcre/:
+
+| File | Git blob |
+| --- | --- |
+| PcreUtfRangeUnionStarAnchorProtocols1.cs | 5e28825ea3c9258553cf5bcbe5ab87023ea41152 |
+| PcreUtfRangeUnionStarAnchorProtocols2.cs | 70dd7bc48f2800159961e309a9325dc737bfbf04 |
+| PcreUtfRangeUnionStarAnchorProtocols3.cs | d314e0e7b00d3e9b7bb0b87b696e017ef9379af3 |
+| PcreUtfRangeUnionStarAnchorProtocols4.cs | 31c34e9c1206a2ada275582d0eb4e64f0cf1bd75 |
+| PcreUtfRangeUnionStarAnchorReferenceTests.cs | d327bb9f994c31f012d39147da9dc72a6a04bd9a |
+
+All331 prior test files/326 C# sources and frozen35 match the merged base.
+No fixture correction or test-source edit follows RED. Production remains
+unchanged at this checkpoint; compilation/execution use native CI hosts.
+
+## Pre-upload review: preserve successful old predicate charges
+
+Before uploading production, review identified a required ordering detail:
+returning immediately after successful coverage would bypass the old
+positive-Any predicate scan and could incorrectly free its shared budget for
+a later predicate-only class. Compute the coverage flag first, then retain
+the old predicate precheck and complete scan, and combine their final results.
+All original fast paths still return before the new proof as before.
+
+Add four controls in a separate sixth C# file without modifying the five
+frozen files. An initial full range union with4093 versus4094 predicates,
+followed by a three-predicate Any class, must preserve the old4096/4097
+boundary. Native preflight adds4 groups/12 literal checks, JIT0. These are
+expected-green controls on unchanged production; the extended RED must keep
+all199 existing managed failure identities and pass100,762 of100,961 tests.
+The unuploaded production sketch was saved and removed before this second
+tests-only checkpoint. Freeze the sixth blob after that result.
 
 ## Review, qualification and delivery
 
@@ -100,7 +158,7 @@ Update all seven inventories before final source qualification: this design,
 the plan and the five shared PCRE inventories.
 
 Build net8/net9/net10; execute net10 only on six native OS/architecture hosts.
-Require the full100,957 suite, frozen214 outcomes/120 methods, zero failures/
+Require the full100,961 suite, frozen214 outcomes/120 methods, zero failures/
 skips/compiler/analyzer warnings/errors and all configured support gates.
 Publish exact reviewed source with a branch-head lease. Record final GREEN,
 source/base/tree/proposed-merge/frozen identities and ready readback externally
