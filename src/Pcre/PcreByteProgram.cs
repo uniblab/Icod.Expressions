@@ -76,6 +76,7 @@ internal sealed record PcreByteProgram(
 	internal bool EndAnchored { get; init; }
 	internal bool FirstLine { get; init; }
 	internal bool NoStartOptimize { get; init; }
+	internal bool UtfXdigitFragmentBarrier { get; init; }
 	internal bool FirstLineSkipBypassesWindow { get; init; }
 	internal int ScalarExpressionStackDepth { get; init; }
 	internal bool TurkishCasing { get; init; }
@@ -222,12 +223,88 @@ internal sealed class PcreByteProgramCompiler {
 			bytePrefix.Unconditional, utfCrLfStartClass, notEmpty, notEmptyAtStart,
 			matchInvalidUtf && !noStartOptimize && newline == PcreByteNewline.Any && HasLineStartSearch( root ), ucp, bytePrefix.Literal ) {
 			NoStartOptimize = noStartOptimize,
+			UtfXdigitFragmentBarrier = utf8 && matchInvalidUtf && !noStartOptimize && !turkishCasing
+				&& !hasSurrogateLiterals && targets.Count == 0 && HasUtfXdigitFragmentBarrier( root ),
 			DotStarAnchored = !noDotStarAnchor && dotStarEntry,
 			ScalarExpressionStackDepth = scalarExpressionStackDepth, CommitStartBytes = commitBytes, TurkishCasing = turkishCasing,
 			FirstLineSkipBypassesWindow = instructions.Any( item => item.Opcode is PcreByteOpcode.Skip or PcreByteOpcode.SkipNamed )
 				&& ( noStartOptimize || HasUnfilteredFirstLineSkipEntry( root ) ),
 			PathMarkSlot = pathMarkSlot, TrackPathMarks = hasNamedSkip, HasSurrogateLiterals = hasSurrogateLiterals
 		};
+	}
+
+	private bool HasUtfXdigitFragmentBarrier( PcreByteAlternatives root ) {
+		if ( root.Branches.Count != 1 || root.Branches[0].Count < 2 ) { return false; }
+		var branch = root.Branches[0];
+		var leading = branch[0];
+		if ( leading is PcreByteAtomic { Child: PcreByteRepeat } atomic ) { leading = atomic.Child; }
+		if ( leading is not PcreByteRepeat { Minimum: 0 or 1, Maximum: int.MaxValue,
+			Child: PcreByteScalarSet { Source: PcreByteScalarSetSource.Class, Negated: false } set } repeat ) { return false; }
+		// Greedy native character-position search needs the direct literal.
+		// Lazy entry may cross one MARK and one capturing literal group.
+		var continuation = branch[1];
+		if ( !repeat.Greedy && continuation is PcreBytePathMark && branch.Count > 2 ) { continuation = branch[2]; }
+		if ( !repeat.Greedy && continuation is PcreByteGroup capture
+			&& capture.Body.Branches.Count == 1 && capture.Body.Branches[0].Count > 0 ) {
+			continuation = capture.Body.Branches[0][0];
+		}
+		if ( continuation is not PcreByteLiteral { Value: >= 0 and <= 127 } literal
+			|| repeat.Greedy && literal.Caseless && ( literal.Value is 'K' or 'k' or 'S' or 's' ) ) { return false; }
+		if ( set.Predicates.Length > MaximumInstructions
+			|| set.Ranges.Length > MaximumInstructions - set.Predicates.Length ) { return false; }
+		var valid = true;
+		var positive = false;
+		var negative = false;
+		foreach ( var predicate in set.Predicates.Span ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			var exact = predicate is { Kind: PcreByteScalarClassKind.UnicodeHexDigit, Category: null, PropertyValue: 0 };
+			valid &= exact;
+			positive |= exact && !predicate.Negated;
+			negative |= exact && predicate.Negated;
+		}
+		foreach ( var range in set.Ranges.Span ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			valid &= range.Start >= 0 && range.Start <= range.End && range.End <= 127;
+		}
+		if ( !valid || !positive || !negative ) { return false; }
+		var pending = new Stack<PcreByteNode>();
+		var visits = 0;
+		if ( !AddBody( root ) ) { return false; }
+		while ( pending.TryPop( out var node ) ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( ++visits > MaximumInstructions ) { return false; }
+			switch ( node ) {
+				case PcreByteLiteral { Value: >= 0xD800 and <= 0xDFFF }: return false;
+				case PcreByteLiteral:
+				case PcreBytePathMark: break;
+				case PcreByteScalarSet candidate when ReferenceEquals( candidate, set ): break;
+				case PcreByteGroup group:
+					if ( !AddBody( group.Body ) ) { return false; }
+					break;
+				case PcreByteNoncapturingGroup group:
+					if ( !AddBody( group.Body ) ) { return false; }
+					break;
+				case PcreByteAtomic { Child: PcreByteRepeat child }: pending.Push( child ); break;
+				case PcreByteRepeat child: pending.Push( child.Child ); break;
+				default: return false;
+			}
+		}
+		return true;
+
+		bool AddBody( PcreByteAlternatives body ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( ++visits > MaximumInstructions || body.Branches.Count == 0
+				|| body.Branches.Count > MaximumInstructions - visits - pending.Count ) { return false; }
+			foreach ( var path in body.Branches ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				if ( ++visits > MaximumInstructions || path.Count > MaximumInstructions - visits - pending.Count ) { return false; }
+				foreach ( var child in path ) {
+					cancellationToken.ThrowIfCancellationRequested();
+					pending.Push( child );
+				}
+			}
+			return true;
+		}
 	}
 
 	private bool HasLeadingDotStarAnchor( PcreByteAlternatives root ) {
