@@ -1,5 +1,38 @@
 # PCRE roadmap status
 
+## PR277: built-in class complement star anchoring
+
+Positive ordinary UTF classes with exact complementary finite ASCII POSIX
+classes, horizontal/vertical whitespace lists or UCP POSIX blank preserve
+native ALLANY star entry. Member order, duplicates, additional union members,
+casing and ASCII restrictions retain typed source provenance. General Unicode
+property pairs and UCP xdigit raw entry remain outside this proof; their valid
+aligned controls and immutable initial research are documented.
+
+A seventh independent compile-local 4,096-predicate counter is shared across
+leading paths. The new overload calls every established proof first and returns
+old successes without new charges. Full-list precheck, exact metadata, explicit
+positive/negative mask bits, complete scans after early pairs and cancellation
+bound the new work. Literal ranges consume no new budget. Exhaustion declines
+inference without changing admission or public limits. Existing production
+bodies, runtime state and work charging, parser, VM, API and workflows stay fixed.
+
+402 groups / 21,952 native protocols, 15 diagnostics and 58 supplementary cases
+add 475 tests (102,866 total). Refined tests-only RED is exactly 142 managed
+failures / 102,724 passes: 123 matching and 19 supplementary identities. All
+102,391 old tests and 333 new controls pass; native assertions and compiler
+warnings/errors are zero. Freeze all five new C# blobs before production;
+preserve 352 prior test files / 347 C# sources and A05 source 35.
+
+See [design](PCRE-UTF-CLASS-COMPLEMENT-STAR-ANCHOR-DESIGN.md), [plan](PCRE-UTF-CLASS-COMPLEMENT-STAR-ANCHOR-PLAN.md) and
+[PR277](https://github.com/uniblab/Icod.Expressions/pull/277). Build
+net8/net9/net10, execute net10 only on six native hosts with frozen 214 cases /
+120 methods and all configured support gates. All seven inventories precede
+final qualification; exact identities/results and final plan completion stay
+external on the PR without source/docs/test edits after GREEN. #7/#102 stay
+open; Grep last; user owns merge/tags/publication. Issue #7 footer unchanged.
+
+
 ## PR276: mixed binary/POSIX ASCII star classes
 
 Positive ordinary UTF classes containing positive binary ASCII plus negative
