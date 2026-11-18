@@ -122,18 +122,9 @@ jobs:
           Import-Module ./packaging/RepositoryTools.psm1 -Force
           $version = Get-MSBuildProperty -ProjectPath Icod.Expressions.csproj -Name Version -Configuration '${{ env.CONFIGURATION }}'
           ./packaging/VerifyPackageArtifact.ps1 -ArtifactDirectory artifacts -Configuration '${{ env.CONFIGURATION }}' -ExpectedVersion $version -ExpectedId Icod.Expressions -ExpectedPackageCount 1
-      - name: Restore package-only consumer
-        if: matrix.os == 'ubuntu-latest'
-        run: dotnet restore samples/PackageSmoke/PackageSmoke.csproj --source artifacts
-      - name: Build package-only consumer
-        if: matrix.os == 'ubuntu-latest'
-        run: dotnet build samples/PackageSmoke/PackageSmoke.csproj -c ${{ env.CONFIGURATION }} --no-restore
-      - name: Run package-only consumer
-        if: matrix.os == 'ubuntu-latest'
-        shell: bash
-        run: |
-          set -e
-          dotnet run --project samples/PackageSmoke/PackageSmoke.csproj -c ${{ env.CONFIGURATION }} --no-build --no-restore -f net10.0
+      - uses: ./.github/actions/pcre-package-consumer
+        with:
+          configuration: ${{ env.CONFIGURATION }}
 
   gnulib_oracle:
     name: Pinned Gnulib oracle

@@ -45,6 +45,9 @@ runs:
         dotnet run --project tools/RegularExpressionParityBaseline/RegularExpressionParityBaseline.csproj
         -c "$CONFIGURATION" -f "$FRAMEWORK"
         -- --verify doc/Icod.Expressions-A04-Parity-Baseline.jsonl
+    - uses: ./.github/actions/pcre-package-consumer
+      with:
+        configuration: ${{ inputs.configuration }}
     - uses: actions/upload-artifact@v4
       with:
         name: macos-x64-${{ inputs.framework }}

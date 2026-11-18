@@ -1,5 +1,45 @@
 # PCRE syntax acceptance matrix
 
+## PR283: internal PCRE package-only consumer gate
+
+P09 now has a bounded package-consumer contract using the actual candidate
+NuGet binary. The explicitly named Icod.Expressions.PackageSmoke friend keeps
+PCRE internal; it is not a new public API. Existing GNU/POSIX sample assertions
+remain intact. No matcher/compiler/Unicode source changes are introduced.
+
+32 protocols reuse immutable native-first raw/UTF/UCP fixtures, including
+binary/NUL input, supplementary values, captures, lookarounds, repeats and
+marks. Ten managed diagnostic/resource cases, one observed-view control and
+two cancellation controls give 45 additions (104,760 total). Padded memory
+views and overwritten caller pattern buffers exercise authoritative view
+coordinates and compiler ownership. The observed callback check is specific
+path evidence, not a blanket allocation/performance/no-transcoding freeze.
+
+Observed successful-build RED isolates exactly 45 missing-consumer failures /
+104,715 passes /zero skips; every native literal assertion passes. Freeze the
+sample case table, new assertions and test-project Compile links before
+implementing only the exercise; freeze that completed helper afterward. All
+375 prior C# test blobs and A05 source35/corpus stay fixed; the sole prior-test
+file exception adds two source links to the existing test project XML.
+
+One common action packs to a fresh unique feed, restores only that candidate
+with an isolated cache, builds net8/net9/net10 and executes net10 on all six
+native PR/main hosts. Require the structured42-protocol/one-view/two-cancellation
+record with zero failures. Main's artifact verification and release workflow
+remain unchanged. Metadata/sample/workflow paths require actual full
+compatibility/Gnulib gates, not classifier skips.
+
+See [design](PCRE-PACKAGE-CONSUMER-DESIGN.md),
+[plan](PCRE-PACKAGE-CONSUMER-PLAN.md) and
+[PR283](https://github.com/uniblab/Icod.Expressions/pull/283). Whole-branch review
+and all seven inventories precede final six-host104,760/frozen214/120 methods,
+package, compatibility and support qualification with zero failures/skips/
+coded warnings/errors. Final identities/evidence, cleanup and completion stay
+external on PR283; no source/docs/test edits after GREEN. P09 remains open for
+the wider contract/hostile/performance freeze; native16/P10-P18, remaining P01,
+Stage C and actual consumer migration remain open. Keep #7/#102/footer fixed;
+Grep last; user owns merge/tags/publication.
+
 ## PR282: pinned Perl overlap and bounded reducer
 
 P00/P01 gains a declared Perl v5.40.1 / Unicode 15.0.0 comparison scope and

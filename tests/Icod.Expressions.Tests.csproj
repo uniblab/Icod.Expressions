@@ -21,6 +21,10 @@
 		</PackageReference>
 	</ItemGroup>
 	<ItemGroup>
+		<Compile Include="../samples/PackageSmoke/PcreSmoke.cs" Link="PackageSmoke/PcreSmoke.cs" />
+		<Compile Include="../samples/PackageSmoke/PcreSmokeCases.cs" Link="PackageSmoke/PcreSmokeCases.cs" />
+	</ItemGroup>
+	<ItemGroup>
 		<ProjectReference Include="../Icod.Expressions.csproj" />
 	</ItemGroup>
 </Project>

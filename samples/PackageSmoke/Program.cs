@@ -1,4 +1,6 @@
 using System.Text;
+using System.Text.Json;
+using Icod.Expressions.PackageSmoke;
 
 using Icod.CommandFramework.RegularExpressions;
 using Icod.CommandFramework.Text;
@@ -25,5 +27,25 @@ var bytes = provider.Compile( "a+" ).Expression!.Match(
 if ( !bytes.IsSuccess || !bytes.IsMatch || bytes.Match!.ByteIndex != 2 || bytes.Match.ByteLength != 3 ) {
 	throw new InvalidOperationException( "Authoritative byte offsets failed." );
 }
+
+var pcreCases = 0;
+foreach ( var item in PcreSmokeCases.All ) {
+	var actual = PcreSmoke.Run( item );
+	if ( actual != item.Expected ) {
+		throw new InvalidOperationException( $"PCRE package case {item.Id}: expected {item.Expected}, actual {actual}." );
+	}
+	pcreCases++;
+}
+PcreSmoke.VerifyObservedView();
+var pcreCancellations = 0;
+foreach ( var compile in new[] { true, false } ) {
+	try {
+		PcreSmoke.VerifyCancellation( compile );
+		throw new InvalidOperationException( "PCRE cancellation did not propagate." );
+	} catch ( OperationCanceledException ) {
+		pcreCancellations++;
+	}
+}
+Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-package-smoke", cases = pcreCases, view = 1, cancellation = pcreCancellations, failed = 0 } ) );
 
 Console.WriteLine( $"Icod.Expressions package smoke passed on {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}." );
