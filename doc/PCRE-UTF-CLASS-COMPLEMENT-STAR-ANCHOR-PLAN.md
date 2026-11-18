@@ -11,13 +11,13 @@ source 35. Keep #7/#102 open, Grep last and issue #7's footer unchanged.
 - [x] Reproduce all 324 merged PR276 groups / 21,456 protocols on exact pins.
 - [x] Pin 402 matching groups / 21,952 protocols, 15 diagnostics, 58 supplementary
   cases and 22 dynamic native groups / 66 outcomes.
-- [ ] Publish tests-only draft, reconcile expected RED and freeze all five C# blobs.
+- [x] Publish tests-only draft, reconcile expected RED and freeze all five C# blobs.
 
 ## Task 2: bounded proof and review
 
-- [ ] Preserve all earlier proof bodies and add one independent shared 4,096
+- [x] Preserve all earlier proof bodies and add one independent shared 4,096
   complete-predicate mask scan for exact built-in complement pairs.
-- [ ] Review whole branch, preserve old/frozen tests, run local gates and update
+- [x] Review whole branch, preserve old/frozen tests, run local gates and update
   both documents plus all five shared inventories.
 - [ ] Upload exact reviewed source with a branch-head lease.
 

@@ -241,6 +241,7 @@ internal sealed class PcreByteProgramCompiler {
 		var remainingAsciiRangeVisits = MaximumInstructions;
 		var remainingPosixAsciiVisits = MaximumInstructions;
 		var remainingMixedAsciiVisits = MaximumInstructions;
+		var remainingComplementVisits = MaximumInstructions;
 		uint enclosingCaptures = 0;
 		while ( entries.TryPop( out var entry ) ) {
 			cancellationToken.ThrowIfCancellationRequested();
@@ -270,7 +271,7 @@ internal sealed class PcreByteProgramCompiler {
 						&& bytes.Set == PcreByteSet.AllBytes )
 					&& !( utf8 && IsUtfAllAny( star.Child, ref remainingPredicateVisits, ref remainingRangeVisits,
 						ref remainingRangeUnionVisits, ref remainingAsciiRangeVisits, ref remainingPosixAsciiVisits,
-						ref remainingMixedAsciiVisits, cancellationToken ) ) ) { return false; }
+						ref remainingMixedAsciiVisits, ref remainingComplementVisits, cancellationToken ) ) ) { return false; }
 			}
 		}
 		// Every leading path must pass the global native reference map, so
@@ -343,6 +344,16 @@ internal sealed class PcreByteProgramCompiler {
 			}
 			return true;
 		}
+	}
+
+	private static bool IsUtfAllAny( PcreByteNode node, ref int remainingPredicateVisits, ref int remainingRangeVisits,
+		ref int remainingRangeUnionVisits, ref int remainingAsciiRangeVisits, ref int remainingPosixAsciiVisits,
+		ref int remainingMixedAsciiVisits, ref int remainingComplementVisits, CancellationToken cancellationToken ) {
+		if ( IsUtfAllAny( node, ref remainingPredicateVisits, ref remainingRangeVisits,
+			ref remainingRangeUnionVisits, ref remainingAsciiRangeVisits, ref remainingPosixAsciiVisits,
+			ref remainingMixedAsciiVisits, cancellationToken ) ) { return true; }
+		return node is PcreByteScalarSet { Source: PcreByteScalarSetSource.Class, Negated: false } set
+			&& HasUtfBuiltInComplement( set, ref remainingComplementVisits, cancellationToken );
 	}
 
 	private static bool IsUtfAllAny( PcreByteNode node, ref int remainingPredicateVisits, ref int remainingRangeVisits,
@@ -545,6 +556,43 @@ internal sealed class PcreByteProgramCompiler {
 		}
 		// The mixed pair is universal independently of every literal range.
 		return hasBinaryAscii && hasNegativeAscii;
+	}
+
+	private static bool HasUtfBuiltInComplement( PcreByteScalarSet set,
+		ref int remainingVisits, CancellationToken cancellationToken ) {
+		if ( set.Predicates.IsEmpty || set.Predicates.Length > remainingVisits ) { return false; }
+		var positive = 0u;
+		var negative = 0u;
+		foreach ( var predicate in set.Predicates.Span ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			remainingVisits--;
+			if ( predicate.Category is not null || predicate.PropertyValue != 0 ) { continue; }
+			// These exact native bitmap/list identities lower complementary
+			// pairs to ALLANY. Unicode property equality alone is insufficient.
+			var mask = predicate.Kind switch {
+				PcreByteScalarClassKind.AsciiAlnum => 1u,
+				PcreByteScalarClassKind.AsciiAlpha => 1u << 1,
+				PcreByteScalarClassKind.AsciiBlank => 1u << 2,
+				PcreByteScalarClassKind.AsciiControl => 1u << 3,
+				PcreByteScalarClassKind.AsciiDigit => 1u << 4,
+				PcreByteScalarClassKind.AsciiGraph => 1u << 5,
+				PcreByteScalarClassKind.AsciiLower => 1u << 6,
+				PcreByteScalarClassKind.AsciiPrintable => 1u << 7,
+				PcreByteScalarClassKind.AsciiPunctuation => 1u << 8,
+				PcreByteScalarClassKind.AsciiSpace => 1u << 9,
+				PcreByteScalarClassKind.AsciiUpper => 1u << 10,
+				PcreByteScalarClassKind.AsciiWord => 1u << 11,
+				PcreByteScalarClassKind.AsciiHexDigit => 1u << 12,
+				PcreByteScalarClassKind.HorizontalSpace => 1u << 13,
+				PcreByteScalarClassKind.VerticalSpace => 1u << 14,
+				PcreByteScalarClassKind.UnicodeBlank => 1u << 15,
+				_ => 0u
+			};
+			if ( predicate.Negated ) { negative |= mask; }
+			else { positive |= mask; }
+		}
+		// Complete the scan even after a pair; later paths share this budget.
+		return ( positive & negative ) != 0;
 	}
 
 	private void ValidateSurrogateLiteralProgram() {

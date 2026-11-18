@@ -116,3 +116,34 @@ intended finite ASCII pair; 38 independent supplementary native preflights
 verify the corrected sources, work subjects and literal captures/marks.
 Production and all old test blobs stay unchanged. Freeze only after refined
 RED confirms 142 managed failures / 102,724 passes and zero native failures.
+
+## Observed refined RED and fixture freeze
+
+Tests-only head `b79d073df0388c4ca9fadaf1e72f56e69c488e28`, tree
+`0fc269eb721d5deb46e7d2b602f6f1f10695d3eb`, proposed merge
+`3259544805c7778094671a36d5db32ae240cf79e` have the exact source tree and
+ordered base/source parents. Run 44213868327 / Linux x64 job 134498872591:
+exactly 142 managed failures / 102,724 passes / 102,866 total / zero skips
+and compiler/analyzer warnings/errors. All 123 matching identities and all
+19 supplementary identities match the refined prediction. No native assertion
+frame or unrelated failure; all 102,391 old tests and 333 new controls pass.
+
+Freeze before production:
+
+- `tests/Pcre/PcreUtfClassComplementStarAnchorProtocols1.cs`: `ebf102b1f47edf6e03d0a78a71a3a5a5349d9d52`
+- `tests/Pcre/PcreUtfClassComplementStarAnchorProtocols2.cs`: `020f7da70a35e3283f99636b52b6db9c4bfe022b`
+- `tests/Pcre/PcreUtfClassComplementStarAnchorProtocols3.cs`: `a90a52987a49369593b87f733242b6da28f63e17`
+- `tests/Pcre/PcreUtfClassComplementStarAnchorProtocols4.cs`: `49dda95d5f1751a0a9cbcba86e66951921844523`
+- `tests/Pcre/PcreUtfClassComplementStarAnchorReferenceTests.cs`: `f635df01fa88a21fc9e7153664796f655972090b`
+
+Whole-branch author review: the new seven-counter wrapper returns established
+successes before new work. The complete exact-metadata mask scan retains all
+16 native-proven kinds and excludes Ascii and UnicodeHexDigit. No early return
+after finding a pair; full-list precheck, shared counter and per-visit
+cancellation preserve bounded compile work. Literal ranges are not visited.
+Removing only the new wrapper/helper, local and argument restores the entire
+previous production file byte-for-byte, proving every old body is unchanged.
+All old/frozen tests, A05 sources/corpus and local support gates remain fixed.
+No unresolved introduced finding; independent agent review was not performed.
+All seven inventories precede final qualification. Final completion is recorded
+externally on PR277 without edits to the qualified tree.
