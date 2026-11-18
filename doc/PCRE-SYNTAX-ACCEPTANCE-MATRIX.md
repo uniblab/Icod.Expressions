@@ -1,5 +1,45 @@
 # PCRE syntax acceptance matrix
 
+## PR282: pinned Perl overlap and bounded reducer
+
+P00/P01 gains a declared Perl v5.40.1 / Unicode 15.0.0 comparison scope and
+an original development runner, with 340 literal overlap cases (221 matches,
+119 no-matches). All 680 independently built pinned PCRE2-8/16 probes agree
+with Perl's scalar captures, retaining each native start/capture coordinate.
+No mismatching rows were discarded. The corpus covers ordered choice,
+repetition, captures/references, assertions, recursion/conditions, Unicode
+literals and search starts. It makes no general Perl/PCRE or UCD15/17 parity
+claim; wider modes, error/mark/callout/partial/iteration families remain open.
+
+CI compares the literals through native8/native16, the direct native16 bridge
+and managed bytes. The pinned Perl interpreter remains an independent
+reproducible development preflight; no new CI dependency/workflow is added.
+All cases/runner are original, with source-release and actual binary provenance.
+
+A test-only native-unit reducer owns its buffers, preserves the start offset,
+uses one explicit oracle-evaluation budget and propagates cancellation/errors.
+Deterministic chunk deletion reaches a one-unit local fixed point, rather
+than promising a globally smallest pair. The callback decides mismatch class
+and rejects invalid/unrelated candidates. Byte/char/ushort controls and a
+native-backed coordinate-comparison fault supply 31 reducer cases.
+
+371 additions bring the full suite to 104,715. Observed successful-build RED
+isolates 31 missing-reducer failures / 104,684 passes / zero skips. Freeze all
+three new case/assertion sources and the Perl runner before implementing only
+the reducer, then freeze its completed helper. Preserve all 379 old test files /
+371 C# sources, the production tree and A05 source35/corpus.
+
+See [design](PCRE-PERL-OVERLAP-REDUCER-DESIGN.md),
+[plan](PCRE-PERL-OVERLAP-REDUCER-PLAN.md) and
+[PR282](https://github.com/uniblab/Icod.Expressions/pull/282). Whole-branch review
+and all seven inventories precede final six-host qualification: all three
+library targets, full net10 plus frozen214/120 methods, zero failures/skips/
+coded warnings/errors and configured support/package/script gates. Final
+identities/evidence, cleanup and completion stay externally on PR282 without
+source/docs/test edits after GREEN. P01 remains partial; P09-P18, Stage C and
+actual consumer migrations remain open. #7/#102 and issue #7 footer stay fixed;
+Grep last; user owns merge/tags/publication.
+
 ## PR281: direct raw 16-bit native reference
 
 A test-only adapter now calls the existing PCRE.NET 1.6.0 native
