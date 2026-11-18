@@ -80,3 +80,53 @@ frozen 214 cases / 120 methods on six native hosts, zero failures/skips/coded
 warnings/errors and all configured support/package/script gates. Final source,
 base/tree/merge identities and plan completion remain external on PR279.
 No source, tests or docs edits follow final GREEN.
+
+## Observed tests-only RED and freeze
+
+Head `d64e0afe171f5217113be48ea2722203e13200a2`, tree
+`ffc5a4506ad9b39fb318d891c7f91bbbef70c024`, proposed merge
+`7cabc5b04bd78d847bfc58375342f6ef32ea02ba`. Run 44305698841 / Linux x64
+job 134806571618 builds all three targets with zero coded compiler/analyzer
+warnings/errors, then reports exactly 165 failures / 103,683 passes / 103,848
+total / zero skips. All 149 matching IDs equal the native shadow prediction,
+including both COMMIT policies. The 16 supplementary failures are eight work,
+two ownership, three admitted combined-list boundaries, one shared boundary,
+one old-success bypass and one new-exhaustion/old-success. There are no native
+assertion frames or unrelated failures; all 103,351 prior tests and 332 new
+controls pass. All five new C# blobs were frozen before production:
+
+- `tests/Pcre/PcreUtfFiniteAsciiStarAnchorProtocols1.cs`: `310b9d5abcea56a7f824226d671822926c025c90`
+- `tests/Pcre/PcreUtfFiniteAsciiStarAnchorProtocols2.cs`: `b993c67467edf1b67d55324004bba154569f23fa`
+- `tests/Pcre/PcreUtfFiniteAsciiStarAnchorProtocols3.cs`: `14d6ffc0b8554a756ded48bbb525acbe10eb9cb3`
+- `tests/Pcre/PcreUtfFiniteAsciiStarAnchorProtocols4.cs`: `3f4550a62be8cf02eb746aaccb9937ce63440b9e`
+- `tests/Pcre/PcreUtfFiniteAsciiStarAnchorReferenceTests.cs`: `90a6f36cd034f69018811a1c0be05131dbbb055f`
+
+## Whole-branch author review
+
+The eight-counter wrapper preserves every existing success before new work.
+All exact finite kind/bitmap mappings, negative high-character inclusion,
+63/64/127 mask boundaries, unsupported metadata and owner exclusions are
+reviewed. Both complete-list scans retain charges and cancellation after
+coverage/pair/unknown members; oversized combined lists do not partially
+charge. Existing pair/negative-Ascii/high-range owners are not rescued.
+Removing only the new wrapper/helper/local/argument restores the entire old
+production file byte-for-byte. Matcher/VM/Step handling and the PR278 fragment
+barrier remain unchanged. All 362 prior test files / 357 C# sources, new frozen
+fixtures, A05 35 sources/corpus/candidate identities are retained. No unresolved
+introduced finding; no independent agent review was performed.
+
+Local A05/corpus/candidate, CI classifier, eight main jobs/thirteen rejection
+controls and diff whitespace gates pass. Both documents and all five shared
+inventories precede final qualification. Final exact identities, six-platform
+results and plan completion remain external on PR279 without subsequent
+source/docs/test edits.
+
+## Revision 4 alignment
+
+The user-requested 2026-11-18 full roadmap review is recorded in
+[roadmap status](PCRE-ROADMAP-STATUS.md#revision-4-stocktake-2026-11-18).
+This bounded 8-bit correctness/analysis increment does not close P09, P10-P18,
+consumer migration or the still-open Stage C normalization. Native UTF-16
+without transcoding or a copied parser/HIR remains mandatory before stable
+PCRE publication. All seven inventories, including the stocktake, precede
+final source qualification.

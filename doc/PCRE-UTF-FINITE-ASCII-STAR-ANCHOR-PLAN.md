@@ -10,14 +10,17 @@ keep #7/#102 open, Grep last, issue #7 footer and all prior/frozen tests unchang
 - [x] Reproduce merged PR278's 428 groups / 22,936 native protocols.
 - [x] Pin 426 groups / 22,214 protocols, 15 diagnostics and 56 supplementary
   cases; preflight 66 dynamic native outcomes.
-- [ ] Publish tests-only draft, reconcile exact successful-build RED identities
+- [x] Publish tests-only draft, reconcile exact successful-build RED identities
   and freeze all five new C# blobs before production.
 
 ## Task 2: bounded compiler proof
 
-- [ ] Add independent shared combined-item counter and conservative finite
+- [x] Re-read Revision 4 and record the stage-by-stage evidence/gaps in the
+  roadmap status without declaring deferred gates complete.
+
+- [x] Add independent shared combined-item counter and conservative finite
   bitmap coverage proof; preserve all old proof bodies, results and charges.
-- [ ] Review whole branch, pass local gates and update all seven inventories.
+- [x] Review whole branch, pass local gates and update all seven inventories.
 - [ ] Upload exact reviewed tree with a branch-head lease.
 
 ## Task 3: qualify and deliver

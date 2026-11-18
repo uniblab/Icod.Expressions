@@ -319,6 +319,7 @@ internal sealed class PcreByteProgramCompiler {
 		var remainingPosixAsciiVisits = MaximumInstructions;
 		var remainingMixedAsciiVisits = MaximumInstructions;
 		var remainingComplementVisits = MaximumInstructions;
+		var remainingFiniteAsciiVisits = MaximumInstructions;
 		uint enclosingCaptures = 0;
 		while ( entries.TryPop( out var entry ) ) {
 			cancellationToken.ThrowIfCancellationRequested();
@@ -348,7 +349,8 @@ internal sealed class PcreByteProgramCompiler {
 						&& bytes.Set == PcreByteSet.AllBytes )
 					&& !( utf8 && IsUtfAllAny( star.Child, ref remainingPredicateVisits, ref remainingRangeVisits,
 						ref remainingRangeUnionVisits, ref remainingAsciiRangeVisits, ref remainingPosixAsciiVisits,
-						ref remainingMixedAsciiVisits, ref remainingComplementVisits, cancellationToken ) ) ) { return false; }
+						ref remainingMixedAsciiVisits, ref remainingComplementVisits, ref remainingFiniteAsciiVisits,
+						cancellationToken ) ) ) { return false; }
 			}
 		}
 		// Every leading path must pass the global native reference map, so
@@ -421,6 +423,17 @@ internal sealed class PcreByteProgramCompiler {
 			}
 			return true;
 		}
+	}
+
+	private static bool IsUtfAllAny( PcreByteNode node, ref int remainingPredicateVisits, ref int remainingRangeVisits,
+		ref int remainingRangeUnionVisits, ref int remainingAsciiRangeVisits, ref int remainingPosixAsciiVisits,
+		ref int remainingMixedAsciiVisits, ref int remainingComplementVisits, ref int remainingFiniteAsciiVisits,
+		CancellationToken cancellationToken ) {
+		if ( IsUtfAllAny( node, ref remainingPredicateVisits, ref remainingRangeVisits,
+			ref remainingRangeUnionVisits, ref remainingAsciiRangeVisits, ref remainingPosixAsciiVisits,
+			ref remainingMixedAsciiVisits, ref remainingComplementVisits, cancellationToken ) ) { return true; }
+		return node is PcreByteScalarSet { Source: PcreByteScalarSetSource.Class, Negated: false, Caseless: false } set
+			&& HasUtfFiniteAsciiCoverage( set, ref remainingFiniteAsciiVisits, cancellationToken );
 	}
 
 	private static bool IsUtfAllAny( PcreByteNode node, ref int remainingPredicateVisits, ref int remainingRangeVisits,
@@ -670,6 +683,67 @@ internal sealed class PcreByteProgramCompiler {
 		}
 		// Complete the scan even after a pair; later paths share this budget.
 		return ( positive & negative ) != 0;
+	}
+
+	private static bool HasUtfFiniteAsciiCoverage( PcreByteScalarSet set,
+		ref int remainingVisits, CancellationToken cancellationToken ) {
+		if ( set.Predicates.IsEmpty || set.Predicates.Length > remainingVisits
+			|| set.Ranges.Length > remainingVisits - set.Predicates.Length ) { return false; }
+		var coverage = default( PcreByteSet );
+		var positive = 0u;
+		var negative = 0u;
+		var hasNegative = false;
+		var known = true;
+		foreach ( var predicate in set.Predicates.Span ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			remainingVisits--;
+			var ( bitmap, mask ) = predicate.Kind switch {
+				PcreByteScalarClassKind.AsciiAlnum => ( PcreByteSet.Alnum, 1u ),
+				PcreByteScalarClassKind.AsciiAlpha => ( PcreByteSet.Alpha, 1u << 1 ),
+				PcreByteScalarClassKind.AsciiBlank => ( PcreByteSet.Blank, 1u << 2 ),
+				PcreByteScalarClassKind.AsciiControl => ( PcreByteSet.Control, 1u << 3 ),
+				PcreByteScalarClassKind.AsciiDigit => ( PcreByteSet.Digit, 1u << 4 ),
+				PcreByteScalarClassKind.AsciiGraph => ( PcreByteSet.Graph, 1u << 5 ),
+				PcreByteScalarClassKind.AsciiLower => ( PcreByteSet.Lower, 1u << 6 ),
+				PcreByteScalarClassKind.AsciiPrintable => ( PcreByteSet.Printable, 1u << 7 ),
+				PcreByteScalarClassKind.AsciiPunctuation => ( PcreByteSet.Punctuation, 1u << 8 ),
+				PcreByteScalarClassKind.AsciiSpace => ( PcreByteSet.WhiteSpace, 1u << 9 ),
+				PcreByteScalarClassKind.AsciiUpper => ( PcreByteSet.Upper, 1u << 10 ),
+				PcreByteScalarClassKind.AsciiWord => ( PcreByteSet.Word, 1u << 11 ),
+				PcreByteScalarClassKind.AsciiHexDigit => ( PcreByteSet.HexDigit, 1u << 12 ),
+				PcreByteScalarClassKind.Ascii => ( PcreByteSet.Ascii, 1u << 13 ),
+				_ => ( default( PcreByteSet ), 0u )
+			};
+			known &= mask != 0 && predicate.Category is null && predicate.PropertyValue == 0
+				&& !( predicate.Negated && predicate.Kind == PcreByteScalarClassKind.Ascii );
+			if ( predicate.Negated ) {
+				negative |= mask;
+				hasNegative |= mask != 0 && predicate.Kind != PcreByteScalarClassKind.Ascii;
+				bitmap = bitmap.Complement();
+			}
+			else { positive |= mask; }
+			coverage = coverage.Union( bitmap );
+		}
+		foreach ( var range in set.Ranges.Span ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			remainingVisits--;
+			if ( range.Start < 0 || range.End > 127 || range.Start > range.End ) { known = false; continue; }
+			var lowEnd = Math.Min( range.End, 63 );
+			var highStart = Math.Max( range.Start, 64 ) - 64;
+			var highEnd = range.End - 64;
+			var low = range.Start <= lowEnd ? BitsThrough( lowEnd ) & ~BitsThrough( range.Start - 1 ) : 0UL;
+			var high = highStart <= highEnd ? BitsThrough( highEnd ) & ~BitsThrough( highStart - 1 ) : 0UL;
+			coverage = coverage.Union( new( low, high, 0, 0 ) );
+		}
+		// Finish both lists even after full coverage. Existing pairs and negative
+		// Ascii retain their earlier proof budgets, including after exhaustion.
+		return known && hasNegative && ( positive & negative ) == 0 && coverage == PcreByteSet.AllBytes;
+
+		static ulong BitsThrough( int bit ) {
+			if ( bit < 0 ) { return 0; }
+			if ( bit >= 63 ) { return ulong.MaxValue; }
+			return ( 1UL << ( bit + 1 ) ) - 1;
+		}
 	}
 
 	private void ValidateSurrogateLiteralProgram() {

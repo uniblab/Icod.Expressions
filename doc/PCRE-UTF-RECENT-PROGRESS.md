@@ -1,5 +1,42 @@
 # Recent UTF proof progress
 
+## PR279: finite ASCII union star anchoring
+
+Case-sensitive positive ordinary UTF classes such as `[\D0-9]`, finite
+negative classes plus containing positive classes, and disjoint negative
+classes preserve native ALLANY star entry. Exact typed finite ASCII predicates,
+low 0..127 literal ranges and a negative finite member establish byte coverage
+plus high-character inclusion. Caseless, unsupported/Unicode/binary members,
+negative Ascii, wider ranges and exact same-kind pairs retain earlier owners
+or conservative fallback. No general semantic-universality inference is made.
+
+An eighth independent compile-local 4,096 combined predicate/range counter
+is shared across leading paths. Every old proof runs first; old successes
+consume no new budget. Precheck entire lists, scan completely with cancellation
+and per-item charges, and use existing static bitmaps plus constant-time
+low-range ulong masks. No allocation per scan, sorting, parser/matcher/VM,
+runtime work, API, dependency, workflow or public quota change. Prior proof
+bodies and PR278 iterator-fragment recovery remain byte-for-byte unchanged.
+
+426 groups / 22,214 native protocols, 15 diagnostics and 56 supplementary cases
+add 497 tests (103,848 total). Tests-only RED exactly matches 149 matching plus
+16 supplementary identities: 165 failures / 103,683 passes / zero skips, native
+assertion frames or coded warnings/errors. All 103,351 prior tests and 332 new
+controls pass; freeze all five new C# blobs before production. Preserve all
+362 prior test files / 357 C# sources and A05 source 35/corpus identities.
+
+See [design](PCRE-UTF-FINITE-ASCII-STAR-ANCHOR-DESIGN.md),
+[plan](PCRE-UTF-FINITE-ASCII-STAR-ANCHOR-PLAN.md) and
+[PR279](https://github.com/uniblab/Icod.Expressions/pull/279). Whole-branch
+author review and all seven inventories precede final qualification. Build
+net8/net9/net10; execute full net10 and frozen 214 cases / 120 methods on six
+native hosts with all configured support/package/script gates. Final identities,
+results and plan completion remain external on the PR, with no source/docs/test
+edits after final GREEN. Keep #7/#102 open; Grep last; user owns merge, tags and
+publication. Issue #7 footer unchanged; broader optimizer/release/consumer gates
+remain open.
+
+
 ## PR278: UCP xdigit iterator fragment recovery
 
 A bounded direct-root proof retains native start-study recovery for unbounded
