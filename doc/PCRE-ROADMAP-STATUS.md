@@ -1,5 +1,89 @@
 # PCRE roadmap status
 
+## Revision 4 stocktake (2026-11-18)
+
+Re-read all 50 pages of *Icod.Expressions Architecture Critique and Production
+Development Roadmap - Revision 4* (2026-09-03), supplied by the user.
+Source PDF SHA256: `4048f7622b9d93137d341b4890e9a3b358501cddca7fc3ea04f7c95e6611796d`.
+This is a gate assessment, not a percentage inferred from PR or test counts.
+
+| Roadmap gate | Current evidence | Disposition / remaining gate |
+|---|---|---|
+| A00-A05 in-situ analysis/freeze | [Accepted A05](Icod.Expressions-A05-Final-Candidate.md), [readiness ledger](EXTRACTION-READINESS.md), unchanged 35 source blobs, 214 focused cases / 120 methods and 44-case parity corpus. | Accepted **bounded** baseline; the original A01-A04 standards/profile/provenance gaps remain classified. Not full standards conformance. |
+| E00-E02 extraction | Frozen transplant and exact same-run old/new comparison; source/API/corpus verifiers remain CI gates. | Complete within the accepted A05 scope. |
+| E03-E04 consumer migration/closure | [Bridge record](E03-Compatibility-Bridge.md), package-only smoke and 725-case scratch bridge checks across five consumers. | Partial. Disposable probes are not actual downstream migrations or a distributable production bridge. CommandFramework ownership removal remains blocked; Grep last. |
+| N00-N01 strict POSIX/Gnulib contracts | Public production API remains the inherited CommandFramework namespaces and three GNU-style providers. | Open. Separate strict BRE/ERE facades, complete composable syntax-bit/profile model and independent standards/profile closure are not implemented by the unchanged extraction. |
+| N02-N05 common substrate/foundation freeze | Exact input coordinates, preserved POSIX/GNU runtime; PCRE has pinned Unicode/UTF helpers and separate parser/VM. | Partial building blocks, not a completed common HIR/analysis seam or normalized foundation freeze. Do not refactor frozen legacy source as part of a PCRE proof fix. |
+| P00-P01 compatibility/oracles | PCRE.NET 1.6.0 / pinned PCRE2 10.48, native 8-bit research, Unicode 17 data and extensive byte-native fixtures. | Partial. Dual-width normalized fixture/oracle contract and declared pinned Perl-overlap/reducer evidence remain open. |
+| P02-P08 parser, VM, captures, advanced syntax, UTF-8/Unicode | Internal dedicated parser, iterative explicit-frame ordered VM, capture journal, references/recursion/conditions, lookarounds/verbs, native byte offsets, UTF validation, properties/scripts/graphemes/class algebra. | Substantial implementation with explicit acceptance gaps. Callout execution, UTF code-unit escape behavior and remaining syntax/invalid-input/source-shape cases prevent claiming full gate closure. |
+| P09 8-bit/UTF-8 freeze | Six-host CI, native differential fixtures and component workload smoke. Merged #278 has 103,351 tests; #279 adds 497 frozen cases, pending final qualification. | Open: internal API, documented unsupported cases, broader hostile corpus, package-only PCRE consumer and representative performance/no-transcoding release evidence still need a deliberate freeze. |
+| P10-P12 native 16-bit/UTF-16 and cross-width | Current PCRE compiler/program/matcher/result types are byte-specific; no production native 16-bit backend or dual-width suite. | Open and **mandatory before stable PCRE release**. No whole-subject transcode adapter or cloned parser/HIR counts as completion. |
+| P13 partial/iteration/substitution | Current internal match result/API handles complete single matches. | Open: soft/hard partial, native partial offsets, next-match empty retry rules, replacement language/output limits and width-native sinks. |
+| P14-P17 security, analyses, performance, fuzz closure | Deterministic work/cancellation, bounded frames/compilation/proof scans, optimized/reference controls, generated Unicode gates, persistent differential cases, seven component workloads. | Partial 8-bit evidence. Full independently controlled resource model, dual-width proof/performance corpus, bounded fuzz/reducer closure and consumer benchmarks remain open. |
+| P18 public API/package/release | Existing extraction package sample/API checks; experimental PCRE stays internal. | Open. Both native PCRE widths, cross-width/package-only consumers, API/version/deviation freeze and release audit are required. User owns tags/publication. |
+
+The implementation has deliberately progressed into experimental Stage D while
+E03/E04 and Stage C remain open. Preserve this sequencing exception in the
+ledger; do not retroactively declare normalization complete. The frozen
+POSIX/GNU baseline proves preservation, not the strict POSIX or full Gnulib
+contracts requested by Revision 4.
+
+Execution order after this review:
+
+1. Finish the already characterized #279 byte/UTF correctness patch, author
+   review and six-host qualification on its immutable frozen fixtures.
+2. Use this ledger to plan P09 closure and the P00/P01 dual-width semantic
+   fixture/oracle seam before starting P10 lowering. Preserve one shared PCRE
+   semantic grammar; specialize representations below it.
+3. Keep callouts, partial/iteration/substitution, full security/fuzz/performance
+   and P18 release evidence as explicit deliverables. Repeated optimizer
+   increments alone cannot close the roadmap.
+4. Keep actual consumer/bridge and Stage C normalization work separately
+   reviewable. No Grep switch, CommandFramework removal, public PCRE contract
+   or stable publication follows from this internal increment.
+
+These are repository-evidenced dispositions, not assertions that uninspected
+downstream repositories have changed. Current passing build counts are
+qualification evidence for the declared subset, not overall completion.
+
+
+## PR279: finite ASCII union star anchoring
+
+Case-sensitive positive ordinary UTF classes such as `[\D0-9]`, finite
+negative classes plus containing positive classes, and disjoint negative
+classes preserve native ALLANY star entry. Exact typed finite ASCII predicates,
+low 0..127 literal ranges and a negative finite member establish byte coverage
+plus high-character inclusion. Caseless, unsupported/Unicode/binary members,
+negative Ascii, wider ranges and exact same-kind pairs retain earlier owners
+or conservative fallback. No general semantic-universality inference is made.
+
+An eighth independent compile-local 4,096 combined predicate/range counter
+is shared across leading paths. Every old proof runs first; old successes
+consume no new budget. Precheck entire lists, scan completely with cancellation
+and per-item charges, and use existing static bitmaps plus constant-time
+low-range ulong masks. No allocation per scan, sorting, parser/matcher/VM,
+runtime work, API, dependency, workflow or public quota change. Prior proof
+bodies and PR278 iterator-fragment recovery remain byte-for-byte unchanged.
+
+426 groups / 22,214 native protocols, 15 diagnostics and 56 supplementary cases
+add 497 tests (103,848 total). Tests-only RED exactly matches 149 matching plus
+16 supplementary identities: 165 failures / 103,683 passes / zero skips, native
+assertion frames or coded warnings/errors. All 103,351 prior tests and 332 new
+controls pass; freeze all five new C# blobs before production. Preserve all
+362 prior test files / 357 C# sources and A05 source 35/corpus identities.
+
+See [design](PCRE-UTF-FINITE-ASCII-STAR-ANCHOR-DESIGN.md),
+[plan](PCRE-UTF-FINITE-ASCII-STAR-ANCHOR-PLAN.md) and
+[PR279](https://github.com/uniblab/Icod.Expressions/pull/279). Whole-branch
+author review and all seven inventories precede final qualification. Build
+net8/net9/net10; execute full net10 and frozen 214 cases / 120 methods on six
+native hosts with all configured support/package/script gates. Final identities,
+results and plan completion remain external on the PR, with no source/docs/test
+edits after final GREEN. Keep #7/#102 open; Grep last; user owns merge, tags and
+publication. Issue #7 footer unchanged; broader optimizer/release/consumer gates
+remain open.
+
+
 ## PR278: UCP xdigit iterator fragment recovery
 
 A bounded direct-root proof retains native start-study recovery for unbounded
