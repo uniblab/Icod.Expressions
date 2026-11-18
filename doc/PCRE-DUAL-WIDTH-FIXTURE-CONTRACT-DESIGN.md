@@ -70,7 +70,7 @@ cases add 202 tests: 104,050 total. Publish an intentionally unimplemented
 coordinate adapter in a tests-only draft: expect 194 coordinate-dependent
 failures / 103,856 passes / zero skips. All native assertions, all 103,848 prior
 tests and eight width-specific controls must pass first. Reconcile failure
-identities, then freeze all four fixture/assertion C# files before implementing
+identities, then freeze all five fixture/assertion C# files before implementing
 only the test-support adapter. Freeze the finished helper separately. No
 production code changes occur at any stage; this RED is the missing fixture
 adapter contract, not a claim that a managed 16-bit engine was implemented.
@@ -90,3 +90,8 @@ UTF-16 high surrogate. Both must be rejected even though a replacement decoder
 could make them appear equal. This strengthens the coordinate contract without
 changing any native fixture or prior test expectation. The refined totals are
 202 new / 104,050 total, expecting 194 adapter failures and 103,856 passes.
+
+The same 150 native rows are exposed through a separate PcreDualWidthCases
+MemberData catalog. This preserves all expected values and case identities
+while allowing future managed width-16 tests to consume the exact same data
+without copying or editing the current assertions. Freeze this catalog too.

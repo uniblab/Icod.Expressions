@@ -11,7 +11,7 @@ identities and issue #7 footer. User owns merge/tags/publication; Grep last.
 - [x] Pin 140 shared cases, ten compile errors, eight malformed-subject errors,
   two raw 16-bit witnesses and 44 independent coordinate controls.
 - [ ] Publish tests-only draft, reconcile 194 intended adapter failures and
-  freeze the four fixture/assertion sources before implementing the helper.
+  freeze the five fixture/assertion sources before implementing the helper.
 
 ## Task 2: independent coordinate normalization
 
