@@ -34,3 +34,16 @@ runs:
           throw 'Expected one complete 42-protocol/one-view/two-cancellation PCRE package result.'
         }
         Write-Host 'PASS: fresh PCRE package consumer: 42 protocols, one view, two cancellation controls'
+        $pcreAllocationRecords = @($pcreSmokeOutput | Where-Object { $_ -match '^\{"kind":"pcre-allocation-smoke",' } | ForEach-Object { $_ | ConvertFrom-Json })
+        if ($pcreAllocationRecords.Count -ne 1 -or $pcreAllocationRecords[0].passed -ne 4 -or $pcreAllocationRecords[0].failed -ne 0 -or @($pcreAllocationRecords[0].profiles).Count -ne 4) {
+          throw 'Expected one complete four-profile PCRE allocation result.'
+        }
+        $pcreAllocationNames = @($pcreAllocationRecords[0].profiles | ForEach-Object { $_.name } | Sort-Object -Unique)
+        $pcreAllocationExpectedNames = @('raw-code-unit', 'utf8-dot', 'ucp-letter', 'utf8-no-match') | Sort-Object
+        if (($pcreAllocationNames -join '|') -cne ($pcreAllocationExpectedNames -join '|')) { throw 'PCRE allocation profile names differ.' }
+        foreach ($pcreAllocation in $pcreAllocationRecords[0].profiles) {
+          if ($pcreAllocation.smallInputBytes -ne 1024 -or $pcreAllocation.largeInputBytes -ne 65536 -or $pcreAllocation.iterations -ne 8 -or $pcreAllocation.allowanceBytesPerCall -ne 4096 -or $pcreAllocation.smallAllocatedBytes -lt 0 -or $pcreAllocation.largeAllocatedBytes -lt 0 -or ($pcreAllocation.largeAllocatedBytes - $pcreAllocation.smallAllocatedBytes) -gt (4096L * 8)) {
+            throw 'PCRE allocation evidence violates the paired-input contract.'
+          }
+        }
+        Write-Host 'PASS: paired PCRE allocation evidence: four profiles'

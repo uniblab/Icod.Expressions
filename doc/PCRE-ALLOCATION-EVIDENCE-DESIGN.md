@@ -102,3 +102,46 @@ completion, cleanup and ready readback externally on PR284. No source/docs/test
 edits after final GREEN. P09 remains open for wider contract/hostile/performance
 release closure; no native16/P10-P18, remaining P01, Stage C or downstream
 migration gate closes merely from these four allocation profiles.
+
+## Successful-build RED and fixture freeze
+
+Tests-only source5baf2c8b4cf405bb86c5ff5cb7a9ef8ef921801b, tree
+70ed29ba576aa12815f6ecc5bdce5bff15126e56; proposed merge
+febca97bceb40f94309eedc13089eaf1579d4619. Run44416467605, Linux x64
+job135197967386 builds net8/net9/net10 with zero coded warnings/errors and
+reports21 failed /104,760 passed /104,781 total /zero skips. All failures
+reach missing new helpers:17 probe /4 consumer. Nine are expected exception-
+type mismatches (arguments6/cancellation2/callback-error1). Every native profile
+assertion and every old case passes. Freeze before helper implementation:
+
+- samples/PackageSmoke/PcreAllocationCases.cs: ed492a89b7258c4e1bfea14cd971bb562d485a5f.
+- tests/Pcre/PcreAllocationEvidenceTests.cs: 05e642b7ba33f0a590bfe3a15875d08a8ab2d6b6.
+- tests/Icod.Expressions.Tests.csproj: 4a2043c47136153c82baae69bc5de5ac34adba05.
+- tests/Pcre/Native/allocation-subject-oracle.c: a3d943a93e9eb7b8fdd27772153c9344dfb93ebc.
+
+## Completed-helper freeze and prequalification review
+
+Probe blob 61cf27896c4f98004c278b6d59c613f78721f2b0; consumer blob
+f22d10421d5a813954fc523371ec13e77aba8725. Reviewed the whole 17-file branch: native setup
+provenance, frozen capture semantics, callback-only counter boundaries, original
+views, eight warmups per size, alternating order, exact bounded visits, argument
+limits, pre/post cancellation and error propagation. Reviewed compilation/input
+preparation outside measurement, fixed capture validation overhead, anchoring,
+padded slices and growth allowance relative to fault-control input deltas.
+
+Reviewed sample output and strict shared-action enforcement for four exact
+names, input sizes, iterations, counters and bounds; existing42+1+2 result and
+isolated feed/cache remain enforced. Existing workflow/release call sites,
+package identity and dependencies stay fixed. Managed current-thread counters
+do not represent native/retained heap or controlled-host performance.
+
+All376 old C# test blobs stay identical. Only three documented test-project
+source links change among386 prior test files. Production src remains
+d1790dfc3fc83625ecb4915942ca0e83219cb25b; old package helper/data and A05
+source35/corpus remain fixed. The four new fixture/assertion/native/XML blobs
+above are still frozen. All seven inventories were reviewed before upload.
+Local A05 identity, classifier, eight-job/thirteen-rejection prerequisite and
+whitespace checks pass. Real hosted compiler, PowerShell and six-host allocation
+records provide final qualification; no local SDK was installed. Final metrics,
+identities, cleanup and ready readback stay on PR284, with no source/docs/test
+edits after final GREEN.

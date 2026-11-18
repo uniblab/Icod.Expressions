@@ -9,16 +9,16 @@ are an old-test-file exception. #7/#102/footer fixed; Grep last; user owns merge
 
 - [x] Independently pin eight native outcomes/JIT facts for four input profiles.
 - [x] Define paired-input counter semantics, fault controls and bounded callbacks.
-- [ ] Publish tests-only draft, reconcile exact successful-build RED21 and freeze
+- [x] Publish tests-only draft, reconcile exact successful-build RED21 and freeze
   profile/assertion/native/XML sources before implementation.
 
 ## Task 2: helpers and package evidence
 
-- [ ] Implement only new measurement/consumer helpers; retain frozen assertions.
-- [ ] Integrate four-profile output and enforcement in the existing package gate,
+- [x] Implement only new measurement/consumer helpers; retain frozen assertions.
+- [x] Integrate four-profile output and enforcement in the existing package gate,
   preserving42+1+2 checks, isolation and workflow call sites.
-- [ ] Freeze helpers, author-review whole branch/seven inventories and local gates;
-  upload reviewed source/tree with a branch-head lease.
+- [x] Freeze helpers, author-review whole branch/seven inventories and local gates.
+- [ ] Upload reviewed source/tree with a branch-head lease.
 
 ## Task 3: qualification
 

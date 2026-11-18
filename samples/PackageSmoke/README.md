@@ -49,3 +49,12 @@ The PCRE line is:
 Any assertion, compile/match/resource or cancellation-contract mismatch exits
 with failure. The sample performs no timing assertions or dependency-version
 checks. User publication/tag decisions are unchanged.
+
+The same invocation also emits `pcre-allocation-smoke`: four anchored raw/UTF/
+UCP profiles compare 1,024- and 65,536-byte original views, with eight measured
+calls per size after warmup. Each row reports raw managed allocation totals.
+The fixed allowance is 4,096 additional bytes per call. Byte-copy and UTF-16
+conversion regression controls live in the test suite. No timing threshold is
+used; controlled-host timing and wider P09 release evidence remain separate.
+See [allocation contract](../../doc/PCRE-ALLOCATION-EVIDENCE-DESIGN.md) for the
+current-thread counter scope, callback bounds and covered-profile limitations.

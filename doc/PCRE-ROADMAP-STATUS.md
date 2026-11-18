@@ -1,5 +1,44 @@
 # PCRE roadmap status
 
+## PR284: paired-input allocation evidence
+
+Bounded P09 evidence now compares four anchored raw/UTF/UCP paths at1KiB and
+64KiB, with exact native captures independently established by eight pinned
+PCRE2 C probes (JIT0/positive size). The package-only consumer prepares inputs/
+patterns outside measurement, uses original padded byte views and validates
+complete results during every callback. No matcher/producer change is needed.
+
+A synchronous current-thread managed-allocation probe warms both sizes,
+alternates eight measured calls per size and records raw totals. Allow at most
+4KiB additional allocation per call. Whole-byte-copy and UTF16-decode fault
+controls must exceed that allowance. Callback bounds, original-view identity,
+argument guards, cancellation/errors and no-op allocation controls are explicit.
+This is covered-profile growth evidence, not absolute zero allocation, native/
+retained heap accounting, timing acceptance or proof for every pattern/mode.
+
+21 additions give104,781 total. Successful-build RED isolates21 missing-helper
+failures /104,760 passes /zero skips, with native assertions passing first.
+Freeze profile/assertion/C/XML sources before implementing only the new helpers;
+freeze completed helpers afterward. All376 old C# test blobs and the producer
+stay fixed; the sole old-test-file exception adds three Compile source links.
+
+The existing isolated package action retains its42+1+2 protocol checks and
+requires a second structured result with four exact profile names, sizes,
+iterations, nonnegative counters and passing growth bounds on all six hosts.
+Existing workflow call sites, release behavior and package dependencies stay
+fixed. Actual configured compatibility/Gnulib/support checks remain mandatory.
+
+See [design](PCRE-ALLOCATION-EVIDENCE-DESIGN.md),
+[plan](PCRE-ALLOCATION-EVIDENCE-PLAN.md) and
+[PR284](https://github.com/uniblab/Icod.Expressions/pull/284). Review the whole
+branch and all seven inventories before final six-host104,781/frozen214/120,
+package/allocation and support qualification with zero failures/skips/coded
+warnings/errors. Final identities, raw metrics, cleanup and completion stay
+external on PR284; no source/docs/test edits after GREEN. Wider P09 contract/
+hostile/performance gates, native16/P10-P18, remaining P01, Stage C and actual
+consumer migration remain open. #7/#102/footer fixed; Grep last; user merges,
+tags and publishes.
+
 ## PR283: internal PCRE package-only consumer gate
 
 P09 now has a bounded package-consumer contract using the actual candidate
@@ -175,7 +214,7 @@ This is a gate assessment, not a percentage inferred from PR or test counts.
 | N02-N05 common substrate/foundation freeze | Exact input coordinates, preserved POSIX/GNU runtime; PCRE has pinned Unicode/UTF helpers and separate parser/VM. | Partial building blocks, not a completed common HIR/analysis seam or normalized foundation freeze. Do not refactor frozen legacy source as part of a PCRE proof fix. |
 | P00-P01 compatibility/oracles | PCRE.NET 1.6.0 / pinned PCRE2 10.48; native8/native16 and normalized fixtures (#280/#281); bounded Perl 5.40.1 overlap and reducer skeleton (#282). | Partial. Broader declared Perl divergence/error coverage and reduction/fuzz closure remain open. |
 | P02-P08 parser, VM, captures, advanced syntax, UTF-8/Unicode | Internal dedicated parser, iterative explicit-frame ordered VM, capture journal, references/recursion/conditions, lookarounds/verbs, native byte offsets, UTF validation, properties/scripts/graphemes/class algebra. | Substantial implementation with explicit acceptance gaps. Callout execution, UTF code-unit escape behavior and remaining syntax/invalid-input/source-shape cases prevent claiming full gate closure. |
-| P09 8-bit/UTF-8 freeze | Merged #282 has 104,715 tests, native widths/Perl-overlap references and a reducer; #283 adds a bounded internal package-only PCRE consumer and six-host isolated candidate checks. | Partial. Full internal API/deviation freeze, broader hostile corpus and representative performance/no-transcoding release evidence remain open. The friend sample is not a public PCRE release. |
+| P09 8-bit/UTF-8 freeze | Merged #283 has 104,760 tests and six-host isolated internal package consumers; #284 adds four paired-input allocation profiles with copy/decode fault controls. | Partial. Full internal API/deviation and hostile corpus freeze, representative controlled-host timing and broader no-transcoding release evidence remain open. |
 | P10-P12 native 16-bit/UTF-16 and cross-width | Production compiler/program/matcher/result types remain byte-specific. Native16 references and shared scalar-coordinate fixtures exist; no managed native16 backend or managed cross-width execution suite. | Open and **mandatory before stable PCRE release**. No whole-subject transcode adapter or cloned parser/HIR counts as completion. |
 | P13 partial/iteration/substitution | Current internal match result/API handles complete single matches. | Open: soft/hard partial, native partial offsets, next-match empty retry rules, replacement language/output limits and width-native sinks. |
 | P14-P17 security, analyses, performance, fuzz closure | Deterministic work/cancellation, bounded frames/compilation/proof scans, optimized/reference controls, generated Unicode gates, persistent differential cases, seven component workloads. | Partial 8-bit evidence. Full independently controlled resource model, dual-width proof/performance corpus, bounded fuzz/reducer closure and consumer benchmarks remain open. |
