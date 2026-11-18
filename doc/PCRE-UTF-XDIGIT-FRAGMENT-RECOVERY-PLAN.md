@@ -12,14 +12,14 @@ A05 source 35. Keep #7/#102 open, Grep last and issue #7 footer unchanged.
 - [x] Isolate iterator early-failure analysis and restore the unmodified oracle.
 - [x] Pin 428 groups / 22,936 protocols, 15 diagnostics and 42 supplementary
   cases; independently preflight 40 supplementary native outcomes.
-- [ ] Publish tests-only draft; reconcile 132 predicted failures and freeze
+- [x] Publish tests-only draft; reconcile 132 predicted failures and freeze
   all five new C# blobs before production.
 
 ## Task 2: bounded metadata and candidate recovery
 
-- [ ] Add the conservative direct-root proof, owned program bool and existing
+- [x] Add the conservative direct-root proof, owned program bool and existing
   fragment-loop cutoff; preserve all existing ALLANY bodies and Step sites.
-- [ ] Review whole branch, pass local support gates and update both documents
+- [x] Review whole branch, pass local support gates and update both documents
   plus all five shared inventories before final source upload.
 - [ ] Upload the exact reviewed tree with a branch-head lease.
 

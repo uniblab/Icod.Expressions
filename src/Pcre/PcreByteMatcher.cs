@@ -180,6 +180,7 @@ internal static partial class PcreByteMatcher {
 			var previousFragmentEnd = -1;
 			var firstLinePosition = startOffset;
 			var forcedSkipStart = -1;
+			var xdigitFragmentEnd = startOffset;
 			for ( var fragmentIndex = 0; fragmentIndex < fragments.Count; ) {
 				var fragment = fragments[fragmentIndex];
 				if ( nullableInvalidCandidates && previousFragmentEnd >= 0
@@ -191,8 +192,11 @@ internal static partial class PcreByteMatcher {
 					fragment = new( gap, gap );
 				} else { fragmentIndex++; }
 				previousFragmentEnd = fragment.End;
+				if ( program.UtfXdigitFragmentBarrier && fragment.Start <= startOffset && startOffset < fragment.End
+					&& ( input.Span[startOffset] & 0xC0 ) != 0x80 ) { xdigitFragmentEnd = fragment.End; }
 				for ( var start = Math.Max( startOffset, fragment.Start ); start <= fragment.End; start++ ) {
 					if ( anchored && start != startOffset && start != forcedSkipStart ) { return new( null, null ); }
+					if ( program.UtfXdigitFragmentBarrier && start > xdigitFragmentEnd ) { return new( null, null ); }
 					if ( program.Utf8 && start < fragment.End && ( input.Span[start] & 0xC0 ) == 0x80 ) {
 						continue; // Search candidate boundaries, never continuation bytes.
 					}

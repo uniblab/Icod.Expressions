@@ -1,5 +1,40 @@
 # PCRE error and resource contract checkpoint
 
+## PR278: UCP xdigit iterator fragment recovery
+
+A bounded direct-root proof retains native start-study recovery for unbounded
+UCP xdigit complement iterators before selected ASCII literal continuations.
+NoDotStarAnchor does not disable this iterator behavior; NoStartOptimize does.
+The owned program bool and one integer cutoff reuse the existing fragment
+loop after whole-subject validation, preserving its requested zero-width
+candidate. Matching does not consume malformed bytes or infer anchoring.
+
+Require exact complementary UnicodeHexDigit predicates, low ASCII ranges,
+combined 4,096 list visits and a bounded 4,096 retained-AST walk over the
+proved head plus literal/capture/mark/repeat tails. Preserve erased-node
+inspection and cancellation. Greedy marked/no-tail/optional, caseless K/S,
+non-ASCII continuation, Turkish/surrogate and wider group/call/cut/assertion
+shapes remain outside the proof. Initial raw native consumption research
+remains on immutable tests-only source; aligned controls retain their spans.
+
+428 groups / 22,936 native protocols, 15 diagnostics and 42 supplementary cases
+add 485 tests (103,351 total). Refined RED is exactly 132 managed failures /
+103,219 passes; all 116 matching and 16 supplementary identities match. All
+102,866 prior tests and 353 new controls pass; native/compiler warning/error
+counts are zero. Freeze five new C# blobs before production; preserve all
+357 prior test files / 352 C# sources and A05 source 35. All established ALLANY
+bodies/budgets, VM instruction handling and Step placement remain unchanged.
+
+See [design](PCRE-UTF-XDIGIT-FRAGMENT-RECOVERY-DESIGN.md), [plan](PCRE-UTF-XDIGIT-FRAGMENT-RECOVERY-PLAN.md) and
+[PR278](https://github.com/uniblab/Icod.Expressions/pull/278). Build
+net8/net9/net10; execute net10 only on six native hosts with frozen 214 cases /
+120 methods and all configured support/package/script gates. All seven
+inventories precede final qualification; results, exact identities and final
+plan completion stay external on the PR without source/docs/test edits after
+GREEN. Keep #7/#102 open; Grep last; user owns merge/tags/publication. Issue
+#7 footer unchanged. Broader optimizer/release/consumer readiness remains open.
+
+
 ## PR277: built-in class complement star anchoring
 
 Positive ordinary UTF classes with exact complementary finite ASCII POSIX

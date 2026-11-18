@@ -41,9 +41,9 @@ subroutine targets. Require one direct root branch whose first node is an
 unbounded repeat with minimum 0 or 1 over a positive ordinary Source:Class
 set. A directly wrapped possessive repeat is eligible; enclosing groups,
 leading assertions/conditions and root alternatives are outside this proof.
-Require a literal continuation immediately after a greedy repeat. A lazy
+Require an ASCII literal continuation immediately after a greedy repeat. A lazy
 repeat may have one intervening path mark and/or a capturing group whose
-single branch begins with a literal. No-tail and optional continuations are
+single branch begins with an ASCII literal. No-tail and optional continuations are
 excluded: their native invalid-byte consumption is a separate boundary.
 
 Precheck a combined 4,096 predicates/ranges. Scan complete lists with per-visit
@@ -53,13 +53,13 @@ entirely inside 0..127 are admitted. Other predicates, outer negation, wider
 ranges, finite/minimum-two repeats and class algebra remain excluded.
 
 Bound a whole retained AST walk independently at 4,096 body/branch/node visits
-and queued nodes. Permit pure consuming atoms, captures/noncaptures, ordinary
-repeats, directly possessive repeats and path marks. Inspect zero-count bodies
+and queued nodes. Permit the proved head set by identity; otherwise permit only literals,
+captures/noncaptures, ordinary/directly possessive repeats and path marks. Inspect zero-count bodies
 too. Reject references, calls, assertions, conditions, cuts, explicit atomic
 groups, resets and unknown nodes, even when erased from emitted code. Use a
 heap worklist and cancellation, not recursion. Exhaustion declines proof
-without new syntax/admission limits. All seven existing ALLANY proof bodies
-and their resource contracts remain unchanged.
+without new syntax/admission limits. All established ALLANY proof bodies
+and their seven budget contracts remain unchanged.
 
 Matching retains whole-subject validation and all its Step charges. Reuse the
 existing fragment loop with one integer cutoff: a valid requested scalar can
@@ -74,7 +74,9 @@ No opcode, frame/journal, parser, AST layout, public API, dependency, workflow
 or public quota change; no new matching allocation or rescan. Existing
 instruction handling and Step placement are unchanged. Broader iterator/source
 provenance and group/assertion/call/cut shapes remain #102 work.
-Programs containing surrogate literals stay outside the new proof.
+Programs containing active or erased surrogate literals and Turkish casing
+stay outside the proof. Greedy caseless K/S/k/s continuations are excluded,
+including when restriction might make an individual case eligible.
 
 ## Native-first fixtures and qualification
 
@@ -128,3 +130,40 @@ all 16 supplementary failures. Before production, require a fresh successful-
 build RED of exactly 132 managed failures / 103,219 passes, no native failures,
 and freeze all five new C# blobs. Narrow the compiler proof's continuation
 shape as specified above; broader native invalid consumption remains research.
+
+## Observed refined RED and frozen source
+
+Tests-only head `051171861851c78a32a37eb57b9c6547fe901ad1`, tree
+`1eee6a36be987eb7e26068eccf339a6263137da4`, proposed merge
+`4747d965aec7c9320a6873a367a55f0297dae06c` have the exact source tree and
+ordered base/source parents. Run 44222693870 / Linux x64 job 134528394188
+confirms exactly 132 managed failures / 103,219 passes / 103,351 total / zero
+skips/compiler warnings/errors. All 116 matching and 16 supplementary
+identities match; no native assertion frame or unrelated failure. All
+102,866 prior tests and 353 new controls pass. Freeze before production:
+
+- `tests/Pcre/PcreUtfXdigitFragmentRecoveryProtocols1.cs`: `9b62d7dfd247a07a2291f4371027901dbc26d15c`
+- `tests/Pcre/PcreUtfXdigitFragmentRecoveryProtocols2.cs`: `5f79413a87c90a0b8489448592bd39f187d06022`
+- `tests/Pcre/PcreUtfXdigitFragmentRecoveryProtocols3.cs`: `d93cf9ddfaa1e7ba8bb356a722ae9306b843e8c6`
+- `tests/Pcre/PcreUtfXdigitFragmentRecoveryProtocols4.cs`: `a0ae876fc99d43dedd82d89c69278f16ede30506`
+- `tests/Pcre/PcreUtfXdigitFragmentRecoveryReferenceTests.cs`: `82c0830c663e501b58ee68a97eb92a14a4f8951e`
+
+Additional unmodified-native review preflights cover all 128 ASCII continuation
+values, two casing modes, four iterator forms, both NoDot policies and lazy
+marked/captured variants: 3,072 profiles. Sixteen greedy caseless K/S/k/s
+profiles exhibit the independent raw-byte consumption boundary; all 3,056
+remaining profiles preserve the pinned miss. Exclude those source identities
+from the proof, together with all non-ASCII continuations, Turkish casing and
+surrogate literals. No new test expectation or old blob changes.
+
+Whole-branch author review: exact type/polarity/range and continuation guards,
+complete combined-list scan, bounded pure retained-AST walk including erased
+children, owned start-study selection and existing fragment-loop cutoff are
+consistent. The cutoff follows whole-subject validation; it preserves the
+requested zero-width candidate and never adds consumption across malformed
+bytes. Removing only the additions restores both previous production files
+byte-for-byte, including every ALLANY helper and every Step site. All old and
+frozen tests remain unchanged. Local A05/classifier/eight-main-job plus thirteen
+rejection/whitespace gates pass. No unresolved introduced finding; independent
+agent review was not performed. All seven inventories precede qualification;
+final completion stays external on PR278 without post-GREEN source edits.
