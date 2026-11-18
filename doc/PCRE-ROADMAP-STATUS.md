@@ -1,5 +1,45 @@
 # PCRE roadmap status
 
+## PR280: native dual-width fixture contract
+
+P00/P01 now has one reusable native UTF-8/UTF-16 case catalog with explicit
+pattern/subject encodings, native start offsets, both capture protocols,
+normalized scalar captures, names, marks and compile errors. The existing
+managed byte matcher is checked against its pinned byte results. There is
+no managed 16-bit matcher, public API, dependency or workflow change.
+
+An independent pinned PCRE2-8/16 C harness records 140 shared matching cases,
+ten compile errors, eight width-specific malformed-subject errors and two raw
+16-bit witnesses. All matching compiles require JIT zero/positive size.
+PCRE.NET 1.6.0 remains the six-host CI oracle; its string API always adds UTF,
+so raw 16-bit results are not misrepresented as string-API coverage.
+
+The test-only coordinate adapter uses independent Rune decoding, not matcher
+navigation. It rejects malformed/different scalar inputs, split byte/scalar
+or surrogate boundaries, invalid endpoints/protocols and arithmetic overflow.
+Original byte/UTF-16 offsets remain pinned separately; empty/unset and reversed
+ranges stay distinct. Arrays and encoding conversion belong only to test
+infrastructure; no production subject transcoding is introduced.
+
+202 new cases (104,050 total) comprise 150 shared/diagnostic rows, 44 coordinate
+controls and eight width-specific errors. Observed tests-only RED exactly isolates
+194 missing-adapter failures / 103,856 passes; all native assertions, 103,848
+prior tests and eight malformed-subject controls pass. Five fixture/assertion
+sources are frozen before implementing only the helper; its final blob is frozen too.
+Preserve all 367 prior test files / 362 C# sources and A05 source 35/corpus.
+
+See [design](PCRE-DUAL-WIDTH-FIXTURE-CONTRACT-DESIGN.md),
+[plan](PCRE-DUAL-WIDTH-FIXTURE-CONTRACT-PLAN.md) and
+[PR280](https://github.com/uniblab/Icod.Expressions/pull/280). Whole-branch review
+and all seven inventories precede six-host qualification: net8/net9/net10
+builds, full net10 plus frozen 214 cases / 120 methods, zero failures/skips/coded
+warnings/errors and all configured support gates. Final identities/evidence and
+plan completion stay external without source/docs/test edits after GREEN.
+Raw 16-bit CI, Perl/reducer and full P01 closure remain open; P09-P18, Stage C
+normalization and real consumer migration are not closed by this contract.
+Keep #7/#102 and issue #7 footer unchanged; Grep last; user merges/tags/publishes.
+
+
 ## Revision 4 stocktake (2026-11-18)
 
 Re-read all 50 pages of *Icod.Expressions Architecture Critique and Production
