@@ -72,8 +72,10 @@ the two fixture/assertion files before implementing only the helper. Freeze
 the completed helper too. This RED measures a missing native test adapter,
 not a managed matching feature. All production source remains unchanged.
 
-Preserve375 prior test files /368 C# sources, all #280 fixtures/helper and A05
-source35/corpus. Review the complete branch, run local support gates and
+Preserve all 368 prior C# sources, all #280 fixtures/helper and A05
+source35/corpus. The only exception among 375 prior test files is the native
+README header-path correction and current bridge link documented below.
+Review the complete branch, run local support gates and
 update this design/plan plus all five inventories before final source upload.
 Build net8/net9/net10; execute full net10 and frozen214 cases /120 methods on
 all six native hosts, zero failures/skips/coded warnings/errors and all
@@ -81,3 +83,62 @@ configured support/package/script gates. Final evidence, cleanup and plan
 completion remain external on PR281; no source/docs/test edits after GREEN.
 Full P01 closure, Perl/reducer, managed 16-bit/P10-P12 and other roadmap gates
 remain separate work.
+
+## Native-header provenance correction
+
+The #280 build example used -I . rather than the generated header directory
+-I src, allowing an installed system header to be selected. Correct that
+README include path and link its raw-mode note to the new bridge documentation;
+keep every old C/C# fixture and assertion unchanged.
+Rebuild against the generated pinned 10.48 header, reproduce all310 #280
+protocols with identical SHA256 e5df76d9cdfb0ccc7f4405d53091006f0ee46ef32d5fd6154784202d26d75f95,
+and byte-compare all136 new outcomes unchanged. Independently recompiled C ABI
+facts remain identical. The linked native libraries were already pinned; no
+native expected result is revised. This one documentation-only exception to
+prior-file identity preservation is explicit; all368 prior C# sources remain fixed.
+
+## Tests-only RED and assertion freeze
+
+Tests-only source 599ea1f2f45f6e3f2edb6ef60e1b22ba5728c6ff, tree
+e61674008f31939ec282a3baeec76c33abeb08e6; proposed merge
+7169978e2f1a6646c362c0544203d814bade579f against the base above.
+Run 44356655849: Linux x64/ARM64 and Windows x64/ARM64 each build
+all three targets without coded warnings and report 294 failed, 104,050
+passed, zero skipped, 104,344 total. Failure identities agree on all four
+hosts: raw136/shared UTF140/diagnostics10/layout1/ownership1/guards6.
+Execute's missing adapter causes 293 failures (including six expected-guard
+type mismatches); the missing layout helper causes one. No old case fails.
+Final six-host qualification and any remaining RED-host evidence stay on PR281.
+
+Freeze before helper implementation:
+
+- PcreRaw16Cases.cs: aa1e375bd7ad64c9cfb54e470e03480b77f12461.
+- PcreRaw16OracleReferenceTests.cs: 38823cff58357ade85cac91964ec17a355972a60.
+
+Pinned-header native output for all136 new protocols has SHA256
+de16f2ed853116aeb966a9d33eaaee1b5cebc1718860d9497cfec7a2df9bfa01.
+No fixture result/assertion changes are allowed while implementing the helper.
+
+## Prequalification author review and helper freeze
+
+The completed helper is frozen at Git blob 6da3b53a4b8560900cc4e26ac8fde9c16e37a00a.
+Reviewed the complete 12-file branch change against the base: pinned export
+names/Cdecl, sequential C64 layout, effective options, JIT info width, native
+code-unit copies and counts, error/no-match separation, signed/unset captures,
+name/mark ownership and every module/program/buffer cleanup path. Managed
+input limits run before native entry. No production subject conversion or
+managed width-16 matcher is introduced.
+
+All 368 prior C# test blobs and the production src tree remain identical.
+Only the native README changes among 375 prior test files; its example now
+uses the generated pinned header and links the new raw-mode reference.
+A05 source35/corpus and all existing fixtures/helpers remain fixed. The two
+new case/assertion blobs above remain frozen.
+
+Local A05 identities, compatibility classifier, main-job prerequisites
+(eight required jobs/thirteen rejection controls) and git diff whitespace
+checks pass. This design/plan and the five shared inventories were reviewed
+before final source upload. No local .NET SDK is installed; native CI supplies
+the required builds/full-suite/frozen/package evidence. Final identities,
+six-host outcomes, review readback and cleanup are recorded externally on
+PR281, without source/docs/test edits after GREEN.

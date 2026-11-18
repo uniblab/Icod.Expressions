@@ -17,7 +17,7 @@ From a disposable out-of-tree build directory, with the pinned PCRE2 checkout
 ```sh
 ./pcre2/configure --enable-jit --enable-pcre2-16 --disable-shared --enable-static
 make -j4 libpcre2-8.la libpcre2-16.la
-cc -O2 -std=c11 -Wall -Wextra -Werror -I . -I pcre2/src \
+cc -O2 -std=c11 -Wall -Wextra -Werror -I src -I pcre2/src \
   /path/to/Icod.Expressions/tests/Pcre/Native/dual-width-oracle.c \
   .libs/libpcre2-8.a .libs/libpcre2-16.a -o oracle
 printf '8|1|C3A9|C3A9|0\n16|1|00E9|00E9|0\n' | ./oracle
@@ -56,5 +56,6 @@ and are never treated as equivalent scalar sequences. This harness also
 supports raw native mode (`mode=0`); e.g. raw 16-bit `0100` and isolated
 `D800` match themselves at `0:1`. These raw native witnesses do **not** imply
 that PCRE.NET's string API or Icod.Expressions has a raw 16-bit backend.
-Raw 16-bit CI integration, Perl/reducer evidence and full P01 closure remain
-separate work. Native managed 16-bit execution remains P10/P11 work.
+Direct raw 16-bit reference CI is described in [raw16-bridge.md](raw16-bridge.md).
+Perl/reducer evidence and full P01 closure remain separate work. Native managed
+16-bit execution remains P10/P11 work.

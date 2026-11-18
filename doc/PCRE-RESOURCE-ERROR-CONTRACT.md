@@ -1,5 +1,44 @@
 # PCRE error and resource contract checkpoint
 
+## PR281: direct raw 16-bit native reference
+
+A test-only adapter now calls the existing PCRE.NET 1.6.0 native
+16-bit exports, with explicit raw/UTF options and effective-option checks.
+This removes the public string API's forced-UTF restriction from the reference
+oracle. It does not implement managed 16-bit execution or change production
+source, public API, dependencies, packaging or workflows.
+
+Independent pinned PCRE2 10.48/SLJIT probes provide 136 raw/UTF protocols:
+54 matches, 62 no-matches, 14 compile errors and six match errors. Reuse all
+150 frozen dual-width UTF cases. Include isolated surrogate code units,
+starts inside surrogate pairs, wide literals/classes, UCP, references,
+recursion/conditions, lookarounds, signed K ranges, names/marks and source UTF
+controls. Native code-unit offsets remain native; no production transcoding.
+
+The bounded C64 ABI copies owned capture/name/mark results before releasing
+native programs and buffers; compile/match errors remain distinct from no-match.
+ABI/ownership facts and six managed-input guards bring the addition to
+294 tests (104,344 total). Successful-build tests-only RED isolates exactly
+294 missing-adapter failures / 104,050 passes / zero skips. Freeze the two
+case/assertion sources before implementing only the helper, then freeze it.
+
+All 368 prior C# test sources, old C harness, A05 source35/corpus and production
+tree stay fixed. The only prior test-file exception corrects the native README
+include path to the generated pinned header and links the new bridge. All
+310 old protocols and 136
+new outcomes reproduce unchanged. See [design](PCRE-RAW16-NATIVE-ORACLE-DESIGN.md),
+[plan](PCRE-RAW16-NATIVE-ORACLE-PLAN.md) and
+[PR281](https://github.com/uniblab/Icod.Expressions/pull/281).
+
+Whole-branch review and all seven inventories precede final six-host
+qualification: net8/net9/net10 builds, full net10 plus frozen 214 cases /
+120 methods, zero failures/skips/coded warnings/errors and all configured
+support gates. Final source/merge identities, evidence, cleanup and completion
+remain external on PR281; no source/docs/test edits after GREEN. Full P01,
+Perl/reducer, P09-P18, Stage C normalization and real consumer migration remain
+open. Keep #7/#102 and issue #7 footer unchanged; Grep last; user owns merge,
+tags and publication.
+
 ## PR280: native dual-width fixture contract
 
 P00/P01 now has one reusable native UTF-8/UTF-16 case catalog with explicit
