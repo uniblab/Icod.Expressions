@@ -1,5 +1,34 @@
 # PCRE error and resource contract checkpoint
 
+## PR276: mixed binary/POSIX ASCII star classes
+
+Positive ordinary UTF classes containing positive binary ASCII plus negative
+POSIX ASCII retain native ALLANY star entry. Reordered/aliased/duplicate/cased
+members and extra union predicates/literals preserve byte spans at malformed
+fragments and split offsets. Opposite-polarity and binary-only complements
+retain XCLASS behavior; membership equality alone does not prove lowering.
+
+A sixth independent compile-local4096 predicate counter is shared across
+leading paths. The new overload calls the unchanged five-/four-counter proofs
+first, preserving every established result and charge. Only old failures
+attempt a complete, prechecked, cancellation-aware scan for the exact mixed
+pair. Scan past early markers; literal ranges are not charged by the new
+proof. Already proven classes consume no new work; exhaustion remains fallback.
+Runtime state/work, instructions, admission and public limits are unchanged.
+
+324 matching groups/21,456 native protocols,15 diagnostics and93 supplementary
+cases add432 tests (102,391 total). Tests-only RED exactly109 failures/102,282
+passes; all101,959 prior tests and323 new controls pass. Five C# blobs are
+frozen before production;347 prior test files/342 C# sources/frozen35 remain
+unchanged. See [design](PCRE-UTF-MIXED-ASCII-STAR-ANCHOR-DESIGN.md),
+[plan](PCRE-UTF-MIXED-ASCII-STAR-ANCHOR-PLAN.md) and
+[PR276](https://github.com/uniblab/Icod.Expressions/pull/276).
+Build net8/net9/net10; execute net10 only on six native hosts. All seven
+inventories precede qualification; final evidence/identities remain external
+on the PR without source/docs/test edits after GREEN. #7/#102 remain open;
+Grep last; user owns merge/tags/package publication. Issue7 footer unchanged.
+
+
 ## PR275: POSIX ASCII unions in UTF star classes
 
 Positive ordinary UTF classes preserve native ALLANY star entry for POSIX
