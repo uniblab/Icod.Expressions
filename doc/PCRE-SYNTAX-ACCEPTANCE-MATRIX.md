@@ -1,5 +1,44 @@
 # PCRE syntax acceptance matrix
 
+## PR284: paired-input allocation evidence
+
+Bounded P09 evidence now compares four anchored raw/UTF/UCP paths at1KiB and
+64KiB, with exact native captures independently established by eight pinned
+PCRE2 C probes (JIT0/positive size). The package-only consumer prepares inputs/
+patterns outside measurement, uses original padded byte views and validates
+complete results during every callback. No matcher/producer change is needed.
+
+A synchronous current-thread managed-allocation probe warms both sizes,
+alternates eight measured calls per size and records raw totals. Allow at most
+4KiB additional allocation per call. Whole-byte-copy and UTF16-decode fault
+controls must exceed that allowance. Callback bounds, original-view identity,
+argument guards, cancellation/errors and no-op allocation controls are explicit.
+This is covered-profile growth evidence, not absolute zero allocation, native/
+retained heap accounting, timing acceptance or proof for every pattern/mode.
+
+21 additions give104,781 total. Successful-build RED isolates21 missing-helper
+failures /104,760 passes /zero skips, with native assertions passing first.
+Freeze profile/assertion/C/XML sources before implementing only the new helpers;
+freeze completed helpers afterward. All376 old C# test blobs and the producer
+stay fixed; the sole old-test-file exception adds three Compile source links.
+
+The existing isolated package action retains its42+1+2 protocol checks and
+requires a second structured result with four exact profile names, sizes,
+iterations, nonnegative counters and passing growth bounds on all six hosts.
+Existing workflow call sites, release behavior and package dependencies stay
+fixed. Actual configured compatibility/Gnulib/support checks remain mandatory.
+
+See [design](PCRE-ALLOCATION-EVIDENCE-DESIGN.md),
+[plan](PCRE-ALLOCATION-EVIDENCE-PLAN.md) and
+[PR284](https://github.com/uniblab/Icod.Expressions/pull/284). Review the whole
+branch and all seven inventories before final six-host104,781/frozen214/120,
+package/allocation and support qualification with zero failures/skips/coded
+warnings/errors. Final identities, raw metrics, cleanup and completion stay
+external on PR284; no source/docs/test edits after GREEN. Wider P09 contract/
+hostile/performance gates, native16/P10-P18, remaining P01, Stage C and actual
+consumer migration remain open. #7/#102/footer fixed; Grep last; user merges,
+tags and publishes.
+
 ## PR283: internal PCRE package-only consumer gate
 
 P09 now has a bounded package-consumer contract using the actual candidate
