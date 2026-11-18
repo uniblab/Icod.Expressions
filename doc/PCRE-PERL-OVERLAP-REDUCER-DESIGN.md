@@ -99,3 +99,51 @@ coded warnings/errors, plus configured support/package/script gates. Keep final
 source/tree/base/merge identities, plan completion, cleanup and ready readback
 on PR282. No source/docs/test edits after final GREEN. P01 remains partial;
 P09-P18, Stage C and real consumer migration are not closed by this increment.
+
+## Successful-build RED and source freeze
+
+Tests-only source 0763d93fb2e803b5810625a9a45bcd7a6051ba72, tree
+a539b6a438fdf9f40f0aa8f02a1334e6bca12a34; proposed merge
+a631879298f470ce82d09a45f691d09858e8a8a7 against the base above.
+Run44388013559, Windows x64 job135097751072 builds net8/net9/net10 with
+zero coded warnings/errors, then reports31 failures /104,684 passes /
+104,715 total /zero skips. All340 overlap cases and104,344 prior tests pass.
+All31 failures reach the missing Reduce helper: four minimum rows, five budget
+rows, eight argument rows and14 facts. Eleven are expected exception-type
+mismatches (arguments8/cancellation2/oracle-error1); the underlying cause of
+every failure is NotImplementedException, with no native-literal assertion failure.
+
+Freeze these sources before implementing only the helper:
+
+- tests/Pcre/PcrePerlOverlapCases.cs: 9d17cb50bb731f9e763b7cd58d7626597b07deba.
+- tests/Pcre/PcrePerlOverlapReferenceTests.cs: 8d4ce4d5f38bf93d0b3c0c95bd26c82fdfda8f8b.
+- tests/Pcre/PcreFixtureReducerTests.cs: e120a9a1c8ff4eecf1bbedce0d2cdff4de51e77b.
+- tests/Pcre/Native/perl-overlap.pl: f4979cb96faf939978fa6688d2fbe73f3d033764.
+
+The README reconstruction also reproduces all340 Perl rows byte-for-byte; five
+invalid row/hex/UTF/start/compile controls fail before producing a record.
+Final source/helper identity and remaining host evidence stay externally on
+PR282. No frozen assertion, runner or native expected output is revised.
+
+## Prequalification author review and completed helper freeze
+
+Completed reducer helper Git blob: addceed519f99a81fec0f8991229d3a696c043ab.
+Reviewed the complete 13-file branch against the merged base: literal Perl/
+native protocols and release/binary provenance, Unicode/native coordinate
+separation, original-case licensing, runner input/compile/timeout behavior,
+fixed start offsets, strictly shrinking candidates, complete unchanged-pass
+minimality, budget-before-call boundaries, owned buffers and pre/post callback
+cancellation/error propagation. The synchronous oracle remains caller-bounded;
+no AST/global-minimum or production matching/resource claim is made.
+
+All 379 prior test files /371 C# blobs and production src tree
+4224ea95d1cee7583799e639c4e3bb6be6c50fea remain identical. Frozen A05 source35/
+corpus and all existing helper/assertion contracts stay fixed. The four new
+frozen sources above remain identical. This design/plan and the five shared
+inventories, including the refreshed gate ledger, precede final source upload.
+
+Local A05 identity, CI classifier, main-job prerequisite (eight required jobs/
+thirteen rejection controls) and whitespace gates pass. No local SDK is
+installed. Full builds/tests/frozen/parity/API/package and script evidence are
+required from six-host native CI; final plan completion and cleanup remain
+external on PR282 without source/docs/test edits after GREEN.

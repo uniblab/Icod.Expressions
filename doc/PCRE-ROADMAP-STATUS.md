@@ -1,5 +1,45 @@
 # PCRE roadmap status
 
+## PR282: pinned Perl overlap and bounded reducer
+
+P00/P01 gains a declared Perl v5.40.1 / Unicode 15.0.0 comparison scope and
+an original development runner, with 340 literal overlap cases (221 matches,
+119 no-matches). All 680 independently built pinned PCRE2-8/16 probes agree
+with Perl's scalar captures, retaining each native start/capture coordinate.
+No mismatching rows were discarded. The corpus covers ordered choice,
+repetition, captures/references, assertions, recursion/conditions, Unicode
+literals and search starts. It makes no general Perl/PCRE or UCD15/17 parity
+claim; wider modes, error/mark/callout/partial/iteration families remain open.
+
+CI compares the literals through native8/native16, the direct native16 bridge
+and managed bytes. The pinned Perl interpreter remains an independent
+reproducible development preflight; no new CI dependency/workflow is added.
+All cases/runner are original, with source-release and actual binary provenance.
+
+A test-only native-unit reducer owns its buffers, preserves the start offset,
+uses one explicit oracle-evaluation budget and propagates cancellation/errors.
+Deterministic chunk deletion reaches a one-unit local fixed point, rather
+than promising a globally smallest pair. The callback decides mismatch class
+and rejects invalid/unrelated candidates. Byte/char/ushort controls and a
+native-backed coordinate-comparison fault supply 31 reducer cases.
+
+371 additions bring the full suite to 104,715. Observed successful-build RED
+isolates 31 missing-reducer failures / 104,684 passes / zero skips. Freeze all
+three new case/assertion sources and the Perl runner before implementing only
+the reducer, then freeze its completed helper. Preserve all 379 old test files /
+371 C# sources, the production tree and A05 source35/corpus.
+
+See [design](PCRE-PERL-OVERLAP-REDUCER-DESIGN.md),
+[plan](PCRE-PERL-OVERLAP-REDUCER-PLAN.md) and
+[PR282](https://github.com/uniblab/Icod.Expressions/pull/282). Whole-branch review
+and all seven inventories precede final six-host qualification: all three
+library targets, full net10 plus frozen214/120 methods, zero failures/skips/
+coded warnings/errors and configured support/package/script gates. Final
+identities/evidence, cleanup and completion stay externally on PR282 without
+source/docs/test edits after GREEN. P01 remains partial; P09-P18, Stage C and
+actual consumer migrations remain open. #7/#102 and issue #7 footer stay fixed;
+Grep last; user owns merge/tags/publication.
+
 ## PR281: direct raw 16-bit native reference
 
 A test-only adapter now calls the existing PCRE.NET 1.6.0 native
@@ -93,10 +133,10 @@ This is a gate assessment, not a percentage inferred from PR or test counts.
 | E03-E04 consumer migration/closure | [Bridge record](E03-Compatibility-Bridge.md), package-only smoke and 725-case scratch bridge checks across five consumers. | Partial. Disposable probes are not actual downstream migrations or a distributable production bridge. CommandFramework ownership removal remains blocked; Grep last. |
 | N00-N01 strict POSIX/Gnulib contracts | Public production API remains the inherited CommandFramework namespaces and three GNU-style providers. | Open. Separate strict BRE/ERE facades, complete composable syntax-bit/profile model and independent standards/profile closure are not implemented by the unchanged extraction. |
 | N02-N05 common substrate/foundation freeze | Exact input coordinates, preserved POSIX/GNU runtime; PCRE has pinned Unicode/UTF helpers and separate parser/VM. | Partial building blocks, not a completed common HIR/analysis seam or normalized foundation freeze. Do not refactor frozen legacy source as part of a PCRE proof fix. |
-| P00-P01 compatibility/oracles | PCRE.NET 1.6.0 / pinned PCRE2 10.48, native 8-bit research, Unicode 17 data and extensive byte-native fixtures. | Partial. Dual-width normalized fixture/oracle contract and declared pinned Perl-overlap/reducer evidence remain open. |
+| P00-P01 compatibility/oracles | PCRE.NET 1.6.0 / pinned PCRE2 10.48; native8/native16 and normalized fixtures (#280/#281); bounded Perl 5.40.1 overlap and reducer skeleton (#282). | Partial. Broader declared Perl divergence/error coverage and reduction/fuzz closure remain open. |
 | P02-P08 parser, VM, captures, advanced syntax, UTF-8/Unicode | Internal dedicated parser, iterative explicit-frame ordered VM, capture journal, references/recursion/conditions, lookarounds/verbs, native byte offsets, UTF validation, properties/scripts/graphemes/class algebra. | Substantial implementation with explicit acceptance gaps. Callout execution, UTF code-unit escape behavior and remaining syntax/invalid-input/source-shape cases prevent claiming full gate closure. |
-| P09 8-bit/UTF-8 freeze | Six-host CI, native differential fixtures and component workload smoke. Merged #278 has 103,351 tests; #279 adds 497 frozen cases, pending final qualification. | Open: internal API, documented unsupported cases, broader hostile corpus, package-only PCRE consumer and representative performance/no-transcoding release evidence still need a deliberate freeze. |
-| P10-P12 native 16-bit/UTF-16 and cross-width | Current PCRE compiler/program/matcher/result types are byte-specific; no production native 16-bit backend or dual-width suite. | Open and **mandatory before stable PCRE release**. No whole-subject transcode adapter or cloned parser/HIR counts as completion. |
+| P09 8-bit/UTF-8 freeze | Six-host native differential CI and component workload smoke; merged #281 has 104,344 tests. #282 adds 371 oracle/reducer cases. | Open: internal API, documented unsupported cases, broader hostile corpus, package-only PCRE consumer and representative performance/no-transcoding release evidence still need a deliberate freeze. |
+| P10-P12 native 16-bit/UTF-16 and cross-width | Production compiler/program/matcher/result types remain byte-specific. Native16 references and shared scalar-coordinate fixtures exist; no managed native16 backend or managed cross-width execution suite. | Open and **mandatory before stable PCRE release**. No whole-subject transcode adapter or cloned parser/HIR counts as completion. |
 | P13 partial/iteration/substitution | Current internal match result/API handles complete single matches. | Open: soft/hard partial, native partial offsets, next-match empty retry rules, replacement language/output limits and width-native sinks. |
 | P14-P17 security, analyses, performance, fuzz closure | Deterministic work/cancellation, bounded frames/compilation/proof scans, optimized/reference controls, generated Unicode gates, persistent differential cases, seven component workloads. | Partial 8-bit evidence. Full independently controlled resource model, dual-width proof/performance corpus, bounded fuzz/reducer closure and consumer benchmarks remain open. |
 | P18 public API/package/release | Existing extraction package sample/API checks; experimental PCRE stays internal. | Open. Both native PCRE widths, cross-width/package-only consumers, API/version/deviation freeze and release audit are required. User owns tags/publication. |
@@ -109,11 +149,11 @@ contracts requested by Revision 4.
 
 Execution order after this review:
 
-1. Finish the already characterized #279 byte/UTF correctness patch, author
-   review and six-host qualification on its immutable frozen fixtures.
-2. Use this ledger to plan P09 closure and the P00/P01 dual-width semantic
-   fixture/oracle seam before starting P10 lowering. Preserve one shared PCRE
-   semantic grammar; specialize representations below it.
+1. #279 correctness and #280/#281 dual-width reference seams are merged.
+   Qualify the bounded Perl-overlap/reducer increment #282 on frozen fixtures.
+2. Plan deliberate P09 closure and the remaining P00/P01 contracts before
+   P10 lowering. Preserve one shared PCRE semantic grammar; specialize
+   representations below it.
 3. Keep callouts, partial/iteration/substitution, full security/fuzz/performance
    and P18 release evidence as explicit deliverables. Repeated optimizer
    increments alone cannot close the roadmap.

@@ -11,14 +11,14 @@ SDK installation. Preserve prior source/tests and A05, keep #7/#102 and issue
   pinned native PCRE2 widths before managed assertions.
 - [x] Define bounded reducer behavior and 31 tests, including native-backed
   comparison-fault reduction and ownership/cancellation/budget controls.
-- [ ] Publish tests-only draft, reconcile exact successful-build RED31 and
+- [x] Publish tests-only draft, reconcile exact successful-build RED31 and
   freeze fixture/assertion sources plus the Perl runner.
 
 ## Task 2: reducer and review
 
-- [ ] Implement only the reducer; retain immutable oracle assertions.
-- [ ] Freeze helper, review whole branch and all seven inventories, pass local
-  gates and upload reviewed source/tree under a branch-head lease.
+- [x] Implement only the reducer; retain immutable oracle assertions.
+- [x] Freeze helper, review whole branch and all seven inventories, pass local gates.
+- [ ] Upload reviewed source/tree under a branch-head lease.
 
 ## Task 3: final qualification
 
