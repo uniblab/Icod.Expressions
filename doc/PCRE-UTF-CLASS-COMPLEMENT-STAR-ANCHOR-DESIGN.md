@@ -17,13 +17,13 @@ NoDotStarAnchor selects 2:1. Ordinary positive classes with complementary
 finite ASCII POSIX members lower to native ALLANY. Negative ASCII specials
 contribute wide inclusion; their positive partners fill the byte bitmap.
 Horizontal/vertical whitespace lists also have complementary native ranges.
-Under UCP, POSIX blank and xdigit are list-based exceptions; general Unicode
+Under UCP, POSIX blank is a list-based exception; general Unicode
 property pairs retain XCLASS even when their membership is universal.
 
 Admit exact same-kind complementary pairs for AsciiAlnum, AsciiAlpha,
 AsciiBlank, AsciiControl, AsciiDigit, AsciiGraph, AsciiLower, AsciiPrintable,
 AsciiPunctuation, AsciiSpace, AsciiUpper, AsciiWord, AsciiHexDigit,
-HorizontalSpace, VerticalSpace, UnicodeBlank and UnicodeHexDigit. Require null
+HorizontalSpace, VerticalSpace, UnicodeBlank. Require null
 category and zero property value. Do not include Ascii: its earlier independent
 proof owns its resource boundary. No general containment, property complement,
 cross-kind, range-union or class-algebra inference is introduced.
@@ -58,11 +58,11 @@ UTF validation, work/cancellation and admission priorities.
 
 ## Native-first qualification
 
-402 matching groups / 22,084 native protocols, 15 diagnostics and 58 supplementary
+402 matching groups / 21,952 native protocols, 15 diagnostics and 58 supplementary
 cases add 475 tests, reaching 102,866. Strict malformed whole subjects and
 unaligned strict starts are excluded before matching. Dynamic native preflight
 pins 22 budget groups / 66 literal outcomes, all JIT zero with positive sizes.
-Cover all admitted kinds, UCP property controls/list exceptions, scopes,
+Cover all admitted kinds, UCP property controls/list exception, scopes,
 extra union members, signed captures/marks, wrappers/references/cuts, caller
 anchoring/empty policies, malformed fragments, NUL and U+10FFFF.
 
@@ -82,12 +82,37 @@ native hosts with zero failures/skips/compiler warnings/errors and all configure
 support gates. Final identities/evidence and plan completion stay on PR277;
 no source, tests or docs edits after final GREEN.
 
-Expected RED is 137 matching identities plus 19 supplementary cases: ten
+Expected RED is 123 matching identities plus 19 supplementary cases: ten
 anchored-work, three ownership, four admitted single-list boundaries, one
-admitted shared boundary and one established-success bypass. Expect 156
-failures / 102,710 passes / 102,866 total, zero skips/compiler warnings/errors,
-with all 102,391 prior tests and 319 new controls passing. Reconcile the exact
+admitted shared boundary and one established-success bypass. Expect 142
+failures / 102,724 passes / 102,866 total, zero skips/compiler warnings/errors,
+with all 102,391 prior tests and 333 new controls passing. Reconcile the exact
 matching IDs against the independently saved native enabled/disabled pairs.
 Strict research exclusions are 504 malformed-whole-subject rows and 288 split
 starts. A further 132 raw protocols for the three wider frontier shapes above
 remain research; their valid aligned controls stay in the fixture.
+
+## Refined tests-only scope
+
+Initial source `6fa677154839899583f921deafdcf306fa025708`, tree
+`136f4d87701da60a1ab7779279acb5477a8c370e`, proposed merge
+`175f01e93f05339883b71c5bac6bfcbf34eac6d2`, run 44212867287 / Linux x64
+job 134495333672 built all three targets with zero compiler warnings/errors:
+146 failures / 102,720 passes / 102,866 total / zero skips. All old tests pass.
+Four matching failures (207/208/319/320) expose a separate UCP xdigit start-study
+boundary, including with NoDotStarAnchor: retain their original raw protocols
+on that immutable source and restrict these unfrozen controls to aligned valid
+subjects. Exclude UnicodeHexDigit from the new proof until its provenance and
+independent optimizer behavior have a separate native contract. This removes
+another 132 raw research rows; no native expected span is changed.
+
+Fourteen predicted matching failures already pass through the established
+digit/word/space/horizontal/vertical pair proofs, including reversed order and
+POSIX spellings. The remaining 123 matching identities are exact. All 19
+supplementary failures are predicted, but the UCP ownership case reaches a
+native assertion because unrestricted alpha becomes a Unicode property pair.
+Use explicit (?aP) for UCP work/ownership source so those cases exercise the
+intended finite ASCII pair; 38 independent supplementary native preflights
+verify the corrected sources, work subjects and literal captures/marks.
+Production and all old test blobs stay unchanged. Freeze only after refined
+RED confirms 142 managed failures / 102,724 passes and zero native failures.

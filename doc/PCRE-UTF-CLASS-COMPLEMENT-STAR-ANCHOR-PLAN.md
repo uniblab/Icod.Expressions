@@ -9,7 +9,7 @@ source 35. Keep #7/#102 open, Grep last and issue #7's footer unchanged.
 ## Task 1: native evidence and tests
 
 - [x] Reproduce all 324 merged PR276 groups / 21,456 protocols on exact pins.
-- [x] Pin 402 matching groups / 22,084 protocols, 15 diagnostics, 58 supplementary
+- [x] Pin 402 matching groups / 21,952 protocols, 15 diagnostics, 58 supplementary
   cases and 22 dynamic native groups / 66 outcomes.
 - [ ] Publish tests-only draft, reconcile expected RED and freeze all five C# blobs.
 

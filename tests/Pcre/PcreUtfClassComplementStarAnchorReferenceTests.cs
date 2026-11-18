@@ -57,7 +57,7 @@ public sealed partial class PcreUtfClassComplementStarAnchorReferenceTests {
 	[InlineData( 13, true, 0 )]
 	[InlineData( 13, true, 128 )]
 	public void BuiltInComplementPreservesCallerAnchoringWorkAndExactBudgets( int mode, bool disabled, int depth ) {
-		var source = Encoding.ASCII.GetBytes( String.Concat( String.Concat( Enumerable.Repeat( "(?:", depth ) ), Complement, "*?Z", new string( ')', depth ) ) );
+		var source = Encoding.ASCII.GetBytes( String.Concat( ( mode & 16384 ) != 0 ? "(?aP)" : "", String.Concat( Enumerable.Repeat( "(?:", depth ) ), Complement, "*?Z", new string( ')', depth ) ) );
 		var subject = Encoding.ASCII.GetBytes( new string( 'B', 64 ) );
 		var native = Reference( source, mode, disabled );
 		AssertNative( native, subject, 0, 0, "", "" );
@@ -79,7 +79,7 @@ public sealed partial class PcreUtfClassComplementStarAnchorReferenceTests {
 	[InlineData( 13, false )]
 	[InlineData( 13, true )]
 	public void BuiltInComplementOwnsSlicedSourceCapturesAndMark( int mode, bool disabled ) {
-		var pattern = Encoding.ASCII.GetBytes( String.Concat( Complement, "*(*MARK:N)(B)" ) );
+		var pattern = Encoding.ASCII.GetBytes( String.Concat( ( mode & 16384 ) != 0 ? "(?aP)" : "", Complement, "*(*MARK:N)(B)" ) );
 		var backing = new byte[pattern.Length + 2];
 		Array.Fill( backing, (byte)0xFF ); pattern.CopyTo( backing, 1 );
 		var native = Reference( pattern, mode, disabled );
