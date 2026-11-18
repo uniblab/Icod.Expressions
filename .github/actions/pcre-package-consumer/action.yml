@@ -1,0 +1,36 @@
+name: Verify fresh PCRE package consumer
+description: Pack the built library, restore only that candidate in an isolated cache, and verify the internal byte consumer.
+inputs:
+  configuration:
+    required: true
+    description: Staging or Release configuration
+runs:
+  using: composite
+  steps:
+    - name: Build and verify isolated package-only PCRE consumer
+      shell: pwsh
+      env:
+        PCRE_SMOKE_CONFIGURATION: ${{ inputs.configuration }}
+      run: |
+        $ErrorActionPreference = 'Stop'
+        Set-StrictMode -Version Latest
+        $pcreSmokeRoot = Join-Path $env:RUNNER_TEMP ('icod-pcre-smoke-' + [Guid]::NewGuid().ToString('N'))
+        $pcreSmokeFeed = Join-Path $pcreSmokeRoot 'feed'
+        $pcreSmokeCache = Join-Path $pcreSmokeRoot 'cache'
+        New-Item -ItemType Directory -Path $pcreSmokeFeed, $pcreSmokeCache | Out-Null
+        dotnet pack Icod.Expressions.csproj -c $env:PCRE_SMOKE_CONFIGURATION --no-build --no-restore -o $pcreSmokeFeed
+        if ($LASTEXITCODE -ne 0) { throw 'PCRE candidate pack failed.' }
+        $env:NUGET_PACKAGES = $pcreSmokeCache
+        dotnet restore samples/PackageSmoke/PackageSmoke.csproj --source $pcreSmokeFeed --no-cache --force-evaluate
+        if ($LASTEXITCODE -ne 0) { throw 'Isolated PCRE package restore failed.' }
+        dotnet build samples/PackageSmoke/PackageSmoke.csproj -c $env:PCRE_SMOKE_CONFIGURATION --no-restore
+        if ($LASTEXITCODE -ne 0) { throw 'PCRE package consumer build failed.' }
+        $pcreSmokeOutput = @(dotnet run --project samples/PackageSmoke/PackageSmoke.csproj -c $env:PCRE_SMOKE_CONFIGURATION --no-build --no-restore -f net10.0)
+        $pcreSmokeExitCode = $LASTEXITCODE
+        $pcreSmokeOutput | ForEach-Object { Write-Host $_ }
+        if ($pcreSmokeExitCode -ne 0) { throw 'PCRE package consumer failed.' }
+        $pcreSmokeRecords = @($pcreSmokeOutput | Where-Object { $_ -match '^\{"kind":"pcre-package-smoke",' } | ForEach-Object { $_ | ConvertFrom-Json })
+        if ($pcreSmokeRecords.Count -ne 1 -or $pcreSmokeRecords[0].cases -ne 42 -or $pcreSmokeRecords[0].view -ne 1 -or $pcreSmokeRecords[0].cancellation -ne 2 -or $pcreSmokeRecords[0].failed -ne 0) {
+          throw 'Expected one complete 42-protocol/one-view/two-cancellation PCRE package result.'
+        }
+        Write-Host 'PASS: fresh PCRE package consumer: 42 protocols, one view, two cancellation controls'

@@ -1,5 +1,45 @@
 # PCRE roadmap status
 
+## PR283: internal PCRE package-only consumer gate
+
+P09 now has a bounded package-consumer contract using the actual candidate
+NuGet binary. The explicitly named Icod.Expressions.PackageSmoke friend keeps
+PCRE internal; it is not a new public API. Existing GNU/POSIX sample assertions
+remain intact. No matcher/compiler/Unicode source changes are introduced.
+
+32 protocols reuse immutable native-first raw/UTF/UCP fixtures, including
+binary/NUL input, supplementary values, captures, lookarounds, repeats and
+marks. Ten managed diagnostic/resource cases, one observed-view control and
+two cancellation controls give 45 additions (104,760 total). Padded memory
+views and overwritten caller pattern buffers exercise authoritative view
+coordinates and compiler ownership. The observed callback check is specific
+path evidence, not a blanket allocation/performance/no-transcoding freeze.
+
+Observed successful-build RED isolates exactly 45 missing-consumer failures /
+104,715 passes /zero skips; every native literal assertion passes. Freeze the
+sample case table, new assertions and test-project Compile links before
+implementing only the exercise; freeze that completed helper afterward. All
+375 prior C# test blobs and A05 source35/corpus stay fixed; the sole prior-test
+file exception adds two source links to the existing test project XML.
+
+One common action packs to a fresh unique feed, restores only that candidate
+with an isolated cache, builds net8/net9/net10 and executes net10 on all six
+native PR/main hosts. Require the structured42-protocol/one-view/two-cancellation
+record with zero failures. Main's artifact verification and release workflow
+remain unchanged. Metadata/sample/workflow paths require actual full
+compatibility/Gnulib gates, not classifier skips.
+
+See [design](PCRE-PACKAGE-CONSUMER-DESIGN.md),
+[plan](PCRE-PACKAGE-CONSUMER-PLAN.md) and
+[PR283](https://github.com/uniblab/Icod.Expressions/pull/283). Whole-branch review
+and all seven inventories precede final six-host104,760/frozen214/120 methods,
+package, compatibility and support qualification with zero failures/skips/
+coded warnings/errors. Final identities/evidence, cleanup and completion stay
+external on PR283; no source/docs/test edits after GREEN. P09 remains open for
+the wider contract/hostile/performance freeze; native16/P10-P18, remaining P01,
+Stage C and actual consumer migration remain open. Keep #7/#102/footer fixed;
+Grep last; user owns merge/tags/publication.
+
 ## PR282: pinned Perl overlap and bounded reducer
 
 P00/P01 gains a declared Perl v5.40.1 / Unicode 15.0.0 comparison scope and
@@ -135,7 +175,7 @@ This is a gate assessment, not a percentage inferred from PR or test counts.
 | N02-N05 common substrate/foundation freeze | Exact input coordinates, preserved POSIX/GNU runtime; PCRE has pinned Unicode/UTF helpers and separate parser/VM. | Partial building blocks, not a completed common HIR/analysis seam or normalized foundation freeze. Do not refactor frozen legacy source as part of a PCRE proof fix. |
 | P00-P01 compatibility/oracles | PCRE.NET 1.6.0 / pinned PCRE2 10.48; native8/native16 and normalized fixtures (#280/#281); bounded Perl 5.40.1 overlap and reducer skeleton (#282). | Partial. Broader declared Perl divergence/error coverage and reduction/fuzz closure remain open. |
 | P02-P08 parser, VM, captures, advanced syntax, UTF-8/Unicode | Internal dedicated parser, iterative explicit-frame ordered VM, capture journal, references/recursion/conditions, lookarounds/verbs, native byte offsets, UTF validation, properties/scripts/graphemes/class algebra. | Substantial implementation with explicit acceptance gaps. Callout execution, UTF code-unit escape behavior and remaining syntax/invalid-input/source-shape cases prevent claiming full gate closure. |
-| P09 8-bit/UTF-8 freeze | Six-host native differential CI and component workload smoke; merged #281 has 104,344 tests. #282 adds 371 oracle/reducer cases. | Open: internal API, documented unsupported cases, broader hostile corpus, package-only PCRE consumer and representative performance/no-transcoding release evidence still need a deliberate freeze. |
+| P09 8-bit/UTF-8 freeze | Merged #282 has 104,715 tests, native widths/Perl-overlap references and a reducer; #283 adds a bounded internal package-only PCRE consumer and six-host isolated candidate checks. | Partial. Full internal API/deviation freeze, broader hostile corpus and representative performance/no-transcoding release evidence remain open. The friend sample is not a public PCRE release. |
 | P10-P12 native 16-bit/UTF-16 and cross-width | Production compiler/program/matcher/result types remain byte-specific. Native16 references and shared scalar-coordinate fixtures exist; no managed native16 backend or managed cross-width execution suite. | Open and **mandatory before stable PCRE release**. No whole-subject transcode adapter or cloned parser/HIR counts as completion. |
 | P13 partial/iteration/substitution | Current internal match result/API handles complete single matches. | Open: soft/hard partial, native partial offsets, next-match empty retry rules, replacement language/output limits and width-native sinks. |
 | P14-P17 security, analyses, performance, fuzz closure | Deterministic work/cancellation, bounded frames/compilation/proof scans, optimized/reference controls, generated Unicode gates, persistent differential cases, seven component workloads. | Partial 8-bit evidence. Full independently controlled resource model, dual-width proof/performance corpus, bounded fuzz/reducer closure and consumer benchmarks remain open. |

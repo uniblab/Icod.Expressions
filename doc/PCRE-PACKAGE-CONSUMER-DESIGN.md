@@ -80,7 +80,7 @@ isolated package cache, builds its net8/net9/net10 targets, then runs net10.
 The sample emits one structured pcre-package-smoke result:42 protocol cases,
 one observed-view control, two cancellation controls, zero failures. It has
 only the existing Icod.Expressions PackageReference; tests alone use PCRE.NET.
-No package/dependency/version or release-publication change is introduced.
+Package identity, dependencies, version and release-publication policy stay fixed.
 
 Apply the action to all five native matrix jobs in PR/main and the shared
 native macOS x64 action. Preserve main's existing package artifact verification
@@ -100,3 +100,48 @@ zero failures/skips/coded warnings/errors. All configured compatibility,
 Gnulib, Unicode/workload/parity/API/package/script gates must pass. Record final
 source/tree/base/merge identities, plan completion, cleanup and ready readback
 externally on PR283. No source/docs/test edits after final GREEN.
+
+## Observed RED and assertion freeze
+
+Tests-only source cd1c46a300311daabd472b685f6c1a49eb128d89, tree
+d32647db1c90b984f75981902ba5d26b1e994ff8; proposed merge
+b8b8b071861d5e8f65800163a479bda4cf898f59. Run44407114945: Linux x64
+135165197265, Linux ARM64 135165197125 and Windows x64 135165197353 build
+all three targets with zero coded warnings/errors, then report45 failed /
+104,715 passed /104,760 total /zero skips. Every failure reaches a missing
+consumer method: matching32/diagnostics10/view1/cancellation2; both cancellation
+rows are expected exception-type mismatches. All native literal assertions pass.
+No old C# case fails. Freeze before implementation:
+
+- samples/PackageSmoke/PcreSmokeCases.cs: b53df8ef92c9335678df5fa168aded6a00912714.
+- tests/Pcre/PcrePackageConsumerTests.cs: 174963a4c96e7fcce71916be9f7b4f5935374185.
+- tests/Icod.Expressions.Tests.csproj: 1b425befc99db5459b6fea3a7f0dca95fed313df.
+
+## Completed-helper freeze and prequalification review
+
+Completed exercise blob 58e8c2a22ce3ab78d62bf0a77f8924d7263fdaa5. All six RED hosts report the same45
+identities/causes with all32 native literal checks passing and104,715 old tests
+green. The new case/assertion/XML blobs above remain identical.
+
+Reviewed the complete 19-file branch: explicit friend identity and source
+visibility, package-only reference, original sample assertions, owned pattern
+and visible subject views, capture/mark/diagnostic projection, observed callback
+and exact cancellation paths. Reviewed both native matrix call sites plus the
+shared Intel action, unique feed/cache creation, no-build candidate pack,
+restore failure guards, all-framework consumer build, net10 execution and
+strict single structured-result validation. Release workflow and main artifact
+verification are unchanged. No project/native dependency leaks into the sample.
+
+All375 old C# test blobs remain fixed; only the documented test-project XML
+links change among385 prior test files. The Pcre subtree remains
+cbe160ce6605be45840127ce36ba5aca09b66bf7; the sole production source change
+is the sample friend attribute outside the frozen legacy source35. Public
+API/parity/A05 must still pass CI. Local A05 identity, classifier, main-job
+prerequisite (eight required/thirteen rejection controls) and whitespace gates
+pass. No local SDK/PowerShell/YAML parser is installed; real hosted builds,
+action execution and all configured support gates supply final qualification.
+
+This design/plan and all five shared inventories were reviewed before final
+source upload. Final source/tree/base/merge identities, gate outcomes, cleanup
+and ready readback stay external on PR283, with no source/docs/test edits
+after final GREEN. P09 remains a bounded increment, not a complete freeze.

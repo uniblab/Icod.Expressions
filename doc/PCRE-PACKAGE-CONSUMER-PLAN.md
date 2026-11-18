@@ -10,17 +10,17 @@ Keep #7/#102/footer fixed; Grep last; user owns merge/tags/publication.
 
 - [x] Reuse32 immutable native-first protocols and define10 diagnostic,
   one observed-view and two cancellation controls.
-- [ ] Publish tests-only draft, reconcile successful-build RED45 and freeze
+- [x] Publish tests-only draft, reconcile successful-build RED45 and freeze
   sample data/assertions/test-project XML before exercise implementation.
 
 ## Task 2: consumer and gate
 
-- [ ] Implement only the shared exercise; grant explicit sample friend,
+- [x] Implement only the shared exercise; grant explicit sample friend,
   retain public GNU/POSIX assertions and add package-only PCRE checks.
-- [ ] Add isolated fresh-package composite to six-host PR/main execution,
+- [x] Add isolated fresh-package composite to six-host PR/main execution,
   preserving release and main artifact checks.
-- [ ] Freeze helper, review whole branch/seven inventories, pass local gates
-  and upload reviewed source/tree under a branch-head lease.
+- [x] Freeze helper, review whole branch/seven inventories and pass local gates.
+- [ ] Upload reviewed source/tree under a branch-head lease.
 
 ## Task 3: qualification
 
