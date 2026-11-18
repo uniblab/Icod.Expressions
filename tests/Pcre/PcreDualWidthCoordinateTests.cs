@@ -40,6 +40,8 @@ public sealed partial class PcreDualWidthReferenceTests {
 	[InlineData( "", "D8000041" )]
 	[InlineData( "", "D800D800" )]
 	[InlineData( "", "DBFF" )]
+	[InlineData( "80", "FFFD" )]
+	[InlineData( "EFBFBD", "D800" )]
 	[InlineData( "61", "0062" )]
 	[InlineData( "6162", "0061" )]
 	public void MalformedOrDifferentScalarSequencesAreNotComparable( string hex8, string hex16 ) {

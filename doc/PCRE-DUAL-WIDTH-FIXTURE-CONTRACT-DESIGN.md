@@ -65,9 +65,9 @@ positive sizes. Covers captures/names/duplicate slots, branch reset, ordered
 alternatives/rollback, lookarounds, recursion/conditions/DEFINE, marks/cuts,
 Unicode/UCP/graphemes, CRLF/NUL, offsets and reversed K ranges.
 
-The 150 shared/diagnostic rows, 42 coordinate cases and eight malformed-subject
-cases add 200 tests: 104,048 total. Publish an intentionally unimplemented
-coordinate adapter in a tests-only draft: expect 192 coordinate-dependent
+The 150 shared/diagnostic rows, 44 coordinate cases and eight malformed-subject
+cases add 202 tests: 104,050 total. Publish an intentionally unimplemented
+coordinate adapter in a tests-only draft: expect 194 coordinate-dependent
 failures / 103,856 passes / zero skips. All native assertions, all 103,848 prior
 tests and eight width-specific controls must pass first. Reconcile failure
 identities, then freeze all four fixture/assertion C# files before implementing
@@ -83,3 +83,10 @@ tests and coded warnings/errors, all configured support/package/script gates.
 Final evidence and plan completion stay on PR280 without source/docs/test
 edits after final GREEN. Raw 16-bit CI, Perl/reducer, broader matrices and P01
 closure remain open, as do migration/normalization and the other release gates.
+
+Before freezing, add two explicit replacement-decoding counterexamples:
+invalid UTF-8 80 versus valid U+FFFD, and valid U+FFFD versus an isolated
+UTF-16 high surrogate. Both must be rejected even though a replacement decoder
+could make them appear equal. This strengthens the coordinate contract without
+changing any native fixture or prior test expectation. The refined totals are
+202 new / 104,050 total, expecting 194 adapter failures and 103,856 passes.

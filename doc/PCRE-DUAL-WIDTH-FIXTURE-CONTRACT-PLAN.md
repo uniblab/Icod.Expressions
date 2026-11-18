@@ -9,8 +9,8 @@ identities and issue #7 footer. User owns merge/tags/publication; Grep last.
 
 - [x] Inspect pinned wrapper/native sources and build independent 8/16 oracles.
 - [x] Pin 140 shared cases, ten compile errors, eight malformed-subject errors,
-  two raw 16-bit witnesses and 42 independent coordinate controls.
-- [ ] Publish tests-only draft, reconcile 192 intended adapter failures and
+  two raw 16-bit witnesses and 44 independent coordinate controls.
+- [ ] Publish tests-only draft, reconcile 194 intended adapter failures and
   freeze the four fixture/assertion sources before implementing the helper.
 
 ## Task 2: independent coordinate normalization
@@ -23,7 +23,7 @@ identities and issue #7 footer. User owns merge/tags/publication; Grep last.
 
 ## Task 3: qualify and deliver
 
-- [ ] Six native 104,048 net10 results / frozen 214 cases / 120 methods each;
+- [ ] Six native 104,050 net10 results / frozen 214 cases / 120 methods each;
   net8/net9/net10 builds; zero failures/skips/coded warnings/errors.
 - [ ] All configured support/package/script gates green; identify skipped jobs.
 - [ ] Verify source/base/tree/merge/review/issue identities, preserve evidence,
