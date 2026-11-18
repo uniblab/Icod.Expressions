@@ -10,7 +10,7 @@ A05 source 35. Keep #7/#102 open, Grep last and issue #7 footer unchanged.
 
 - [x] Reproduce 402 merged PR277 groups / 21,952 protocols on exact pins.
 - [x] Isolate iterator early-failure analysis and restore the unmodified oracle.
-- [x] Pin 428 groups / 23,860 protocols, 15 diagnostics and 42 supplementary
+- [x] Pin 428 groups / 22,936 protocols, 15 diagnostics and 42 supplementary
   cases; independently preflight 40 supplementary native outcomes.
 - [ ] Publish tests-only draft; reconcile 132 predicted failures and freeze
   all five new C# blobs before production.

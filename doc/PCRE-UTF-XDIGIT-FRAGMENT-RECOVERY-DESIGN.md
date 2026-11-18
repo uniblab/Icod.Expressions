@@ -41,6 +41,10 @@ subroutine targets. Require one direct root branch whose first node is an
 unbounded repeat with minimum 0 or 1 over a positive ordinary Source:Class
 set. A directly wrapped possessive repeat is eligible; enclosing groups,
 leading assertions/conditions and root alternatives are outside this proof.
+Require a literal continuation immediately after a greedy repeat. A lazy
+repeat may have one intervening path mark and/or a capturing group whose
+single branch begins with a literal. No-tail and optional continuations are
+excluded: their native invalid-byte consumption is a separate boundary.
 
 Precheck a combined 4,096 predicates/ranges. Scan complete lists with per-visit
 cancellation. Every predicate must be exact UnicodeHexDigit / null category /
@@ -70,10 +74,11 @@ No opcode, frame/journal, parser, AST layout, public API, dependency, workflow
 or public quota change; no new matching allocation or rescan. Existing
 instruction handling and Step placement are unchanged. Broader iterator/source
 provenance and group/assertion/call/cut shapes remain #102 work.
+Programs containing surrogate literals stay outside the new proof.
 
 ## Native-first fixtures and qualification
 
-428 groups / 23,860 native protocols, 15 diagnostics and 42 supplementary cases
+428 groups / 22,936 native protocols, 15 diagnostics and 42 supplementary cases
 add 485 tests, reaching 103,351. Native shadow runs with start study disabled
 independently predict 116 matching failures; 16 supplementary failures are
 four fragment-work, six ownership and six admitted list boundaries. Expect
@@ -96,3 +101,30 @@ qualification. Build net8/net9/net10; execute full net10 and frozen 214 cases /
 120 methods on six native hosts, with zero failures/skips/compiler warnings/
 errors and all configured support/package/script gates. Final evidence and
 plan completion remain external on PR278 without edits after final GREEN.
+
+## Refined tests-only scope
+
+Initial source `f649ce3dbf4fdd54e67c7178104715a0d40ac1e5`, tree
+`8df00fbc8d1dbdd196282c811cf3ac8199563e2a`, proposed merge
+`fde454694c81e5838028f02029c9c6083f407ab0`, run 44221313205 / Linux x64
+job 134523576996: 158 failures / 103,193 passes / 103,351 total, zero skips,
+native assertion frames or compiler/analyzer warning/error codes. All old
+tests pass. The 116 predicted matching and all 16 supplementary failures are
+present, plus 26 independent native invalid-consumption profiles.
+
+Greedy marked continuations (20 profiles) and no-tail empty-rejection cases
+(6 profiles) can natively report a match starting inside a valid scalar, also
+when start study is disabled. For example, UCP `[[:xdigit:][:^xdigit:]]*`
+followed by MARK/captured B on C3A942 from byte 1 reports 1:2 natively, while
+the managed fragment-preserving path reports 2:1. This increment must not
+reinterpret malformed bytes as consumable Unicode scalars. Preserve these
+exact raw protocols on the immutable initial source above; no old expectation
+is changed. Restrict 28 unfrozen marked-greedy/no-tail cohorts (including two
+already passing no-tail controls) to valid aligned subjects, removing 924 raw
+research rows. Their remaining native expected spans are unchanged.
+
+The refined 22,936 protocols retain all 116 iterator-recovery witnesses and
+all 16 supplementary failures. Before production, require a fresh successful-
+build RED of exactly 132 managed failures / 103,219 passes, no native failures,
+and freeze all five new C# blobs. Narrow the compiler proof's continuation
+shape as specified above; broader native invalid consumption remains research.
