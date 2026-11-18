@@ -10,14 +10,14 @@ identities and issue #7 footer. User owns merge/tags/publication; Grep last.
 - [x] Inspect pinned wrapper/native sources and build independent 8/16 oracles.
 - [x] Pin 140 shared cases, ten compile errors, eight malformed-subject errors,
   two raw 16-bit witnesses and 44 independent coordinate controls.
-- [ ] Publish tests-only draft, reconcile 194 intended adapter failures and
+- [x] Publish tests-only draft, reconcile 194 intended adapter failures and
   freeze the five fixture/assertion sources before implementing the helper.
 
 ## Task 2: independent coordinate normalization
 
-- [ ] Implement only the test-support helper; retain original byte offsets,
+- [x] Implement only the test-support helper; retain original byte offsets,
   reject invalid/bisected inputs, preserve empty/unset/signed ranges.
-- [ ] Freeze helper, review whole branch, run local gates and update all seven
+- [x] Freeze helper, review whole branch, run local gates and update all seven
   inventories before final qualification.
 - [ ] Upload exact reviewed source/tree with a branch-head lease.
 

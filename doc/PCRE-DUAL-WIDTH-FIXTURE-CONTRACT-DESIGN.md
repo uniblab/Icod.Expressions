@@ -95,3 +95,49 @@ The same 150 native rows are exposed through a separate PcreDualWidthCases
 MemberData catalog. This preserves all expected values and case identities
 while allowing future managed width-16 tests to consume the exact same data
 without copying or editing the current assertions. Freeze this catalog too.
+
+## Observed RED, assertion freeze and author review
+
+Tests-only head `9b2966e13164411d7df178fb89e4ac7653eab5ce`, tree
+`dd7b01d6e26d47c5e9b961db78f15116a51f23c6`, proposed merge
+`215fdf468ba9392d91863dabbc0e7f2e69002108`. Run 44338870876 / Linux x64
+job 134923362072 builds all targets with zero coded warnings/errors, then
+reports exactly 194 failures / 103,856 passes / 104,050 total / zero skips.
+All 194 detailed failure blocks reach the intentionally unimplemented
+coordinate constructor: 140 shared matches, ten native compile diagnostics,
+ten scalar boundaries, 17 invalid/different inputs, 16 endpoint/protocol
+errors and one empty/unset/reversed control. There are no unrelated failures.
+Both native oracles, the current managed byte results, every prior test and
+all eight width-specific malformed-subject controls pass before normalization.
+
+Freeze before implementing the test helper:
+
+- `tests/Pcre/PcreDualWidthCases.cs`: `9fab1e91ffa35e712f9fc8277b049fdd1eaa0675`
+- `tests/Pcre/PcreDualWidthProtocols.cs`: `ca1ec364bf573b880cd1542232dd5721f30240c7`
+- `tests/Pcre/PcreDualWidthReferenceTests.cs`: `f292221d77ee11b1a985295b352b9f8c39c67165`
+- `tests/Pcre/PcreDualWidthCoordinateTests.cs`: `09b030a30d63df1caa9106b980a146ea182a7732`
+- `tests/Pcre/PcreDualWidthMalformedSubjectTests.cs`: `6ffdec4bf7c08b74c236afd9ffae3d02b9fc8e6c`
+
+The finished helper blob is `cb4ae2d3b219ceb91aff69b1283625bf9008f0e9`. No fixture/assertion
+file changes after its freeze; no production source changes at all.
+
+Independent native preflight has 310 executions including raw witnesses;
+combined output SHA256 `e5df76d9cdfb0ccc7f4405d53091006f0ee46ef32d5fd6154784202d26d75f95`.
+Native harness blob `3c393ebf047a1d8a76b0c075df97c9ce958df9b1` is retained.
+A separate catalog comparison confirms all 150 row values survived the
+InlineData-to-MemberData extraction unchanged.
+
+Whole-branch author review covers native code-unit/endian conventions, explicit
+UTF scope, wrapper raw-mode limitation, source/subject identity, paired strict
+Rune decoding, terminal/interior boundaries, signed endpoints, overflow and
+format failures, capture/name/mark/error preservation and future catalog reuse.
+The helper holds only private boundary arrays and no caller input; decoding is
+independent of matcher navigation and classification. It stays outside src and
+the production package. Entire src tree, API, project/dependency/workflow/version
+files and all 367 prior test files / 362 C# sources remain byte-for-byte fixed.
+No unresolved introduced finding; independent agent review was not performed.
+
+Local A05/corpus/candidate, CI classifier, eight main jobs/thirteen rejection
+controls and whitespace checks pass. All seven inventories precede final
+qualification. Final exact identities, six-host results, cleanup and plan
+completion remain external on PR280; no source/docs/test edits after GREEN.
