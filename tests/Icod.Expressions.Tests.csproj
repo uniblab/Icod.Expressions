@@ -21,6 +21,8 @@
 		</PackageReference>
 	</ItemGroup>
 	<ItemGroup>
+		<Compile Include="../samples/PackageSmoke/PcreCaptureInfoCases.cs" Link="PackageSmoke/PcreCaptureInfoCases.cs" />
+		<Compile Include="../samples/PackageSmoke/PcreCaptureInfoConsumer.cs" Link="PackageSmoke/PcreCaptureInfoConsumer.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreFragmentAllocationCases.cs" Link="PackageSmoke/PcreFragmentAllocationCases.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreFragmentAllocationConsumer.cs" Link="PackageSmoke/PcreFragmentAllocationConsumer.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreAllocationCases.cs" Link="PackageSmoke/PcreAllocationCases.cs" />

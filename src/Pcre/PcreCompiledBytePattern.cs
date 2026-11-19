@@ -7,6 +7,8 @@ internal sealed class PcreCompiledBytePattern {
 	private readonly int matchWorkLimit;
 	private readonly Action<int>? workObserver;
 
+	public PcreCaptureInfo CaptureInfo => throw new NotImplementedException();
+
 	internal PcreCompiledBytePattern(
 		PcreByteProgram program, int groupCount, int matchWorkLimit, Action<int>? workObserver
 	) {
