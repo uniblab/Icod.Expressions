@@ -123,4 +123,13 @@ foreach ( var item in PcreOptionalRewindCases.All ) {
 }
 Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-optional-rewind-smoke", patterns = PcreOptionalRewindCases.All.Count, cases = pcreOptionalRewindCases, failed = 0 } ) );
 
+var pcreInterpretedBoundaryCases = 0;
+foreach ( var item in PcreInterpretedBoundaryCases.All ) {
+	if ( PcreMatchPolicyConsumer.Run( item ) != item.Outcomes ) {
+		throw new InvalidOperationException( $"PCRE interpreted word boundary definition {item.Id} changed." );
+	}
+	pcreInterpretedBoundaryCases += 64;
+}
+Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-interpreted-boundary-smoke", patterns = PcreInterpretedBoundaryCases.All.Count, cases = pcreInterpretedBoundaryCases, failed = 0 } ) );
+
 Console.WriteLine( $"Icod.Expressions package smoke passed on {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}." );

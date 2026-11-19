@@ -1,5 +1,12 @@
 # Recent UTF proof progress
 
+## PR292 — interpreted word boundaries at malformed UTF starts
+
+The [interpreted boundary addendum](PCRE-INTERPRETED-BOUNDARY-STATUS.md)
+records 3,072 native outcomes and 52 tests. Match-time anchoring allows word
+boundary assertions to evaluate the empty initial malformed UTF fragment.
+The tenth package smoke record runs the same corpus against the packed library.
+
 ## PR291: interpreted optional lookbehind at UTF barriers
 
 The [optional rewind addendum](PCRE-OPTIONAL-REWIND-STATUS.md) records3,072
