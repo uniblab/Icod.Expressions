@@ -19,7 +19,7 @@ undoes a compiled/source restriction. Calls neither mutate nor clone the program
 No new public API, dynamic work quota, cache, enumeration, or replacement engine.
 
 Anchor and empty controls reuse existing candidate/acceptance logic, including
-tolerant empty fast paths, both ordinary/early ACCEPT exits, physical end checks,
+tolerant empty fast paths, both ordinary/early ACCEPT exits, native end checks,
 and group-zero signed endpoints. Full validation/cancellation/work charging and
 original fragment boundaries still precede successful execution. Runtime anchoring
 must participate in existing fragment retention and accelerator eligibility.
@@ -30,7 +30,7 @@ boundary while retaining internal newlines. Non-multiline dollar including its
 before-final-newline alternative is wholly suppressed by NotEol. Preserve source
 provenance in the two relevant AST kinds and spare instruction operands so runtime
 flags can distinguish caret/dollar from otherwise identical absolute instructions.
-No new opcode or instruction count, no proof redesign and no changed Step count.
+No new opcode or instruction count. Default calls retain their prior Step counts.
 Compiled disabled anchors retain their existing Fail lowering. Default policy
 retains all old instruction semantics and work/limit behavior.
 
@@ -135,7 +135,7 @@ Freeze before execution implementation:
 
 Reviewed execution blobs before final qualification:
 
-- matcher3880b5e228ac3cd48efd203181b55fe259965f86;
+- matcher0dfb48c668ed0f7ea99d543d7e4b207e60878fe1;
 - anchor parser39a265aba2c9a19a00c8e9a08ea27913dc8df9df;
 - program190f95ed808652d055039218738e820c137bcfce;
 - syntax8fca307ed1e3af3a8ee8cdef986c36664dc86412;
@@ -166,3 +166,36 @@ Main's eight jobs including Gnulib/Intel aggregate pass; each script host report
 31 checks and Ubuntu also complete eight-main-job/thirteen-rejection cases.
 The merge treece94160847b545f90a597d338b6d3684389aeb00 equals the reviewed/tested
 PR287 source tree. No new merge/tag/publication action is taken here.
+
+## First implementation qualification and native-dispatch correction
+
+Initial execution source09a06bdff8a04355f5dc96a89aed7c96bbfe9452,
+tree9e89232ab2e650b6ccffa2cb15085aee3f1ff3b9, proposed
+merge1791c7b28b27e6c6dbc71b251ffb3d3137040434, run44540909867, Linux x64
+job135618659516 builds all targets without coded warnings/errors and reports
+3 failures/106,443 passes/zero skips/106,446 total. All native assertions pass;
+only frozen definitions3/4/28 differ in managed projection. All106,379 old tests
+and64 new tests pass. Keep every frozen source/outcome/assertion unchanged.
+
+Pinned pcre2_match.c initial non-JIT UTF validation, ENDLOOP/FRAGMENT_RESTART
+and post-SKIP anchored termination explain these differences. Match-time anchor
+flags select the interpreter. In tolerant UTF that driver skips continuation-byte
+starts, retries separate valid fragments even under anchoring, applies end tests
+to the current fragment, suppresses artificial line ends and avoids a later empty
+EOF fragment after trailing invalid bytes. Its anchored failure stops before a
+forward SKIP retry. The old compiled/default JIT-profile behavior stays separate.
+
+The same managed VM now selects these entry/acceptance rules only for call anchor
+flags. Retain all required tolerant fragments for that profile, preserve physical
+start/G/original NOTEMPTY_ATSTART coordinates, recover only initial continuation
+bytes with one Step per byte, and limit assertion context after such recovery.
+Default fragment retention, empty fast path, SKIP retry, work traces and paired
+allocation profiles stay fixed. New call-anchor tolerant mode may retain multiple
+fragments; the old compiled-anchor allocation bound is not extended to that mode.
+No program/subject clone, decoder buffer, new opcode or public quota is added.
+
+Re-review source/entry recovery, per-fragment starts/ends, line boundaries, scoped
+acceptance, SKIP termination and legacy/default preservation before fresh full
+qualification. Wider interpreter-invalid-UTF assertion/verb/start-study parity
+outside the declared catalog remains an acceptance gate; this increment does not
+close P09 or issue102. Final source/results/completion remain external.

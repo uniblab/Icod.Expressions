@@ -128,3 +128,9 @@ all64 policies, interleaving the original entry after every call and preserving
 owned pattern/metadata and padded subject-view checks. All five earlier package
 records, isolated candidate feed/cache and net8/9/10 builds remain required;
 actual consumer execution remains net10 only on all six native hosts.
+
+Native match-time anchoring disables JIT. In tolerant UTF this selects fragment
+entry recovery and fragment-local end anchoring; anchored failure stops before a
+forward SKIP retry. The call profile can retain multiple fragments. Default calls
+retain the earlier compiled/JIT-profile behavior and measured allocation bounds.
+Wider malformed-input assertion/verb/start-study conformance remains open.

@@ -8,7 +8,7 @@ force. The original Match entry delegates with default policy. No program clone,
 shared policy mutation, subject conversion, new opcode or runtime dependency.
 Caret/dollar provenance uses two AST booleans and spare instruction operands;
 absolute A/Z/z/G anchors keep their meaning. Existing multiline internal-newline
-behavior, physical-end acceptance, tolerant fast paths, original byte captures/
+behavior, native end acceptance, tolerant fast paths, original byte captures/
 marks, validation, cancellation and work limits remain shared.
 
 The bounded direct-root terminal optional-literal proof now records eligibility
@@ -50,3 +50,12 @@ warnings/errors. Final identities/raw metrics/results/completion/cleanup/ready
 stay external without source/docs/test edits after GREEN. #7/#102/footer fixed;
 broader P09, mandatory native16/P10-P18, remaining P00/P01/Stage C and actual
 migrations remain open. Grep last; user owns merge/tags/publication.
+
+Match-time native anchor flags disable JIT. The managed call profile preserves
+its interpreter continuation-entry recovery, tolerant fragment retries/local ends
+and anchored termination before SKIP. Initial execution exposed three differences
+in frozen definitions3/4/28; preserve all assertions/data and correct execution.
+Only that call profile retains multiple tolerant fragments; default/compiled-anchor
+allocation evidence stays bounded to its original profile. Wider interpreter-mode
+assertion/verb/start-study conformance remains open. See the design for the exact
+failed qualification and renewed review; no prior GREEN is claimed.
