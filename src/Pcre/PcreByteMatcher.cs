@@ -696,7 +696,7 @@ internal static partial class PcreByteMatcher {
 								failed = true; break;
 							}
 							if ( ( position == 0 && instruction.Second != 1 && !policy.NotBol ) || ( position > fragment.Start
-							&& ( position < subjectEnd || position == subjectEnd && ( position < absoluteEnd || instruction.First == 1 ) )
+								&& ( position < subjectEnd || position == subjectEnd && ( position < absoluteEnd && !interpretedUtfFragments || instruction.First == 1 ) )
 								&& ( program.Newline == PcreByteNewline.Any
 									? PcreByteNewlineExtensions.IsAnyBefore( input.Span, position, fragment.Start, program.Utf8 )
 									: program.Newline == PcreByteNewline.CrLf

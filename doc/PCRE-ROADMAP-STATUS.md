@@ -1,5 +1,18 @@
 # PCRE roadmap status
 
+## PR290: multiline caret at interpreted UTF fragment ends
+
+The [fragment caret addendum](PCRE-FRAGMENT-CARET-STATUS.md) records this bounded
+P09 increment across all five inventories. Multiline caret without alternate-
+caret rejects a current interpreted fragment end; preserve default/JIT behavior,
+physical z/Z, scoped limits, original offsets and shared work/state. Native48x64=
+3,072 outcomes /52 additions gives106,554 tests. Observe semantic RED/freeze
+before the guard change; append eighth package record. See [design](PCRE-FRAGMENT-CARET-DESIGN.md),
+[plan](PCRE-FRAGMENT-CARET-PLAN.md) and [PR290](https://github.com/uniblab/Icod.Expressions/pull/290).
+Whole-branch/baseline review precedes qualification; final evidence/completion
+stay external without source/docs/test edits after GREEN. #7/#102/footer fixed;
+broader P09/native16/P10-P18/P00/P01/Stage C/migrations stay open. Grep last.
+
 ## PR289: COMMIT fragment restarts and physical end anchors
 
 The [COMMIT fragment addendum](PCRE-COMMIT-FRAGMENT-STATUS.md) records this
