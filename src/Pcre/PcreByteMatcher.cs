@@ -17,6 +17,7 @@ internal static partial class PcreByteMatcher {
 	internal static PcreByteMatchResult Match(
 		PcreByteProgram program,
 		int groupCount,
+		PcreCaptureInfo captureInfo,
 		ReadOnlyMemory<byte> input,
 		int startOffset,
 		int matchWorkLimit,
@@ -139,7 +140,7 @@ internal static partial class PcreByteMatcher {
 				Step(); // Accept transition.
 				var emptyCaptures = new PcreByteCapture?[groupCount + 1];
 				emptyCaptures[0] = new( startOffset, 0 );
-				return new( new PcreByteMatch( startOffset, 0, Array.AsReadOnly( emptyCaptures ) ), null );
+				return new( new PcreByteMatch( startOffset, 0, Array.AsReadOnly( emptyCaptures ), captureInfo ), null );
 			}
 			if ( program.MatchInvalidUtf && program.CanMatchEmptyAtAnyOffset
 				&& startOffset < input.Length && !PcreUtf8.TryReadLiteral( input.Span, startOffset, surrogateLiterals, out _, out _ ) ) {
@@ -937,7 +938,7 @@ internal static partial class PcreByteMatcher {
 							}
 							captures[0] = new( reportedStart, position - reportedStart );
 							var labelInstruction = program.PathMarkSlot >= 0 ? marks[program.PathMarkSlot] - 1 : -1;
-							return new( new PcreByteMatch( reportedStart, position - reportedStart, Array.AsReadOnly( captures ) ) {
+							return new( new PcreByteMatch( reportedStart, position - reportedStart, Array.AsReadOnly( captures ), captureInfo ) {
 								MarkName = labelInstruction >= 0 ? program.Instructions[labelInstruction].Bytes : default
 							}, null );
 						default:

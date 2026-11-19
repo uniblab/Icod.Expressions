@@ -23,5 +23,5 @@ internal sealed class PcreCompiledBytePattern {
 		ReadOnlyMemory<byte> input,
 		int startOffset = 0,
 		CancellationToken cancellationToken = default
-	) => PcreByteMatcher.Match( program, groupCount, input, startOffset, matchWorkLimit, workObserver, cancellationToken );
+	) => PcreByteMatcher.Match( program, groupCount, CaptureInfo, input, startOffset, matchWorkLimit, workObserver, cancellationToken );
 }

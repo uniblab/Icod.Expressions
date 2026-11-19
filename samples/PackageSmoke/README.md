@@ -93,3 +93,20 @@ subject views. A fourth pcre-capture-info-smoke JSON record is required alongsid
 the existing protocol and both allocation records on all six native hosts.
 Metadata lookup identifies slots; selecting a participating named capture remains
 a separate consumer policy.
+
+## Named captures on match results
+
+Successful byte matches carry the compiled CaptureInfo snapshot. GetCapture(name)
+returns the first participating named slot in native table order,
+including participating empty captures. Null represents absent/all-unset names;
+the metadata distinguishes them. Names use exact ordinal lookup; a null query
+is an argument error. Returned spans use original byte coordinates and lookup
+does not copy or decode subject text. This remains an internal experimental API.
+
+The fifth pcre-named-capture-smoke result requires 976 native-first protocols,
+reusing all 214 frozen metadata inputs and adding native named-substring API
+selection/span/byte literals. Preserve all four earlier records. Duplicate-name
+substring lookup preserves native table order, including historical2,1 in selected
+branch-reset cases; canonical numeric metadata remains sorted separately. The same metadata reference is bound at both success paths;
+no post-match record clone is used. The fixed result reference can increase
+absolute allocation; paired-input growth allowances remain unchanged.

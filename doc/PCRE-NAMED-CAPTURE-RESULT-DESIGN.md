@@ -105,3 +105,69 @@ data; no mismatching row is removed. Requalify a corrected tests-only source
 and reconcile all707 failures at missing accessors before fixture freeze and
 production implementation. Snapshot separate native lookup order without changing
 the prior canonical numeric metadata API.
+
+## Corrected RED, fixture freeze and author review
+
+Corrected tests-only source1a940b68d8beb9ae378949e78a23e395b09ba7ea, tree
+225ddf363640c3a89852cd113ac4601dd1a8b329; proposed merge
+a829b81be8363d674b23b67b873a11255ab6bb96. Run44456930891 /Linux x64
+job135334261663 builds all targets, zero coded compiler warnings/errors, and
+reports707 failed /105,672 passed /zero skips /106,379 total. All707 unique
+identities reach new accessors:706 GetCapture (one expected null exception-type
+mismatch) and one CaptureInfo getter. No native-reference mismatch remains.
+All105,394 old tests,276 no-match rows and two resource controls pass. This
+corrected witness precedes fixture freeze and production implementation; four
+additional native hosts independently confirm the same set before final review.
+
+Freeze after the adapter correction, before implementation:
+
+- samples/PackageSmoke/PcreNamedCaptureCases.cs: d466e22e4ff535a93780dadefe90e4c9d3a30d05.
+- samples/PackageSmoke/PcreNamedCaptureConsumer.cs: afbd58dda98ea47de25d57ba9d4bdc9bd9a2cb31.
+- tests/Pcre/PcreNamedCaptureResultTests.cs: c322edec7530de784ba9523a291f8b54a7065c0a.
+- tests/Pcre/Native/named-capture-result-oracle.c: 913df56f7dfb8a754c86e1f6894112909462ec58.
+- tests/Icod.Expressions.Tests.csproj: 8ce0588adc5c1ab8820218ad59be45f45f82eef6.
+
+Completed producer blobs reviewed before qualification:
+
+- src/Pcre/PcreByteMatcher.cs: 31f3a65c64d7d91cb52a669faba96189e39d7527.
+- src/Pcre/PcreByteResult.cs: 23df64b4ad7e693a79df75722c4e39ffe36b0324.
+- src/Pcre/PcreCaptureInfo.cs: ae277997093bdc45f134191e6bea96067bae5810.
+- src/Pcre/PcreCompiledBytePattern.cs: e3cba8f07ba1fe5d1474d9bed665831c458a0c15.
+
+CaptureInfo stores canonical/lookup read-only views per name. The original
+registration copy is the lookup view; if already ascending, both views share
+it. Only an out-of-order list gets a second sorted owned array. Prior numeric
+metadata names/counts/views remain stable; parser registration/resolution code
+is byte-identical. Sorting/copying retains cancellation and existing256 bounds.
+
+Results require their exact compiled metadata in the record constructor. One
+reference flows through the existing matcher entry to both success constructors;
+all other matcher code is byte-identical. No extra match/result clone or metadata
+snapshot. GetCapture indexes the immutable lookup/capture lists, preserving
+empty participation and null/ordinal behavior without enumeration allocation.
+No search/VM/Step/state/journal/capture/mark/limit or byte-navigation change.
+
+Whole18-file author review covers independent native API bytes/coordinates, the
+three ordering witnesses, untouched976 literals/old214 catalog, native adapter
+correction and clean missing-accessor RED, binding at both exits, metadata and
+result lifetime, ordinal/unknown/null/empty/unset behavior and warmed zero lookup
+allocation. Reviewed fixed result-field cost and unchanged paired-growth gates,
+fifth package JSON enforcement/typed original-byte consumers/old isolation and
+checks. Baseline five inventories/design/plan/small addendum are reviewed; large
+syntax/resource/Grep baselines remain untouched. No blocking introduced finding;
+no independent reviewer/agents claimed.
+
+All380 old C# test blobs among396 prior test files remain fixed; only two XML
+Compile links are the stated exception. A05 source35/corpus and old package
+helpers/data/probe remain fixed. Existing public API/root projects/dependencies/
+version/workflow/release/migrations stay fixed. Local A05/corpus, classifier,
+eight-job/thirteen-rejection prerequisite and whitespace checks pass. Final
+source identities/native results/raw allocation metrics/completion/cleanup/ready
+stay externally on PR287 without source/docs/test edits after GREEN.
+
+All six corrected-checkpoint native hosts subsequently confirm the exact707
+missing-accessor identities /105,672 passes /zero skips /106,379 total, all
+library targets built and zero coded compiler warnings/errors: Linux x64
+135334261663, Linux ARM64 135334261566, Windows x64 135334261387, Windows ARM64
+135334261427, macOS ARM64 135334261323, macOS x64 135334260999. There are no
+remaining native-reference mismatches; the fixture blobs above remain unchanged.

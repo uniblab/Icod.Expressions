@@ -17,8 +17,8 @@ Output is id|numbered-captures|kind|selected-span|copied-bytes|lookup-code|JIT-r
 JIT-size. Kinds M/U/A/N mean present/known-unset/absent-name/no-match. The probe
 calls pcre2_substring_get_byname and verifies its returned bytes/length against
 first-set native table/ovector coordinates. Empty participating values stay M.
-Source pcre2_substring.c157..178 confirms this native ordering; it differs from
-historical duplicate-backreference ordering in selected branch-reset cases.
+Source pcre2_substring.c157..178 confirms this native ordering; duplicate entries can preserve
+historical registration order2,1, rather than canonical numeric order1,2.
 Every context/program/match data/substring/buffer is released per row.
 
 976 complete outcomes:403 present (259 empty),31 unset,266 absent,276 no-match;

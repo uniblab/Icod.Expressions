@@ -1,5 +1,23 @@
 # Recent UTF proof progress
 
+## PR287: named captures on bound match results
+
+The [named result inventory addendum](PCRE-NAMED-CAPTURE-RESULT-STATUS.md) records
+this P09 increment for all five shared inventories. Successful results bind the
+compiled metadata and expose first-participating native named-substring spans.
+Empty/unset/absent states, ordinal lookup and original bytes remain explicit;
+parser reference ordering and all matching/work behavior stay fixed.
+
+Independent native preflight976 outcomes /985 new tests gives106,379 total.
+Corrected tests-only RED is707 /105,672 passes /zero skips after native/existing
+span checks; new source blobs freeze before binding. Require final six-host
+full/frozen/five-package/build/support gates. See [design](PCRE-NAMED-CAPTURE-RESULT-DESIGN.md),
+[plan](PCRE-NAMED-CAPTURE-RESULT-PLAN.md), addendum and
+[PR287](https://github.com/uniblab/Icod.Expressions/pull/287). Final identities/raw
+metrics/results/completion/cleanup/ready stay external without source/docs/test
+edits after GREEN. #7/#102/footer fixed; broader P09/native16/P10-P18/P01/Stage C
+and actual migrations remain open. Grep last; user owns merge/tags/publication.
+
 ## PR286: immutable internal capture metadata
 
 The [capture metadata inventory addendum](PCRE-CAPTURE-METADATA-STATUS.md) records
