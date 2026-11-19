@@ -1,5 +1,18 @@
 # PCRE roadmap status
 
+## PR291: interpreted optional lookbehind at UTF fragment barriers
+
+The [optional rewind addendum](PCRE-OPTIONAL-REWIND-STATUS.md) records bounded
+P09 conformance across five inventories. Interpreted tolerant variable lookbehind
+uses shorter available context once its minimum is met; retain default/JIT
+barrier rejection, required context, retry order/state/work and original bytes.
+Native48x64=3,072 outcomes /52 additions gives106,606 tests. Observe RED/freeze
+before the one-guard correction; append ninth package record. See [design](PCRE-OPTIONAL-REWIND-DESIGN.md),
+[plan](PCRE-OPTIONAL-REWIND-PLAN.md) and [PR291](https://github.com/uniblab/Icod.Expressions/pull/291).
+Whole-branch/baseline review precedes qualification; final evidence/completion
+stays external without source/docs/test edits after GREEN. #7/#102/footer fixed;
+broader P09/native16/P10-P18/P00/P01/Stage C/migrations remain open. Grep last.
+
 ## PR290: multiline caret at interpreted UTF fragment ends
 
 The [fragment caret addendum](PCRE-FRAGMENT-CARET-STATUS.md) records this bounded

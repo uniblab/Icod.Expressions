@@ -85,3 +85,8 @@ runs:
           throw 'Expected one complete 48-pattern/3072-protocol fragment caret result.'
         }
         Write-Host 'PASS: multiline caret boundaries in interpreted UTF fragments: 3072 protocols'
+        $pcreOptionalRewindRecords = @($pcreSmokeOutput | Where-Object { $_ -match '^\{"kind":"pcre-optional-rewind-smoke",' } | ForEach-Object { $_ | ConvertFrom-Json })
+        if ($pcreOptionalRewindRecords.Count -ne 1 -or $pcreOptionalRewindRecords[0].patterns -ne 48 -or $pcreOptionalRewindRecords[0].cases -ne 3072 -or $pcreOptionalRewindRecords[0].failed -ne 0) {
+          throw 'Expected one complete 48-pattern/3072-protocol optional rewind result.'
+        }
+        Write-Host 'PASS: interpreted optional lookbehind at UTF fragment barriers: 3072 protocols'

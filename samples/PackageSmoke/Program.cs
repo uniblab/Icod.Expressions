@@ -114,4 +114,13 @@ foreach ( var item in PcreFragmentCaretCases.All ) {
 }
 Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-fragment-caret-smoke", patterns = PcreFragmentCaretCases.All.Count, cases = pcreFragmentCaretCases, failed = 0 } ) );
 
+var pcreOptionalRewindCases = 0;
+foreach ( var item in PcreOptionalRewindCases.All ) {
+	if ( PcreMatchPolicyConsumer.Run( item ) != item.Outcomes ) {
+		throw new InvalidOperationException( $"PCRE optional rewind definition {item.Id} changed." );
+	}
+	pcreOptionalRewindCases += 64;
+}
+Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-optional-rewind-smoke", patterns = PcreOptionalRewindCases.All.Count, cases = pcreOptionalRewindCases, failed = 0 } ) );
+
 Console.WriteLine( $"Icod.Expressions package smoke passed on {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}." );

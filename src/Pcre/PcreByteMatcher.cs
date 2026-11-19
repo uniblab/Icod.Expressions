@@ -596,7 +596,7 @@ internal static partial class PcreByteMatcher {
 								Step(); // One asserted character of left context.
 								if ( reversed <= fragment.Start ) {
 									// Pinned invalid-UTF JIT fails optional rewind at malformed barriers.
-									failed = reversedCount < minimumReverse || rangedReverse && program.MatchInvalidUtf && fragment.Start > 0;
+									failed = reversedCount < minimumReverse || rangedReverse && program.MatchInvalidUtf && !interpretedUtfFragments && fragment.Start > 0;
 									break;
 								}
 								var reverseEnd = reversed;
