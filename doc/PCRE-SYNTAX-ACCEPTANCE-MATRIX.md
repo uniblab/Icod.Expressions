@@ -1,5 +1,41 @@
 # PCRE syntax acceptance matrix
 
+## PR285: bounded anchored tolerant UTF fragment storage
+
+Tolerant UTF validation currently records every valid fragment before matching.
+This increment retains only the first real fragment ending at/after the requested
+byte when caller or proven dot-star anchoring already prevents later ordinary
+retry. Preserve real end-at-start context and existing synthetic nullable entries.
+Unanchored fragment collection/search stays identical. Full subject validation,
+every Step, strict diagnostics, cancellation, captures and forward SKIP remain.
+No streaming rescan, transcoding, parser/proof/VM change or new public quota.
+
+Independent pinned PCRE2/SLJIT preflight records 1,568 all-offset short protocols
+(364 groups) plus 12 large-subject outcomes, all JIT zero/positive size. Six
+paired allocation profiles exercise plain, observed and cancellable paths;
+eight controls preserve whole-validation budgets/cancellation/strict late errors.
+390 additions give 105,171 tests. Observed successful-build RED on all six hosts
+is exactly 18 allocation-growth failures /105,153 passes /zero skips, with native/
+old cases passing first. New data/assertion/consumer/C/XML sources were frozen
+before the three anchored fragment-retention calls and private guard changed.
+
+The isolated package gate adds six raw allocation profiles while preserving
+42+1+2 and the earlier four-profile results, fresh feeds/caches and all workflow
+call sites. At 1KiB/64KiB require at most 4KiB extra per call after warmup.
+No claim extends to unanchored fragments, backtracking/capture storage, native
+memory, controlled-host timing or the entire P09 release contract.
+
+See [design](PCRE-ANCHORED-FRAGMENT-STORAGE-DESIGN.md),
+[plan](PCRE-ANCHORED-FRAGMENT-STORAGE-PLAN.md) and
+[PR285](https://github.com/uniblab/Icod.Expressions/pull/285). Review the whole
+branch/seven inventories before final six-host 105,171/frozen214/120, all target
+builds and actual package/compatibility/Gnulib/support/script gates, with zero
+failures/skips/coded compiler warnings/errors. Final raw metrics/identities,
+completion/cleanup/ready remain external on PR285; no source/docs/test edits
+after GREEN. Prior C# tests/A05 and #7/#102/footer fixed; sole old-test-file
+exception adds two Compile links. Wider P09, native16/P10-P18, remaining P01,
+Stage C and actual migration remain open. Grep last; user merges/tags/publishes.
+
 ## PR284: paired-input allocation evidence
 
 Bounded P09 evidence now compares four anchored raw/UTF/UCP paths at1KiB and

@@ -58,3 +58,20 @@ conversion regression controls live in the test suite. No timing threshold is
 used; controlled-host timing and wider P09 release evidence remain separate.
 See [allocation contract](../../doc/PCRE-ALLOCATION-EVIDENCE-DESIGN.md) for the
 current-thread counter scope, callback bounds and covered-profile limitations.
+
+## Anchored tolerant UTF fragment storage
+
+Six additional profiles alternate valid A and malformed FF bytes at 1,024 and
+65,536 bytes. Caller anchoring covers match, miss, a late requested offset and
+a zero-width match at an invalid requested byte; implicit dot-star anchoring
+covers match and miss. Expected complete capture spans come from an independent
+pinned native PCRE2 C preflight. The original padded input view remains authoritative.
+
+The existing callback-only allocation probe warms each size eight times and
+alternates eight measured calls. A separate pcre-fragment-allocation-smoke JSON
+record carries six raw small/large totals. The shared package gate checks exact
+names, input sizes, iterations and growth <=4,096 bytes per call on all six
+native hosts. Preparation/compilation are excluded; match/capture checks are
+included. This bounds covered anchored fragment metadata growth, without claiming
+constant unanchored storage, zero total allocation or controlled-host performance.
+The earlier 42+1+2 protocol and four-profile allocation records remain required.

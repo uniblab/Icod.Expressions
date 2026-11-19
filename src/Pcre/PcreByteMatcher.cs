@@ -102,9 +102,9 @@ internal static partial class PcreByteMatcher {
 								"subject contains invalid UTF-8" ) );
 						}
 						if ( hasValidScalar ) {
-							fragments.Add( new( fragmentStart, offset ) );
+							RetainSearchFragment( fragments, new( fragmentStart, offset ), anchored, startOffset );
 						} else if ( offset == 0 ) {
-							fragments.Add( new( offset, offset ) );
+							RetainSearchFragment( fragments, new( offset, offset ), anchored, startOffset );
 						}
 						hasValidScalar = false;
 						offset++;
@@ -114,7 +114,7 @@ internal static partial class PcreByteMatcher {
 					hasValidScalar = true;
 					offset += width;
 				}
-				fragments.Add( new( hasValidScalar ? fragmentStart : input.Length, input.Length ) );
+				RetainSearchFragment( fragments, new( hasValidScalar ? fragmentStart : input.Length, input.Length ), anchored, startOffset );
 				if ( !program.MatchInvalidUtf && startOffset < input.Length
 					&& ( input.Span[startOffset] & 0xC0 ) == 0x80 ) {
 					return new( null, new( PcreByteDiagnosticCode.InvalidStartOffset, startOffset,
@@ -1085,6 +1085,15 @@ internal static partial class PcreByteMatcher {
 	}
 
 	private readonly record struct Fragment( int Start, int End );
+
+	private static void RetainSearchFragment( List<Fragment> fragments, Fragment fragment, bool anchored, int startOffset ) {
+		// Validation still visits the whole subject. Anchored search can enter only
+		// its first relevant fragment; a forward SKIP stays within that fragment.
+		// Keep an end exactly at startOffset for preceding assertion context.
+		if ( !anchored || fragments.Count == 0 && fragment.End >= startOffset ) {
+			fragments.Add( fragment );
+		}
+	}
 
 	private static int NextReverseStart( ReadOnlySpan<byte> input, int position, bool utf8, bool surrogateLiterals ) {
 		if ( !utf8 ) { return position + 1; }
