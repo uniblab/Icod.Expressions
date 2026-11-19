@@ -1,5 +1,25 @@
 # PCRE roadmap status
 
+## PR289: COMMIT fragment restarts and physical end anchors
+
+The [COMMIT fragment addendum](PCRE-COMMIT-FRAGMENT-STATUS.md) records this
+bounded P09 hostile-input increment across all five shared inventories. A reached
+root COMMIT abandons the current interpreted tolerant fragment, allowing later
+valid fragments; physical z/Z remains distinct from call EndAnchored acceptance.
+Existing default/scoped cuts, state, work and byte coordinates are preserved.
+
+Pinned native52x64=3,328 outcomes /56 additions gives106,502 tests. Semantic
+tests-only RED32/106,470 passes follows all native/default comparisons;24 new
+controls and all106,446 old tests pass. New catalog/assertion/XML sources freeze
+before the one-file matcher correction. A seventh package record reuses the
+unchanged consumer and all six earlier records. See [design](PCRE-COMMIT-FRAGMENT-DESIGN.md),
+[plan](PCRE-COMMIT-FRAGMENT-PLAN.md), addendum and
+[PR289](https://github.com/uniblab/Icod.Expressions/pull/289). Whole-branch/baseline
+review precedes final qualification; final identities/raw metrics/results/plan
+completion/cleanup/ready remain external without source/docs/test edits after
+GREEN. #7/#102/footer fixed; broader P09/native16/P10-P18/P00/P01/Stage C and
+actual migrations stay open. Grep last; user merges/tags/publishes.
+
 ## PR288: immutable per-call match policy
 
 The [per-call policy addendum](PCRE-MATCH-POLICY-STATUS.md) records this P09

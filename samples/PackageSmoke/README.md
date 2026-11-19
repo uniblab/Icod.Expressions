@@ -134,3 +134,18 @@ entry recovery and fragment-local end anchoring; anchored failure stops before a
 forward SKIP retry. The call profile can retain multiple fragments. Default calls
 retain the earlier compiled/JIT-profile behavior and measured allocation bounds.
 Wider malformed-input assertion/verb/start-study conformance remains open.
+
+## Committed fragments and physical end anchors
+
+Tolerant matching with per-call anchoring can continue to the next valid fragment
+after a reached root COMMIT rejects the current fragment. Absolute z/Z anchors
+still require the physical subject end, independently of fragment-local call
+EndAnchored acceptance. Existing scoped cuts, work budgets, cancellation and
+capture/mark ownership remain shared by the same VM.
+
+The seventh pcre-commit-fragment-smoke result requires52 definitions and3,328
+native-first policy protocols. It reuses the unchanged per-call consumer, with
+one compiled pattern per definition and the original entry interleaved after
+every policy. Preserve all six earlier records, isolated candidate feeds/caches,
+all target builds and net10-only execution. This remains an internal bounded
+contract; broader hostile-input/release conformance stays open.

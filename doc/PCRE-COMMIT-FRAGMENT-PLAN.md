@@ -7,11 +7,11 @@ Grep last; user owns merge/tags/publication.
 
 - [x] Independently record52x64 pinned native8 cut/physical-end outcomes.
 - [x] Define56 tests before production changes, reusing the immutable consumer.
-- [ ] Observe successful-build semantic RED, reconcile identities/causes and freeze
+- [x] Observe successful-build semantic RED, reconcile identities/causes and freeze
   new catalog/assertion/XML sources before implementation.
-- [ ] Restrict reached root COMMIT failure to the current interpreted tolerant
+- [x] Restrict reached root COMMIT failure to the current interpreted tolerant
   fragment and preserve physical z/Z, shared state/budgets and default behavior.
-- [ ] Add seventh package record; review whole branch and baseline inventories/
+- [x] Add seventh package record; review whole branch and baseline inventories/
   design/plan/status and all preservation checks before final qualification.
 - [ ] Qualify six106,502/frozen214/120 results, all target builds/seven package
   records and actual support/script gates without failures/skips/coded warnings.

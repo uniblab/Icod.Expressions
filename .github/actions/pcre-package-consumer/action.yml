@@ -75,3 +75,8 @@ runs:
           throw 'Expected one complete 56-pattern/3584-protocol per-call PCRE policy result.'
         }
         Write-Host 'PASS: immutable per-call PCRE policies: 3584 protocols'
+        $pcreCommitFragmentRecords = @($pcreSmokeOutput | Where-Object { $_ -match '^\{"kind":"pcre-commit-fragment-smoke",' } | ForEach-Object { $_ | ConvertFrom-Json })
+        if ($pcreCommitFragmentRecords.Count -ne 1 -or $pcreCommitFragmentRecords[0].patterns -ne 52 -or $pcreCommitFragmentRecords[0].cases -ne 3328 -or $pcreCommitFragmentRecords[0].failed -ne 0) {
+          throw 'Expected one complete 52-pattern/3328-protocol COMMIT fragment result.'
+        }
+        Write-Host 'PASS: COMMIT fragment restarts and physical end anchors: 3328 protocols'

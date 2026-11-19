@@ -72,3 +72,61 @@ merge identities, raw allocations/results/plan completion externally on PR289;
 no source/docs/test edits after final GREEN. Retain the original roadmap/repository;
 clean only exact disposable pcre289-research after evidence readback and observe
 ready/open/unmerged state. This is bounded conformance, not whole P09 closure.
+
+## Observed RED and immutable sources
+
+Tests-only source289c0eac0085a37540846808d9a27aac040f35d4,
+tree9c68198a3defa61df97190e5085a5b7e8e45a46e, proposed
+merged82beb7706c6508d81ab72ed1ef2a866c8b95df8, run44555775526.
+Linux ARM64135671286336 and Linux x64135671286475 build net8/9/10 without
+coded warnings/errors, then report32 failed/106,470 passed/zero skips/106,502
+total. Exact failure identities match: definition IDs1-13,26,31-33,35-39,44-46,
+48,51-52 and all four facts. Every failed theory reaches the managed protocol
+comparison only after its complete native batch. All24 new controls and106,446
+old tests pass, including raw/strict/default paths, overridden/unreached cuts
+and existing physical-end successes. No native mismatch or fixture correction.
+Windows x64135671286263 and Windows ARM64135671286318 corroborate the same set.
+The Linux witness and following freeze precede production implementation; the
+remaining hosts corroborate before final qualification.
+
+Frozen sources:
+
+- samples/PackageSmoke/PcreCommitFragmentCases.cs:3883bf052683ffadc89e717bb560d31152be5d19.
+- tests/Pcre/PcreCommitFragmentTests.cs:7262ee787cc9faa23ca3c63d4c8c57751895e32f.
+- tests/Icod.Expressions.Tests.csproj:58a78b8d41277fb58dcf81cab20cc90df96729ff.
+- reused samples/PackageSmoke/PcreMatchPolicyConsumer.cs:07ba6226a117768d36a0aab119cb5e4093c81fb7.
+- reused samples/PackageSmoke/PcreMatchPolicyCases.cs:34b87a6fc455468bdabcb8ad90e6a0ff779fa554.
+- reused tests/Pcre/Native/match-policy-oracle.c:6fbaee449941be0b462604d3d1c4101d79241a37.
+
+## Reviewed source before final qualification
+
+Matcher blob0758dd9315326372ba66480361795cc8dc06a558; only10 additions/two
+deletions in production. A per-candidate committedFragment bool becomes true
+only at the reached existing root guard under interpretedUtfFragments. Unwinding
+still pops the original frames/charges before leaving the candidate. The outer
+fragment loop resumes with its existing state reset; work/cancellation never
+reset. A false flag preserves every prior path, including discarded cuts. The
+absoluteEnd change restores physical input end only when no scoped limit applies;
+the separate matchEnd end-anchoring checks remain untouched.
+
+Whole13-file author review covers primary native COMMIT/true-end provenance,
+all unfiltered protocols, exact RED causes, root versus discarded/scoped cuts,
+fragment/capture/mark resets, physical/scoped end boundaries, original offsets,
+one shared budget/exhaustion/cancellation, retained result/metadata lifetime,
+observed byte views and package source/model reuse. No introduced unresolved
+findings or independent review claimed. No opcode/program/parser/metadata/frame/
+journal/Step site/proof/API/dependency/workflow call-site changes.
+
+All382 prior C# tests among402 old test files stay fixed; one Compile link is
+the sole old-test-file change. All13 prior sample helper/data sources, original
+56-policy catalog and large syntax/resource/Grep inventories retain base blobs.
+A05 source35/corpus identities, classifier, complete eight-main-job/thirteen-
+rejection and whitespace gates pass locally. The baseline five inventories and
+this design/plan/small status addendum precede final source qualification.
+
+Merged288 closure: main44553241211/scripts44553241374 green at attempt1.
+Six106,446 net10/frozen214/120/all-target/six-package results have zero failures/
+skips/coded warnings/errors. Main's eight jobs including Gnulib/Intel aggregate
+pass; all script hosts report31 checks, Ubuntu also eight main jobs/thirteen
+rejection cases. The merged base tree equals the reviewed/tested PR288 tree.
+Final current-source results/identities/plan completion stay externally on PR289.

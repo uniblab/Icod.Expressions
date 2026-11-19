@@ -256,6 +256,7 @@ internal static partial class PcreByteMatcher {
 					var position = start;
 					var utfRepeatEnd = start;
 					var skipRestart = -1;
+					var committedFragment = false;
 					var pc = 0;
 					Array.Clear( captures );
 					Array.Clear( captureStarts );
@@ -273,7 +274,7 @@ internal static partial class PcreByteMatcher {
 						var instruction = program.Instructions[pc];
 						var endLimit = activeScope >= 0 ? assertionScopes![activeScope].LimitEnd : -1;
 						var subjectEnd = endLimit >= 0 ? Math.Min( fragment.End, endLimit ) : fragment.End;
-						var absoluteEnd = endLimit >= 0 ? endLimit : matchEnd;
+						var absoluteEnd = endLimit >= 0 ? endLimit : input.Length;
 						var suppressLineEnd = policy.NotEol || interpretedUtfFragments && fragment.End < input.Length;
 						var failed = false;
 						switch ( instruction.Opcode ) {
@@ -1002,7 +1003,12 @@ internal static partial class PcreByteMatcher {
 							while ( backtrack.Count > frame.Pc ) { Step(); PopFrame( backtrack, assertionScopes, callScopes ); }
 							// Delay root termination until this cut is actually reached. A later
 							// PRUNE/SKIP or a successful atomic scope may discard COMMIT first.
-							if ( frame.Kind == FrameKind.Commit && frame.Pc == 0 ) { return new( null, null ); }
+							if ( frame.Kind == FrameKind.Commit && frame.Pc == 0 ) {
+								if ( !interpretedUtfFragments ) { return new( null, null ); }
+								committedFragment = true;
+								failed = true;
+								break;
+							}
 							failed = true;
 							continue; // Resolve the retained catch guard, or fail this candidate.
 						}
@@ -1020,6 +1026,8 @@ internal static partial class PcreByteMatcher {
 					}
 					if ( failed ) { break; }
 				}
+				// Native interpreter COMMIT reaches ENDLOOP, then retries later fragments.
+				if ( committedFragment ) { break; }
 				// Interpreter anchoring stops within this fragment before a SKIP retry.
 				if ( matchTimeAnchoring && anchored ) {
 					if ( interpretedUtfFragments ) { break; }
