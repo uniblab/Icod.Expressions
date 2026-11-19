@@ -81,3 +81,68 @@ prior C# test blobs remain fixed. Final source/tree/base/merge identities, resul
 plan completion, exact research cleanup and ready readback stay externally on
 PR286 without source/docs/test edits after GREEN. No broader release gate closes
 merely from capture metadata.
+
+## Observed RED, freeze and whole-branch review
+
+Tests-only source16797ad96ae8e43bbb0eac1fb399e6187c399644, tree
+87bf5016c76bdde9c1a345e4a2fa09461491688a; proposed merge
+78dacef28ac633c8127ef730a47318891c4a1946. Run44448790030: all six native
+hosts build net8/net9/net10 with zero coded compiler warnings/errors and report
+exactly222 failed /105,172 passed /zero skips /105,394 total. The same222
+unique identities reach PcreCompiledBytePattern.get_CaptureInfo NotImplemented.
+Every native count/name/match assertion and existing managed span check passes
+before that getter; all105,171 prior tests and pre-cancellation control pass.
+
+Freeze before replacing scaffolding:
+
+- samples/PackageSmoke/PcreCaptureInfoCases.cs: 1bc11ad0fe986311321d7c2c0403d29b122f69bd.
+- samples/PackageSmoke/PcreCaptureInfoConsumer.cs: 0290e7a4abadf02a6aec3f2caab610b91f0a9bfe.
+- tests/Icod.Expressions.Tests.csproj: b4098218cec188905fe1b041e2956fab97ecc67e.
+- tests/Pcre/Native/capture-info-oracle.c: 40621050437913f319dc07aa395bf9e54b0cf5f8.
+- tests/Pcre/PcreCaptureInfoTests.cs: b5e2625898063f2b5ddcda8a6eb1afa7304aba94.
+
+Completed producer blobs reviewed before qualification:
+
+- src/Pcre/PcreCaptureInfo.cs: 24c5b6380467025781fbaa9d9eda45a0fe0381a5.
+- src/Pcre/PcreCompiledBytePattern.cs: cbde63cb6e0a6a9ae885e44e7f1e3019c72b5b60.
+- src/Pcre/PcreByteCompiler.cs: 89605e2197414797d9130ad483dd310302d25eb4.
+- src/Pcre/PcreByteParser.NamedCaptures.cs: fefb68039acb80bf2e1b88fa0cd3eb976eaa1b05.
+
+The parser only exposes a snapshot factory; RegisterCaptureName, resolution and
+all AST/program/matcher bodies stay fixed. Compiler wiring occurs after program
+admission. The snapshot copies numbers, reuses owned immutable name strings,
+sorts only new arrays, uses an ordinal private dictionary and exposes read-only
+wrappers. Unknown-empty/null-error behavior and stable allocation-free views
+follow the frozen tests. Captures cap256; a first distinct name cannot reuse an
+already-named number, so at most256 unique names and256 numbers per name bound
+copying/sorting. Cancellation checks surround bounded sorts and each copy loop.
+No borrowed source/AST retention, per-match metadata allocation or quota change.
+
+Whole18-file author review covers native C/source provenance, all214 unfiltered
+results and independent canonical ordering, no-match/unused-slot metadata,
+Unicode/branch-reset aliases/capacities, ownership and mutation boundaries,
+lookup identity/casing/null behavior and after-diagnostic reads. Reviewed package
+source-linked typed API assertions, padded views/overwritten source, fourth JSON
+record and unchanged old protocol/allocation/isolation enforcement. No introduced
+blocking findings; no independent reviewer/agents claimed.
+
+All379 prior C# test blobs remain byte-identical among393 prior test files; only
+two XML Compile links are the documented exception. A05 source35/corpus, matcher
+(including PR285 retention), old package helpers/data/probe, public API, root
+projects/dependencies/version and workflow/release call sites stay fixed. Local
+A05/corpus, classifier, eight-job/thirteen-rejection prerequisite and whitespace
+checks pass. This design/plan and all five shared inventories precede final
+source qualification. Final exact identities/results/completion/cleanup/ready
+stay externally on PR286 with no source/docs/test edits after GREEN.
+
+## Inventory publication adjustment before qualification
+
+Automatic review rejected the large resource inventory replacement despite
+verification of its exact public baseline plus the2,437-byte authored update.
+The rejected file replacement is omitted. Large syntax/resource/Grep inventories
+remain byte-identical to base; no alternative endpoint publishes their payloads.
+The [small status addendum](PCRE-CAPTURE-METADATA-STATUS.md) records this increment
+for all five shared inventories, linked from roadmap/recent progress. Reviewed
+all five baseline inventories, design/plan and addendum before qualification.
+This is a documentation publication adjustment; implementation/frozen fixtures
+are unchanged. Final branch has18 files. No approval-dependent action remains.

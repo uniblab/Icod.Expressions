@@ -60,3 +60,8 @@ runs:
           }
         }
         Write-Host 'PASS: bounded anchored fragment allocations: six profiles'
+        $pcreCaptureInfoRecords = @($pcreSmokeOutput | Where-Object { $_ -match '^\{"kind":"pcre-capture-info-smoke",' } | ForEach-Object { $_ | ConvertFrom-Json })
+        if ($pcreCaptureInfoRecords.Count -ne 1 -or $pcreCaptureInfoRecords[0].cases -ne 214 -or $pcreCaptureInfoRecords[0].failed -ne 0) {
+          throw 'Expected one complete 214-case PCRE capture metadata result.'
+        }
+        Write-Host 'PASS: immutable PCRE capture metadata: 214 protocols'

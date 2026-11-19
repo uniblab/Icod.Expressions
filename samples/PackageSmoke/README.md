@@ -75,3 +75,21 @@ native hosts. Preparation/compilation are excluded; match/capture checks are
 included. This bounds covered anchored fragment metadata growth, without claiming
 constant unanchored storage, zero total allocation or controlled-host performance.
 The earlier 42+1+2 protocol and four-profile allocation records remain required.
+
+## Internal capture metadata
+
+Compiled patterns expose CaptureInfo with the capture count excluding group zero,
+unique names in UTF-16 ordinal order, and exact ordinal name lookup returning
+sorted distinct slot numbers. Duplicate names and branch-reset aliases retain
+all declared slots. Unknown names return an empty list; null is an argument error.
+The views are owned, read-only and stable across matches and diagnostics.
+This remains an internal experimental API for the package friend consumer.
+
+The consumer verifies 214 native-first count/name/match protocols, including
+raw/UTF/UCP, caller/source options, Unicode ordering, DEFINE/recursion/assertion
+captures, unset/erased groups, literal source, binary/NUL, 256 slots and 128-byte
+names. It overwrites caller pattern bytes after compilation and uses padded
+subject views. A fourth pcre-capture-info-smoke JSON record is required alongside
+the existing protocol and both allocation records on all six native hosts.
+Metadata lookup identifies slots; selecting a participating named capture remains
+a separate consumer policy.

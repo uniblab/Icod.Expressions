@@ -10,16 +10,17 @@ old-test-file exception. Grep last; user owns merge/tags/publication.
 - [x] Review the P09 consumer gap and existing parsed name/number ownership.
 - [x] Independently pin214 metadata/match cases, all JIT0/positive size.
 - [x] Define owned immutable count/names/lookups and223 tests with unused stubs.
-- [ ] Publish tests-only draft, reconcile RED222 and freeze new fixture/assertion/
+- [x] Publish tests-only draft, reconcile RED222 and freeze new fixture/assertion/
   consumer/native/XML sources before implementation.
 
 ## Metadata and package implementation
 
-- [ ] Snapshot parser names/count after successful program admission; preserve
+- [x] Snapshot parser names/count after successful program admission; preserve
   declaration ordering, matching, diagnostics/work and all old C# assertions.
-- [ ] Implement stable read-only views/ordinal lookups with cancellation.
-- [ ] Add package metadata record while preserving three existing records.
-- [ ] Review whole branch/seven inventories; run local preservation/gate checks.
+- [x] Implement stable read-only views/ordinal lookups with cancellation.
+- [x] Add package metadata record while preserving three existing records.
+- [x] Review whole branch/seven inventories and linked status addendum; run local
+  preservation/gate checks.
 - [ ] Upload reviewed source/tree with a branch-head lease.
 
 ## Qualification
@@ -30,3 +31,7 @@ old-test-file exception. Grep last; user owns merge/tags/publication.
   observe ready readback without source/docs/test edits after GREEN.
 
 Final completion stays externally on PR286; broader roadmap gates remain open.
+
+Large inventory replacements are omitted after automatic-review rejection.
+The linked status addendum records their increment; see design for the reviewed
+publication adjustment. No rejected replacement is published indirectly.

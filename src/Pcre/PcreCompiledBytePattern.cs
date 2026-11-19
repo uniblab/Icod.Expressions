@@ -7,15 +7,16 @@ internal sealed class PcreCompiledBytePattern {
 	private readonly int matchWorkLimit;
 	private readonly Action<int>? workObserver;
 
-	public PcreCaptureInfo CaptureInfo => throw new NotImplementedException();
+	public PcreCaptureInfo CaptureInfo { get; }
 
 	internal PcreCompiledBytePattern(
-		PcreByteProgram program, int groupCount, int matchWorkLimit, Action<int>? workObserver
+		PcreByteProgram program, int groupCount, int matchWorkLimit, Action<int>? workObserver, PcreCaptureInfo captureInfo
 	) {
 		this.program = program;
 		this.groupCount = groupCount;
 		this.matchWorkLimit = matchWorkLimit;
 		this.workObserver = workObserver;
+		CaptureInfo = captureInfo;
 	}
 
 	public PcreByteMatchResult Match(
