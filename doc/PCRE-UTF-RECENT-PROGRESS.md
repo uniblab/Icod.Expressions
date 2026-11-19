@@ -1,5 +1,25 @@
 # Recent UTF proof progress
 
+## PR286: immutable internal capture metadata
+
+The [capture metadata inventory addendum](PCRE-CAPTURE-METADATA-STATUS.md) records
+this P09 increment for all five shared inventories. Compiled patterns gain owned,
+stable read-only capture counts and ordinal name-to-slot mappings; execution,
+parser declaration order and existing diagnostics/work remain fixed.
+
+Independent pinned native preflight has214 count/name/match protocols. All-six
+successful-build RED isolates222 missing-accessor failures /105,172 passes /
+zero skips /105,394 total, with all old/native match checks passing. Freeze new
+assertion/data/consumer/C/XML sources before implementation. Whole-branch review
+and final six-host/full/frozen/four-package/support gates remain required.
+
+See [design](PCRE-CAPTURE-METADATA-DESIGN.md),
+[plan](PCRE-CAPTURE-METADATA-PLAN.md) and
+[PR286](https://github.com/uniblab/Icod.Expressions/pull/286). Final identities,
+results/completion/cleanup/ready stay external without source/docs/test edits
+after GREEN. #7/#102/footer fixed; broader P09/native16/P10-P18/P01/Stage C and
+actual migrations remain open. Grep last; user owns merge/tags/publication.
+
 ## PR285: bounded anchored tolerant UTF fragment storage
 
 Tolerant UTF validation currently records every valid fragment before matching.

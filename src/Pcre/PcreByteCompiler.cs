@@ -63,7 +63,7 @@ internal static class PcreByteCompiler {
 				Anchored = options.Anchored, EndAnchored = options.EndAnchored, FirstLine = options.FirstLine
 			};
 			return new(
-				new PcreCompiledBytePattern( program, parser.GroupCount, options.MatchWorkLimit, options.WorkObserver ),
+				new PcreCompiledBytePattern( program, parser.GroupCount, options.MatchWorkLimit, options.WorkObserver, parser.CreateCaptureInfo() ),
 				null
 			);
 		} catch ( PcreByteParseException error ) {

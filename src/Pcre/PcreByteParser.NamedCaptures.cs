@@ -8,6 +8,8 @@ internal sealed partial class PcreByteParser {
 	private readonly List<(string Name, int Number)> captureNames = new();
 	private bool hasNamedReferences;
 
+	internal PcreCaptureInfo CreateCaptureInfo() => new( groupCount, namedCaptures, cancellationToken );
+
 	// Temporary parser node only: resolved before the numbered program compiler runs.
 	private sealed record NamedReference( string Name, int Offset ) : PcreByteNode;
 
