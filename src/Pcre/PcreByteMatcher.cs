@@ -18,6 +18,7 @@ internal static partial class PcreByteMatcher {
 		PcreByteProgram program,
 		int groupCount,
 		PcreCaptureInfo captureInfo,
+		PcreMatchPolicy policy,
 		ReadOnlyMemory<byte> input,
 		int startOffset,
 		int matchWorkLimit,
@@ -32,7 +33,15 @@ internal static partial class PcreByteMatcher {
 				"start byte offset is outside the input"
 			) );
 		}
-		var anchored = program.Anchored || program.DotStarAnchored;
+		var anchored = program.Anchored || program.DotStarAnchored || policy.Anchored;
+		var endAnchored = program.EndAnchored || policy.EndAnchored;
+		var notEmpty = program.NotEmpty || policy.NotEmpty;
+		var notEmptyAtStart = program.NotEmptyAtStart || policy.NotEmptyAtStart;
+		// Native match-time anchoring selects its interpreter. In tolerant UTF,
+		// that driver retries separate valid fragments with fragment-local ends.
+		var matchTimeAnchoring = policy.Anchored || policy.EndAnchored;
+		var interpretedUtfFragments = program.MatchInvalidUtf && matchTimeAnchoring;
+		var retainAnchoredFragment = anchored && !interpretedUtfFragments;
 		var surrogateLiterals = program.MatchInvalidUtf && program.HasSurrogateLiterals;
 		// No candidate can reach the VM when the required first byte is absent.
 		// This is limited to unobserved, noncancellable exact byte searches.
@@ -103,9 +112,9 @@ internal static partial class PcreByteMatcher {
 								"subject contains invalid UTF-8" ) );
 						}
 						if ( hasValidScalar ) {
-							RetainSearchFragment( fragments, new( fragmentStart, offset ), anchored, startOffset );
+							RetainSearchFragment( fragments, new( fragmentStart, offset ), retainAnchoredFragment, startOffset );
 						} else if ( offset == 0 ) {
-							RetainSearchFragment( fragments, new( offset, offset ), anchored, startOffset );
+							RetainSearchFragment( fragments, new( offset, offset ), retainAnchoredFragment, startOffset );
 						}
 						hasValidScalar = false;
 						offset++;
@@ -115,7 +124,7 @@ internal static partial class PcreByteMatcher {
 					hasValidScalar = true;
 					offset += width;
 				}
-				RetainSearchFragment( fragments, new( hasValidScalar ? fragmentStart : input.Length, input.Length ), anchored, startOffset );
+				RetainSearchFragment( fragments, new( hasValidScalar ? fragmentStart : input.Length, input.Length ), retainAnchoredFragment, startOffset );
 				if ( !program.MatchInvalidUtf && startOffset < input.Length
 					&& ( input.Span[startOffset] & 0xC0 ) == 0x80 ) {
 					return new( null, new( PcreByteDiagnosticCode.InvalidStartOffset, startOffset,
@@ -123,6 +132,10 @@ internal static partial class PcreByteMatcher {
 				}
 			} else {
 				fragments.Add( new( 0, input.Length ) );
+			}
+			var searchOffset = startOffset;
+			if ( interpretedUtfFragments ) {
+				while ( searchOffset < input.Length && ( input.Span[searchOffset] & 0xC0 ) == 0x80 ) { Step(); searchOffset++; }
 			}
 			if ( unobservedUnicodeSearch && !program.MatchInvalidUtf
 				&& MissingRequiredLiteralSuffixWithinBudget( program, input.Span, startOffset, matchWorkLimit ) ) {
@@ -132,7 +145,7 @@ internal static partial class PcreByteMatcher {
 			// Native STARTLINE search begins at the requested byte, so a newline
 			// whose encoding began before it cannot supply the first line candidate.
 			var excludedLineStart = !anchored && program.LineStartSearch ? PcreByteNewlineExtensions.PartialAnyNewlineEnd( input.Span, startOffset ) : -1;
-			if ( program.MatchInvalidUtf && !program.EndAnchored && !program.NotEmpty && !program.NotEmptyAtStart && program.Instructions.Length == 1
+			if ( program.MatchInvalidUtf && !interpretedUtfFragments && !endAnchored && !notEmpty && !notEmptyAtStart && program.Instructions.Length == 1
 				&& program.Instructions[0].Opcode == PcreByteOpcode.Accept ) {
 				// PCRE2 permits an empty pattern at the requested byte offset,
 				// including inside a valid scalar or a malformed byte run.
@@ -143,7 +156,7 @@ internal static partial class PcreByteMatcher {
 				return new( new PcreByteMatch( startOffset, 0, Array.AsReadOnly( emptyCaptures ), captureInfo ), null );
 			}
 			if ( program.MatchInvalidUtf && program.CanMatchEmptyAtAnyOffset
-				&& startOffset < input.Length && !PcreUtf8.TryReadLiteral( input.Span, startOffset, surrogateLiterals, out _, out _ ) ) {
+				&& searchOffset < input.Length && !PcreUtf8.TryReadLiteral( input.Span, searchOffset, surrogateLiterals, out _, out _ ) ) {
 				// PCRE2 can accept a zero-width path exactly at a requested byte offset,
 				// including inside a scalar or malformed run. Consumption remains barred.
 				// A real fragment ending here already permits a zero-width candidate
@@ -152,14 +165,15 @@ internal static partial class PcreByteMatcher {
 				var hasContextCandidate = false;
 				foreach ( var existing in fragments ) {
 					cancellationToken.ThrowIfCancellationRequested();
-					if ( existing.End == startOffset ) { hasContextCandidate = true; break; }
+					if ( existing.End == searchOffset ) { hasContextCandidate = true; break; }
 				}
 				if ( !hasContextCandidate ) {
 					// Starting inside a valid scalar makes its remaining continuation
 					// bytes zero-width candidates, just like a malformed byte run.
-					var end = Math.Max( startOffset + 1, PcreByteNewlineExtensions.PartialScalarEnd( input.Span, startOffset ) );
-					for ( var candidate = startOffset; candidate < end; candidate++ ) {
-						fragments.Insert( candidate - startOffset, new( candidate, candidate ) );
+					var end = interpretedUtfFragments ? searchOffset + 1
+						: Math.Max( searchOffset + 1, PcreByteNewlineExtensions.PartialScalarEnd( input.Span, searchOffset ) );
+					for ( var candidate = searchOffset; candidate < end; candidate++ ) {
+						fragments.Insert( candidate - searchOffset, new( candidate, candidate ) );
 					}
 				}
 			}
@@ -177,13 +191,19 @@ internal static partial class PcreByteMatcher {
 			var regionalRun = new RegionalRun( -1, -1 );
 			var pruneLiteralEnd = -1;
 			// Keep the observed and cancellable path byte-for-byte accountable to Step().
-			var nullableInvalidCandidates = !anchored && program.MatchInvalidUtf && program.CanMatchEmptyAtAnyOffset;
+			var nullableInvalidCandidates = !anchored && !interpretedUtfFragments && program.MatchInvalidUtf && program.CanMatchEmptyAtAnyOffset;
 			var previousFragmentEnd = -1;
 			var firstLinePosition = startOffset;
 			var forcedSkipStart = -1;
 			var xdigitFragmentEnd = startOffset;
 			for ( var fragmentIndex = 0; fragmentIndex < fragments.Count; ) {
 				var fragment = fragments[fragmentIndex];
+				if ( interpretedUtfFragments && fragment.Start == input.Length && searchOffset < input.Length ) { break; }
+				if ( interpretedUtfFragments && searchOffset > startOffset && fragment.Start < searchOffset ) {
+					// Native skipped a continuation start, so preceding text cannot
+					// provide assertion context for this recovered first fragment.
+					fragment = new( searchOffset, fragment.End );
+				}
 				if ( nullableInvalidCandidates && previousFragmentEnd >= 0
 					&& previousFragmentEnd < fragment.Start - 1 && startOffset < fragment.Start - 1 ) {
 					// Gaps contain only malformed bytes: valid UTF scalars remain whole
@@ -195,8 +215,10 @@ internal static partial class PcreByteMatcher {
 				previousFragmentEnd = fragment.End;
 				if ( program.UtfXdigitFragmentBarrier && fragment.Start <= startOffset && startOffset < fragment.End
 					&& ( input.Span[startOffset] & 0xC0 ) != 0x80 ) { xdigitFragmentEnd = fragment.End; }
-				for ( var start = Math.Max( startOffset, fragment.Start ); start <= fragment.End; start++ ) {
-					if ( anchored && start != startOffset && start != forcedSkipStart ) { return new( null, null ); }
+				var fragmentOffset = Math.Max( searchOffset, fragment.Start );
+				var matchEnd = interpretedUtfFragments ? fragment.End : input.Length;
+				for ( var start = fragmentOffset; start <= fragment.End; start++ ) {
+					if ( anchored && start != ( interpretedUtfFragments ? fragmentOffset : startOffset ) && start != forcedSkipStart ) { return new( null, null ); }
 					if ( program.UtfXdigitFragmentBarrier && start > xdigitFragmentEnd ) { return new( null, null ); }
 					if ( program.Utf8 && start < fragment.End && ( input.Span[start] & 0xC0 ) == 0x80 ) {
 						continue; // Search candidate boundaries, never continuation bytes.
@@ -251,7 +273,8 @@ internal static partial class PcreByteMatcher {
 						var instruction = program.Instructions[pc];
 						var endLimit = activeScope >= 0 ? assertionScopes![activeScope].LimitEnd : -1;
 						var subjectEnd = endLimit >= 0 ? Math.Min( fragment.End, endLimit ) : fragment.End;
-						var absoluteEnd = endLimit >= 0 ? endLimit : input.Length;
+						var absoluteEnd = endLimit >= 0 ? endLimit : matchEnd;
+						var suppressLineEnd = policy.NotEol || interpretedUtfFragments && fragment.End < input.Length;
 						var failed = false;
 						switch ( instruction.Opcode ) {
 						case PcreByteOpcode.PruneRepeatStart:
@@ -347,7 +370,7 @@ internal static partial class PcreByteMatcher {
 										: scalar == instruction.First )
 								: ScalarEquals( input.Span[position], instruction.First, instruction.Caseless, program.Ucp, instruction.CaselessRestricted ) ) ) {
 								position += literalWidth;
-								if ( instruction.CommitOptional ) {
+								if ( instruction.CommitOptional && ( notEmpty || notEmptyAtStart ) ) {
 									// Commit only this literal query's immediately preceding Split.
 									// A failed literal still takes its ordinary zero-length edge.
 									PopFrame( backtrack, assertionScopes, callScopes );
@@ -657,13 +680,13 @@ internal static partial class PcreByteMatcher {
 							else { failed = true; }
 							break;
 						case PcreByteOpcode.Start:
-							if ( position == 0 ) { pc++; } else { failed = true; }
+							if ( position == 0 && ( instruction.First != 1 || !policy.NotBol ) ) { pc++; } else { failed = true; }
 							break;
 						case PcreByteOpcode.SearchStart:
 							if ( position == startOffset ) { pc++; } else { failed = true; }
 							break;
 						case PcreByteOpcode.End:
-							if ( position == absoluteEnd ) { pc++; } else { failed = true; }
+							if ( position == absoluteEnd && ( instruction.First != 1 || !suppressLineEnd ) ) { pc++; } else { failed = true; }
 							break;
 						case PcreByteOpcode.StartLine:
 							// Native newline search still retries physical EOF when the
@@ -671,7 +694,7 @@ internal static partial class PcreByteMatcher {
 							if ( position == excludedLineStart && ( instruction.First != 1 || position != input.Length ) ) {
 								failed = true; break;
 							}
-							if ( ( position == 0 && instruction.Second != 1 ) || ( position > fragment.Start
+							if ( ( position == 0 && instruction.Second != 1 && !policy.NotBol ) || ( position > fragment.Start
 							&& ( position < subjectEnd || position == subjectEnd && ( position < absoluteEnd || instruction.First == 1 ) )
 								&& ( program.Newline == PcreByteNewline.Any
 									? PcreByteNewlineExtensions.IsAnyBefore( input.Span, position, fragment.Start, program.Utf8 )
@@ -685,7 +708,7 @@ internal static partial class PcreByteMatcher {
 						case PcreByteOpcode.EndLine:
 							// JIT allows the LF after consumed CR under ANY/ANYCRLF;
 							// CRLF-only requires the complete pair. Bumpalong stays separate.
-							if ( ( position == absoluteEnd && instruction.Second != 1 ) || ( position < subjectEnd
+							if ( ( position == absoluteEnd && instruction.Second != 1 && !suppressLineEnd ) || ( position < subjectEnd
 							&& ( program.Newline == PcreByteNewline.Any
 								? PcreByteNewlineExtensions.AnyLengthAt( input.Span, position, subjectEnd, program.Utf8 ) > 0
 								: program.Newline == PcreByteNewline.CrLf
@@ -696,6 +719,7 @@ internal static partial class PcreByteMatcher {
 							} else { failed = true; }
 							break;
 						case PcreByteOpcode.EndBeforeFinalLf:
+							if ( instruction.Second == 1 && suppressLineEnd ) { failed = true; break; }
 							var end = instruction.First == 1 ? subjectEnd : absoluteEnd;
 							var newlineLength = program.Newline == PcreByteNewline.Any
 								? PcreByteNewlineExtensions.AnyLengthAt( input.Span, position, end, program.Utf8 ) : 0;
@@ -791,7 +815,7 @@ internal static partial class PcreByteMatcher {
 								pc = instruction.First; // Bypass ReverseEnd/script-run/body suffixes.
 								break;
 							}
-							if ( program.EndAnchored && position != input.Length ) {
+							if ( endAnchored && position != matchEnd ) {
 								// A short root ACCEPT abandons this candidate, including cuts
 								// and alternatives. Scoped exits above retain their own meaning.
 								backtrack.Clear();
@@ -923,7 +947,7 @@ internal static partial class PcreByteMatcher {
 							}
 							break;
 						case PcreByteOpcode.Accept:
-							if ( program.EndAnchored && position != input.Length ) {
+							if ( endAnchored && position != matchEnd ) {
 								// Ordinary completion can retry a saved path that consumes more.
 								failed = true;
 								break;
@@ -931,8 +955,8 @@ internal static partial class PcreByteMatcher {
 							var reportedStart = captureStarts[0];
 							// Reject at final acceptance so ordinary saved paths can retry.
 							// K may have moved the reported start beyond the candidate start.
-							if ( position == reportedStart && ( program.NotEmpty
-								|| program.NotEmptyAtStart && position == startOffset ) ) {
+							if ( position == reportedStart && ( notEmpty
+								|| notEmptyAtStart && position == startOffset ) ) {
 								failed = true;
 								break;
 							}
@@ -996,6 +1020,11 @@ internal static partial class PcreByteMatcher {
 					}
 					if ( failed ) { break; }
 				}
+				// Interpreter anchoring stops within this fragment before a SKIP retry.
+				if ( matchTimeAnchoring && anchored ) {
+					if ( interpretedUtfFragments ) { break; }
+					return new( null, null );
+				}
 				if ( skipRestart > start ) {
 					// Native reset_match enters a forward target directly, even when
 					// caller-anchored. A later ordinary failure still terminates it.
@@ -1007,7 +1036,10 @@ internal static partial class PcreByteMatcher {
 					continue;
 				}
 				// Anchoring constrains ordinary candidate retries, not forced SKIP entry.
-				if ( anchored ) { return new( null, null ); }
+				if ( anchored ) {
+					if ( interpretedUtfFragments ) { break; }
+					return new( null, null );
+				}
 				if ( program.UtfCrLfStartClass && !program.ExplicitNewline
 					&& ( program.Newline is PcreByteNewline.AnyCrLf or PcreByteNewline.CrLf or PcreByteNewline.Any )
 					&& utfRepeatEnd > start && utfRepeatEnd < fragment.End - 1

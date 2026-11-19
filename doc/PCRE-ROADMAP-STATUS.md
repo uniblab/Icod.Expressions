@@ -1,5 +1,25 @@
 # PCRE roadmap status
 
+## PR288: immutable per-call match policy
+
+The [per-call policy addendum](PCRE-MATCH-POLICY-STATUS.md) records this P09
+increment across all five shared inventories. One compiled byte pattern accepts
+six additive per-call restrictions without program cloning or shared mutation.
+Preserve absolute anchors, compiled/source defaults, original bytes, validation,
+work and cancellation; defer the same bounded optional-query pruning to effective
+empty policy. Native56x64=3,584 outcomes /67 additions gives106,446 tests.
+
+Refined tests-only RED67/106,379 passes follows complete native/default checks;
+new catalog/consumer/assertion/C/XML/value sources freeze before implementation.
+The sixth package record requires56 definitions/3,584 protocols, preserving all
+five earlier records. Whole-branch review and all final six-host/full/frozen/
+all-target/package/support gates remain required. See [design](PCRE-MATCH-POLICY-DESIGN.md),
+[plan](PCRE-MATCH-POLICY-PLAN.md), addendum and
+[PR288](https://github.com/uniblab/Icod.Expressions/pull/288). Final identities/raw
+metrics/results/completion/cleanup/ready stay external without source/docs/test
+edits after GREEN. #7/#102/footer fixed; broader P09/native16/P10-P18/P00/P01/
+Stage C and actual migrations remain open. Grep last; user merges/tags/publishes.
+
 ## PR287: named captures on bound match results
 
 The [named result inventory addendum](PCRE-NAMED-CAPTURE-RESULT-STATUS.md) records

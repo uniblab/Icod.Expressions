@@ -158,7 +158,8 @@ internal sealed class PcreByteProgramCompiler {
 	internal PcreByteProgram Compile( PcreByteAlternatives root, IReadOnlyDictionary<int, PcreByteGroup> targets ) {
 		// Native auto_possessify commits greedy literal queries at OP_END.
 		// Keep the proof at one direct root tail without any called copy.
-		if ( !noAutoPossess && ( notEmpty || notEmptyAtStart ) && targets.Count == 0 && root.Branches.Count == 1 ) {
+		// Record eligibility even when only a later match call rejects empty results.
+		if ( !noAutoPossess && targets.Count == 0 && root.Branches.Count == 1 ) {
 			var branch = root.Branches[0];
 			if ( branch.Count > 0 && branch[^1] is PcreByteRepeat {
 				Minimum: 0, Maximum: 1, Greedy: true, Child: PcreByteLiteral
@@ -2242,7 +2243,7 @@ internal sealed class PcreByteProgramCompiler {
 				break;
 			case PcreByteAnchor anchor:
 				Emit( anchor.IsDisabled ? PcreByteOpcode.Fail
-					: anchor.IsStart ? PcreByteOpcode.Start : PcreByteOpcode.End );
+					: anchor.IsStart ? PcreByteOpcode.Start : PcreByteOpcode.End, anchor.IsLineBoundary ? 1 : 0 );
 				break;
 			case PcreByteSearchStart:
 				Emit( PcreByteOpcode.SearchStart );
@@ -2257,7 +2258,7 @@ internal sealed class PcreByteProgramCompiler {
 				break;
 			case PcreByteEndBeforeFinalLf end:
 				Emit( end.IsDisabled ? PcreByteOpcode.Fail : PcreByteOpcode.EndBeforeFinalLf,
-					end.FragmentEnd ? 1 : 0 );
+					end.FragmentEnd ? 1 : 0, end.IsLineBoundary ? 1 : 0 );
 				break;
 			case PcreByteGroup group:
 				Emit( PcreByteOpcode.CaptureStart, group.Number );
