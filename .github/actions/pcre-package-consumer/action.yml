@@ -65,3 +65,8 @@ runs:
           throw 'Expected one complete 214-case PCRE capture metadata result.'
         }
         Write-Host 'PASS: immutable PCRE capture metadata: 214 protocols'
+        $pcreNamedCaptureRecords = @($pcreSmokeOutput | Where-Object { $_ -match '^\{"kind":"pcre-named-capture-smoke",' } | ForEach-Object { $_ | ConvertFrom-Json })
+        if ($pcreNamedCaptureRecords.Count -ne 1 -or $pcreNamedCaptureRecords[0].cases -ne 976 -or $pcreNamedCaptureRecords[0].failed -ne 0) {
+          throw 'Expected one complete 976-case PCRE named capture result.'
+        }
+        Write-Host 'PASS: bound PCRE named capture results: 976 protocols'

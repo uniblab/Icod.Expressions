@@ -78,4 +78,13 @@ foreach ( var item in PcreCaptureInfoCases.All ) {
 }
 Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-capture-info-smoke", cases = pcreCaptureInfoCases, failed = 0 } ) );
 
+var pcreNamedCaptureCases = 0;
+foreach ( var item in PcreNamedCaptureCases.All ) {
+	if ( PcreNamedCaptureConsumer.Run( item ) != new PcreNamedCaptureProtocol( item.Kind, item.Span, item.Value ) ) {
+		throw new InvalidOperationException( $"PCRE named capture result {item.Id} changed." );
+	}
+	pcreNamedCaptureCases++;
+}
+Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-named-capture-smoke", cases = pcreNamedCaptureCases, failed = 0 } ) );
+
 Console.WriteLine( $"Icod.Expressions package smoke passed on {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}." );

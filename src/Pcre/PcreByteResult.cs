@@ -30,8 +30,15 @@ internal sealed record PcreByteCompileResult(
 
 internal readonly record struct PcreByteCapture( int ByteIndex, int ByteLength );
 
-internal sealed record PcreByteMatch( int ByteIndex, int ByteLength, IReadOnlyList<PcreByteCapture?> Captures ) {
+internal sealed record PcreByteMatch( int ByteIndex, int ByteLength, IReadOnlyList<PcreByteCapture?> Captures, PcreCaptureInfo CaptureInfo ) {
 	internal ReadOnlyMemory<byte> MarkName { get; init; }
+	public PcreByteCapture? GetCapture( string name ) {
+		var numbers = CaptureInfo.GetLookupGroupNumbers( name );
+		for ( var i = 0; i < numbers.Count; i++ ) {
+			if ( Captures[numbers[i]] is { } capture ) { return capture; }
+		}
+		return null;
+	}
 }
 
 internal sealed record PcreByteMatchResult(
