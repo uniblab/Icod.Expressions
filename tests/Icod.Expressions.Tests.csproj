@@ -21,6 +21,8 @@
 		</PackageReference>
 	</ItemGroup>
 	<ItemGroup>
+		<Compile Include="../samples/PackageSmoke/PcreMatchPolicyCases.cs" Link="PackageSmoke/PcreMatchPolicyCases.cs" />
+		<Compile Include="../samples/PackageSmoke/PcreMatchPolicyConsumer.cs" Link="PackageSmoke/PcreMatchPolicyConsumer.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreNamedCaptureCases.cs" Link="PackageSmoke/PcreNamedCaptureCases.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreNamedCaptureConsumer.cs" Link="PackageSmoke/PcreNamedCaptureConsumer.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreCaptureInfoCases.cs" Link="PackageSmoke/PcreCaptureInfoCases.cs" />

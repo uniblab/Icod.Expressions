@@ -21,6 +21,13 @@ internal sealed class PcreCompiledBytePattern {
 
 	public PcreByteMatchResult Match(
 		ReadOnlyMemory<byte> input,
+		PcreMatchPolicy policy,
+		int startOffset = 0,
+		CancellationToken cancellationToken = default
+	) => throw new NotImplementedException( "per-call match policy" );
+
+	public PcreByteMatchResult Match(
+		ReadOnlyMemory<byte> input,
 		int startOffset = 0,
 		CancellationToken cancellationToken = default
 	) => PcreByteMatcher.Match( program, groupCount, CaptureInfo, input, startOffset, matchWorkLimit, workObserver, cancellationToken );
