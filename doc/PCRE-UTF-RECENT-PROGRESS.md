@@ -1,5 +1,18 @@
 # Recent UTF proof progress
 
+## PR290: multiline caret at interpreted UTF fragment ends
+
+The [fragment caret addendum](PCRE-FRAGMENT-CARET-STATUS.md) records native48x64=
+3,072 outcomes and52 tests (106,554 total). Per-call anchor interpreter dispatch
+rejects ordinary multiline caret at a nonterminal fragment end; default/JIT and
+alternate-caret retain their behavior. Preserve physical/scoped ends, state,
+original bytes and shared work/cancellation. See [design](PCRE-FRAGMENT-CARET-DESIGN.md),
+[plan](PCRE-FRAGMENT-CARET-PLAN.md) and [PR290](https://github.com/uniblab/Icod.Expressions/pull/290).
+Semantic RED/freeze precede implementation; eighth package record and all six
+native/support gates precede ready state. Final evidence/completion stay external
+without source/docs/test edits after GREEN. Broader gates open; #7/#102/footer
+fixed; Grep last; user owns merge/tags/publication.
+
 ## PR289: COMMIT fragment restarts and physical end anchors
 
 The [COMMIT fragment addendum](PCRE-COMMIT-FRAGMENT-STATUS.md) records this

@@ -105,4 +105,13 @@ foreach ( var item in PcreCommitFragmentCases.All ) {
 }
 Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-commit-fragment-smoke", patterns = PcreCommitFragmentCases.All.Count, cases = pcreCommitFragmentCases, failed = 0 } ) );
 
+var pcreFragmentCaretCases = 0;
+foreach ( var item in PcreFragmentCaretCases.All ) {
+	if ( PcreMatchPolicyConsumer.Run( item ) != item.Outcomes ) {
+		throw new InvalidOperationException( $"PCRE fragment caret definition {item.Id} changed." );
+	}
+	pcreFragmentCaretCases += 64;
+}
+Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-fragment-caret-smoke", patterns = PcreFragmentCaretCases.All.Count, cases = pcreFragmentCaretCases, failed = 0 } ) );
+
 Console.WriteLine( $"Icod.Expressions package smoke passed on {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}." );
