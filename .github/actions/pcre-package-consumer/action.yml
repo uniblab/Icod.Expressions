@@ -47,3 +47,16 @@ runs:
           }
         }
         Write-Host 'PASS: paired PCRE allocation evidence: four profiles'
+        $pcreFragmentRecords = @($pcreSmokeOutput | Where-Object { $_ -match '^\{"kind":"pcre-fragment-allocation-smoke",' } | ForEach-Object { $_ | ConvertFrom-Json })
+        if ($pcreFragmentRecords.Count -ne 1 -or $pcreFragmentRecords[0].passed -ne 6 -or $pcreFragmentRecords[0].failed -ne 0 -or @($pcreFragmentRecords[0].profiles).Count -ne 6) {
+          throw 'Expected one complete six-profile anchored fragment allocation result.'
+        }
+        $pcreFragmentNames = @($pcreFragmentRecords[0].profiles | ForEach-Object { $_.name } | Sort-Object -Unique)
+        $pcreFragmentExpectedNames = @('caller-match', 'caller-miss', 'caller-late', 'caller-invalid-empty', 'dotstar-match', 'dotstar-miss') | Sort-Object
+        if (($pcreFragmentNames -join '|') -cne ($pcreFragmentExpectedNames -join '|')) { throw 'Anchored fragment profile names differ.' }
+        foreach ($pcreFragment in $pcreFragmentRecords[0].profiles) {
+          if ($pcreFragment.smallInputBytes -ne 1024 -or $pcreFragment.largeInputBytes -ne 65536 -or $pcreFragment.iterations -ne 8 -or $pcreFragment.allowanceBytesPerCall -ne 4096 -or $pcreFragment.smallAllocatedBytes -lt 0 -or $pcreFragment.largeAllocatedBytes -lt 0 -or ($pcreFragment.largeAllocatedBytes - $pcreFragment.smallAllocatedBytes) -gt (4096L * 8)) {
+            throw 'Anchored fragment allocation evidence violates the paired-input contract.'
+          }
+        }
+        Write-Host 'PASS: bounded anchored fragment allocations: six profiles'

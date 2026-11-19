@@ -58,4 +58,14 @@ Console.WriteLine( JsonSerializer.Serialize( new {
 	} )
 } ) );
 
+var pcreFragmentProfiles = PcreFragmentAllocationCases.All.Select( profile => PcreFragmentAllocationConsumer.Run( profile ) ).ToArray();
+Console.WriteLine( JsonSerializer.Serialize( new {
+	kind = "pcre-fragment-allocation-smoke", passed = pcreFragmentProfiles.Length, failed = 0,
+	profiles = pcreFragmentProfiles.Select( profile => new {
+		name = profile.Name, smallInputBytes = profile.SmallInputBytes, largeInputBytes = profile.LargeInputBytes,
+		iterations = profile.Metrics.Iterations, smallAllocatedBytes = profile.Metrics.SmallAllocatedBytes,
+		largeAllocatedBytes = profile.Metrics.LargeAllocatedBytes, allowanceBytesPerCall = PcreAllocationCases.FixedAllowance
+	} )
+} ) );
+
 Console.WriteLine( $"Icod.Expressions package smoke passed on {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}." );

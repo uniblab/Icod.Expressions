@@ -10,15 +10,15 @@ are an old-test-file exception. Grep last; user owns merge/tags/publication.
 - [x] Re-read Revision4 P09/P10 and inspect eager fragment retention.
 - [x] Independently pin1,568 short and12 large native protocols, all JIT0/positive.
 - [x] Define390 tests and fixed paired-growth package contract.
-- [ ] Publish tests-only draft and reconcile successful-build RED18 exactly.
-- [ ] Freeze new fixture/assertion/consumer/native/XML sources before production.
+- [x] Publish tests-only draft and reconcile successful-build RED18 exactly.
+- [x] Freeze new fixture/assertion/consumer/native/XML sources before production.
 
 ## Bounded implementation and integration
 
-- [ ] Retain at most first relevant real fragment for anchored searches only.
-- [ ] Preserve complete validation/Step/cancellation, context and SKIP semantics.
-- [ ] Add six-profile package record/gate; preserve earlier42+1+2 and four profiles.
-- [ ] Review whole branch/seven inventories and local preservation/gate checks.
+- [x] Retain at most first relevant real fragment for anchored searches only.
+- [x] Preserve complete validation/Step/cancellation, context and SKIP semantics.
+- [x] Add six-profile package record/gate; preserve earlier42+1+2 and four profiles.
+- [x] Review whole branch/seven inventories and local preservation/gate checks.
 - [ ] Upload reviewed final source/tree with branch-head lease.
 
 ## Qualification
