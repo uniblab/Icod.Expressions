@@ -28,10 +28,15 @@ E/X records and a nonzero exit, never a no-match conversion. Every allocation,
 context, program and match data is released per row. JIT compile results/sizes
 are recorded; dispatch remains pcre2_match with its native option handling.
 
-All48 definitions and all64 policies produce3,072 complete literal outcomes:
-1,522 matches,1,550 misses, including32 reversed reported ranges. Every compile
+Pinned pcre2api.3, match-options section, explicitly states that match-time
+ANCHORED/ENDANCHORED disable JIT and use the interpreter. Do not describe those
+calls as JIT execution merely because the program has compiled JIT code.
+PCRE.NET's pinned pcrenet_match.c also calls pcre2_match with additional_options.
+
+All56 definitions and all64 policies produce3,584 complete literal outcomes:
+1,874 matches,1,710 misses, including80 reversed reported ranges. Every compile
 has JIT-return0/positive size. No row was discarded. Raw output SHA256:
-`a9a8f22f972a03aba26a73e9ed33dcbf70ca61caaabe5d5fe2a87f9a33d06283`.
+`75168c42dd34448d1c4119dccf2193e8a6a27d084789e5ca427d795217cf57d3`.
 The sample catalog stores these outcomes without running the implementation to
 invent expectations. CI first checks all64 outcomes through PCRE.NET1.6.0 for
 each definition, then exercises one reusable managed pattern with every policy.
