@@ -31,7 +31,7 @@ public sealed class PcreNamedCaptureResultTests {
 			kind = "A";
 			if ( regex.PatternInfo.GroupNames.Contains( name, StringComparer.Ordinal ) ) {
 				kind = "U";
-				foreach ( var number in regex.PatternInfo.GetGroupIndexesByName( name ).OrderBy( n => n ) ) {
+				foreach ( var number in regex.PatternInfo.GetGroupIndexesByName( name ) ) {
 					var g = native.Groups[number];
 					if ( !g.Success ) { continue; }
 					kind = "M"; span = $"{g.Index}:{g.EndIndex - g.Index}";

@@ -10,19 +10,21 @@ P09/native16/P10-P18/P01/Stage C and actual migrations remain open.
 
 Each successful PcreByteMatch carries the exact immutable CaptureInfo snapshot
 from its compiled pattern. GetCapture(name) returns the first participating slot
-in that name's ascending native table order, or null when the name is absent or
+in that name's native table order, or null when the name is absent or
 all its slots are unset. A participating empty capture is present, including at
 EOF. CaptureInfo.GetGroupNumbers distinguishes unknown from known-unset names.
 Null is an ArgumentNullException. Lookup is ordinal/case-sensitive/exact; NUL in
 a .NET query is data, never a C-string truncation. Return original byte index/
 length values, including captures outside group zero. Do not copy subject text.
 
-This is native named-substring selection, not duplicate backreference resolution.
-For branch-reset declarations with historical number order2,1, native references
-can prefer slot2 while the named-substring API selects participating slot1.
-Preserve every existing parser/VM/reference decision and numbered capture/mark.
+Native named-substring selection follows native table order. Branch-reset duplicate
+names can retain historical order2,1: the native substring API and references
+prefer participating slot2. PR286's canonical GetGroupNumbers view is deliberately
+sorted1,2 and must remain unchanged. Retain a separate owned lookup-order view
+from the parser's validated registration list. Preserve every existing parser/VM/
+reference decision and numbered capture/mark.
 
-Use the already sorted immutable metadata numbers and an indexed loop over the
+Use immutable native lookup-order numbers and an indexed loop over the
 existing readonly captures. Bound lookup by256 slots; no lookup allocation,
 normalization, scan of subject bytes or VM work charge. Results remain stable
 across later matches/compilations and retain metadata independently of the pattern.
@@ -85,3 +87,21 @@ configured compatibility/Gnulib/support/script gates. A05 source35/corpus and al
 prior C# test blobs stay fixed. Final identities/raw metrics/results/completion/
 exact research cleanup/ready readback stay externally on PR287; no source/docs/
 test edits after GREEN. No broader release gate closes from named result lookup.
+
+## Native-order adapter correction before freeze
+
+Initial source79020f66e8434f12cdc3e90dc2a20c61491d50c9, tree
+9c381457e9c809464d1f362c13c399e8f4db709b, run44456089067 reported707 failures
+/105,672 passes on Linux ARM64 job135331327184, zero coded compiler warnings/
+errors. Three identities145/151/157 failed the new reference adapter before
+managed lookup: it sorted native indices and selected0:1/value63 instead of
+the independently pinned C API1:1/value64. All other failures reached new
+accessor stubs. The expected native literals are unchanged.
+
+Remove only the new adapter OrderBy so PCRE.NET preserves its actual native
+name-table order. Its pinned PcrePatternInfo.GetGroupIndexesByName returns the
+original InternalRegex.CaptureNames list. All976 C API outcomes remain frozen
+data; no mismatching row is removed. Requalify a corrected tests-only source
+and reconcile all707 failures at missing accessors before fixture freeze and
+production implementation. Snapshot separate native lookup order without changing
+the prior canonical numeric metadata API.
