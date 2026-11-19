@@ -32,6 +32,8 @@ internal readonly record struct PcreByteCapture( int ByteIndex, int ByteLength )
 
 internal sealed record PcreByteMatch( int ByteIndex, int ByteLength, IReadOnlyList<PcreByteCapture?> Captures ) {
 	internal ReadOnlyMemory<byte> MarkName { get; init; }
+	public PcreCaptureInfo CaptureInfo => throw new NotImplementedException();
+	public PcreByteCapture? GetCapture( string name ) => throw new NotImplementedException();
 }
 
 internal sealed record PcreByteMatchResult(
