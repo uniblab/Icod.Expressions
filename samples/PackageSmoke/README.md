@@ -110,3 +110,21 @@ substring lookup preserves native table order, including historical2,1 in select
 branch-reset cases; canonical numeric metadata remains sorted separately. The same metadata reference is bound at both success paths;
 no post-match record clone is used. The fixed result reference can increase
 absolute allocation; paired-input growth allowances remain unchanged.
+
+## Per-call match policy
+
+One compiled pattern accepts an immutable PcreMatchPolicy value on each call.
+Anchored, EndAnchored, NotEmpty, NotEmptyAtStart, NotBol and NotEol add
+restrictions to compiled/source defaults. The original Match entry keeps those
+defaults, and interleaved or concurrent calls retain independent policies.
+Line-boundary flags affect caret/dollar, preserving absolute A/Z/z/G anchors.
+Captures and marks keep their original byte coordinates, including signed K
+ranges. No program clone, subject conversion or new runtime dependency is used.
+This remains an internal experimental contract, without an iteration API.
+
+The sixth pcre-match-policy-smoke record requires56 compiled definitions and
+3,584 native-first protocols. Each definition reuses one compiled pattern for
+all64 policies, interleaving the original entry after every call and preserving
+owned pattern/metadata and padded subject-view checks. All five earlier package
+records, isolated candidate feed/cache and net8/9/10 builds remain required;
+actual consumer execution remains net10 only on all six native hosts.

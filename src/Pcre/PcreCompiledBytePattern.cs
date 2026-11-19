@@ -24,11 +24,11 @@ internal sealed class PcreCompiledBytePattern {
 		PcreMatchPolicy policy,
 		int startOffset = 0,
 		CancellationToken cancellationToken = default
-	) => throw new NotImplementedException( "per-call match policy" );
+	) => PcreByteMatcher.Match( program, groupCount, CaptureInfo, policy, input, startOffset, matchWorkLimit, workObserver, cancellationToken );
 
 	public PcreByteMatchResult Match(
 		ReadOnlyMemory<byte> input,
 		int startOffset = 0,
 		CancellationToken cancellationToken = default
-	) => PcreByteMatcher.Match( program, groupCount, CaptureInfo, input, startOffset, matchWorkLimit, workObserver, cancellationToken );
+	) => Match( input, default( PcreMatchPolicy ), startOffset, cancellationToken );
 }

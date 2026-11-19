@@ -7,10 +7,10 @@ exception. Grep last; user owns merge/tags/publication.
 
 - [x] Independently record all3,584 pinned native8 outcomes for56x64 policies.
 - [x] Define67 tests and a reusable typed consumer before execution implementation.
-- [ ] Observe successful-build RED67/106,379 passes and freeze new sources.
-- [ ] Bind per-call policy to existing search/acceptance/boundary paths without
+- [x] Observe successful-build RED67/106,379 passes and freeze new sources.
+- [x] Bind per-call policy to existing search/acceptance/boundary paths without
   program clones, mutable shared state, changed work or absolute-anchor leakage.
-- [ ] Add sixth package result preserving all old records/helpers and review
+- [x] Add sixth package result preserving all old records/helpers and review
   complete branch/baseline inventories/design/plan/status before qualification.
 - [ ] Qualify six full106,446/frozen214/120 results, all target outputs/six package
   records and actual configured support/script gates with zero failures/skips/

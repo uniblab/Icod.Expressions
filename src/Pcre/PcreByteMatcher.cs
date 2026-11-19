@@ -18,6 +18,7 @@ internal static partial class PcreByteMatcher {
 		PcreByteProgram program,
 		int groupCount,
 		PcreCaptureInfo captureInfo,
+		PcreMatchPolicy policy,
 		ReadOnlyMemory<byte> input,
 		int startOffset,
 		int matchWorkLimit,
@@ -32,7 +33,10 @@ internal static partial class PcreByteMatcher {
 				"start byte offset is outside the input"
 			) );
 		}
-		var anchored = program.Anchored || program.DotStarAnchored;
+		var anchored = program.Anchored || program.DotStarAnchored || policy.Anchored;
+		var endAnchored = program.EndAnchored || policy.EndAnchored;
+		var notEmpty = program.NotEmpty || policy.NotEmpty;
+		var notEmptyAtStart = program.NotEmptyAtStart || policy.NotEmptyAtStart;
 		var surrogateLiterals = program.MatchInvalidUtf && program.HasSurrogateLiterals;
 		// No candidate can reach the VM when the required first byte is absent.
 		// This is limited to unobserved, noncancellable exact byte searches.
@@ -132,7 +136,7 @@ internal static partial class PcreByteMatcher {
 			// Native STARTLINE search begins at the requested byte, so a newline
 			// whose encoding began before it cannot supply the first line candidate.
 			var excludedLineStart = !anchored && program.LineStartSearch ? PcreByteNewlineExtensions.PartialAnyNewlineEnd( input.Span, startOffset ) : -1;
-			if ( program.MatchInvalidUtf && !program.EndAnchored && !program.NotEmpty && !program.NotEmptyAtStart && program.Instructions.Length == 1
+			if ( program.MatchInvalidUtf && !endAnchored && !notEmpty && !notEmptyAtStart && program.Instructions.Length == 1
 				&& program.Instructions[0].Opcode == PcreByteOpcode.Accept ) {
 				// PCRE2 permits an empty pattern at the requested byte offset,
 				// including inside a valid scalar or a malformed byte run.
@@ -347,7 +351,7 @@ internal static partial class PcreByteMatcher {
 										: scalar == instruction.First )
 								: ScalarEquals( input.Span[position], instruction.First, instruction.Caseless, program.Ucp, instruction.CaselessRestricted ) ) ) {
 								position += literalWidth;
-								if ( instruction.CommitOptional ) {
+								if ( instruction.CommitOptional && ( notEmpty || notEmptyAtStart ) ) {
 									// Commit only this literal query's immediately preceding Split.
 									// A failed literal still takes its ordinary zero-length edge.
 									PopFrame( backtrack, assertionScopes, callScopes );
@@ -657,13 +661,13 @@ internal static partial class PcreByteMatcher {
 							else { failed = true; }
 							break;
 						case PcreByteOpcode.Start:
-							if ( position == 0 ) { pc++; } else { failed = true; }
+							if ( position == 0 && ( instruction.First != 1 || !policy.NotBol ) ) { pc++; } else { failed = true; }
 							break;
 						case PcreByteOpcode.SearchStart:
 							if ( position == startOffset ) { pc++; } else { failed = true; }
 							break;
 						case PcreByteOpcode.End:
-							if ( position == absoluteEnd ) { pc++; } else { failed = true; }
+							if ( position == absoluteEnd && ( instruction.First != 1 || !policy.NotEol ) ) { pc++; } else { failed = true; }
 							break;
 						case PcreByteOpcode.StartLine:
 							// Native newline search still retries physical EOF when the
@@ -671,7 +675,7 @@ internal static partial class PcreByteMatcher {
 							if ( position == excludedLineStart && ( instruction.First != 1 || position != input.Length ) ) {
 								failed = true; break;
 							}
-							if ( ( position == 0 && instruction.Second != 1 ) || ( position > fragment.Start
+							if ( ( position == 0 && instruction.Second != 1 && !policy.NotBol ) || ( position > fragment.Start
 							&& ( position < subjectEnd || position == subjectEnd && ( position < absoluteEnd || instruction.First == 1 ) )
 								&& ( program.Newline == PcreByteNewline.Any
 									? PcreByteNewlineExtensions.IsAnyBefore( input.Span, position, fragment.Start, program.Utf8 )
@@ -685,7 +689,7 @@ internal static partial class PcreByteMatcher {
 						case PcreByteOpcode.EndLine:
 							// JIT allows the LF after consumed CR under ANY/ANYCRLF;
 							// CRLF-only requires the complete pair. Bumpalong stays separate.
-							if ( ( position == absoluteEnd && instruction.Second != 1 ) || ( position < subjectEnd
+							if ( ( position == absoluteEnd && instruction.Second != 1 && !policy.NotEol ) || ( position < subjectEnd
 							&& ( program.Newline == PcreByteNewline.Any
 								? PcreByteNewlineExtensions.AnyLengthAt( input.Span, position, subjectEnd, program.Utf8 ) > 0
 								: program.Newline == PcreByteNewline.CrLf
@@ -696,6 +700,7 @@ internal static partial class PcreByteMatcher {
 							} else { failed = true; }
 							break;
 						case PcreByteOpcode.EndBeforeFinalLf:
+							if ( instruction.Second == 1 && policy.NotEol ) { failed = true; break; }
 							var end = instruction.First == 1 ? subjectEnd : absoluteEnd;
 							var newlineLength = program.Newline == PcreByteNewline.Any
 								? PcreByteNewlineExtensions.AnyLengthAt( input.Span, position, end, program.Utf8 ) : 0;
@@ -791,7 +796,7 @@ internal static partial class PcreByteMatcher {
 								pc = instruction.First; // Bypass ReverseEnd/script-run/body suffixes.
 								break;
 							}
-							if ( program.EndAnchored && position != input.Length ) {
+							if ( endAnchored && position != input.Length ) {
 								// A short root ACCEPT abandons this candidate, including cuts
 								// and alternatives. Scoped exits above retain their own meaning.
 								backtrack.Clear();
@@ -923,7 +928,7 @@ internal static partial class PcreByteMatcher {
 							}
 							break;
 						case PcreByteOpcode.Accept:
-							if ( program.EndAnchored && position != input.Length ) {
+							if ( endAnchored && position != input.Length ) {
 								// Ordinary completion can retry a saved path that consumes more.
 								failed = true;
 								break;
@@ -931,8 +936,8 @@ internal static partial class PcreByteMatcher {
 							var reportedStart = captureStarts[0];
 							// Reject at final acceptance so ordinary saved paths can retry.
 							// K may have moved the reported start beyond the candidate start.
-							if ( position == reportedStart && ( program.NotEmpty
-								|| program.NotEmptyAtStart && position == startOffset ) ) {
+							if ( position == reportedStart && ( notEmpty
+								|| notEmptyAtStart && position == startOffset ) ) {
 								failed = true;
 								break;
 							}

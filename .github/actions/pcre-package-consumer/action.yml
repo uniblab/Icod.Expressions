@@ -70,3 +70,8 @@ runs:
           throw 'Expected one complete 976-case PCRE named capture result.'
         }
         Write-Host 'PASS: bound PCRE named capture results: 976 protocols'
+        $pcrePolicyRecords = @($pcreSmokeOutput | Where-Object { $_ -match '^\{"kind":"pcre-match-policy-smoke",' } | ForEach-Object { $_ | ConvertFrom-Json })
+        if ($pcrePolicyRecords.Count -ne 1 -or $pcrePolicyRecords[0].patterns -ne 56 -or $pcrePolicyRecords[0].cases -ne 3584 -or $pcrePolicyRecords[0].failed -ne 0) {
+          throw 'Expected one complete 56-pattern/3584-protocol per-call PCRE policy result.'
+        }
+        Write-Host 'PASS: immutable per-call PCRE policies: 3584 protocols'

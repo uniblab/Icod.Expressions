@@ -78,7 +78,7 @@ Append a sixth structured result requiring3,584 protocols; retain all five old
 package records and helper/data/assertion blobs. Build library/consumer net8/9/10;
 execute real suites/consumers net10 only on six native hosts. Reuse existing
 package action/call sites, isolated feed/cache and full compatibility/Gnulib gates.
-Do not change dependencies, version, root projects, workflows or release policy.
+Do not change dependencies, version, root projects, workflow call sites or release policy.
 
 Review complete branch and baseline five inventories plus this design/plan/small
 status addendum before final qualification. Keep large syntax/resource/Grep
@@ -109,3 +109,60 @@ this addition. The same assertion source now discovers56 definitions, giving
 67 tests/106,446 total. Require a fresh refined successful-build RED67 and freeze
 the expanded catalog before execution implementation. The initial checkpoint
 does not claim to qualify these additional cases.
+
+## Refined RED, freeze and reviewed implementation
+
+Refined tests-only sourcef9955ca6dbb66c3e0a11b72ee7cb051f56c84b9f,
+treef385b80ff6d11483a89e819179146e47c3f05a8b, proposed
+merge8aa184433f57f2e271d95dbd92905bc8cfa45808, run44538367052.
+Linux ARM64135609980870 and Windows x64135609981109 independently build all
+three targets with zero coded warnings/errors, then report exactly67 failed/
+106,379 passed/zero skipped/106,446 total. Their exact67 identities match, all
+reach the explicit missing-policy overload and all56 native/default batches pass
+first; two cancellation cases fail only on the expected exception-type mismatch.
+This observation precedes execution implementation. Linux x64135609981005 and
+Windows ARM64135609981021 subsequently corroborate the same identities/causes.
+No native comparison, old test, assertion or fixture correction is required.
+
+Freeze before execution implementation:
+
+- samples/PackageSmoke/PcreMatchPolicyCases.cs:34b87a6fc455468bdabcb8ad90e6a0ff779fa554.
+- samples/PackageSmoke/PcreMatchPolicyConsumer.cs:07ba6226a117768d36a0aab119cb5e4093c81fb7.
+- src/Pcre/PcreMatchPolicy.cs:4228923e6254cc9a7c138c0e3976d11ac00c57c2.
+- tests/Icod.Expressions.Tests.csproj:6893bc38880d28602f84a5aedb0a0e1cbc02ac2c.
+- tests/Pcre/Native/match-policy-oracle.c:6fbaee449941be0b462604d3d1c4101d79241a37.
+- tests/Pcre/PcreMatchPolicyTests.cs:fe2f4a04f6ac0d643feff3befb2ed61d77cf050e.
+
+Reviewed execution blobs before final qualification:
+
+- matcher3880b5e228ac3cd48efd203181b55fe259965f86;
+- anchor parser39a265aba2c9a19a00c8e9a08ea27913dc8df9df;
+- program190f95ed808652d055039218738e820c137bcfce;
+- syntax8fca307ed1e3af3a8ee8cdef986c36664dc86412;
+- compiled patternf3294f2cbe3e30140a156ed750f0a1ae80f7b302.
+
+Whole20-file author review checks native provenance/dispatch and all unfiltered
+outcomes; immutable additive policy and old-entry forwarding; physical versus
+line anchors and spare operand provenance; both acceptance exits/tolerant fast
+path; bounded optional eligibility with effective-policy pruning; unchanged Step,
+validation, stack/journal/capture/mark/search limits; original byte views; default
+allocation parity/concurrency/cancellation/lifetime; consumer source links, actual
+candidate package isolation and strict sixth result gate. No introduced unresolved
+critical/important/minor findings. No independent review is claimed.
+
+All381 prior C# tests among399 prior test files remain fixed. Only the two Compile
+links alter old test XML. All11 prior sample helper/data sources and the large
+syntax/resource/Grep inventories remain base-identical. Source result/metadata,
+UTF/Unicode helpers, old proof bodies outside the declared optional eligibility,
+opcodes/instruction counts and frozen A05 legacy35/corpus are preserved. Local
+A05/classifier/eight-main-job-thirteen-rejection/whitespace gates pass. This
+design/plan and baseline five inventories plus the small status addendum precede
+final source qualification; final results/completion remain external.
+
+Merged287 closure is independently green at attempt1: main44535082336 and
+scripts44535082457. Six106,379 net10/frozen214/120 results, all library/consumer
+targets and five package records pass with zero coded compiler warnings/errors.
+Main's eight jobs including Gnulib/Intel aggregate pass; each script host reports
+31 checks and Ubuntu also complete eight-main-job/thirteen-rejection cases.
+The merge treece94160847b545f90a597d338b6d3684389aeb00 equals the reviewed/tested
+PR287 source tree. No new merge/tag/publication action is taken here.
