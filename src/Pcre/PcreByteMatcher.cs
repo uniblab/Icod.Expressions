@@ -155,7 +155,8 @@ internal static partial class PcreByteMatcher {
 				emptyCaptures[0] = new( startOffset, 0 );
 				return new( new PcreByteMatch( startOffset, 0, Array.AsReadOnly( emptyCaptures ), captureInfo ), null );
 			}
-			if ( program.MatchInvalidUtf && program.CanMatchEmptyAtAnyOffset
+			// The interpreter can try an empty initial fragment at a malformed byte.
+			if ( program.MatchInvalidUtf && ( interpretedUtfFragments || program.CanMatchEmptyAtAnyOffset )
 				&& searchOffset < input.Length && !PcreUtf8.TryReadLiteral( input.Span, searchOffset, surrogateLiterals, out _, out _ ) ) {
 				// PCRE2 can accept a zero-width path exactly at a requested byte offset,
 				// including inside a scalar or malformed run. Consumption remains barred.
@@ -556,7 +557,7 @@ internal static partial class PcreByteMatcher {
 							// PCRE2 JIT has a third boundary state: invalid codepoints on
 							// both sides reject both b and B. A synthetic/gap candidate has
 							// no valid preceding scalar; subject start and EOF are distinct.
-							if ( program.MatchInvalidUtf && position > 0 && position == fragment.Start
+							if ( program.MatchInvalidUtf && !interpretedUtfFragments && position > 0 && position == fragment.Start
 								&& position < absoluteEnd && !PcreUtf8.TryRead( input.Span, position, out _, out _ ) ) {
 								failed = true;
 								break;
