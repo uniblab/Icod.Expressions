@@ -1,5 +1,17 @@
 # Recent UTF proof progress
 
+## PR291: interpreted optional lookbehind at UTF barriers
+
+The [optional rewind addendum](PCRE-OPTIONAL-REWIND-STATUS.md) records3,072
+native outcomes/52 additions (106,606 total). Call-anchor interpreter dispatch
+permits shorter available variable-lookbehind context once minimum is met;
+default/JIT barrier behavior and all existing retry/state/work policies stay
+fixed. See [design](PCRE-OPTIONAL-REWIND-DESIGN.md), [plan](PCRE-OPTIONAL-REWIND-PLAN.md)
+and [PR291](https://github.com/uniblab/Icod.Expressions/pull/291). RED/reconciliation/
+freeze precede implementation; ninth package record and six native/support gates
+precede ready. Final evidence/completion remains external without source/docs/
+test edits after GREEN. #7/#102/footer fixed; broader gates open; Grep last.
+
 ## PR290: multiline caret at interpreted UTF fragment ends
 
 The [fragment caret addendum](PCRE-FRAGMENT-CARET-STATUS.md) records native48x64=
