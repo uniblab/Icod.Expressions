@@ -328,7 +328,15 @@ internal static partial class PcreByteMatcher {
 								// Root lookup sees only history still visible to backtracking;
 								// default/JIT hides returned callee history. The interpreter
 								// can resolve names against those retained frames.
-								if ( pruneBoundary == 0 ) {
+								var namedSkipCallBoundary = activeCall >= 0 ? callScopes![activeCall].Boundary : 0;
+								var resolveAssertionSkip = matchTimeAnchoring && pruneBoundary > namedSkipCallBoundary;
+								if ( resolveAssertionSkip ) {
+									// The interpreter propagates an unresolved name past assertions.
+									// A matching MARK chooses where ordinary SKIP can be caught.
+									pruneBoundary = namedSkipCallBoundary;
+									historyBoundary = namedSkipCallBoundary;
+								}
+								if ( pruneBoundary == 0 || resolveAssertionSkip ) {
 									skipPosition = -1;
 									var historyDepth = backtrack.Count;
 									foreach ( var history in backtrack ) {
@@ -337,17 +345,32 @@ internal static partial class PcreByteMatcher {
 										if ( history.Kind == FrameKind.PathMark && ( matchTimeAnchoring || history.CallScope == activeCall )
 											&& program.Instructions[history.Pc].Bytes.Span.SequenceEqual( instruction.Bytes.Span ) ) {
 											skipPosition = history.Position;
+											if ( resolveAssertionSkip ) {
+												for ( var markScope = history.AssertionScope; markScope >= 0; ) {
+													Step();
+													var markCatcher = assertionScopes![markScope];
+													if ( markCatcher.Boundary + 1 <= pruneBoundary ) { break; }
+													if ( markCatcher.Kind is FrameKind.NegativeAssertion or FrameKind.ConditionalAssertion ) {
+														pruneBoundary = markCatcher.Boundary + 1;
+														break;
+													}
+													markScope = markCatcher.Parent;
+												}
+											}
 											break;
 										}
 									}
 									if ( skipPosition < 0 ) {
-										if ( !matchTimeAnchoring || !( anchored || program.Instructions[0].Opcode == PcreByteOpcode.SearchStart ) ) {
-											pc++; break; // The ignored name needs no cut frame.
+										if ( pruneBoundary > 0 ) { skipPosition = position; } // The active callee catches the unresolved name.
+										else {
+											if ( !matchTimeAnchoring || !( anchored || program.Instructions[0].Opcode == PcreByteOpcode.SearchStart ) ) {
+												pc++; break; // The ignored name needs no cut frame.
+											}
+											// The native anchored driver stops before unmatched-name replay.
+											// Delay termination until failure actually reaches this verb.
+											unmatchedAnchoredSkip = true;
+											skipPosition = position;
 										}
-										// The native anchored driver stops before unmatched-name replay.
-										// Delay termination until failure actually reaches this verb.
-										unmatchedAnchoredSkip = true;
-										skipPosition = position;
 									}
 								}
 								if ( backtrack.Count >= MaximumBacktrackFrames ) {
