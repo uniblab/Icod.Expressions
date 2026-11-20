@@ -1,5 +1,13 @@
 # PCRE syntax acceptance matrix
 
+## PR297 — interpreted named SKIP and returned call history
+
+The [returned-history record](PCRE-RETURNED-SKIP-STATUS.md) makes interpreted
+root named-SKIP lookup see MARK history retained by returned subroutine calls.
+The native corpus contains 2,048 outcomes across 32 definitions. Two resource
+checks bring the suite to 106,844 tests. A fourteenth package record exercises
+the same policies. Broader conformance and roadmap gates remain open.
+
 ## PR296 — compiled-anchor reference routing
 
 The [compiled-anchor record](PCRE-COMPILED-ANCHOR-STATUS.md) separates native
