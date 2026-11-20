@@ -125,3 +125,8 @@ runs:
           throw 'Expected one complete 32-pattern/2048-protocol assertion named SKIP result.'
         }
         Write-Host 'PASS: interpreted named SKIP assertion propagation: 2048 protocols'
+        $pcreStartAnchorSkipRecords = @($pcreSmokeOutput | Where-Object { $_ -match '^\{"kind":"pcre-start-anchor-skip-smoke",' } | ForEach-Object { $_ | ConvertFrom-Json })
+        if ($pcreStartAnchorSkipRecords.Count -ne 1 -or $pcreStartAnchorSkipRecords[0].patterns -ne 32 -or $pcreStartAnchorSkipRecords[0].cases -ne 2048 -or $pcreStartAnchorSkipRecords[0].failed -ne 0) {
+          throw 'Expected one complete 32-pattern/2048-protocol source start anchor SKIP result.'
+        }
+        Write-Host 'PASS: direct source start anchors and unmatched named SKIP: 2048 protocols'
