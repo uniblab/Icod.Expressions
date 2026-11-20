@@ -140,6 +140,9 @@ jobs:
         run: |
           dotnet run --project tools/RegularExpressionApiSnapshot/RegularExpressionApiSnapshot.csproj -c Staging > /tmp/icod-expressions-api.txt
           diff <(tail -n +2 doc/Icod.Expressions-A00-Compiled-API.txt) <(tail -n +2 /tmp/icod-expressions-api.txt)
+          dotnet run --project tools/RegularExpressionApiSnapshot/RegularExpressionApiSnapshot.csproj -c ${{ env.CONFIGURATION }} --no-build -- --pcre-internal > /tmp/icod-expressions-pcre-api.txt
+          cat /tmp/icod-expressions-pcre-api.txt
+          diff -u doc/PCRE-INTERNAL-API.txt /tmp/icod-expressions-pcre-api.txt
       - uses: ./.github/actions/pcre-package-consumer
         with:
           configuration: ${{ env.CONFIGURATION }}
