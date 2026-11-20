@@ -304,10 +304,12 @@ internal static partial class PcreByteMatcher {
 								if ( catchingScope.IsolatePathMarks ) {
 									historyBoundary = Math.Max( historyBoundary, catchingScope.Boundary + 1 );
 								}
-								// Native JIT uses the call-local quit for an unowned THEN
-								// inside an atomic positive assertion; other assertions catch.
+								// Interpreted matching catches THEN at this assertion.
+								// Default/JIT uses a call-local quit for an unowned THEN
+								// inside a called atomic positive assertion.
 								var thenCatches = instruction.Opcode == PcreByteOpcode.Then
-									&& ( instruction.First >= 0 || activeCall < 0 || catchingScope.Kind != FrameKind.PositiveAssertion );
+									&& ( matchTimeAnchoring || instruction.First >= 0 || activeCall < 0
+										|| catchingScope.Kind != FrameKind.PositiveAssertion );
 								if ( thenCatches || catchingScope.Kind is FrameKind.NegativeAssertion or FrameKind.ConditionalAssertion ) {
 									pruneBoundary = catchingScope.Boundary + 1;
 									break;

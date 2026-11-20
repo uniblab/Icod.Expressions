@@ -100,3 +100,8 @@ runs:
           throw 'Expected one complete 48-pattern/3072-protocol interpreted callee cut result.'
         }
         Write-Host 'PASS: interpreted callee cut capture rollback: 3072 protocols'
+        $pcreInterpretedThenRecords = @($pcreSmokeOutput | Where-Object { $_ -match '^\{"kind":"pcre-interpreted-then-smoke",' } | ForEach-Object { $_ | ConvertFrom-Json })
+        if ($pcreInterpretedThenRecords.Count -ne 1 -or $pcreInterpretedThenRecords[0].patterns -ne 48 -or $pcreInterpretedThenRecords[0].cases -ne 3072 -or $pcreInterpretedThenRecords[0].failed -ne 0) {
+          throw 'Expected one complete 48-pattern/3072-protocol interpreted THEN assertion result.'
+        }
+        Write-Host 'PASS: interpreted THEN assertion catches: 3072 protocols'
