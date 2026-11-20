@@ -27,10 +27,7 @@ public sealed class PcreInterpretedBoundaryTests {
 		var protocols = item.Outcomes.Split( ';' );
 		Assert.Equal( 64, protocols.Length );
 		for ( var mask = 0; mask < protocols.Length; mask++ ) {
-			var effective = mask | item.Defaults;
-			var options = (PCRE.PcreMatchOptions)( ( ( effective & 1 ) != 0 ? 0x80000000u : 0 )
-				| ( ( effective & 2 ) != 0 ? 0x20000000u : 0 ) | ( ( effective & 4 ) != 0 ? 4u : 0 )
-				| ( ( effective & 8 ) != 0 ? 8u : 0 ) | ( ( effective & 16 ) != 0 ? 1u : 0 ) | ( ( effective & 32 ) != 0 ? 2u : 0 ) );
+			var options = PcreNativeMatchPolicy.Options( item.Defaults, mask );
 			var match = reference.Match( subject, item.Start, options );
 			var captures = new List<string>();
 			if ( match.Success ) {
