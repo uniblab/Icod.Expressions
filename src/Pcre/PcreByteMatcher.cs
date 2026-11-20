@@ -981,7 +981,8 @@ internal static partial class PcreByteMatcher {
 						position = frame.Position;
 						if ( frame.Kind == FrameKind.PathMark ) { continue; } // History has no retry edge.
 						if ( frame.Kind is FrameKind.Prune or FrameKind.Skip or FrameKind.Commit or FrameKind.Then or FrameKind.ThenAlternative ) {
-							if ( activeCall >= 0 && frame.Pc == callScopes![activeCall].Boundary && frame.Kind != FrameKind.ThenAlternative ) {
+							if ( !matchTimeAnchoring && activeCall >= 0
+								&& frame.Pc == callScopes![activeCall].Boundary && frame.Kind != FrameKind.ThenAlternative ) {
 								var cutCall = callScopes[activeCall];
 								var selected = program.Instructions[cutCall.ReturnPc - 1].CaptureNumbers;
 								if ( !selected.IsEmpty ) {

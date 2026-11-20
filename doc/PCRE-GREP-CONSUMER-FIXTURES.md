@@ -1,5 +1,13 @@
 # Grep `-P` consumer fixture inventory
 
+## PR294 — interpreted callee cut capture rollback
+
+The [capture rollback record](PCRE-INTERPRETED-CUT-STATUS.md) covers selected
+return captures when a called group fails after a control verb. Match-time
+anchor dispatch restores the caller values through the existing journal.
+The corpus contains 3,072 native outcomes and 52 new tests, bringing the
+suite to 106,710 cases. The eleventh package record uses the same corpus.
+
 ## PR293 — compiled internal consumer contract
 
 The [internal contract](PCRE-INTERNAL-CONTRACT.md) records eleven consumer
