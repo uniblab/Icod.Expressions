@@ -132,4 +132,13 @@ foreach ( var item in PcreInterpretedBoundaryCases.All ) {
 }
 Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-interpreted-boundary-smoke", patterns = PcreInterpretedBoundaryCases.All.Count, cases = pcreInterpretedBoundaryCases, failed = 0 } ) );
 
+var pcreInterpretedCutCases = 0;
+foreach ( var item in PcreInterpretedCutCases.All ) {
+	if ( PcreMatchPolicyConsumer.Run( item ) != item.Outcomes ) {
+		throw new InvalidOperationException( $"PCRE interpreted callee cut definition {item.Id} changed." );
+	}
+	pcreInterpretedCutCases += 64;
+}
+Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-interpreted-cut-smoke", patterns = PcreInterpretedCutCases.All.Count, cases = pcreInterpretedCutCases, failed = 0 } ) );
+
 Console.WriteLine( $"Icod.Expressions package smoke passed on {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}." );
