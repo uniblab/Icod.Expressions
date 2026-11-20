@@ -325,14 +325,15 @@ internal static partial class PcreByteMatcher {
 							if ( instruction.Opcode == PcreByteOpcode.SkipNamed ) {
 								// Native JIT takes a local assertion/callee quit before lookup.
 								// Root lookup sees only history still visible to backtracking;
-								// successful returned callees keep labels, but hide their history.
+								// default/JIT hides returned callee history. The interpreter
+								// can resolve names against those retained frames.
 								if ( pruneBoundary == 0 ) {
 									skipPosition = -1;
 									var historyDepth = backtrack.Count;
 									foreach ( var history in backtrack ) {
 										if ( historyDepth-- <= historyBoundary ) { break; }
 										Step();
-										if ( history.Kind == FrameKind.PathMark && history.CallScope == activeCall
+										if ( history.Kind == FrameKind.PathMark && ( matchTimeAnchoring || history.CallScope == activeCall )
 											&& program.Instructions[history.Pc].Bytes.Span.SequenceEqual( instruction.Bytes.Span ) ) {
 											skipPosition = history.Position;
 											break;
