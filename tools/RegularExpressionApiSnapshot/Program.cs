@@ -18,7 +18,8 @@ var pcreNames = new[] {
 	"PcreCaptureInfo", "PcreCompiledBytePattern", "PcreMatchPolicy"
 };
 var included = pcreInternal
-	? pcreNames.Select( name => assembly.GetType( $"Icod.Expressions.Pcre.{name}", throwOnError: true )! ).ToArray()
+	? pcreNames.OrderBy( name => name, StringComparer.Ordinal )
+		.Select( name => assembly.GetType( $"Icod.Expressions.Pcre.{name}", throwOnError: true )! ).ToArray()
 	: assembly.GetExportedTypes()
 	.Where( type => type.Namespace == "Icod.CommandFramework.RegularExpressions"
 		|| type == typeof( TextDecodingMode )
@@ -31,7 +32,8 @@ if ( pcreInternal ) {
 	Console.WriteLine( "# Consumer boundary declarations, including compiler-generated record members." );
 	Console.WriteLine( "# Internal boundary members: PcreByteMatch.MarkName, PcreByteOptions.DefaultMatchWorkLimit." );
 	Console.WriteLine( $"# Selected types: {included.Length}" );
-	var exported = assembly.GetExportedTypes().Where( type => type.Namespace == "Icod.Expressions.Pcre" )
+	var exported = assembly.GetExportedTypes().Where( type => type.Namespace == "Icod.Expressions.Pcre"
+		|| type.Namespace?.StartsWith( "Icod.Expressions.Pcre.", StringComparison.Ordinal ) == true )
 		.Select( type => type.FullName ).OrderBy( name => name, StringComparer.Ordinal ).ToArray();
 	Console.WriteLine( $"# Public PCRE types: {( exported.Length == 0 ? "none" : string.Join( ", ", exported ) )}" );
 } else {
@@ -45,7 +47,12 @@ foreach ( var type in included ) {
 	var kind = type.IsInterface ? "interface" : type.IsEnum ? "enum" : type.IsValueType ? "struct"
 		: type.IsAbstract && type.IsSealed ? "static class" : type.IsSealed ? "sealed class"
 		: type.IsAbstract ? "abstract class" : "class";
+	if ( pcreInternal && type.IsValueType && !type.IsEnum
+		&& type.IsDefined( typeof( System.Runtime.CompilerServices.IsReadOnlyAttribute ), inherit: false ) ) {
+		kind = "readonly struct";
+	}
 	var ancestry = new List<string>();
+	if ( pcreInternal && type.IsEnum ) { ancestry.Add( Format( Enum.GetUnderlyingType( type ) ) ); }
 	if ( type.BaseType is { } baseType && baseType != typeof( object ) && baseType != typeof( ValueType ) && baseType != typeof( Enum ) ) ancestry.Add( Format( baseType ) );
 	ancestry.AddRange( type.GetInterfaces().Select( iface => Format( iface ) ).OrderBy( name => name, StringComparer.Ordinal ) );
 	var visibility = pcreInternal ? type.IsVisible ? "public " : "internal " : string.Empty;
@@ -75,6 +82,11 @@ foreach ( var type in included ) {
 	}
 	foreach ( var field in type.GetFields( BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly ) ) {
 		entries.Add( $"field {( field.IsStatic ? "static " : string.Empty )}{Format( field.FieldType, nullable.Create( field ) )} {field.Name}" );
+	}
+	if ( pcreInternal ) {
+		foreach ( var member in type.GetEvents( BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly ) ) {
+			entries.Add( $"event {( member.AddMethod!.IsStatic ? "static " : string.Empty )}{Format( member.EventHandlerType!, nullable.Create( member ) )} {member.Name}" );
+		}
 	}
 	foreach ( var method in type.GetMethods( BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly ) ) {
 		if ( method.IsSpecialName && ( method.Name.StartsWith( "get_", StringComparison.Ordinal ) || method.Name.StartsWith( "set_", StringComparison.Ordinal ) || method.Name.StartsWith( "add_", StringComparison.Ordinal ) || method.Name.StartsWith( "remove_", StringComparison.Ordinal ) ) ) continue;

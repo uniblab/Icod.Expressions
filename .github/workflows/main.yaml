@@ -106,14 +106,13 @@ jobs:
       - name: Verify A05 candidate corpus identities
         if: matrix.os == 'ubuntu-latest'
         run: sh tools/verify-a05-candidate.sh
-      - name: Verify compiled public API members
+      - name: Verify compiled public and internal API members
         if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |
           dotnet run --project tools/RegularExpressionApiSnapshot/RegularExpressionApiSnapshot.csproj -c ${{ env.CONFIGURATION }} > /tmp/icod-expressions-api.txt
           diff <(tail -n +2 doc/Icod.Expressions-A00-Compiled-API.txt) <(tail -n +2 /tmp/icod-expressions-api.txt)
           dotnet run --project tools/RegularExpressionApiSnapshot/RegularExpressionApiSnapshot.csproj -c ${{ env.CONFIGURATION }} --no-build -- --pcre-internal > /tmp/icod-expressions-pcre-api.txt
-          cat /tmp/icod-expressions-pcre-api.txt
           diff -u doc/PCRE-INTERNAL-API.txt /tmp/icod-expressions-pcre-api.txt
       - name: Pack the single library project
         if: matrix.os == 'ubuntu-latest'

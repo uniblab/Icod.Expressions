@@ -1,5 +1,13 @@
 # PCRE error and resource contract checkpoint
 
+## PR293 — compiled internal consumer contract
+
+The [internal contract](PCRE-INTERNAL-CONTRACT.md) records eleven consumer
+boundary types, option defaults, diagnostic values, and current acceptance
+gaps. PR and main CI compare the compiled declaration snapshot alongside the
+public extraction API. Existing runtime and package cases provide behavioral
+evidence. Broader P09 conformance, hostile-input, and performance closure remains open.
+
 ## PR285: bounded anchored tolerant UTF fragment storage
 
 Tolerant UTF validation currently records every valid fragment before matching.
