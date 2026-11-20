@@ -44,7 +44,7 @@ int main(void) {
         int jit=pcre2_jit_compile(code,PCRE2_JIT_COMPLETE);PCRE2_SIZE size=0;uint32_t captures=0;
         if(pcre2_pattern_info(code,PCRE2_INFO_JITSIZE,&size)||pcre2_pattern_info(code,PCRE2_INFO_CAPTURECOUNT,&captures)){return 3;}
         pcre2_match_data *data=pcre2_match_data_create_from_pattern(code,NULL);if(!data){return 2;}
-        int rc=pcre2_match(code,subject,slen,start,policy(defaults|call),data,NULL);
+        int rc=pcre2_match(code,subject,slen,start,policy((defaults & ~3u)|call),data,NULL);
         if(rc<=0&&rc!=PCRE2_ERROR_NOMATCH){printf("%u|%u|X|%d\n",id,call,rc);return 4;}
         printf("%u|%u|%d|%zu|",id,call,jit,(size_t)size);
         if(rc>0){PCRE2_SIZE *ov=pcre2_get_ovector_pointer(data);for(uint32_t i=0;i<=captures;i++){if(i){putchar(',');}if(ov[2*i]==PCRE2_UNSET){putchar('-');}else{printf("%zu:%lld",(size_t)ov[2*i],(long long)ov[2*i+1]-(long long)ov[2*i]);}}}
