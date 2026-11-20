@@ -1,5 +1,13 @@
 # PCRE roadmap status
 
+## PR300 — direct source start anchors and unmatched SKIP
+
+The [source-anchor record](PCRE-START-ANCHOR-SKIP-STATUS.md) extends the
+interpreted unmatched-name stop check to direct absolute-start and ordinary
+caret anchors. The corpus adds 2,048 native outcomes across 32 definitions.
+Two resource cases bring the suite to 106,946 tests. A seventeenth package
+record checks the same policies. Broader roadmap gates remain open.
+
 ## PR299 — interpreted named SKIP assertion propagation
 
 The [assertion propagation record](PCRE-ASSERTION-SKIP-STATUS.md) resolves
