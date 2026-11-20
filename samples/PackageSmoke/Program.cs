@@ -150,4 +150,13 @@ foreach ( var item in PcreInterpretedThenCases.All ) {
 }
 Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-interpreted-then-smoke", patterns = PcreInterpretedThenCases.All.Count, cases = pcreInterpretedThenCases, failed = 0 } ) );
 
+var pcreCompiledAnchorCases = 0;
+foreach ( var item in PcreCompiledAnchorCases.All ) {
+	if ( PcreMatchPolicyConsumer.Run( item ) != item.Outcomes ) {
+		throw new InvalidOperationException( $"PCRE compiled anchor policy definition {item.Id} changed." );
+	}
+	pcreCompiledAnchorCases += 64;
+}
+Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-compiled-anchor-smoke", patterns = PcreCompiledAnchorCases.All.Count, cases = pcreCompiledAnchorCases, failed = 0 } ) );
+
 Console.WriteLine( $"Icod.Expressions package smoke passed on {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}." );

@@ -1,5 +1,13 @@
 # PCRE syntax acceptance matrix
 
+## PR296 — compiled-anchor reference routing
+
+The [compiled-anchor record](PCRE-COMPILED-ANCHOR-STATUS.md) separates native
+compile defaults from call-time anchor flags. The C probe and shared native
+test adapter apply this routing. The corpus adds 3,072 native outcomes and
+48 tests, bringing the suite to 106,810 cases. A thirteenth package record
+checks the same compiled-default and call-policy combinations.
+
 ## PR295 — interpreted THEN assertion catches
 
 The [THEN scope record](PCRE-INTERPRETED-THEN-STATUS.md) covers failed THEN

@@ -12,9 +12,10 @@ cc -O2 -std=c11 -Wall -Wextra -Werror -I src -I pcre2/src \
 
 Input: id|mode|compiled-default-mask|call-mask|pattern-hex|subject-hex|start.
 Use '-' for empty hex. Masks0..63 use1=anchored,2=end-anchored,4=not-empty,
-8=not-empty-at-start,16=not-BOL,32=not-EOL. Default anchor bits also enter
-compilation; all effective bits are ORed into native match flags. Source
-directives retain native precedence.
+8=not-empty-at-start,16=not-BOL,32=not-EOL. Default anchor bits enter
+compilation. Call-time anchor bits enter native match flags, together with
+the other defaults and call restrictions. Source directives retain native
+precedence.
 
 Mode bits:1=UTF,2=UCP,4=match-invalid-UTF,8=allow assertion-K,16=caseless,
 32=literal,64=ANYCRLF newline,128=dollar-end-only,256=alternate-caret,
@@ -41,3 +42,8 @@ The sample catalog stores these outcomes without running the implementation to
 invent expectations. CI first checks all64 outcomes through PCRE.NET1.6.0 for
 each definition, then exercises one reusable managed pattern with every policy.
 No production native dependency or fallback is introduced.
+
+PR #296 corrects compiled-anchor routing and adds an independent composition
+corpus. See the [compiled-anchor record](compiled-anchor-oracle.md).
+Historical preflights identify their exact source blobs. Retrieve a recorded
+version with git show followed by its blob ID when reproducing an older probe.
