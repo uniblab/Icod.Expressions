@@ -261,10 +261,11 @@ separate, reviewed PRs.
    names make a direct reference ambiguous. Use the
    [A03 call-site matrix in PR #16](https://github.com/uniblab/Icod.CommandFramework/blob/docs/icod-expressions-a00-in-situ-inventory/doc/Icod.Expressions-A03-Consumer-Compatibility-Matrix.md)
    as the source-pinned inventory. Start with string-only ProcPs and
-   DiffUtils, then CoreUtils `expr`/`nl`/`csplit`/`ptx`/`tac`, Grep's byte
-   and prepared paths, and LineEditor's Sed/Ed repeated searches and
-   replacement ownership. This order is a validation sequence, not a claim
-   that earlier consumers are already migrated.
+   DiffUtils, then CoreUtils `expr`/`nl`/`csplit`/`ptx`/`tac` and LineEditor's
+   Sed/Ed repeated searches and replacement ownership. Migrate Grep last,
+   after its planned in-house PCRE implementation is ready to be validated
+   alongside its byte and prepared paths. This order is a validation
+   sequence, not a claim that earlier consumers are already migrated.
 5. Keep application-specific search loops, empty-match progression,
    replacement, output formatting, and command diagnostics in their
    consumers. Reject any silent replacement of GNU/POSIX calls by
