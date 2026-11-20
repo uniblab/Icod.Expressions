@@ -1,5 +1,13 @@
 # Recent UTF proof progress
 
+## PR298 — anchored interpreter and unmatched named SKIP
+
+The [unmatched-name record](PCRE-UNMATCHED-SKIP-STATUS.md) preserves failure
+before an anchored interpreted attempt can replay an unmatched named SKIP.
+The corpus supplies 2,048 native outcomes across 32 definitions. Two resource
+checks bring the suite to 106,878 tests. A fifteenth package record checks
+the same policies. Broader conformance and roadmap gates remain open.
+
 ## PR297 — interpreted named SKIP and returned call history
 
 The [returned-history record](PCRE-RETURNED-SKIP-STATUS.md) makes interpreted
