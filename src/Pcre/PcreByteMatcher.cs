@@ -322,6 +322,7 @@ internal static partial class PcreByteMatcher {
 								pruneBoundary = Math.Max( pruneBoundary, marks[instruction.First] + instruction.Second );
 							}
 							var skipPosition = position;
+							var unmatchedAnchoredSkip = false;
 							if ( instruction.Opcode == PcreByteOpcode.SkipNamed ) {
 								// Native JIT takes a local assertion/callee quit before lookup.
 								// Root lookup sees only history still visible to backtracking;
@@ -339,7 +340,15 @@ internal static partial class PcreByteMatcher {
 											break;
 										}
 									}
-									if ( skipPosition < 0 ) { pc++; break; } // An ignored name needs no cut frame.
+									if ( skipPosition < 0 ) {
+										if ( !matchTimeAnchoring || !( anchored || program.Instructions[0].Opcode == PcreByteOpcode.SearchStart ) ) {
+											pc++; break; // The ignored name needs no cut frame.
+										}
+										// The native anchored driver stops before unmatched-name replay.
+										// Delay termination until failure actually reaches this verb.
+										unmatchedAnchoredSkip = true;
+										skipPosition = position;
+									}
 								}
 								if ( backtrack.Count >= MaximumBacktrackFrames ) {
 									throw new MatchLimitException( PcreByteDiagnosticCode.MatchDepthLimitExceeded, "backtrack stack limit exceeded" );
@@ -351,6 +360,7 @@ internal static partial class PcreByteMatcher {
 								activeScope, instruction.Opcode switch {
 									PcreByteOpcode.Then => instruction.First >= 0 ? FrameKind.ThenAlternative : FrameKind.Then,
 									PcreByteOpcode.Commit => FrameKind.Commit,
+									PcreByteOpcode.SkipNamed when unmatchedAnchoredSkip => FrameKind.Commit,
 									PcreByteOpcode.Skip or PcreByteOpcode.SkipNamed => FrameKind.Skip, _ => FrameKind.Prune
 								}, CallScope: activeCall ) );
 							if ( instruction.PropertyValue > 0 ) {
