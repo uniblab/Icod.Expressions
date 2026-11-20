@@ -141,4 +141,13 @@ foreach ( var item in PcreInterpretedCutCases.All ) {
 }
 Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-interpreted-cut-smoke", patterns = PcreInterpretedCutCases.All.Count, cases = pcreInterpretedCutCases, failed = 0 } ) );
 
+var pcreInterpretedThenCases = 0;
+foreach ( var item in PcreInterpretedThenCases.All ) {
+	if ( PcreMatchPolicyConsumer.Run( item ) != item.Outcomes ) {
+		throw new InvalidOperationException( $"PCRE interpreted THEN assertion definition {item.Id} changed." );
+	}
+	pcreInterpretedThenCases += 64;
+}
+Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-interpreted-then-smoke", patterns = PcreInterpretedThenCases.All.Count, cases = pcreInterpretedThenCases, failed = 0 } ) );
+
 Console.WriteLine( $"Icod.Expressions package smoke passed on {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}." );

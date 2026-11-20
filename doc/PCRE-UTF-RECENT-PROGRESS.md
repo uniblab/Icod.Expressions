@@ -1,5 +1,13 @@
 # Recent UTF proof progress
 
+## PR295 — interpreted THEN assertion catches
+
+The [THEN scope record](PCRE-INTERPRETED-THEN-STATUS.md) covers failed THEN
+inside a called positive assertion. Interpreted matching catches the assertion
+and can retry an earlier callee choice. The corpus contains 3,072 native
+outcomes and 52 new tests, bringing the suite to 106,762 cases. The twelfth
+package record checks the same definitions.
+
 ## PR294 — interpreted callee cut capture rollback
 
 The [capture rollback record](PCRE-INTERPRETED-CUT-STATUS.md) covers selected
