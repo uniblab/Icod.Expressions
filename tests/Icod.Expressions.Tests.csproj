@@ -21,6 +21,7 @@
 		</PackageReference>
 	</ItemGroup>
 	<ItemGroup>
+		<Compile Include="../samples/PackageSmoke/PcreInterpretedCutCases.cs" Link="PackageSmoke/PcreInterpretedCutCases.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreInterpretedBoundaryCases.cs" Link="PackageSmoke/PcreInterpretedBoundaryCases.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreOptionalRewindCases.cs" Link="PackageSmoke/PcreOptionalRewindCases.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreFragmentCaretCases.cs" Link="PackageSmoke/PcreFragmentCaretCases.cs" />
