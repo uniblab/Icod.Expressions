@@ -120,3 +120,8 @@ runs:
           throw 'Expected one complete 32-pattern/2048-protocol unmatched named SKIP result.'
         }
         Write-Host 'PASS: unmatched named SKIP in anchored interpreted attempts: 2048 protocols'
+        $pcreAssertionSkipRecords = @($pcreSmokeOutput | Where-Object { $_ -match '^\{"kind":"pcre-assertion-skip-smoke",' } | ForEach-Object { $_ | ConvertFrom-Json })
+        if ($pcreAssertionSkipRecords.Count -ne 1 -or $pcreAssertionSkipRecords[0].patterns -ne 32 -or $pcreAssertionSkipRecords[0].cases -ne 2048 -or $pcreAssertionSkipRecords[0].failed -ne 0) {
+          throw 'Expected one complete 32-pattern/2048-protocol assertion named SKIP result.'
+        }
+        Write-Host 'PASS: interpreted named SKIP assertion propagation: 2048 protocols'

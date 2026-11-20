@@ -177,4 +177,13 @@ foreach ( var item in PcreUnmatchedSkipCases.All ) {
 }
 Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-unmatched-skip-smoke", patterns = PcreUnmatchedSkipCases.All.Count, cases = pcreUnmatchedSkipCases, failed = 0 } ) );
 
+var pcreAssertionSkipCases = 0;
+foreach ( var item in PcreAssertionSkipCases.All ) {
+	if ( PcreMatchPolicyConsumer.Run( item ) != item.Outcomes ) {
+		throw new InvalidOperationException( $"PCRE assertion SKIP definition {item.Id} changed." );
+	}
+	pcreAssertionSkipCases += 64;
+}
+Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-assertion-skip-smoke", patterns = PcreAssertionSkipCases.All.Count, cases = pcreAssertionSkipCases, failed = 0 } ) );
+
 Console.WriteLine( $"Icod.Expressions package smoke passed on {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}." );

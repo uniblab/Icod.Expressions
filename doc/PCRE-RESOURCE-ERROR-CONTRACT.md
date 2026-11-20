@@ -1,5 +1,13 @@
 # PCRE error and resource contract checkpoint
 
+## PR299 — interpreted named SKIP assertion propagation
+
+The [assertion propagation record](PCRE-ASSERTION-SKIP-STATUS.md) resolves
+named SKIP history before choosing a negative or conditional assertion catch.
+The corpus supplies 2,048 native outcomes across 32 definitions. Two resource
+checks bring the suite to 106,912 tests. A sixteenth package record checks
+the same policies. Broader conformance and roadmap gates remain open.
+
 ## PR298 — anchored interpreter and unmatched named SKIP
 
 The [unmatched-name record](PCRE-UNMATCHED-SKIP-STATUS.md) preserves failure
