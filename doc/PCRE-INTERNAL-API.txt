@@ -1,0 +1,231 @@
+# Icod.Expressions compiled internal PCRE API
+# Consumer boundary declarations, including compiler-generated record members.
+# Internal boundary members: PcreByteMatch.MarkName, PcreByteOptions.DefaultMatchWorkLimit.
+# Selected types: 11
+# Public PCRE types: none
+internal readonly struct Icod.Expressions.Pcre.PcreByteCapture : System.IEquatable<Icod.Expressions.Pcre.PcreByteCapture>
+  ctor(int ByteIndex, int ByteLength)
+  method bool Equals(Icod.Expressions.Pcre.PcreByteCapture other)
+  method bool Equals(object obj)
+  method int GetHashCode()
+  method static bool op_Equality(Icod.Expressions.Pcre.PcreByteCapture left, Icod.Expressions.Pcre.PcreByteCapture right)
+  method static bool op_Inequality(Icod.Expressions.Pcre.PcreByteCapture left, Icod.Expressions.Pcre.PcreByteCapture right)
+  method string ToString()
+  method void Deconstruct(out int ByteIndex, out int ByteLength)
+  property int ByteIndex { get; init; }
+  property int ByteLength { get; init; }
+internal sealed class Icod.Expressions.Pcre.PcreByteCompileResult : System.IEquatable<Icod.Expressions.Pcre.PcreByteCompileResult>
+  ctor(Icod.Expressions.Pcre.PcreCompiledBytePattern? Pattern, Icod.Expressions.Pcre.PcreByteDiagnostic? Diagnostic)
+  method Icod.Expressions.Pcre.PcreByteCompileResult <Clone>$()
+  method bool Equals(Icod.Expressions.Pcre.PcreByteCompileResult? other)
+  method bool Equals(object? obj)
+  method int GetHashCode()
+  method static bool op_Equality(Icod.Expressions.Pcre.PcreByteCompileResult? left, Icod.Expressions.Pcre.PcreByteCompileResult? right)
+  method static bool op_Inequality(Icod.Expressions.Pcre.PcreByteCompileResult? left, Icod.Expressions.Pcre.PcreByteCompileResult? right)
+  method string ToString()
+  method void Deconstruct(out Icod.Expressions.Pcre.PcreCompiledBytePattern? Pattern, out Icod.Expressions.Pcre.PcreByteDiagnostic? Diagnostic)
+  property Icod.Expressions.Pcre.PcreByteDiagnostic? Diagnostic { get; init; }
+  property Icod.Expressions.Pcre.PcreCompiledBytePattern? Pattern { get; init; }
+  property bool IsSuccess { get; }
+internal static class Icod.Expressions.Pcre.PcreByteCompiler
+  method static Icod.Expressions.Pcre.PcreByteCompileResult Compile(System.ReadOnlyMemory<byte> pattern, Icod.Expressions.Pcre.PcreByteOptions? options = null, System.Threading.CancellationToken cancellationToken = default)
+internal sealed class Icod.Expressions.Pcre.PcreByteDiagnostic : System.IEquatable<Icod.Expressions.Pcre.PcreByteDiagnostic>
+  ctor(Icod.Expressions.Pcre.PcreByteDiagnosticCode Code, int ByteOffset, string Message)
+  method Icod.Expressions.Pcre.PcreByteDiagnostic <Clone>$()
+  method bool Equals(Icod.Expressions.Pcre.PcreByteDiagnostic? other)
+  method bool Equals(object? obj)
+  method int GetHashCode()
+  method static bool op_Equality(Icod.Expressions.Pcre.PcreByteDiagnostic? left, Icod.Expressions.Pcre.PcreByteDiagnostic? right)
+  method static bool op_Inequality(Icod.Expressions.Pcre.PcreByteDiagnostic? left, Icod.Expressions.Pcre.PcreByteDiagnostic? right)
+  method string ToString()
+  method void Deconstruct(out Icod.Expressions.Pcre.PcreByteDiagnosticCode Code, out int ByteOffset, out string Message)
+  property Icod.Expressions.Pcre.PcreByteDiagnosticCode Code { get; init; }
+  property int ByteOffset { get; init; }
+  property string Message { get; init; }
+internal enum Icod.Expressions.Pcre.PcreByteDiagnosticCode : int, System.IComparable, System.IConvertible, System.IFormattable, System.ISpanFormattable
+  InvalidStartOffset = 6
+  InvalidSyntax = 1
+  InvalidUtf8Pattern = 7
+  InvalidUtf8Subject = 8
+  InvalidWorkLimit = 5
+  MatchDepthLimitExceeded = 10
+  MatchWorkLimitExceeded = 9
+  PatternCaptureLimitExceeded = 3
+  PatternDepthLimitExceeded = 2
+  PatternLengthLimitExceeded = 11
+  PatternRepeatLimitExceeded = 4
+  UnsupportedSyntax = 0
+internal sealed class Icod.Expressions.Pcre.PcreByteMatch : System.IEquatable<Icod.Expressions.Pcre.PcreByteMatch>
+  ctor(int ByteIndex, int ByteLength, System.Collections.Generic.IReadOnlyList<Icod.Expressions.Pcre.PcreByteCapture?> Captures, Icod.Expressions.Pcre.PcreCaptureInfo CaptureInfo)
+  method Icod.Expressions.Pcre.PcreByteCapture? GetCapture(string name)
+  method Icod.Expressions.Pcre.PcreByteMatch <Clone>$()
+  method bool Equals(Icod.Expressions.Pcre.PcreByteMatch? other)
+  method bool Equals(object? obj)
+  method int GetHashCode()
+  method static bool op_Equality(Icod.Expressions.Pcre.PcreByteMatch? left, Icod.Expressions.Pcre.PcreByteMatch? right)
+  method static bool op_Inequality(Icod.Expressions.Pcre.PcreByteMatch? left, Icod.Expressions.Pcre.PcreByteMatch? right)
+  method string ToString()
+  method void Deconstruct(out int ByteIndex, out int ByteLength, out System.Collections.Generic.IReadOnlyList<Icod.Expressions.Pcre.PcreByteCapture?> Captures, out Icod.Expressions.Pcre.PcreCaptureInfo CaptureInfo)
+  property Icod.Expressions.Pcre.PcreCaptureInfo CaptureInfo { get; init; }
+  property System.Collections.Generic.IReadOnlyList<Icod.Expressions.Pcre.PcreByteCapture?> Captures { get; init; }
+  property int ByteIndex { get; init; }
+  property int ByteLength { get; init; }
+  internal property System.ReadOnlyMemory<byte> MarkName { get; init; }
+internal sealed class Icod.Expressions.Pcre.PcreByteMatchResult : System.IEquatable<Icod.Expressions.Pcre.PcreByteMatchResult>
+  ctor(Icod.Expressions.Pcre.PcreByteMatch? Match, Icod.Expressions.Pcre.PcreByteDiagnostic? Diagnostic)
+  method Icod.Expressions.Pcre.PcreByteMatchResult <Clone>$()
+  method bool Equals(Icod.Expressions.Pcre.PcreByteMatchResult? other)
+  method bool Equals(object? obj)
+  method int GetHashCode()
+  method static bool op_Equality(Icod.Expressions.Pcre.PcreByteMatchResult? left, Icod.Expressions.Pcre.PcreByteMatchResult? right)
+  method static bool op_Inequality(Icod.Expressions.Pcre.PcreByteMatchResult? left, Icod.Expressions.Pcre.PcreByteMatchResult? right)
+  method string ToString()
+  method void Deconstruct(out Icod.Expressions.Pcre.PcreByteMatch? Match, out Icod.Expressions.Pcre.PcreByteDiagnostic? Diagnostic)
+  property Icod.Expressions.Pcre.PcreByteDiagnostic? Diagnostic { get; init; }
+  property Icod.Expressions.Pcre.PcreByteMatch? Match { get; init; }
+  property bool IsSuccess { get; }
+internal sealed class Icod.Expressions.Pcre.PcreByteOptions : System.IEquatable<Icod.Expressions.Pcre.PcreByteOptions>
+  ctor()
+  method Icod.Expressions.Pcre.PcreByteOptions <Clone>$()
+  method bool Equals(Icod.Expressions.Pcre.PcreByteOptions? other)
+  method bool Equals(object? obj)
+  method int GetHashCode()
+  method static bool op_Equality(Icod.Expressions.Pcre.PcreByteOptions? left, Icod.Expressions.Pcre.PcreByteOptions? right)
+  method static bool op_Inequality(Icod.Expressions.Pcre.PcreByteOptions? left, Icod.Expressions.Pcre.PcreByteOptions? right)
+  method string ToString()
+  property System.UInt32 MaxVarLookbehind { get; init; }
+  property System.UInt32? MaxPatternLength { get; init; }
+  property bool AllowEmptyClass { get; init; }
+  property bool AllowLookaroundBackslashK { get; init; }
+  property bool AllowSurrogateEscapes { get; init; }
+  property bool AltBsux { get; init; }
+  property bool AltCircumflex { get; init; }
+  property bool AltExtendedClass { get; init; }
+  property bool AltVerbNames { get; init; }
+  property bool Anchored { get; init; }
+  property bool AnyCrLfNewline { get; init; }
+  property bool AsciiBsD { get; init; }
+  property bool AsciiBsS { get; init; }
+  property bool AsciiBsW { get; init; }
+  property bool AsciiDigit { get; init; }
+  property bool AsciiPosix { get; init; }
+  property bool BadEscapeIsLiteral { get; init; }
+  property bool BsrAnyCrLf { get; init; }
+  property bool Caseless { get; init; }
+  property bool CaselessRestricted { get; init; }
+  property bool DollarEndOnly { get; init; }
+  property bool DotAll { get; init; }
+  property bool DuplicateNames { get; init; }
+  property bool EndAnchored { get; init; }
+  property bool EscapedCrIsLf { get; init; }
+  property bool Extended { get; init; }
+  property bool ExtendedMore { get; init; }
+  property bool ExtraAltBsux { get; init; }
+  property bool FirstLine { get; init; }
+  property bool Literal { get; init; }
+  property bool MatchInvalidUtf { get; init; }
+  property bool MatchLine { get; init; }
+  property bool MatchUnsetBackreference { get; init; }
+  property bool MatchWord { get; init; }
+  property bool Multiline { get; init; }
+  property bool NeverBackslashC { get; init; }
+  property bool NeverCallout { get; init; }
+  property bool NeverUcp { get; init; }
+  property bool NeverUtf { get; init; }
+  property bool NoAutoCapture { get; init; }
+  property bool NoAutoPossess { get; init; }
+  property bool NoBackslashZero { get; init; }
+  property bool NoDotStarAnchor { get; init; }
+  property bool NoStartOptimize { get; init; }
+  property bool NotBol { get; init; }
+  property bool NotEmpty { get; init; }
+  property bool NotEmptyAtStart { get; init; }
+  property bool NotEol { get; init; }
+  property bool PythonOctal { get; init; }
+  property bool TurkishCasing { get; init; }
+  property bool Ucp { get; init; }
+  property bool Ungreedy { get; init; }
+  property bool Utf8 { get; init; }
+  property int MatchWorkLimit { get; init; }
+  internal const int DefaultMatchWorkLimit = 1000000
+  default AllowEmptyClass = false
+  default AllowLookaroundBackslashK = false
+  default AllowSurrogateEscapes = false
+  default AltBsux = false
+  default AltCircumflex = false
+  default AltExtendedClass = false
+  default AltVerbNames = false
+  default Anchored = false
+  default AnyCrLfNewline = false
+  default AsciiBsD = false
+  default AsciiBsS = false
+  default AsciiBsW = false
+  default AsciiDigit = false
+  default AsciiPosix = false
+  default BadEscapeIsLiteral = false
+  default BsrAnyCrLf = false
+  default Caseless = false
+  default CaselessRestricted = false
+  default DollarEndOnly = false
+  default DotAll = false
+  default DuplicateNames = false
+  default EndAnchored = false
+  default EscapedCrIsLf = false
+  default Extended = false
+  default ExtendedMore = false
+  default ExtraAltBsux = false
+  default FirstLine = false
+  default Literal = false
+  default MatchInvalidUtf = false
+  default MatchLine = false
+  default MatchUnsetBackreference = false
+  default MatchWord = false
+  default MatchWorkLimit = 1000000
+  default MaxPatternLength = null
+  default MaxVarLookbehind = 255
+  default Multiline = false
+  default NeverBackslashC = false
+  default NeverCallout = false
+  default NeverUcp = false
+  default NeverUtf = false
+  default NoAutoCapture = false
+  default NoAutoPossess = false
+  default NoBackslashZero = false
+  default NoDotStarAnchor = false
+  default NoStartOptimize = false
+  default NotBol = false
+  default NotEmpty = false
+  default NotEmptyAtStart = false
+  default NotEol = false
+  default PythonOctal = false
+  default TurkishCasing = false
+  default Ucp = false
+  default Ungreedy = false
+  default Utf8 = false
+internal sealed class Icod.Expressions.Pcre.PcreCaptureInfo
+  method System.Collections.Generic.IReadOnlyList<int> GetGroupNumbers(string name)
+  property System.Collections.Generic.IReadOnlyList<string> Names { get; }
+  property int CaptureCount { get; }
+internal sealed class Icod.Expressions.Pcre.PcreCompiledBytePattern
+  method Icod.Expressions.Pcre.PcreByteMatchResult Match(System.ReadOnlyMemory<byte> input, Icod.Expressions.Pcre.PcreMatchPolicy policy, int startOffset = 0, System.Threading.CancellationToken cancellationToken = default)
+  method Icod.Expressions.Pcre.PcreByteMatchResult Match(System.ReadOnlyMemory<byte> input, int startOffset = 0, System.Threading.CancellationToken cancellationToken = default)
+  property Icod.Expressions.Pcre.PcreCaptureInfo CaptureInfo { get; }
+internal readonly struct Icod.Expressions.Pcre.PcreMatchPolicy : System.IEquatable<Icod.Expressions.Pcre.PcreMatchPolicy>
+  method bool Equals(Icod.Expressions.Pcre.PcreMatchPolicy other)
+  method bool Equals(object obj)
+  method int GetHashCode()
+  method static bool op_Equality(Icod.Expressions.Pcre.PcreMatchPolicy left, Icod.Expressions.Pcre.PcreMatchPolicy right)
+  method static bool op_Inequality(Icod.Expressions.Pcre.PcreMatchPolicy left, Icod.Expressions.Pcre.PcreMatchPolicy right)
+  method string ToString()
+  property bool Anchored { get; init; }
+  property bool EndAnchored { get; init; }
+  property bool NotBol { get; init; }
+  property bool NotEmpty { get; init; }
+  property bool NotEmptyAtStart { get; init; }
+  property bool NotEol { get; init; }
+  default Anchored = false
+  default EndAnchored = false
+  default NotBol = false
+  default NotEmpty = false
+  default NotEmptyAtStart = false
+  default NotEol = false
