@@ -150,3 +150,8 @@ runs:
           throw 'Expected one complete 40-pattern/2560-protocol explicit atomic group source anchor SKIP result.'
         }
         Write-Host 'PASS: explicit atomic group source anchors and unmatched SKIP: 2560 protocols'
+        $pcreConditionalAnchorSkipRecords = @($pcreSmokeOutput | Where-Object { $_ -match '^\{"kind":"pcre-conditional-anchor-skip-smoke",' } | ForEach-Object { $_ | ConvertFrom-Json })
+        if ($pcreConditionalAnchorSkipRecords.Count -ne 1 -or $pcreConditionalAnchorSkipRecords[0].patterns -ne 53 -or $pcreConditionalAnchorSkipRecords[0].cases -ne 3392 -or $pcreConditionalAnchorSkipRecords[0].failed -ne 0) {
+          throw 'Expected one complete 53-pattern/3392-protocol conditional source anchor SKIP result.'
+        }
+        Write-Host 'PASS: two-branch conditional source anchors and unmatched SKIP: 3392 protocols'

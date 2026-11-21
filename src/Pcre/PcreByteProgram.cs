@@ -265,6 +265,9 @@ internal sealed class PcreByteProgramCompiler {
 					PcreByteNoncapturingGroup group => group.Body,
 					PcreByteAtomic { Child: PcreByteNoncapturingGroup group } => group.Body,
 					PcreByteLookahead { IsPositive: true } assertion => assertion.Body,
+					PcreByteCaptureConditional { Body.Branches.Count: 2 } condition => condition.Body,
+					PcreByteRecursionConditional { Body.Branches.Count: 2 } condition => condition.Body,
+					PcreByteStaticConditional { IsDefinition: false, Body.Branches.Count: 2 } condition => condition.Body,
 					_ => null
 				};
 				if ( nested is not null ) {

@@ -1,5 +1,13 @@
 # Grep `-P` consumer fixture inventory
 
+## PR305 — conditional source anchors and unmatched SKIP
+
+The [conditional-anchor record](PCRE-CONDITIONAL-ANCHOR-SKIP-STATUS.md) checks
+both branches of capture, recursion, and version conditionals for source start
+anchors. The corpus adds 3,392 native outcomes across 53 definitions. Two
+resource cases bring the suite to 107,149 tests. A twenty-second package record
+checks the same policies. Broader roadmap gates remain open.
+
 ## PR304 — explicit atomic group source anchors and unmatched SKIP
 
 The [atomic-anchor record](PCRE-ATOMIC-ANCHOR-SKIP-STATUS.md) recognizes source
