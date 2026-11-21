@@ -1,5 +1,13 @@
 # PCRE roadmap status
 
+## PR309 — skipped static condition prefixes and unmatched SKIP
+
+The [static-prefix record](PCRE-STATIC-PREFIX-ANCHOR-SKIP-STATUS.md) recognizes
+source start anchors after a false one-branch conditional and its ignored
+quantifiers. The corpus adds 3,072 native outcomes across 48 definitions. Two
+resource cases bring the suite to 107,367 tests. A twenty-sixth package record
+checks the same policies. Broader roadmap gates remain open.
+
 ## PR308 — exact-zero repeat prefixes and unmatched SKIP
 
 The [zero-repeat record](PCRE-ZERO-REPEAT-ANCHOR-SKIP-STATUS.md) recognizes a

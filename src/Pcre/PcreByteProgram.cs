@@ -259,14 +259,16 @@ internal sealed class PcreByteProgramCompiler {
 				var branch = entry.Body.Branches[index];
 				var first = 0;
 				PcreByteNode leading;
-				// Native erases exact-zero atoms or skips their retained group bodies.
+				// Native skips exact-zero repeats and one-branch false conditions.
 				do {
 					cancellationToken.ThrowIfCancellationRequested();
 					if ( first == branch.Count || visits >= MaximumInstructions - entries.Count ) { return false; }
 					visits++;
 					leading = branch[first++];
 				} while ( leading is PcreByteRepeat { Maximum: 0 }
-					or PcreByteAtomic { Child: PcreByteRepeat { Maximum: 0 } } );
+					or PcreByteAtomic { Child: PcreByteRepeat { Maximum: 0 } }
+					or PcreByteStaticConditional { Value: false, Body.Branches.Count: 1 }
+					or PcreByteRepeat { Child: PcreByteStaticConditional { Value: false, Body.Branches.Count: 1 } } );
 				if ( leading is PcreByteAtomic { Child: PcreByteRepeat { Minimum: > 0 } possessive } ) { leading = possessive; }
 				if ( leading is PcreByteRepeat { Minimum: > 0 } repeat ) { leading = repeat.Child; }
 				if ( leading is PcreByteAssertionConditional {
