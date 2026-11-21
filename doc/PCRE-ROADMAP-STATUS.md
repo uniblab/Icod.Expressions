@@ -1,5 +1,13 @@
 # PCRE roadmap status
 
+## PR308 — exact-zero repeat prefixes and unmatched SKIP
+
+The [zero-repeat record](PCRE-ZERO-REPEAT-ANCHOR-SKIP-STATUS.md) recognizes a
+source start anchor after leading repeats with a maximum of zero. The corpus
+adds 3,072 native outcomes across 48 definitions. Two resource cases bring
+the suite to 107,317 tests. A twenty-fifth package record checks the same
+policies. Broader roadmap gates remain open.
+
 ## PR307 — mandatory-repeat source anchors and unmatched SKIP
 
 The [repeat-anchor record](PCRE-REPEAT-ANCHOR-SKIP-STATUS.md) recognizes source

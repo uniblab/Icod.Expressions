@@ -256,11 +256,17 @@ internal sealed class PcreByteProgramCompiler {
 			// Each leading node already consumes a visit during compilation.
 			if ( entry.Count == 0 || entry.Count > MaximumInstructions - visits - entries.Count ) { return false; }
 			for ( var index = entry.First; index < entry.First + entry.Count; index++ ) {
-				cancellationToken.ThrowIfCancellationRequested();
-				visits++;
 				var branch = entry.Body.Branches[index];
-				if ( branch.Count == 0 ) { return false; }
-				var leading = branch[0];
+				var first = 0;
+				PcreByteNode leading;
+				// Native erases exact-zero atoms or skips their retained group bodies.
+				do {
+					cancellationToken.ThrowIfCancellationRequested();
+					if ( first == branch.Count || visits >= MaximumInstructions - entries.Count ) { return false; }
+					visits++;
+					leading = branch[first++];
+				} while ( leading is PcreByteRepeat { Maximum: 0 }
+					or PcreByteAtomic { Child: PcreByteRepeat { Maximum: 0 } } );
 				if ( leading is PcreByteAtomic { Child: PcreByteRepeat { Minimum: > 0 } possessive } ) { leading = possessive; }
 				if ( leading is PcreByteRepeat { Minimum: > 0 } repeat ) { leading = repeat.Child; }
 				if ( leading is PcreByteAssertionConditional {
