@@ -1,5 +1,13 @@
 # PCRE roadmap status
 
+## PR306 — assertion-condition source anchors and unmatched SKIP
+
+The [assertion-condition record](PCRE-ASSERTION-CONDITION-ANCHOR-SKIP-STATUS.md)
+checks a positive forward guard and its explicit else branch for source start
+anchors. The corpus adds 3,456 native outcomes across 54 definitions. Two
+resource cases bring the suite to 107,205 tests. A twenty-third package record
+checks the same policies. Broader roadmap gates remain open.
+
 ## PR305 — conditional source anchors and unmatched SKIP
 
 The [conditional-anchor record](PCRE-CONDITIONAL-ANCHOR-SKIP-STATUS.md) checks

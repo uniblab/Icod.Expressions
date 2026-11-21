@@ -248,18 +248,29 @@ internal sealed class PcreByteProgramCompiler {
 
 	private bool HasAlternativeStartAnchor( PcreByteAlternatives root ) {
 		cancellationToken.ThrowIfCancellationRequested();
-		var entries = new Stack<PcreByteAlternatives>();
-		entries.Push( root );
+		var entries = new Stack<(PcreByteAlternatives Body, int First, int Count)>();
+		entries.Push( (root, 0, root.Branches.Count) );
 		var visits = 0;
 		while ( entries.TryPop( out var entry ) ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			// Each leading node already consumes a visit during compilation.
-			if ( entry.Branches.Count == 0 || entry.Branches.Count > MaximumInstructions - visits - entries.Count ) { return false; }
-			foreach ( var branch in entry.Branches ) {
+			if ( entry.Count == 0 || entry.Count > MaximumInstructions - visits - entries.Count ) { return false; }
+			for ( var index = entry.First; index < entry.First + entry.Count; index++ ) {
 				cancellationToken.ThrowIfCancellationRequested();
 				visits++;
+				var branch = entry.Body.Branches[index];
 				if ( branch.Count == 0 ) { return false; }
 				var leading = branch[0];
+				if ( leading is PcreByteAssertionConditional {
+					Body.Branches.Count: 2,
+					Assertion: PcreByteLookahead { IsPositive: true, NonAtomic: false } guard
+				} assertionCondition ) {
+					if ( entries.Count > MaximumInstructions - visits - 2 ) { return false; }
+					// Native analyzes the guard and else; the then body does not establish this evidence.
+					entries.Push( (assertionCondition.Body, 1, 1) );
+					entries.Push( (guard.Body, 0, guard.Body.Branches.Count) );
+					continue;
+				}
 				var nested = leading switch {
 					PcreByteGroup { Number: > 0 } capture => capture.Body,
 					PcreByteNoncapturingGroup group => group.Body,
@@ -272,7 +283,7 @@ internal sealed class PcreByteProgramCompiler {
 				};
 				if ( nested is not null ) {
 					if ( entries.Count >= MaximumInstructions - visits ) { return false; }
-					entries.Push( nested );
+					entries.Push( (nested, 0, nested.Branches.Count) );
 					continue;
 				}
 				// NotBol affects execution. Native retains caret's source anchoring.

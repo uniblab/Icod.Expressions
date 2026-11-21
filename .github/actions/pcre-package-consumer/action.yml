@@ -155,3 +155,8 @@ runs:
           throw 'Expected one complete 53-pattern/3392-protocol conditional source anchor SKIP result.'
         }
         Write-Host 'PASS: two-branch conditional source anchors and unmatched SKIP: 3392 protocols'
+        $pcreAssertionConditionAnchorSkipRecords = @($pcreSmokeOutput | Where-Object { $_ -match '^\{"kind":"pcre-assertion-condition-anchor-skip-smoke",' } | ForEach-Object { $_ | ConvertFrom-Json })
+        if ($pcreAssertionConditionAnchorSkipRecords.Count -ne 1 -or $pcreAssertionConditionAnchorSkipRecords[0].patterns -ne 54 -or $pcreAssertionConditionAnchorSkipRecords[0].cases -ne 3456 -or $pcreAssertionConditionAnchorSkipRecords[0].failed -ne 0) {
+          throw 'Expected one complete 54-pattern/3456-protocol assertion condition source anchor SKIP result.'
+        }
+        Write-Host 'PASS: assertion guard and else source anchors with unmatched SKIP: 3456 protocols'
