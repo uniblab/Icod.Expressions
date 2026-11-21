@@ -1,5 +1,13 @@
 # PCRE error and resource contract checkpoint
 
+## PR304 — explicit atomic group source anchors and unmatched SKIP
+
+The [atomic-anchor record](PCRE-ATOMIC-ANCHOR-SKIP-STATUS.md) recognizes source
+start anchors through explicit atomic groups, including nested alternatives.
+The corpus adds 2,560 native outcomes across 40 definitions. Two resource cases
+bring the suite to 107,094 tests. A twenty-first package record checks the same
+policies. Broader roadmap gates remain open.
+
 ## PR303 — positive lookahead source anchors and unmatched SKIP
 
 The [lookahead-anchor record](PCRE-LOOKAHEAD-ANCHOR-SKIP-STATUS.md) recognizes
