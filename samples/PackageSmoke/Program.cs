@@ -213,4 +213,13 @@ foreach ( var item in PcreAlternativeAnchorSkipCases.All ) {
 }
 Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-alternative-anchor-skip-smoke", patterns = PcreAlternativeAnchorSkipCases.All.Count, cases = pcreAlternativeAnchorSkipCases, failed = 0 } ) );
 
+var pcreLookaheadAnchorSkipCases = 0;
+foreach ( var item in PcreLookaheadAnchorSkipCases.All ) {
+	if ( PcreMatchPolicyConsumer.Run( item ) != item.Outcomes ) {
+		throw new InvalidOperationException( $"PCRE positive lookahead source anchor SKIP definition {item.Id} changed." );
+	}
+	pcreLookaheadAnchorSkipCases += 64;
+}
+Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-lookahead-anchor-skip-smoke", patterns = PcreLookaheadAnchorSkipCases.All.Count, cases = pcreLookaheadAnchorSkipCases, failed = 0 } ) );
+
 Console.WriteLine( $"Icod.Expressions package smoke passed on {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}." );

@@ -1,5 +1,13 @@
 # Recent UTF proof progress
 
+## PR303 — positive lookahead source anchors and unmatched SKIP
+
+The [lookahead-anchor record](PCRE-LOOKAHEAD-ANCHOR-SKIP-STATUS.md) recognizes
+source start anchors through positive lookaheads, including non-atomic forms.
+The corpus adds 2,304 native outcomes across 36 definitions. Two resource cases
+bring the suite to 107,052 tests. A twentieth package record checks the same
+policies. Broader roadmap gates remain open.
+
 ## PR302 — alternative source anchors and unmatched SKIP
 
 The [alternative-anchor record](PCRE-ALTERNATIVE-ANCHOR-SKIP-STATUS.md) checks

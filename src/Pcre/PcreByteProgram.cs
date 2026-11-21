@@ -263,6 +263,7 @@ internal sealed class PcreByteProgramCompiler {
 				var nested = leading switch {
 					PcreByteGroup { Number: > 0 } capture => capture.Body,
 					PcreByteNoncapturingGroup group => group.Body,
+					PcreByteLookahead { IsPositive: true } assertion => assertion.Body,
 					_ => null
 				};
 				if ( nested is not null ) {
