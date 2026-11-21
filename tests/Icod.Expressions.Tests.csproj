@@ -25,6 +25,7 @@
 		<Compile Include="../samples/PackageSmoke/PcreLookaheadAnchorSkipCases.cs" Link="PackageSmoke/PcreLookaheadAnchorSkipCases.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreAtomicAnchorSkipCases.cs" Link="PackageSmoke/PcreAtomicAnchorSkipCases.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreConditionalAnchorSkipCases.cs" Link="PackageSmoke/PcreConditionalAnchorSkipCases.cs" />
+		<Compile Include="../samples/PackageSmoke/PcreAssertionConditionAnchorSkipCases.cs" Link="PackageSmoke/PcreAssertionConditionAnchorSkipCases.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreCaptureAnchorSkipCases.cs" Link="PackageSmoke/PcreCaptureAnchorSkipCases.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreStartAnchorSkipCases.cs" Link="PackageSmoke/PcreStartAnchorSkipCases.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreAssertionSkipCases.cs" Link="PackageSmoke/PcreAssertionSkipCases.cs" />
