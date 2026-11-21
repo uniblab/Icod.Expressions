@@ -160,3 +160,8 @@ runs:
           throw 'Expected one complete 54-pattern/3456-protocol assertion condition source anchor SKIP result.'
         }
         Write-Host 'PASS: assertion guard and else source anchors with unmatched SKIP: 3456 protocols'
+        $pcreRepeatAnchorSkipRecords = @($pcreSmokeOutput | Where-Object { $_ -match '^\{"kind":"pcre-repeat-anchor-skip-smoke",' } | ForEach-Object { $_ | ConvertFrom-Json })
+        if ($pcreRepeatAnchorSkipRecords.Count -ne 1 -or $pcreRepeatAnchorSkipRecords[0].patterns -ne 60 -or $pcreRepeatAnchorSkipRecords[0].cases -ne 3840 -or $pcreRepeatAnchorSkipRecords[0].failed -ne 0) {
+          throw 'Expected one complete 60-pattern/3840-protocol mandatory repeat source anchor SKIP result.'
+        }
+        Write-Host 'PASS: mandatory repeat source anchors and unmatched SKIP: 3840 protocols'

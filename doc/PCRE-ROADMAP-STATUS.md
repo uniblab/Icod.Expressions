@@ -1,5 +1,13 @@
 # PCRE roadmap status
 
+## PR307 — mandatory-repeat source anchors and unmatched SKIP
+
+The [repeat-anchor record](PCRE-REPEAT-ANCHOR-SKIP-STATUS.md) recognizes source
+start anchors through positive-minimum repeats, including possessive wrappers.
+The corpus adds 3,840 native outcomes across 60 definitions. Two resource cases
+bring the suite to 107,267 tests. A twenty-fourth package record checks the same
+policies. Broader roadmap gates remain open.
+
 ## PR306 — assertion-condition source anchors and unmatched SKIP
 
 The [assertion-condition record](PCRE-ASSERTION-CONDITION-ANCHOR-SKIP-STATUS.md)

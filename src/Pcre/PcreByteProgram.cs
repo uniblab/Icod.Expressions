@@ -261,6 +261,8 @@ internal sealed class PcreByteProgramCompiler {
 				var branch = entry.Body.Branches[index];
 				if ( branch.Count == 0 ) { return false; }
 				var leading = branch[0];
+				if ( leading is PcreByteAtomic { Child: PcreByteRepeat { Minimum: > 0 } possessive } ) { leading = possessive; }
+				if ( leading is PcreByteRepeat { Minimum: > 0 } repeat ) { leading = repeat.Child; }
 				if ( leading is PcreByteAssertionConditional {
 					Body.Branches.Count: 2,
 					Assertion: PcreByteLookahead { IsPositive: true, NonAtomic: false } guard
