@@ -258,4 +258,13 @@ foreach ( var item in PcreRepeatAnchorSkipCases.All ) {
 }
 Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-repeat-anchor-skip-smoke", patterns = PcreRepeatAnchorSkipCases.All.Count, cases = pcreRepeatAnchorSkipCases, failed = 0 } ) );
 
+var pcreZeroRepeatAnchorSkipCases = 0;
+foreach ( var item in PcreZeroRepeatAnchorSkipCases.All ) {
+	if ( PcreMatchPolicyConsumer.Run( item ) != item.Outcomes ) {
+		throw new InvalidOperationException( $"PCRE exact-zero repeat source anchor SKIP definition {item.Id} changed." );
+	}
+	pcreZeroRepeatAnchorSkipCases += 64;
+}
+Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-zero-repeat-anchor-skip-smoke", patterns = PcreZeroRepeatAnchorSkipCases.All.Count, cases = pcreZeroRepeatAnchorSkipCases, failed = 0 } ) );
+
 Console.WriteLine( $"Icod.Expressions package smoke passed on {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}." );
