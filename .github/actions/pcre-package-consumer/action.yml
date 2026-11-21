@@ -135,3 +135,8 @@ runs:
           throw 'Expected one complete 32-pattern/2048-protocol capture prefix anchor SKIP result.'
         }
         Write-Host 'PASS: mandatory capture prefixes and source anchor SKIP: 2048 protocols'
+        $pcreAlternativeAnchorSkipRecords = @($pcreSmokeOutput | Where-Object { $_ -match '^\{"kind":"pcre-alternative-anchor-skip-smoke",' } | ForEach-Object { $_ | ConvertFrom-Json })
+        if ($pcreAlternativeAnchorSkipRecords.Count -ne 1 -or $pcreAlternativeAnchorSkipRecords[0].patterns -ne 32 -or $pcreAlternativeAnchorSkipRecords[0].cases -ne 2048 -or $pcreAlternativeAnchorSkipRecords[0].failed -ne 0) {
+          throw 'Expected one complete 32-pattern/2048-protocol alternative source anchor SKIP result.'
+        }
+        Write-Host 'PASS: source anchors across alternatives and unmatched SKIP: 2048 protocols'

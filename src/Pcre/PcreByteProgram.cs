@@ -228,7 +228,7 @@ internal sealed class PcreByteProgramCompiler {
 			UtfXdigitFragmentBarrier = utf8 && matchInvalidUtf && !noStartOptimize && !turkishCasing
 				&& !hasSurrogateLiterals && targets.Count == 0 && HasUtfXdigitFragmentBarrier( root ),
 			DotStarAnchored = !noDotStarAnchor && dotStarEntry,
-			LeadingStartAnchor = HasLeadingStartAnchor(),
+			LeadingStartAnchor = HasLeadingStartAnchor() || hasNamedSkip && HasAlternativeStartAnchor( root ),
 			ScalarExpressionStackDepth = scalarExpressionStackDepth, CommitStartBytes = commitBytes, TurkishCasing = turkishCasing,
 			FirstLineSkipBypassesWindow = instructions.Any( item => item.Opcode is PcreByteOpcode.Skip or PcreByteOpcode.SkipNamed )
 				&& ( noStartOptimize || HasUnfilteredFirstLineSkipEntry( root ) ),
@@ -244,6 +244,37 @@ internal sealed class PcreByteProgramCompiler {
 			return instruction.Opcode is PcreByteOpcode.Start or PcreByteOpcode.SearchStart;
 		}
 		return false;
+	}
+
+	private bool HasAlternativeStartAnchor( PcreByteAlternatives root ) {
+		cancellationToken.ThrowIfCancellationRequested();
+		var entries = new Stack<PcreByteAlternatives>();
+		entries.Push( root );
+		var visits = 0;
+		while ( entries.TryPop( out var entry ) ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			// Each leading node already consumes a visit during compilation.
+			if ( entry.Branches.Count == 0 || entry.Branches.Count > MaximumInstructions - visits - entries.Count ) { return false; }
+			foreach ( var branch in entry.Branches ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				visits++;
+				if ( branch.Count == 0 ) { return false; }
+				var leading = branch[0];
+				var nested = leading switch {
+					PcreByteGroup { Number: > 0 } capture => capture.Body,
+					PcreByteNoncapturingGroup group => group.Body,
+					_ => null
+				};
+				if ( nested is not null ) {
+					if ( entries.Count >= MaximumInstructions - visits ) { return false; }
+					entries.Push( nested );
+					continue;
+				}
+				// NotBol affects execution. Native retains caret's source anchoring.
+				if ( leading is not PcreByteAnchor { IsStart: true } && leading is not PcreByteSearchStart ) { return false; }
+			}
+		}
+		return true;
 	}
 
 	private bool HasUtfXdigitFragmentBarrier( PcreByteAlternatives root ) {

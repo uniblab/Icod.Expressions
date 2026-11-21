@@ -1,5 +1,13 @@
 # Recent UTF proof progress
 
+## PR302 — alternative source anchors and unmatched SKIP
+
+The [alternative-anchor record](PCRE-ALTERNATIVE-ANCHOR-SKIP-STATUS.md) checks
+all leading paths through capturing and noncapturing groups for source start
+anchors. The corpus adds 2,048 native outcomes across 32 definitions. Two
+resource cases bring the suite to 107,014 tests. A nineteenth package record
+checks the same policies. Broader roadmap gates remain open.
+
 ## PR301 — capture prefixes and source-anchor SKIP
 
 The [capture-prefix record](PCRE-CAPTURE-ANCHOR-SKIP-STATUS.md) recognizes
