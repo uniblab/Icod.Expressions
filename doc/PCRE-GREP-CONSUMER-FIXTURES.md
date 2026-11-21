@@ -1,5 +1,13 @@
 # Grep `-P` consumer fixture inventory
 
+## PR301 — capture prefixes and source-anchor SKIP
+
+The [capture-prefix record](PCRE-CAPTURE-ANCHOR-SKIP-STATUS.md) recognizes
+source start anchors behind mandatory leading capture entries for interpreted
+unmatched-name handling. The corpus adds 2,048 native outcomes across 32
+definitions. Two resource cases bring the suite to 106,980 tests. An eighteenth
+package record checks the same policies. Broader roadmap gates remain open.
+
 ## PR300 — direct source start anchors and unmatched SKIP
 
 The [source-anchor record](PCRE-START-ANCHOR-SKIP-STATUS.md) extends the

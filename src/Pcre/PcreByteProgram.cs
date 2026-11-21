@@ -73,6 +73,7 @@ internal sealed record PcreByteProgram(
 ) {
 	internal bool Anchored { get; init; }
 	internal bool DotStarAnchored { get; init; }
+	internal bool LeadingStartAnchor { get; init; }
 	internal bool EndAnchored { get; init; }
 	internal bool FirstLine { get; init; }
 	internal bool NoStartOptimize { get; init; }
@@ -227,11 +228,22 @@ internal sealed class PcreByteProgramCompiler {
 			UtfXdigitFragmentBarrier = utf8 && matchInvalidUtf && !noStartOptimize && !turkishCasing
 				&& !hasSurrogateLiterals && targets.Count == 0 && HasUtfXdigitFragmentBarrier( root ),
 			DotStarAnchored = !noDotStarAnchor && dotStarEntry,
+			LeadingStartAnchor = HasLeadingStartAnchor(),
 			ScalarExpressionStackDepth = scalarExpressionStackDepth, CommitStartBytes = commitBytes, TurkishCasing = turkishCasing,
 			FirstLineSkipBypassesWindow = instructions.Any( item => item.Opcode is PcreByteOpcode.Skip or PcreByteOpcode.SkipNamed )
 				&& ( noStartOptimize || HasUnfilteredFirstLineSkipEntry( root ) ),
 			PathMarkSlot = pathMarkSlot, TrackPathMarks = hasNamedSkip, HasSurrogateLiterals = hasSurrogateLiterals
 		};
+	}
+
+	private bool HasLeadingStartAnchor() {
+		foreach ( var instruction in instructions ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			// Only numbered group entries qualify; group zero resets match start.
+			if ( instruction.Opcode == PcreByteOpcode.CaptureStart && instruction.First > 0 ) { continue; }
+			return instruction.Opcode is PcreByteOpcode.Start or PcreByteOpcode.SearchStart;
+		}
+		return false;
 	}
 
 	private bool HasUtfXdigitFragmentBarrier( PcreByteAlternatives root ) {

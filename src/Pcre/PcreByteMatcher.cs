@@ -363,7 +363,7 @@ internal static partial class PcreByteMatcher {
 									if ( skipPosition < 0 ) {
 										if ( pruneBoundary > 0 ) { skipPosition = position; } // The active callee catches the unresolved name.
 										else {
-											if ( !matchTimeAnchoring || !( anchored || program.Instructions[0].Opcode is PcreByteOpcode.SearchStart or PcreByteOpcode.Start ) ) {
+											if ( !matchTimeAnchoring || !( anchored || program.LeadingStartAnchor ) ) {
 												pc++; break; // The ignored name needs no cut frame.
 											}
 											// The native anchored driver stops before unmatched-name replay.
