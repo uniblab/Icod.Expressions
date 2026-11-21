@@ -21,6 +21,7 @@
 		</PackageReference>
 	</ItemGroup>
 	<ItemGroup>
+		<Compile Include="../samples/PackageSmoke/PcreAlternativeAnchorSkipCases.cs" Link="PackageSmoke/PcreAlternativeAnchorSkipCases.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreCaptureAnchorSkipCases.cs" Link="PackageSmoke/PcreCaptureAnchorSkipCases.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreStartAnchorSkipCases.cs" Link="PackageSmoke/PcreStartAnchorSkipCases.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreAssertionSkipCases.cs" Link="PackageSmoke/PcreAssertionSkipCases.cs" />
