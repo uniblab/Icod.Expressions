@@ -140,3 +140,8 @@ runs:
           throw 'Expected one complete 32-pattern/2048-protocol alternative source anchor SKIP result.'
         }
         Write-Host 'PASS: source anchors across alternatives and unmatched SKIP: 2048 protocols'
+        $pcreLookaheadAnchorSkipRecords = @($pcreSmokeOutput | Where-Object { $_ -match '^\{"kind":"pcre-lookahead-anchor-skip-smoke",' } | ForEach-Object { $_ | ConvertFrom-Json })
+        if ($pcreLookaheadAnchorSkipRecords.Count -ne 1 -or $pcreLookaheadAnchorSkipRecords[0].patterns -ne 36 -or $pcreLookaheadAnchorSkipRecords[0].cases -ne 2304 -or $pcreLookaheadAnchorSkipRecords[0].failed -ne 0) {
+          throw 'Expected one complete 36-pattern/2304-protocol positive lookahead source anchor SKIP result.'
+        }
+        Write-Host 'PASS: positive lookahead source anchors and unmatched SKIP: 2304 protocols'
