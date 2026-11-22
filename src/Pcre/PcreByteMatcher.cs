@@ -858,9 +858,12 @@ internal static partial class PcreByteMatcher {
 								var acceptedScopeDepth = backtrack.Peek().AtomicDepth;
 								atomicDepths.RemoveRange( acceptedScopeDepth, atomicDepths.Count - acceptedScopeDepth );
 								if ( matchTimeAnchoring ) {
-									// Interpreted assertion ACCEPT returns captures and the mark to
-									// its caller while leaving the caller's reported start in place.
+									// Interpreted assertion ACCEPT keeps the caller's reported start.
 									captureStarts[0] = acceptedScope.ReportedStart;
+									if ( acceptedScope.Kind == FrameKind.ConditionalAssertion && program.PathMarkSlot >= 0 ) {
+										// A condition returns captures and restores its entry mark.
+										marks[program.PathMarkSlot] = acceptedScope.EntryLabel;
+									}
 								}
 								pc = instruction.First; // Bypass ReverseEnd/script-run/body suffixes.
 								break;
@@ -963,7 +966,8 @@ internal static partial class PcreByteMatcher {
 							// JIT narrows subject visibility at a variable lookbehind endpoint.
 							var visibleEnd = !matchTimeAnchoring && ( instruction.Second & 2 ) != 0 ? position : endLimit;
 							assertionScopes.Add( new( backtrack.Count, visibleEnd,
-								activeScope, instruction.First, position, captureStarts[0], guard.Kind, ( instruction.Second & 16 ) != 0 ) );
+								activeScope, instruction.First, position, captureStarts[0],
+								program.PathMarkSlot >= 0 ? marks[program.PathMarkSlot] : 0, guard.Kind, ( instruction.Second & 16 ) != 0 ) );
 							activeScope = scopeId;
 							backtrack.Push( guard ); // Forces body mutations into the shared journal.
 							pc++;
@@ -1248,7 +1252,8 @@ internal static partial class PcreByteMatcher {
 	private readonly record struct CallScope( int ReturnPc, int Parent, int ChangeCount, int Number, int AssertionScope, int Boundary, int EntryLabel );
 
 	private readonly record struct AssertionScope(
-		int Boundary, int LimitEnd, int Parent, int ReturnPc, int Position, int ReportedStart, FrameKind Kind, bool IsolatePathMarks
+		int Boundary, int LimitEnd, int Parent, int ReturnPc, int Position, int ReportedStart, int EntryLabel,
+		FrameKind Kind, bool IsolatePathMarks
 	);
 
 	private readonly record struct Frame(
