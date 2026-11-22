@@ -72,6 +72,7 @@ internal sealed record PcreByteProgram(
 	bool LineStartSearch, bool Ucp, PcreBytePrefixLiteral? ByteCrLfPrefixLiteral
 ) {
 	internal bool HasNonAtomicAccept { get; init; }
+	internal bool NoJit { get; init; }
 	internal bool Anchored { get; init; }
 	internal bool DotStarAnchored { get; init; }
 	internal bool LeadingStartAnchor { get; init; }

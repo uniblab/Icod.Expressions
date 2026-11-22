@@ -225,3 +225,8 @@ runs:
           throw 'Expected one complete 40-pattern/2560-protocol non-atomic ACCEPT dispatch result.'
         }
         Write-Host 'PASS: non-atomic ACCEPT interpreter dispatch: 2560 protocols'
+        $pcreNoJitDirectiveRecords = @($pcreSmokeOutput | Where-Object { $_ -match '^\{"kind":"pcre-no-jit-directive-smoke",' } | ForEach-Object { $_ | ConvertFrom-Json })
+        if ($pcreNoJitDirectiveRecords.Count -ne 1 -or $pcreNoJitDirectiveRecords[0].patterns -ne 40 -or $pcreNoJitDirectiveRecords[0].cases -ne 2560 -or $pcreNoJitDirectiveRecords[0].failed -ne 0) {
+          throw 'Expected one complete 40-pattern/2560-protocol NO_JIT directive result.'
+        }
+        Write-Host 'PASS: NO_JIT start directive: 2560 protocols'

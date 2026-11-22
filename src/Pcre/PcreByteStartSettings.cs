@@ -5,6 +5,8 @@ internal readonly record struct PcreByteStartSettings(
 	bool Utf8, bool Ucp, PcreByteNewline Newline, bool BsrAnyCrLf, bool NotEmpty, bool NotEmptyAtStart, int BodyOffset,
 	bool CaselessRestricted, bool TurkishCasing, bool NoAutoPossess, bool NoStartOptimize, bool NoDotStarAnchor
 ) {
+	internal bool NoJit { get; init; }
+
 	internal static PcreByteStartSettings Parse( ReadOnlySpan<byte> source, PcreByteOptions options,
 		CancellationToken cancellationToken ) {
 		var utf8 = options.Utf8 || options.MatchInvalidUtf;
@@ -15,6 +17,7 @@ internal readonly record struct PcreByteStartSettings(
 		var notEmptyAtStart = options.NotEmptyAtStart;
 		var caselessRestricted = options.CaselessRestricted;
 		var turkishCasing = options.TurkishCasing;
+		var noJit = false;
 		var noAutoPossess = options.NoAutoPossess;
 		var noStartOptimize = options.NoStartOptimize;
 		var noDotStarAnchor = options.NoDotStarAnchor;
@@ -28,6 +31,7 @@ internal readonly record struct PcreByteStartSettings(
 			else if ( TryConsume( source, ref offset, "(*UCP)"u8 ) ) { ucp = true; }
 			else if ( TryConsume( source, ref offset, "(*CASELESS_RESTRICT)"u8 ) ) { caselessRestricted = true; }
 			else if ( TryConsume( source, ref offset, "(*TURKISH_CASING)"u8 ) ) { turkishCasing = true; }
+			else if ( TryConsume( source, ref offset, "(*NO_JIT)"u8 ) ) { noJit = true; }
 			else if ( TryConsume( source, ref offset, "(*NO_AUTO_POSSESS)"u8 ) ) { noAutoPossess = true; }
 			else if ( TryConsume( source, ref offset, "(*NO_START_OPT)"u8 ) ) { noStartOptimize = true; }
 			else if ( TryConsume( source, ref offset, "(*NO_DOTSTAR_ANCHOR)"u8 ) ) { noDotStarAnchor = true; }
@@ -43,7 +47,9 @@ internal readonly record struct PcreByteStartSettings(
 			else if ( TryConsume( source, ref offset, "(*NOTEMPTY_ATSTART)"u8 ) ) { notEmptyAtStart = true; }
 			else { break; }
 		}
-		return new( utf8, ucp, newline, bsrAnyCrLf, notEmpty, notEmptyAtStart, offset, caselessRestricted, turkishCasing, noAutoPossess, noStartOptimize, noDotStarAnchor );
+		return new( utf8, ucp, newline, bsrAnyCrLf, notEmpty, notEmptyAtStart, offset, caselessRestricted, turkishCasing, noAutoPossess, noStartOptimize, noDotStarAnchor ) {
+			NoJit = noJit
+		};
 	}
 
 	private static bool TryConsume( ReadOnlySpan<byte> source, ref int offset, ReadOnlySpan<byte> directive ) {
