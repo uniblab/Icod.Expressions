@@ -1,5 +1,13 @@
 # Grep `-P` consumer fixture inventory
 
+## PR310 — named control verb prefixes and unmatched SKIP
+
+The [verb-prefix record](PCRE-VERB-PREFIX-ANCHOR-SKIP-STATUS.md) recognizes
+source start anchors after leading MARK and named backtracking verbs. The
+corpus adds 3,072 native outcomes across 48 definitions. Two resource cases
+bring the suite to 107,417 tests. A twenty-seventh package record checks the
+same policies. Broader roadmap gates remain open.
+
 ## PR309 — skipped static condition prefixes and unmatched SKIP
 
 The [static-prefix record](PCRE-STATIC-PREFIX-ANCHOR-SKIP-STATUS.md) recognizes

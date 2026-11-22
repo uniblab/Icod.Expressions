@@ -276,4 +276,13 @@ foreach ( var item in PcreStaticPrefixAnchorSkipCases.All ) {
 }
 Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-static-prefix-anchor-skip-smoke", patterns = PcreStaticPrefixAnchorSkipCases.All.Count, cases = pcreStaticPrefixAnchorSkipCases, failed = 0 } ) );
 
+var pcreVerbPrefixAnchorSkipCases = 0;
+foreach ( var item in PcreVerbPrefixAnchorSkipCases.All ) {
+	if ( PcreMatchPolicyConsumer.Run( item ) != item.Outcomes ) {
+		throw new InvalidOperationException( $"PCRE named verb prefix source anchor SKIP definition {item.Id} changed." );
+	}
+	pcreVerbPrefixAnchorSkipCases += 64;
+}
+Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-verb-prefix-anchor-skip-smoke", patterns = PcreVerbPrefixAnchorSkipCases.All.Count, cases = pcreVerbPrefixAnchorSkipCases, failed = 0 } ) );
+
 Console.WriteLine( $"Icod.Expressions package smoke passed on {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}." );
