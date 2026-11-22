@@ -859,14 +859,6 @@ internal static partial class PcreByteMatcher {
 								pc = instruction.First; // Bypass ReverseEnd/script-run/body suffixes.
 								break;
 							}
-							if ( endAnchored && position != matchEnd ) {
-								// A short root ACCEPT abandons this candidate, including cuts
-								// and alternatives. Scoped exits above retain their own meaning.
-								backtrack.Clear();
-								failed = true;
-								break;
-							}
-							// Root NOTEMPTY rejection is retryable, including synthetic closes.
 							goto case PcreByteOpcode.Accept;
 						case PcreByteOpcode.Return:
 							var caller = callScopes![activeCall];
@@ -993,16 +985,16 @@ internal static partial class PcreByteMatcher {
 							}
 							break;
 						case PcreByteOpcode.Accept:
-							if ( endAnchored && position != matchEnd ) {
-								// Ordinary completion can retry a saved path that consumes more.
-								failed = true;
-								break;
-							}
 							var reportedStart = captureStarts[0];
-							// Reject at final acceptance so ordinary saved paths can retry.
 							// K may have moved the reported start beyond the candidate start.
-							if ( position == reportedStart && ( notEmpty
-								|| notEmptyAtStart && position == startOffset ) ) {
+							var rejectedEmpty = position == reportedStart && ( notEmpty
+								|| notEmptyAtStart && position == startOffset );
+							var rejectedEnd = endAnchored && position != matchEnd;
+							if ( rejectedEmpty || rejectedEnd ) {
+								// A short root ACCEPT abandons this candidate. The interpreter
+								// backtracks first when the empty-match check rejects it.
+								if ( rejectedEnd && instruction.Opcode == PcreByteOpcode.EarlyAccept
+									&& ( !matchTimeAnchoring || !rejectedEmpty ) ) { backtrack.Clear(); }
 								failed = true;
 								break;
 							}
