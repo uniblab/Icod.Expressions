@@ -366,4 +366,13 @@ foreach ( var item in PcreNonAtomicAcceptDispatchCases.All ) {
 }
 Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-nonatomic-accept-dispatch-smoke", patterns = PcreNonAtomicAcceptDispatchCases.All.Count, cases = pcreNonAtomicAcceptDispatchCases, failed = 0 } ) );
 
+var pcreNoJitDirectiveCases = 0;
+foreach ( var item in PcreNoJitDirectiveCases.All ) {
+	if ( PcreMatchPolicyConsumer.Run( item ) != item.Outcomes ) {
+		throw new InvalidOperationException( $"PCRE NO_JIT directive definition {item.Id} changed." );
+	}
+	pcreNoJitDirectiveCases += 64;
+}
+Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-no-jit-directive-smoke", patterns = PcreNoJitDirectiveCases.All.Count, cases = pcreNoJitDirectiveCases, failed = 0 } ) );
+
 Console.WriteLine( $"Icod.Expressions package smoke passed on {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}." );

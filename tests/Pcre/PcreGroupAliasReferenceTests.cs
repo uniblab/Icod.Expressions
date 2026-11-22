@@ -108,7 +108,7 @@ public sealed class PcreGroupAliasReferenceTests {
 	}
 
 	[Theory]
-	[InlineData( "(*NO_JIT)a" )]
+	[InlineData( "(*LIMIT_DEPTH=10)a" )]
 	[InlineData( "(*LIMIT_MATCH=1000000)a" )]
 	[InlineData( "(*LIMIT_MATCH=10)" )]
 	public void OtherValidNativeConstructsAreNeverReinterpretedAsAtomicAliases( string pattern ) {

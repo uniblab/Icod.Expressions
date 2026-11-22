@@ -37,10 +37,10 @@ internal static partial class PcreByteMatcher {
 		var endAnchored = program.EndAnchored || policy.EndAnchored;
 		var notEmpty = program.NotEmpty || policy.NotEmpty;
 		var notEmptyAtStart = program.NotEmptyAtStart || policy.NotEmptyAtStart;
-		// Native uses interpreted matching for call-time anchors or an ACCEPT
-		// lexically inside a non-atomic assertion. This selects semantics for
-		// the whole pattern, including fragment retries in tolerant UTF.
-		var interpreted = program.HasNonAtomicAccept || policy.Anchored || policy.EndAnchored;
+		// Native uses interpreted matching for NO_JIT, call-time anchors, or
+		// an ACCEPT lexically inside a non-atomic assertion. This selects semantics
+		// for the whole pattern, including fragment retries in tolerant UTF.
+		var interpreted = program.NoJit || program.HasNonAtomicAccept || policy.Anchored || policy.EndAnchored;
 		var interpretedUtfFragments = program.MatchInvalidUtf && interpreted;
 		var retainAnchoredFragment = anchored && !interpretedUtfFragments;
 		var surrogateLiterals = program.MatchInvalidUtf && program.HasSurrogateLiterals;

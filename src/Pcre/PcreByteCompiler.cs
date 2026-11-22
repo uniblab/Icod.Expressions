@@ -61,7 +61,7 @@ internal static class PcreByteCompiler {
 				noDotStarAnchor: settings.NoDotStarAnchor
 			).Compile( root, parser.SubroutineTargets ) with {
 				Anchored = options.Anchored, EndAnchored = options.EndAnchored, FirstLine = options.FirstLine,
-				HasNonAtomicAccept = parser.HasNonAtomicAccept
+				HasNonAtomicAccept = parser.HasNonAtomicAccept, NoJit = settings.NoJit
 			};
 			return new(
 				new PcreCompiledBytePattern( program, parser.GroupCount, options.MatchWorkLimit, options.WorkObserver, parser.CreateCaptureInfo() ),

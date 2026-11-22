@@ -1291,9 +1291,9 @@ public sealed class PcreTurkishCasingReferenceTests {
 	[InlineData( "(*turkish_casing)", 0 )]
 	[InlineData( "(*TURKISH_CASING:x)", 0 )]
 	[InlineData( "(*TURKISH_CASINGX)", 0 )]
-	[InlineData( "(*TURKISH_CASING)(*NO_JIT)", 17 )]
+	[InlineData( "(*TURKISH_CASING)(*LIMIT_MATCH=1000000)", 17 )]
 	public void MisplacedNonExactAndPendingHeadersStayExplicit( string pattern, int offset ) {
-		if ( !pattern.EndsWith( "(*NO_JIT)", StringComparison.Ordinal ) ) { Assert.Throws<PcrePatternException>( () => Reference( pattern, Options( 0 ) ) ); }
+		if ( !pattern.EndsWith( "(*LIMIT_MATCH=1000000)", StringComparison.Ordinal ) ) { Assert.Throws<PcrePatternException>( () => Reference( pattern, Options( 0 ) ) ); }
 		else { Reference( pattern, Options( 0 ) ); }
 		var result = PcreByteCompiler.Compile( Encoding.UTF8.GetBytes( pattern ), Options( 0 ) ); Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code ); Assert.Equal( offset, result.Diagnostic?.ByteOffset );
 	}

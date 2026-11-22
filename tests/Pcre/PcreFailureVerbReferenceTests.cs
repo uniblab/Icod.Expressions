@@ -117,7 +117,7 @@ public sealed class PcreFailureVerbReferenceTests {
 	[InlineData( @"(*fail)", true )]
 	[InlineData( @"(*FA)", true )]
 	[InlineData( @"(*FAILx)", true )]
-	[InlineData( @"(*NO_JIT)(*FAIL)", false )]
+	[InlineData( @"(*LIMIT_HEAP=10)(*FAIL)", false )]
 	[InlineData( @"(*LIMIT_MATCH=1000000)(*FAIL)", false )]
 	public void NonExactHeadersAndPendingDirectivesRemainRejected( string pattern, bool invalidNative ) {
 		if ( invalidNative ) { Assert.Throws<PcrePatternException>( () => Reference( pattern, new() ) ); }
