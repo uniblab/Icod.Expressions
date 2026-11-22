@@ -668,7 +668,7 @@ internal static partial class PcreByteMatcher {
 							}
 							break;
 						case PcreByteOpcode.ReverseEnd:
-							if ( position == subjectEnd ) { pc++; } else { failed = true; }
+							if ( position == assertionScopes![activeScope].Position ) { pc++; } else { failed = true; }
 							break;
 						case PcreByteOpcode.AssertLiteral:
 							var literal = instruction.Bytes.Span;
@@ -962,7 +962,9 @@ internal static partial class PcreByteMatcher {
 									: ( instruction.Second & 4 ) != 0 ? FrameKind.NonAtomicAssertion
 									: ( instruction.Second & 1 ) != 0 ? FrameKind.PositiveAssertion : FrameKind.NegativeAssertion, CallScope: activeCall );
 							var scopeId = assertionScopes.Count;
-							assertionScopes.Add( new( backtrack.Count, ( instruction.Second & 2 ) != 0 ? position : endLimit,
+							// JIT narrows subject visibility at a variable lookbehind endpoint.
+							var visibleEnd = !matchTimeAnchoring && ( instruction.Second & 2 ) != 0 ? position : endLimit;
+							assertionScopes.Add( new( backtrack.Count, visibleEnd,
 								activeScope, instruction.First, position, guard.Kind, ( instruction.Second & 16 ) != 0 ) );
 							activeScope = scopeId;
 							backtrack.Push( guard ); // Forces body mutations into the shared journal.

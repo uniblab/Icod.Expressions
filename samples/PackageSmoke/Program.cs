@@ -312,4 +312,13 @@ foreach ( var item in PcreInterpretedFirstLineCases.All ) {
 }
 Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-interpreted-first-line-smoke", patterns = PcreInterpretedFirstLineCases.All.Count, cases = pcreInterpretedFirstLineCases, failed = 0 } ) );
 
+var pcreInterpretedLookbehindEndCases = 0;
+foreach ( var item in PcreInterpretedLookbehindEndCases.All ) {
+	if ( PcreMatchPolicyConsumer.Run( item ) != item.Outcomes ) {
+		throw new InvalidOperationException( $"PCRE interpreted variable lookbehind definition {item.Id} changed." );
+	}
+	pcreInterpretedLookbehindEndCases += 64;
+}
+Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-interpreted-lookbehind-end-smoke", patterns = PcreInterpretedLookbehindEndCases.All.Count, cases = pcreInterpretedLookbehindEndCases, failed = 0 } ) );
+
 Console.WriteLine( $"Icod.Expressions package smoke passed on {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}." );
