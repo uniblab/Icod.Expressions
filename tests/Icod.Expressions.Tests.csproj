@@ -37,6 +37,7 @@
 		<Compile Include="../samples/PackageSmoke/PcreInterpretedAcceptPolicyCases.cs" Link="PackageSmoke/PcreInterpretedAcceptPolicyCases.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreAssertionAcceptStartCases.cs" Link="PackageSmoke/PcreAssertionAcceptStartCases.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreInterpretedAcceptedCallMarkCases.cs" Link="PackageSmoke/PcreInterpretedAcceptedCallMarkCases.cs" />
+		<Compile Include="../samples/PackageSmoke/PcreNonAtomicAcceptDispatchCases.cs" Link="PackageSmoke/PcreNonAtomicAcceptDispatchCases.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreConditionalAcceptMarkCases.cs" Link="PackageSmoke/PcreConditionalAcceptMarkCases.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreCaptureAnchorSkipCases.cs" Link="PackageSmoke/PcreCaptureAnchorSkipCases.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreStartAnchorSkipCases.cs" Link="PackageSmoke/PcreStartAnchorSkipCases.cs" />
