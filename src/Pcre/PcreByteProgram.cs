@@ -259,7 +259,7 @@ internal sealed class PcreByteProgramCompiler {
 				var branch = entry.Body.Branches[index];
 				var first = 0;
 				PcreByteNode leading;
-				// Native skips exact-zero repeats and one-branch false conditions.
+				// Native advances past these prefixes to find the first significant opcode.
 				do {
 					cancellationToken.ThrowIfCancellationRequested();
 					if ( first == branch.Count || visits >= MaximumInstructions - entries.Count ) { return false; }
@@ -268,7 +268,11 @@ internal sealed class PcreByteProgramCompiler {
 				} while ( leading is PcreByteRepeat { Maximum: 0 }
 					or PcreByteAtomic { Child: PcreByteRepeat { Maximum: 0 } }
 					or PcreByteStaticConditional { Value: false, Body.Branches.Count: 1 }
-					or PcreByteRepeat { Child: PcreByteStaticConditional { Value: false, Body.Branches.Count: 1 } } );
+					or PcreByteRepeat { Child: PcreByteStaticConditional { Value: false, Body.Branches.Count: 1 } }
+					or PcreBytePathMark or PcreByteNamedSkip
+					or PcreByteCommit { Name.IsEmpty: false }
+					or PcreBytePrune { Name.IsEmpty: false }
+					or PcreByteThen { Name.IsEmpty: false } );
 				if ( leading is PcreByteAtomic { Child: PcreByteRepeat { Minimum: > 0 } possessive } ) { leading = possessive; }
 				if ( leading is PcreByteRepeat { Minimum: > 0 } repeat ) { leading = repeat.Child; }
 				if ( leading is PcreByteAssertionConditional {
