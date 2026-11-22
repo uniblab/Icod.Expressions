@@ -303,4 +303,13 @@ foreach ( var item in PcreInterpretedForwardSkipCases.All ) {
 }
 Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-interpreted-forward-skip-smoke", patterns = PcreInterpretedForwardSkipCases.All.Count, cases = pcreInterpretedForwardSkipCases, failed = 0 } ) );
 
+var pcreInterpretedFirstLineCases = 0;
+foreach ( var item in PcreInterpretedFirstLineCases.All ) {
+	if ( PcreMatchPolicyConsumer.Run( item ) != item.Outcomes ) {
+		throw new InvalidOperationException( $"PCRE interpreted FIRSTLINE definition {item.Id} changed." );
+	}
+	pcreInterpretedFirstLineCases += 64;
+}
+Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-interpreted-first-line-smoke", patterns = PcreInterpretedFirstLineCases.All.Count, cases = pcreInterpretedFirstLineCases, failed = 0 } ) );
+
 Console.WriteLine( $"Icod.Expressions package smoke passed on {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}." );

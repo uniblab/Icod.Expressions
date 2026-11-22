@@ -219,6 +219,10 @@ internal static partial class PcreByteMatcher {
 					&& ( input.Span[startOffset] & 0xC0 ) != 0x80 ) { xdigitFragmentEnd = fragment.End; }
 				var fragmentOffset = Math.Max( searchOffset, fragment.Start );
 				var matchEnd = interpretedUtfFragments ? fragment.End : input.Length;
+				if ( interpretedUtfFragments && program.FirstLine ) {
+					// The interpreter starts a new first-line search in each valid fragment.
+					firstLinePosition = fragmentOffset;
+				}
 				for ( var start = fragmentOffset; start <= fragment.End; start++ ) {
 					if ( anchored && start != ( interpretedUtfFragments ? fragmentOffset : startOffset ) && start != forcedSkipStart ) { return new( null, null ); }
 					if ( program.UtfXdigitFragmentBarrier && start > xdigitFragmentEnd ) { return new( null, null ); }
@@ -229,9 +233,13 @@ internal static partial class PcreByteMatcher {
 						&& !( start == forcedSkipStart && program.FirstLineSkipBypassesWindow ) ) {
 						while ( firstLinePosition < start ) {
 							Step(); // Inspect one intervening scalar or malformed byte.
-							if ( IsNewlineAt( program, input.Span, firstLinePosition, input.Length ) ) { return new( null, null ); }
+							if ( IsNewlineAt( program, input.Span, firstLinePosition, matchEnd ) ) { break; }
 							firstLinePosition += program.Utf8 && PcreUtf8.TryReadLiteral( input.Span, firstLinePosition,
 								surrogateLiterals, out _, out var firstLineWidth ) ? firstLineWidth : 1;
+						}
+						if ( firstLinePosition < start ) {
+							if ( interpretedUtfFragments ) { break; }
+							return new( null, null );
 						}
 					}
 					forcedSkipStart = -1; // Consume an explicitly selected entry before matching.
@@ -1095,6 +1103,7 @@ internal static partial class PcreByteMatcher {
 						// The interpreter tests the failed candidate before changing its start.
 						if ( program.FirstLine && IsNewlineAt( program, input.Span, start, fragment.End ) ) { break; }
 						skipRestart = AdvancePastCrLfTail( program, input.Span, skipRestart, fragment.End, startOffset );
+						firstLinePosition = skipRestart;
 					}
 					// JIT enters the explicit target directly. The loop increment supplies the entry byte.
 					forcedSkipStart = skipRestart;
