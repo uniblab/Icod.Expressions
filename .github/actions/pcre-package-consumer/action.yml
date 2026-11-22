@@ -215,3 +215,8 @@ runs:
           throw 'Expected one complete 40-pattern/2560-protocol interpreted accepted-call mark result.'
         }
         Write-Host 'PASS: interpreted accepted-call mark rollback: 2560 protocols'
+        $pcreConditionalAcceptMarkRecords = @($pcreSmokeOutput | Where-Object { $_ -match '^\{"kind":"pcre-conditional-accept-mark-smoke",' } | ForEach-Object { $_ | ConvertFrom-Json })
+        if ($pcreConditionalAcceptMarkRecords.Count -ne 1 -or $pcreConditionalAcceptMarkRecords[0].patterns -ne 40 -or $pcreConditionalAcceptMarkRecords[0].cases -ne 2560 -or $pcreConditionalAcceptMarkRecords[0].failed -ne 0) {
+          throw 'Expected one complete 40-pattern/2560-protocol conditional ACCEPT mark result.'
+        }
+        Write-Host 'PASS: interpreted conditional ACCEPT mark restoration: 2560 protocols'
