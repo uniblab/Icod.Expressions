@@ -285,4 +285,13 @@ foreach ( var item in PcreVerbPrefixAnchorSkipCases.All ) {
 }
 Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-verb-prefix-anchor-skip-smoke", patterns = PcreVerbPrefixAnchorSkipCases.All.Count, cases = pcreVerbPrefixAnchorSkipCases, failed = 0 } ) );
 
+var pcreInterpretedSkipReplayCases = 0;
+foreach ( var item in PcreInterpretedSkipReplayCases.All ) {
+	if ( PcreMatchPolicyConsumer.Run( item ) != item.Outcomes ) {
+		throw new InvalidOperationException( $"PCRE interpreted named SKIP replay definition {item.Id} changed." );
+	}
+	pcreInterpretedSkipReplayCases += 64;
+}
+Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-interpreted-skip-replay-smoke", patterns = PcreInterpretedSkipReplayCases.All.Count, cases = pcreInterpretedSkipReplayCases, failed = 0 } ) );
+
 Console.WriteLine( $"Icod.Expressions package smoke passed on {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}." );

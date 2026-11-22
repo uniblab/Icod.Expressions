@@ -196,6 +196,7 @@ internal static partial class PcreByteMatcher {
 			var previousFragmentEnd = -1;
 			var firstLinePosition = startOffset;
 			var forcedSkipStart = -1;
+			var ignoredNamedSkips = 0;
 			var xdigitFragmentEnd = startOffset;
 			for ( var fragmentIndex = 0; fragmentIndex < fragments.Count; ) {
 				var fragment = fragments[fragmentIndex];
@@ -228,18 +229,12 @@ internal static partial class PcreByteMatcher {
 						&& !( start == forcedSkipStart && program.FirstLineSkipBypassesWindow ) ) {
 						while ( firstLinePosition < start ) {
 							Step(); // Inspect one intervening scalar or malformed byte.
-							var atNewline = program.Newline == PcreByteNewline.Any
-								? PcreByteNewlineExtensions.AnyLengthAt( input.Span, firstLinePosition, input.Length, program.Utf8 ) > 0
-								: program.Newline == PcreByteNewline.CrLf
-								? PcreByteNewlineExtensions.IsCrLf( input.Span, firstLinePosition, input.Length )
-								: input.Span[firstLinePosition] == program.NewlineCharacter
-									|| program.AnyCrLfNewline && input.Span[firstLinePosition] == (byte)'\r';
-							if ( atNewline ) { return new( null, null ); }
+							if ( IsNewlineAt( program, input.Span, firstLinePosition, input.Length ) ) { return new( null, null ); }
 							firstLinePosition += program.Utf8 && PcreUtf8.TryReadLiteral( input.Span, firstLinePosition,
 								surrogateLiterals, out _, out var firstLineWidth ) ? firstLineWidth : 1;
 						}
 					}
-					forcedSkipStart = -1; // Only an explicit forward SKIP admits this entry.
+					forcedSkipStart = -1; // Consume an explicitly selected entry before matching.
 					if ( leadingLiteral >= 0 ) {
 						var next = input.Span.Slice( start, fragment.End - start ).IndexOf( (byte)leadingLiteral );
 						if ( next < 0 ) {
@@ -257,6 +252,8 @@ internal static partial class PcreByteMatcher {
 					var position = start;
 					var utfRepeatEnd = start;
 					var skipRestart = -1;
+					var namedSkipCount = 0;
+					var replayNamedSkip = false;
 					var committedFragment = false;
 					var pc = 0;
 					Array.Clear( captures );
@@ -292,6 +289,10 @@ internal static partial class PcreByteMatcher {
 						case PcreByteOpcode.Skip:
 						case PcreByteOpcode.SkipNamed:
 						case PcreByteOpcode.Prune:
+							if ( matchTimeAnchoring && instruction.Opcode == PcreByteOpcode.SkipNamed ) {
+								namedSkipCount++;
+								if ( namedSkipCount <= ignoredNamedSkips ) { pc++; break; }
+							}
 							if ( instruction.Opcode != PcreByteOpcode.SkipNamed && backtrack.Count >= MaximumBacktrackFrames ) {
 								throw new MatchLimitException( PcreByteDiagnosticCode.MatchDepthLimitExceeded, "backtrack stack limit exceeded" );
 							}
@@ -322,7 +323,7 @@ internal static partial class PcreByteMatcher {
 								pruneBoundary = Math.Max( pruneBoundary, marks[instruction.First] + instruction.Second );
 							}
 							var skipPosition = position;
-							var unmatchedAnchoredSkip = false;
+							var unmatchedNamedSkip = false;
 							if ( instruction.Opcode == PcreByteOpcode.SkipNamed ) {
 								// Native JIT takes a local assertion/callee quit before lookup.
 								// Root lookup sees only history still visible to backtracking;
@@ -363,12 +364,9 @@ internal static partial class PcreByteMatcher {
 									if ( skipPosition < 0 ) {
 										if ( pruneBoundary > 0 ) { skipPosition = position; } // The active callee catches the unresolved name.
 										else {
-											if ( !matchTimeAnchoring || !( anchored || program.LeadingStartAnchor ) ) {
-												pc++; break; // The ignored name needs no cut frame.
-											}
-											// The native anchored driver stops before unmatched-name replay.
-											// Delay termination until failure actually reaches this verb.
-											unmatchedAnchoredSkip = true;
+											if ( !matchTimeAnchoring ) { pc++; break; }
+											// The interpreter can replay this candidate when failure reaches the verb.
+											unmatchedNamedSkip = true;
 											skipPosition = position;
 										}
 									}
@@ -383,7 +381,7 @@ internal static partial class PcreByteMatcher {
 								activeScope, instruction.Opcode switch {
 									PcreByteOpcode.Then => instruction.First >= 0 ? FrameKind.ThenAlternative : FrameKind.Then,
 									PcreByteOpcode.Commit => FrameKind.Commit,
-									PcreByteOpcode.SkipNamed when unmatchedAnchoredSkip => FrameKind.Commit,
+									PcreByteOpcode.SkipNamed when unmatchedNamedSkip => FrameKind.SkipReplay,
 									PcreByteOpcode.Skip or PcreByteOpcode.SkipNamed => FrameKind.Skip, _ => FrameKind.Prune
 								}, CallScope: activeCall ) );
 							if ( instruction.PropertyValue > 0 ) {
@@ -1016,7 +1014,7 @@ internal static partial class PcreByteMatcher {
 						pc = frame.Pc;
 						position = frame.Position;
 						if ( frame.Kind == FrameKind.PathMark ) { continue; } // History has no retry edge.
-						if ( frame.Kind is FrameKind.Prune or FrameKind.Skip or FrameKind.Commit or FrameKind.Then or FrameKind.ThenAlternative ) {
+						if ( frame.Kind is FrameKind.Prune or FrameKind.Skip or FrameKind.SkipReplay or FrameKind.Commit or FrameKind.Then or FrameKind.ThenAlternative ) {
 							if ( !matchTimeAnchoring && activeCall >= 0
 								&& frame.Pc == callScopes![activeCall].Boundary && frame.Kind != FrameKind.ThenAlternative ) {
 								var cutCall = callScopes[activeCall];
@@ -1039,6 +1037,10 @@ internal static partial class PcreByteMatcher {
 								skipRestart = frame.Position;
 							}
 							while ( backtrack.Count > frame.Pc ) { Step(); PopFrame( backtrack, assertionScopes, callScopes ); }
+							if ( frame.Kind == FrameKind.SkipReplay ) {
+								replayNamedSkip = true;
+								break;
+							}
 							// Delay root termination until this cut is actually reached. A later
 							// PRUNE/SKIP or a successful atomic scope may discard COMMIT first.
 							if ( frame.Kind == FrameKind.Commit && frame.Pc == 0 ) {
@@ -1064,8 +1066,28 @@ internal static partial class PcreByteMatcher {
 					}
 					if ( failed ) { break; }
 				}
+				if ( replayNamedSkip ) {
+					// PCRE2 ignores every named SKIP visited so far, including earlier resolved names.
+					ignoredNamedSkips = namedSkipCount;
+					if ( anchored || program.LeadingStartAnchor ) {
+						if ( interpretedUtfFragments ) { break; }
+						return new( null, null );
+					}
+					if ( program.FirstLine && IsNewlineAt( program, input.Span, start, fragment.End ) ) { break; }
+					// The interpreter applies its CRLF bumpalong rule even to a same-offset retry.
+					var skipLf = start > startOffset && !program.ExplicitNewline
+						&& ( program.Newline is PcreByteNewline.CrLf or PcreByteNewline.AnyCrLf or PcreByteNewline.Any )
+						&& PcreByteNewlineExtensions.IsCrLf( input.Span, start - 1, fragment.End );
+					if ( !skipLf ) {
+						forcedSkipStart = start;
+						start--; // Reenter with clean candidate storage and the same work budget.
+					}
+					continue;
+				}
 				// Native interpreter COMMIT reaches ENDLOOP, then retries later fragments.
 				if ( committedFragment ) { break; }
+				// Only an ordinary bumpalong clears replay suppression. Forward SKIP keeps it.
+				if ( ignoredNamedSkips != 0 && skipRestart <= start ) { ignoredNamedSkips = 0; }
 				// Interpreter anchoring stops within this fragment before a SKIP retry.
 				if ( matchTimeAnchoring && anchored ) {
 					if ( interpretedUtfFragments ) { break; }
@@ -1121,6 +1143,15 @@ internal static partial class PcreByteMatcher {
 		} catch ( MatchLimitException error ) {
 			return new( null, new( error.Code, 0, error.Message ) );
 		}
+	}
+
+	private static bool IsNewlineAt( PcreByteProgram program, ReadOnlySpan<byte> input, int position, int end ) {
+		if ( position >= end ) { return false; }
+		return program.Newline switch {
+			PcreByteNewline.Any => PcreByteNewlineExtensions.AnyLengthAt( input, position, end, program.Utf8 ) > 0,
+			PcreByteNewline.CrLf => PcreByteNewlineExtensions.IsCrLf( input, position, end ),
+			_ => input[position] == program.NewlineCharacter || program.AnyCrLfNewline && input[position] == (byte)'\r'
+		};
 	}
 
 	private static void RestoreFrameState( Frame frame, List<StateChange> changes,
@@ -1196,7 +1227,7 @@ internal static partial class PcreByteMatcher {
 		StateKind Kind, int Index, int PriorValue, PcreByteCapture? PriorCapture
 	);
 
-	private enum FrameKind : byte { Branch, PositiveAssertion, NegativeAssertion, ReverseRetry, NonAtomicAssertion, ConditionalAssertion, Call, Prune, Skip, Commit, Then, ThenAlternative, PathMark }
+	private enum FrameKind : byte { Branch, PositiveAssertion, NegativeAssertion, ReverseRetry, NonAtomicAssertion, ConditionalAssertion, Call, Prune, Skip, SkipReplay, Commit, Then, ThenAlternative, PathMark }
 
 	private readonly record struct CallScope( int ReturnPc, int Parent, int ChangeCount, int Number, int AssertionScope, int Boundary, int EntryLabel );
 
