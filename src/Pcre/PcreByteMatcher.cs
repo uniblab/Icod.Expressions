@@ -833,8 +833,8 @@ internal static partial class PcreByteMatcher {
 								while ( backtrack.Count > acceptedCallBoundary ) { Step(); PopFrame( backtrack, assertionScopes, callScopes ); }
 								var acceptedCallDepth = backtrack.Peek().AtomicDepth;
 								atomicDepths.RemoveRange( acceptedCallDepth, atomicDepths.Count - acceptedCallDepth );
-								if ( program.PathMarkSlot >= 0 ) {
-									// Interior checkpoints are gone. Native ACCEPT commits the
+								if ( !matchTimeAnchoring && program.PathMarkSlot >= 0 ) {
+									// Interior checkpoints are gone. JIT ACCEPT commits the
 									// callee's label unless its lexical local-quit flag saved the
 									// entry value. Older caller checkpoints remain untouched.
 									var kept = acceptedCaller.ChangeCount;

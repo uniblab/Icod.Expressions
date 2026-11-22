@@ -210,3 +210,8 @@ runs:
           throw 'Expected one complete 40-pattern/2560-protocol assertion ACCEPT match start result.'
         }
         Write-Host 'PASS: assertion ACCEPT match start restoration: 2560 protocols'
+        $pcreInterpretedAcceptedCallMarkRecords = @($pcreSmokeOutput | Where-Object { $_ -match '^\{"kind":"pcre-interpreted-accepted-call-mark-smoke",' } | ForEach-Object { $_ | ConvertFrom-Json })
+        if ($pcreInterpretedAcceptedCallMarkRecords.Count -ne 1 -or $pcreInterpretedAcceptedCallMarkRecords[0].patterns -ne 40 -or $pcreInterpretedAcceptedCallMarkRecords[0].cases -ne 2560 -or $pcreInterpretedAcceptedCallMarkRecords[0].failed -ne 0) {
+          throw 'Expected one complete 40-pattern/2560-protocol interpreted accepted-call mark result.'
+        }
+        Write-Host 'PASS: interpreted accepted-call mark rollback: 2560 protocols'
