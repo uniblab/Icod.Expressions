@@ -7,8 +7,8 @@ using Xunit;
 namespace Icod.Expressions.Tests.Pcre;
 
 public sealed class PcreAssertionAcceptStartTests {
-	private const string Pattern = @"x\K(?=(a\K(*ACCEPT:m)))a";
-	private const string Expected = "1:1,1:1/6D";
+	private const string Pattern = @"x\Kz(?=(a\K(*ACCEPT:m)))a";
+	private const string Expected = "1:2,2:1/6D";
 
 	public static IEnumerable<object[]> Cases => PcreAssertionAcceptStartCases.All.Select( item => new object[] { item.Id } );
 
@@ -44,7 +44,7 @@ public sealed class PcreAssertionAcceptStartTests {
 
 	[Fact]
 	public void AssertionAcceptRetainsTheExactWorkBudget() {
-		var input = "xa"u8.ToArray();
+		var input = "xza"u8.ToArray();
 		var policy = new PcreMatchPolicy { EndAnchored = true, NotEmpty = true };
 		var work = 0;
 		var observed = Compile( new() { WorkObserver = step => work = step } ).Match( input, policy );
@@ -61,7 +61,7 @@ public sealed class PcreAssertionAcceptStartTests {
 
 	[Fact]
 	public void AssertionAcceptPropagatesCancellation() {
-		var input = "xa"u8.ToArray();
+		var input = "xza"u8.ToArray();
 		var policy = new PcreMatchPolicy { EndAnchored = true, NotEmpty = true };
 		var work = 0;
 		var observed = Compile( new() { WorkObserver = step => work = step } ).Match( input, policy );
