@@ -1075,10 +1075,7 @@ internal static partial class PcreByteMatcher {
 					}
 					if ( program.FirstLine && IsNewlineAt( program, input.Span, start, fragment.End ) ) { break; }
 					// The interpreter applies its CRLF bumpalong rule even to a same-offset retry.
-					var skipLf = start > startOffset && !program.ExplicitNewline
-						&& ( program.Newline is PcreByteNewline.CrLf or PcreByteNewline.AnyCrLf or PcreByteNewline.Any )
-						&& PcreByteNewlineExtensions.IsCrLf( input.Span, start - 1, fragment.End );
-					if ( !skipLf ) {
+					if ( AdvancePastCrLfTail( program, input.Span, start, fragment.End, startOffset ) == start ) {
 						forcedSkipStart = start;
 						start--; // Reenter with clean candidate storage and the same work budget.
 					}
@@ -1094,12 +1091,13 @@ internal static partial class PcreByteMatcher {
 					return new( null, null );
 				}
 				if ( skipRestart > start ) {
-					// Native reset_match enters a forward target directly, even when
-					// caller-anchored. A later ordinary failure still terminates it.
+					if ( matchTimeAnchoring ) {
+						// The interpreter tests the failed candidate before changing its start.
+						if ( program.FirstLine && IsNewlineAt( program, input.Span, start, fragment.End ) ) { break; }
+						skipRestart = AdvancePastCrLfTail( program, input.Span, skipRestart, fragment.End, startOffset );
+					}
+					// JIT enters the explicit target directly. The loop increment supplies the entry byte.
 					forcedSkipStart = skipRestart;
-					// Native JIT forward SKIP goes directly to candidate entry,
-					// including LF after CR and fragment end/EOF. The for-loop
-					// increment supplies the final byte; scalar targets were consumed.
 					start = skipRestart - 1;
 					continue;
 				}
@@ -1143,6 +1141,15 @@ internal static partial class PcreByteMatcher {
 		} catch ( MatchLimitException error ) {
 			return new( null, new( error.Code, 0, error.Message ) );
 		}
+	}
+
+	private static int AdvancePastCrLfTail( PcreByteProgram program, ReadOnlySpan<byte> input, int target, int end, int startOffset ) {
+		if ( target > startOffset && !program.ExplicitNewline
+			&& ( program.Newline is PcreByteNewline.CrLf or PcreByteNewline.AnyCrLf or PcreByteNewline.Any )
+			&& PcreByteNewlineExtensions.IsCrLf( input, target - 1, end ) ) {
+			return target + 1;
+		}
+		return target;
 	}
 
 	private static bool IsNewlineAt( PcreByteProgram program, ReadOnlySpan<byte> input, int position, int end ) {

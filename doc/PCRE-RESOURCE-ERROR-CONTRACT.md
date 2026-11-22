@@ -1,5 +1,13 @@
 # PCRE error and resource contract checkpoint
 
+## PR312 — interpreted forward SKIP newline admission
+
+The [forward-skip record](PCRE-INTERPRETED-FORWARD-SKIP-STATUS.md) applies
+`FIRSTLINE` and CRLF restart rules to interpreted forward SKIP. The corpus adds
+3,072 native outcomes across 48 definitions. Two resource cases bring the suite
+to 107,517 tests. A twenty-ninth package record checks the same policies.
+Broader roadmap gates remain open.
+
 ## PR311 — ordered replay for interpreted named SKIP
 
 The [replay record](PCRE-INTERPRETED-SKIP-REPLAY-STATUS.md) preserves the order
