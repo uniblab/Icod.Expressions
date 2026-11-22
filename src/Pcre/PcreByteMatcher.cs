@@ -37,10 +37,11 @@ internal static partial class PcreByteMatcher {
 		var endAnchored = program.EndAnchored || policy.EndAnchored;
 		var notEmpty = program.NotEmpty || policy.NotEmpty;
 		var notEmptyAtStart = program.NotEmptyAtStart || policy.NotEmptyAtStart;
-		// Native match-time anchoring selects its interpreter. In tolerant UTF,
-		// that driver retries separate valid fragments with fragment-local ends.
-		var matchTimeAnchoring = policy.Anchored || policy.EndAnchored;
-		var interpretedUtfFragments = program.MatchInvalidUtf && matchTimeAnchoring;
+		// Native uses interpreted matching for call-time anchors or an ACCEPT
+		// lexically inside a non-atomic assertion. This selects semantics for
+		// the whole pattern, including fragment retries in tolerant UTF.
+		var interpreted = program.HasNonAtomicAccept || policy.Anchored || policy.EndAnchored;
+		var interpretedUtfFragments = program.MatchInvalidUtf && interpreted;
 		var retainAnchoredFragment = anchored && !interpretedUtfFragments;
 		var surrogateLiterals = program.MatchInvalidUtf && program.HasSurrogateLiterals;
 		// No candidate can reach the VM when the required first byte is absent.
@@ -297,7 +298,7 @@ internal static partial class PcreByteMatcher {
 						case PcreByteOpcode.Skip:
 						case PcreByteOpcode.SkipNamed:
 						case PcreByteOpcode.Prune:
-							if ( matchTimeAnchoring && instruction.Opcode == PcreByteOpcode.SkipNamed ) {
+							if ( interpreted && instruction.Opcode == PcreByteOpcode.SkipNamed ) {
 								namedSkipCount++;
 								if ( namedSkipCount <= ignoredNamedSkips ) { pc++; break; }
 							}
@@ -317,7 +318,7 @@ internal static partial class PcreByteMatcher {
 								// Default/JIT uses a call-local quit for an unowned THEN
 								// inside a called atomic positive assertion.
 								var thenCatches = instruction.Opcode == PcreByteOpcode.Then
-									&& ( matchTimeAnchoring || instruction.First >= 0 || activeCall < 0
+									&& ( interpreted || instruction.First >= 0 || activeCall < 0
 										|| catchingScope.Kind != FrameKind.PositiveAssertion );
 								if ( thenCatches || catchingScope.Kind is FrameKind.NegativeAssertion or FrameKind.ConditionalAssertion ) {
 									pruneBoundary = catchingScope.Boundary + 1;
@@ -338,7 +339,7 @@ internal static partial class PcreByteMatcher {
 								// default/JIT hides returned callee history. The interpreter
 								// can resolve names against those retained frames.
 								var namedSkipCallBoundary = activeCall >= 0 ? callScopes![activeCall].Boundary : 0;
-								var resolveAssertionSkip = matchTimeAnchoring && pruneBoundary > namedSkipCallBoundary;
+								var resolveAssertionSkip = interpreted && pruneBoundary > namedSkipCallBoundary;
 								if ( resolveAssertionSkip ) {
 									// The interpreter propagates an unresolved name past assertions.
 									// A matching MARK chooses where ordinary SKIP can be caught.
@@ -351,7 +352,7 @@ internal static partial class PcreByteMatcher {
 									foreach ( var history in backtrack ) {
 										if ( historyDepth-- <= historyBoundary ) { break; }
 										Step();
-										if ( history.Kind == FrameKind.PathMark && ( matchTimeAnchoring || history.CallScope == activeCall )
+										if ( history.Kind == FrameKind.PathMark && ( interpreted || history.CallScope == activeCall )
 											&& program.Instructions[history.Pc].Bytes.Span.SequenceEqual( instruction.Bytes.Span ) ) {
 											skipPosition = history.Position;
 											if ( resolveAssertionSkip ) {
@@ -372,7 +373,7 @@ internal static partial class PcreByteMatcher {
 									if ( skipPosition < 0 ) {
 										if ( pruneBoundary > 0 ) { skipPosition = position; } // The active callee catches the unresolved name.
 										else {
-											if ( !matchTimeAnchoring ) { pc++; break; }
+											if ( !interpreted ) { pc++; break; }
 											// The interpreter can replay this candidate when failure reaches the verb.
 											unmatchedNamedSkip = true;
 											skipPosition = position;
@@ -833,7 +834,7 @@ internal static partial class PcreByteMatcher {
 								while ( backtrack.Count > acceptedCallBoundary ) { Step(); PopFrame( backtrack, assertionScopes, callScopes ); }
 								var acceptedCallDepth = backtrack.Peek().AtomicDepth;
 								atomicDepths.RemoveRange( acceptedCallDepth, atomicDepths.Count - acceptedCallDepth );
-								if ( !matchTimeAnchoring && program.PathMarkSlot >= 0 ) {
+								if ( !interpreted && program.PathMarkSlot >= 0 ) {
 									// Interior checkpoints are gone. JIT ACCEPT commits the
 									// callee's label unless its lexical local-quit flag saved the
 									// entry value. Older caller checkpoints remain untouched.
@@ -857,7 +858,7 @@ internal static partial class PcreByteMatcher {
 								while ( backtrack.Count > acceptedScopeBoundary ) { Step(); PopFrame( backtrack, assertionScopes, callScopes ); }
 								var acceptedScopeDepth = backtrack.Peek().AtomicDepth;
 								atomicDepths.RemoveRange( acceptedScopeDepth, atomicDepths.Count - acceptedScopeDepth );
-								if ( matchTimeAnchoring ) {
+								if ( interpreted ) {
 									// Interpreted assertion ACCEPT keeps the caller's reported start.
 									captureStarts[0] = acceptedScope.ReportedStart;
 									if ( acceptedScope.Kind == FrameKind.ConditionalAssertion && program.PathMarkSlot >= 0 ) {
@@ -964,7 +965,7 @@ internal static partial class PcreByteMatcher {
 									: ( instruction.Second & 1 ) != 0 ? FrameKind.PositiveAssertion : FrameKind.NegativeAssertion, CallScope: activeCall );
 							var scopeId = assertionScopes.Count;
 							// JIT narrows subject visibility at a variable lookbehind endpoint.
-							var visibleEnd = !matchTimeAnchoring && ( instruction.Second & 2 ) != 0 ? position : endLimit;
+							var visibleEnd = !interpreted && ( instruction.Second & 2 ) != 0 ? position : endLimit;
 							assertionScopes.Add( new( backtrack.Count, visibleEnd,
 								activeScope, instruction.First, position, captureStarts[0],
 								program.PathMarkSlot >= 0 ? marks[program.PathMarkSlot] : 0, guard.Kind, ( instruction.Second & 16 ) != 0 ) );
@@ -1004,7 +1005,7 @@ internal static partial class PcreByteMatcher {
 								// A short root ACCEPT abandons this candidate. The interpreter
 								// backtracks first when the empty-match check rejects it.
 								if ( rejectedEnd && instruction.Opcode == PcreByteOpcode.EarlyAccept
-									&& ( !matchTimeAnchoring || !rejectedEmpty ) ) { backtrack.Clear(); }
+									&& ( !interpreted || !rejectedEmpty ) ) { backtrack.Clear(); }
 								failed = true;
 								break;
 							}
@@ -1027,7 +1028,7 @@ internal static partial class PcreByteMatcher {
 						position = frame.Position;
 						if ( frame.Kind == FrameKind.PathMark ) { continue; } // History has no retry edge.
 						if ( frame.Kind is FrameKind.Prune or FrameKind.Skip or FrameKind.SkipReplay or FrameKind.Commit or FrameKind.Then or FrameKind.ThenAlternative ) {
-							if ( !matchTimeAnchoring && activeCall >= 0
+							if ( !interpreted && activeCall >= 0
 								&& frame.Pc == callScopes![activeCall].Boundary && frame.Kind != FrameKind.ThenAlternative ) {
 								var cutCall = callScopes[activeCall];
 								var selected = program.Instructions[cutCall.ReturnPc - 1].CaptureNumbers;
@@ -1098,12 +1099,12 @@ internal static partial class PcreByteMatcher {
 				// Only an ordinary bumpalong clears replay suppression. Forward SKIP keeps it.
 				if ( ignoredNamedSkips != 0 && skipRestart <= start ) { ignoredNamedSkips = 0; }
 				// Interpreter anchoring stops within this fragment before a SKIP retry.
-				if ( matchTimeAnchoring && anchored ) {
+				if ( interpreted && anchored ) {
 					if ( interpretedUtfFragments ) { break; }
 					return new( null, null );
 				}
 				if ( skipRestart > start ) {
-					if ( matchTimeAnchoring ) {
+					if ( interpreted ) {
 						// The interpreter tests the failed candidate before changing its start.
 						if ( program.FirstLine && IsNewlineAt( program, input.Span, start, fragment.End ) ) { break; }
 						skipRestart = AdvancePastCrLfTail( program, input.Span, skipRestart, fragment.End, startOffset );

@@ -52,6 +52,7 @@ internal sealed partial class PcreByteParser {
 
 	private PcreByteAlternatives ParseAlternatives() {
 		var parents = new Stack<GroupFrame>();
+		var nonAtomicDepth = 0;
 		var current = new GroupFrame( -1, 0, 0, false, false, CurrentGroupOptions, groupCount, 0, -1 );
 		while ( true ) {
 			cancellationToken.ThrowIfCancellationRequested();
@@ -102,6 +103,7 @@ internal sealed partial class PcreByteParser {
 					var groupCaseless = current.EntryOptions.Caseless;
 					var groupCaselessRestricted = current.EntryOptions.CaselessRestricted;
 					var conditionAssertion = current.IsConditionAssertion;
+					if ( current.NonAtomic ) { nonAtomicDepth--; }
 					current = parents.Pop();
 					if ( conditionAssertion ) {
 						current.ConditionAssertion = completed with { Caseless = groupCaseless, CaselessRestricted = groupCaselessRestricted };
@@ -144,10 +146,14 @@ internal sealed partial class PcreByteParser {
 					child.IsConditionAssertion = true;
 				}
 				parents.Push( current );
+				if ( child.NonAtomic ) { nonAtomicDepth++; }
 				current = child;
 				continue;
 			}
 			if ( current.WaitingForCondition ) { throw Invalid( current.OpeningOffset, "conditional group requires an assertion" ); }
+			// Preserve this lexical native-dispatch constraint before quantifiers
+			// or unused definitions can remove the ACCEPT from executable code.
+			if ( atom is PcreByteAccept && nonAtomicDepth > 0 ) { HasNonAtomicAccept = true; }
 			AppendNode( current, atom!, atomCaseless, atomCaselessRestricted );
 		}
 	}

@@ -60,7 +60,8 @@ internal static class PcreByteCompiler {
 				settings.TurkishCasing, noAutoPossess: settings.NoAutoPossess, noStartOptimize: settings.NoStartOptimize,
 				noDotStarAnchor: settings.NoDotStarAnchor
 			).Compile( root, parser.SubroutineTargets ) with {
-				Anchored = options.Anchored, EndAnchored = options.EndAnchored, FirstLine = options.FirstLine
+				Anchored = options.Anchored, EndAnchored = options.EndAnchored, FirstLine = options.FirstLine,
+				HasNonAtomicAccept = parser.HasNonAtomicAccept
 			};
 			return new(
 				new PcreCompiledBytePattern( program, parser.GroupCount, options.MatchWorkLimit, options.WorkObserver, parser.CreateCaptureInfo() ),
