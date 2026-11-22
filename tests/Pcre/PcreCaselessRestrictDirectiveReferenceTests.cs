@@ -384,9 +384,9 @@ public sealed class PcreCaselessRestrictDirectiveReferenceTests {
 	[InlineData( "(*CASELESS_RESTRICTX)", 0 )]
 	[InlineData( "(*CASELESS_RESTRICT=1)", 0 )]
 	[InlineData( "(*CASELESS_RESTRICT)(*TURKISH_CASINGX)", 20 )]
-	[InlineData( "(*CASELESS_RESTRICT)(*NO_JIT)", 20 )]
+	[InlineData( "(*CASELESS_RESTRICT)(*LIMIT_MATCH=1000000)", 20 )]
 	public void MisplacedNonExactAndPendingDirectivesKeepOpeningDiagnostics( string pattern, int offset ) {
-		if ( !pattern.EndsWith( "(*NO_JIT)", StringComparison.Ordinal ) ) { Assert.Throws<PcrePatternException>( () => Reference( pattern, new() ) ); }
+		if ( !pattern.EndsWith( "(*LIMIT_MATCH=1000000)", StringComparison.Ordinal ) ) { Assert.Throws<PcrePatternException>( () => Reference( pattern, new() ) ); }
 		else { Reference( pattern, new() ); }
 		var result = PcreByteCompiler.Compile( Encoding.UTF8.GetBytes( pattern ) );
 		Assert.Equal( PcreByteDiagnosticCode.UnsupportedSyntax, result.Diagnostic?.Code ); Assert.Equal( offset, result.Diagnostic?.ByteOffset );
