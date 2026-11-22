@@ -294,4 +294,13 @@ foreach ( var item in PcreInterpretedSkipReplayCases.All ) {
 }
 Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-interpreted-skip-replay-smoke", patterns = PcreInterpretedSkipReplayCases.All.Count, cases = pcreInterpretedSkipReplayCases, failed = 0 } ) );
 
+var pcreInterpretedForwardSkipCases = 0;
+foreach ( var item in PcreInterpretedForwardSkipCases.All ) {
+	if ( PcreMatchPolicyConsumer.Run( item ) != item.Outcomes ) {
+		throw new InvalidOperationException( $"PCRE interpreted forward SKIP definition {item.Id} changed." );
+	}
+	pcreInterpretedForwardSkipCases += 64;
+}
+Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-interpreted-forward-skip-smoke", patterns = PcreInterpretedForwardSkipCases.All.Count, cases = pcreInterpretedForwardSkipCases, failed = 0 } ) );
+
 Console.WriteLine( $"Icod.Expressions package smoke passed on {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}." );
