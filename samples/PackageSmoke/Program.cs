@@ -330,4 +330,13 @@ foreach ( var item in PcreInterpretedAcceptPolicyCases.All ) {
 }
 Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-interpreted-accept-policy-smoke", patterns = PcreInterpretedAcceptPolicyCases.All.Count, cases = pcreInterpretedAcceptPolicyCases, failed = 0 } ) );
 
+var pcreAssertionAcceptStartCases = 0;
+foreach ( var item in PcreAssertionAcceptStartCases.All ) {
+	if ( PcreMatchPolicyConsumer.Run( item ) != item.Outcomes ) {
+		throw new InvalidOperationException( $"PCRE assertion ACCEPT match start definition {item.Id} changed." );
+	}
+	pcreAssertionAcceptStartCases += 64;
+}
+Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-assertion-accept-start-smoke", patterns = PcreAssertionAcceptStartCases.All.Count, cases = pcreAssertionAcceptStartCases, failed = 0 } ) );
+
 Console.WriteLine( $"Icod.Expressions package smoke passed on {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}." );

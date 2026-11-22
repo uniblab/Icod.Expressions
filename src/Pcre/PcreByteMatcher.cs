@@ -852,10 +852,16 @@ internal static partial class PcreByteMatcher {
 								goto case PcreByteOpcode.Return;
 							}
 							if ( activeScope >= 0 ) {
-								var acceptedScopeBoundary = assertionScopes![activeScope].Boundary + 1;
+								var acceptedScope = assertionScopes![activeScope];
+								var acceptedScopeBoundary = acceptedScope.Boundary + 1;
 								while ( backtrack.Count > acceptedScopeBoundary ) { Step(); PopFrame( backtrack, assertionScopes, callScopes ); }
 								var acceptedScopeDepth = backtrack.Peek().AtomicDepth;
 								atomicDepths.RemoveRange( acceptedScopeDepth, atomicDepths.Count - acceptedScopeDepth );
+								if ( matchTimeAnchoring ) {
+									// Interpreted assertion ACCEPT returns captures and the mark to
+									// its caller while leaving the caller's reported start in place.
+									captureStarts[0] = acceptedScope.ReportedStart;
+								}
 								pc = instruction.First; // Bypass ReverseEnd/script-run/body suffixes.
 								break;
 							}
@@ -957,7 +963,7 @@ internal static partial class PcreByteMatcher {
 							// JIT narrows subject visibility at a variable lookbehind endpoint.
 							var visibleEnd = !matchTimeAnchoring && ( instruction.Second & 2 ) != 0 ? position : endLimit;
 							assertionScopes.Add( new( backtrack.Count, visibleEnd,
-								activeScope, instruction.First, position, guard.Kind, ( instruction.Second & 16 ) != 0 ) );
+								activeScope, instruction.First, position, captureStarts[0], guard.Kind, ( instruction.Second & 16 ) != 0 ) );
 							activeScope = scopeId;
 							backtrack.Push( guard ); // Forces body mutations into the shared journal.
 							pc++;
@@ -1241,7 +1247,9 @@ internal static partial class PcreByteMatcher {
 
 	private readonly record struct CallScope( int ReturnPc, int Parent, int ChangeCount, int Number, int AssertionScope, int Boundary, int EntryLabel );
 
-	private readonly record struct AssertionScope( int Boundary, int LimitEnd, int Parent, int ReturnPc, int Position, FrameKind Kind, bool IsolatePathMarks );
+	private readonly record struct AssertionScope(
+		int Boundary, int LimitEnd, int Parent, int ReturnPc, int Position, int ReportedStart, FrameKind Kind, bool IsolatePathMarks
+	);
 
 	private readonly record struct Frame(
 		int Pc, int Position, int ChangeCount, int AtomicDepth, int AssertionScope,

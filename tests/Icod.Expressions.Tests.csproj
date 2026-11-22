@@ -35,6 +35,7 @@
 		<Compile Include="../samples/PackageSmoke/PcreInterpretedFirstLineCases.cs" Link="PackageSmoke/PcreInterpretedFirstLineCases.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreInterpretedLookbehindEndCases.cs" Link="PackageSmoke/PcreInterpretedLookbehindEndCases.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreInterpretedAcceptPolicyCases.cs" Link="PackageSmoke/PcreInterpretedAcceptPolicyCases.cs" />
+		<Compile Include="../samples/PackageSmoke/PcreAssertionAcceptStartCases.cs" Link="PackageSmoke/PcreAssertionAcceptStartCases.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreCaptureAnchorSkipCases.cs" Link="PackageSmoke/PcreCaptureAnchorSkipCases.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreStartAnchorSkipCases.cs" Link="PackageSmoke/PcreStartAnchorSkipCases.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreAssertionSkipCases.cs" Link="PackageSmoke/PcreAssertionSkipCases.cs" />
