@@ -30,6 +30,7 @@
 		<Compile Include="../samples/PackageSmoke/PcreZeroRepeatAnchorSkipCases.cs" Link="PackageSmoke/PcreZeroRepeatAnchorSkipCases.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreStaticPrefixAnchorSkipCases.cs" Link="PackageSmoke/PcreStaticPrefixAnchorSkipCases.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreVerbPrefixAnchorSkipCases.cs" Link="PackageSmoke/PcreVerbPrefixAnchorSkipCases.cs" />
+		<Compile Include="../samples/PackageSmoke/PcreInterpretedSkipReplayCases.cs" Link="PackageSmoke/PcreInterpretedSkipReplayCases.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreCaptureAnchorSkipCases.cs" Link="PackageSmoke/PcreCaptureAnchorSkipCases.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreStartAnchorSkipCases.cs" Link="PackageSmoke/PcreStartAnchorSkipCases.cs" />
 		<Compile Include="../samples/PackageSmoke/PcreAssertionSkipCases.cs" Link="PackageSmoke/PcreAssertionSkipCases.cs" />

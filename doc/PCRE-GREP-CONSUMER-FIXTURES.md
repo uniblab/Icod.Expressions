@@ -1,5 +1,13 @@
 # Grep `-P` consumer fixture inventory
 
+## PR311 — ordered replay for interpreted named SKIP
+
+The [replay record](PCRE-INTERPRETED-SKIP-REPLAY-STATUS.md) preserves the order
+of named SKIP visits when the interpreter retries a candidate. The corpus adds
+3,072 native outcomes across 48 definitions. Two resource cases bring the suite
+to 107,467 tests. A twenty-eighth package record checks the same policies.
+Broader roadmap gates remain open.
+
 ## PR310 — named control verb prefixes and unmatched SKIP
 
 The [verb-prefix record](PCRE-VERB-PREFIX-ANCHOR-SKIP-STATUS.md) recognizes
