@@ -1,5 +1,13 @@
 # PCRE syntax acceptance matrix
 
+## PR313 — interpreted FIRSTLINE restart boundaries
+
+The [first-line record](PCRE-INTERPRETED-FIRST-LINE-STATUS.md) starts an
+interpreted FIRSTLINE scan at each valid UTF-8 fragment or admitted forward
+SKIP target. The corpus adds 3,072 native outcomes across 48 definitions
+and two resource cases, bringing the suite to 107,567 tests. A thirtieth
+package smoke check uses the same outcomes.
+
 ## PR312 — interpreted forward SKIP newline admission
 
 The [forward-skip record](PCRE-INTERPRETED-FORWARD-SKIP-STATUS.md) applies
