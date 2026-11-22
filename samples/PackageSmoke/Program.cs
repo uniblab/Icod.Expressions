@@ -357,4 +357,13 @@ foreach ( var item in PcreConditionalAcceptMarkCases.All ) {
 }
 Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-conditional-accept-mark-smoke", patterns = PcreConditionalAcceptMarkCases.All.Count, cases = pcreConditionalAcceptMarkCases, failed = 0 } ) );
 
+var pcreNonAtomicAcceptDispatchCases = 0;
+foreach ( var item in PcreNonAtomicAcceptDispatchCases.All ) {
+	if ( PcreMatchPolicyConsumer.Run( item ) != item.Outcomes ) {
+		throw new InvalidOperationException( $"PCRE non-atomic ACCEPT dispatch definition {item.Id} changed." );
+	}
+	pcreNonAtomicAcceptDispatchCases += 64;
+}
+Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-nonatomic-accept-dispatch-smoke", patterns = PcreNonAtomicAcceptDispatchCases.All.Count, cases = pcreNonAtomicAcceptDispatchCases, failed = 0 } ) );
+
 Console.WriteLine( $"Icod.Expressions package smoke passed on {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}." );

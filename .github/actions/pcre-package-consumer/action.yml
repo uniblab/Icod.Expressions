@@ -220,3 +220,8 @@ runs:
           throw 'Expected one complete 40-pattern/2560-protocol conditional ACCEPT mark result.'
         }
         Write-Host 'PASS: interpreted conditional ACCEPT mark restoration: 2560 protocols'
+        $pcreNonAtomicAcceptDispatchRecords = @($pcreSmokeOutput | Where-Object { $_ -match '^\{"kind":"pcre-nonatomic-accept-dispatch-smoke",' } | ForEach-Object { $_ | ConvertFrom-Json })
+        if ($pcreNonAtomicAcceptDispatchRecords.Count -ne 1 -or $pcreNonAtomicAcceptDispatchRecords[0].patterns -ne 40 -or $pcreNonAtomicAcceptDispatchRecords[0].cases -ne 2560 -or $pcreNonAtomicAcceptDispatchRecords[0].failed -ne 0) {
+          throw 'Expected one complete 40-pattern/2560-protocol non-atomic ACCEPT dispatch result.'
+        }
+        Write-Host 'PASS: non-atomic ACCEPT interpreter dispatch: 2560 protocols'
