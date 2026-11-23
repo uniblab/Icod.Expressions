@@ -15,6 +15,7 @@ internal sealed partial class PcreByteParser {
 	private const int MaximumCaptureCount = 256;
 	private const int MaximumRepeatMarks = 256;
 	private readonly byte[] source;
+	private readonly char[]? wordSource;
 	private readonly CancellationToken cancellationToken;
 	private readonly bool literal;
 	private readonly bool noStartOptimize;
@@ -61,9 +62,14 @@ internal sealed partial class PcreByteParser {
 	private ExtendedMode extended;
 
 	internal PcreByteParser( byte[] source, PcreByteOptions options,
-		PcreByteStartSettings settings, CancellationToken cancellationToken, int codeUnitWidth = 8 ) {
+		PcreByteStartSettings settings, CancellationToken cancellationToken, int codeUnitWidth = 8,
+		char[]? wordSource = null ) {
 		if ( codeUnitWidth is not 8 and not 16 ) { throw new ArgumentOutOfRangeException( nameof( codeUnitWidth ) ); }
+		if ( wordSource is not null && ( codeUnitWidth != 16 || wordSource.Length != source.Length ) ) {
+			throw new ArgumentException( "Word source must have the same length as its grammar tokens.", nameof( wordSource ) );
+		}
 		this.source = source;
+		this.wordSource = wordSource;
 		literal = options.Literal;
 		noStartOptimize = settings.NoStartOptimize;
 		caseless = options.Caseless;
@@ -255,6 +261,7 @@ internal sealed partial class PcreByteParser {
 
 	private PcreByteLiteral ParseQuotedLiteral() {
 		var offset = index;
+		if ( wordSource is not null && source[offset] >= 0x80 ) { return ParseWordLiteral(); }
 		if ( utf8 && source[index] >= 0x80 ) {
 			PcreUtf8.TryRead( source, offset, out var scalar, out var width ); // Validated at compile entry.
 			index += width;
@@ -263,8 +270,15 @@ internal sealed partial class PcreByteParser {
 		return new( source[index++] );
 	}
 
+	private PcreByteLiteral ParseWordLiteral() {
+		PcreUtf16.TryRead( wordSource!, index, utf8, out var value, out var width ); // Validated at compile entry.
+		index += width;
+		return new( value );
+	}
+
 	private PcreByteNode? ParseAtom( int depth, int assertionOpeningContext, out GroupFrame? group ) {
 		group = null;
+		if ( wordSource is not null && source[index] >= 0x80 ) { return ParseWordLiteral(); }
 		var offset = index;
 		var value = source[index++];
 		if ( value == (byte)'(' ) { return ParseGroupOpening( offset, depth, assertionOpeningContext, out group ); }
@@ -630,7 +644,7 @@ internal sealed partial class PcreByteParser {
 		if ( index >= source.Length ) {
 			throw Invalid( offset, "trailing backslash" );
 		}
-		if ( utf8 && source[index] >= 0x80 ) { return ParseQuotedLiteral(); }
+		if ( source[index] >= 0x80 && ( utf8 || wordSource is not null ) ) { return ParseQuotedLiteral(); }
 		var value = source[index++];
 		if ( altBsux && ( value is (byte)'u' or (byte)'U' or (byte)'x' ) ) {
 			return ParseAltBsuxEscape( value, offset, inBracket );

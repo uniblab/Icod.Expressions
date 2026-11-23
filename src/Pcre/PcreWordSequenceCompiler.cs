@@ -20,19 +20,19 @@ internal static class PcreWordSequenceCompiler {
 				offset += width;
 			}
 		}
-		// The first shared-grammar binding admits ASCII source units only. Their
-		// byte and word indices coincide; wide literal values use numeric escapes.
+		// ASCII grammar tokens keep their original indices. Non-ASCII units are
+		// placeholders read directly from the owned word source by the parser.
 		var grammarSource = new byte[source.Length];
 		for ( var index = 0; index < source.Length; index++ ) {
 			cancellationToken.ThrowIfCancellationRequested();
-			if ( source[index] > 127 ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, index ); }
-			grammarSource[index] = (byte)source[index];
+			grammarSource[index] = source[index] > 127 ? (byte)0x80 : (byte)source[index];
 		}
 		var grammarOptions = new PcreByteOptions { Utf8 = options.Utf16 };
 		var settings = PcreByteStartSettings.Parse( grammarSource, grammarOptions, cancellationToken );
 		if ( settings.BodyOffset != 0 ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
 		try {
-			var parser = new PcreByteParser( grammarSource, grammarOptions, settings, cancellationToken, codeUnitWidth: 16 );
+			var parser = new PcreByteParser( grammarSource, grammarOptions, settings, cancellationToken,
+				codeUnitWidth: 16, wordSource: source );
 			var root = parser.Parse();
 			if ( parser.GroupCount != 0 || root.Branches.Count != 1 ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
 			var nodes = root.Branches[0];
