@@ -38,7 +38,7 @@ internal sealed partial class PcreByteParser {
 			cancellationToken.ThrowIfCancellationRequested();
 			value = value * 8 + source[index++] - (byte)'0';
 		}
-		if ( value > 255 && ( !utf8 || pythonOctal ) ) { throw NumericEscapeError( offset, "octal escape exceeds the supported character range" ); }
+		if ( value > maximumCharacterValue || pythonOctal && value > 255 ) { throw NumericEscapeError( offset, "octal escape exceeds the supported character range" ); }
 		if ( noBackslashZero && value == 0 && digits == 1 ) { throw NumericEscapeError( offset, "bare backslash-zero escape is disabled" ); }
 		return new( value );
 	}

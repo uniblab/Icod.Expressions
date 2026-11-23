@@ -21,6 +21,9 @@ internal static class PcreNative16Oracle {
 	internal static PcreNative16Protocol ExecuteLiteral( ushort[] pattern, ushort[] subject, bool utf, uint offset,
 		int defaults = 0, int mask = 0 ) => ExecuteCore( pattern, subject, utf ? 1 : 0, offset, true, defaults, mask );
 
+	internal static PcreNative16Protocol ExecuteSequence( ushort[] pattern, ushort[] subject, bool utf, uint offset,
+		int defaults = 0, int mask = 0 ) => ExecuteCore( pattern, subject, utf ? 1 : 0, offset, false, defaults, mask );
+
 	private static PcreNative16Protocol ExecuteCore( ushort[] pattern, ushort[] subject, int mode, uint offset,
 		bool literal, int defaults, int mask ) {
 		ArgumentNullException.ThrowIfNull( pattern );

@@ -1,6 +1,6 @@
 namespace Icod.Expressions.Pcre;
 
-internal sealed record PcreWordLiteralOptions {
+internal sealed record PcreWordOptions {
 	public bool Utf16 { get; init; }
 	public PcreMatchPolicy Policy { get; init; }
 	public int MatchWorkLimit { get; init; } = 1_000_000;
@@ -10,7 +10,7 @@ internal sealed record PcreWordLiteralOptions {
 
 internal enum PcreWordDiagnosticCode {
 	InvalidWorkLimit, PatternLengthLimitExceeded, InvalidUtf16Pattern,
-	InvalidUtf16Subject, InvalidStartOffset, MatchWorkLimitExceeded
+	InvalidUtf16Subject, InvalidStartOffset, MatchWorkLimitExceeded, InvalidSyntax, UnsupportedSyntax
 }
 
 internal sealed record PcreWordDiagnostic( PcreWordDiagnosticCode Code, int CodeUnitOffset );
@@ -18,15 +18,15 @@ internal readonly record struct PcreWordCapture( int CodeUnitIndex, int CodeUnit
 internal sealed record PcreWordMatchResult( PcreWordCapture? Match, PcreWordDiagnostic? Diagnostic ) {
 	public bool IsSuccess => Diagnostic is null;
 }
-internal sealed record PcreWordLiteralCompileResult( PcreCompiledWordLiteral? Pattern, PcreWordDiagnostic? Diagnostic ) {
+internal sealed record PcreWordCompileResult( PcreCompiledWordPattern? Pattern, PcreWordDiagnostic? Diagnostic ) {
 	public bool IsSuccess => Pattern is not null && Diagnostic is null;
 }
 
 /// <summary>Compiles an explicitly literal width-16 pattern using shared literal semantics.</summary>
 internal static class PcreWordLiteralCompiler {
 	private const int MaximumPatternUnits = 4096;
-	internal static PcreWordLiteralCompileResult CompileLiteral(
-		ReadOnlyMemory<char> pattern, PcreWordLiteralOptions? options = null, CancellationToken cancellationToken = default
+	internal static PcreWordCompileResult CompileLiteral(
+		ReadOnlyMemory<char> pattern, PcreWordOptions? options = null, CancellationToken cancellationToken = default
 	) {
 		cancellationToken.ThrowIfCancellationRequested();
 		options ??= new();

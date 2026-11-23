@@ -6,6 +6,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef ORACLE_LITERAL
+#define ORACLE_LITERAL 1
+#endif
 static unsigned number(const char *s) {
     char *end; errno = 0; unsigned long n = strtoul(s, &end, 10);
     if (!*s || *s == '-' || *end || errno || n > UINT32_MAX) { exit(2); }
@@ -47,7 +50,7 @@ int main(void) {
         unsigned id = number(v[0]), utf = number(v[1]), defaults = number(v[2]), mask = number(v[3]), start = number(v[6]);
         if (utf > 1 || defaults > 63 || mask > 63) { return 2; }
         size_t plen, slen; uint16_t *pattern = units(v[4], &plen), *subject = units(v[5], &slen);
-        uint32_t flags = PCRE2_LITERAL | (utf ? PCRE2_UTF : 0) | policy(defaults & 3);
+        uint32_t flags = (ORACLE_LITERAL ? PCRE2_LITERAL : 0) | (utf ? PCRE2_UTF : 0) | policy(defaults & 3);
         int error; PCRE2_SIZE offset; pcre2_code *code = pcre2_compile(pattern, plen, flags, &error, &offset, NULL);
         printf("%u|%u|%u|", id, defaults, mask);
         if (!code) { printf("E|%d|%zu\n", error, (size_t)offset); free(pattern); free(subject); continue; }

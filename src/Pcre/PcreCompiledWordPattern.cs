@@ -1,11 +1,11 @@
 namespace Icod.Expressions.Pcre;
 
-/// <summary>Immutable width-16 literal program; matching reads the original subject view.</summary>
-internal sealed class PcreCompiledWordLiteral {
-	private readonly PcreByteLiteral[] literals;
-	private readonly PcreWordLiteralOptions options;
-	internal PcreCompiledWordLiteral( PcreByteLiteral[] literals, PcreWordLiteralOptions options ) {
-		this.literals = literals;
+/// <summary>Immutable width-16 sequence; matching reads the original subject view.</summary>
+internal sealed class PcreCompiledWordPattern {
+	private readonly PcreByteNode[] nodes;
+	private readonly PcreWordOptions options;
+	internal PcreCompiledWordPattern( PcreByteNode[] nodes, PcreWordOptions options ) {
+		this.nodes = nodes;
 		this.options = options;
 	}
 
@@ -30,7 +30,7 @@ internal sealed class PcreCompiledWordLiteral {
 		PcreWordMatchResult Exhausted() => new( null, new( PcreWordDiagnosticCode.MatchWorkLimitExceeded, 0 ) );
 		var input = subject.Span;
 		if ( options.Utf16 ) {
-			// Literal programs have no lookbehind. Native strict validation starts
+			// Supported sequences have no lookbehind. Native strict validation starts
 			// at the requested offset; an earlier malformed prefix is not inspected.
 			if ( startOffset > 0 && startOffset < input.Length && Char.IsLowSurrogate( input[startOffset] ) ) {
 				return new( null, new( PcreWordDiagnosticCode.InvalidStartOffset, startOffset ) );
@@ -51,13 +51,19 @@ internal sealed class PcreCompiledWordLiteral {
 			if ( !Step() ) { return Exhausted(); } // Candidate admission.
 			var position = candidate;
 			var matched = true;
-			foreach ( var literal in literals ) {
-				if ( !Step() ) { return Exhausted(); } // One scalar/unit comparison, including end failure.
-				if ( !PcreUtf16.TryRead( input, position, options.Utf16, out var value, out var width ) || value != literal.Value ) {
-					matched = false;
-					break;
+			foreach ( var node in nodes ) {
+				if ( !Step() ) { return Exhausted(); } // One comparison or zero-width assertion.
+				switch ( node ) {
+					case PcreByteLiteral literal:
+						if ( PcreUtf16.TryRead( input, position, options.Utf16, out var value, out var width ) && value == literal.Value ) {
+							position += width;
+						} else { matched = false; }
+						break;
+					case PcreByteAnchor anchor: matched = position == ( anchor.IsStart ? 0 : input.Length ); break;
+					case PcreByteSearchStart: matched = position == startOffset; break;
+					default: throw new InvalidOperationException( "Unsupported node reached the word sequence executor." );
 				}
-				position += width;
+				if ( !matched ) { break; }
 			}
 			if ( matched ) {
 				if ( !Step() ) { return Exhausted(); } // Root completion, including policy rejection.
