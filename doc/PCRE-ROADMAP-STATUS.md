@@ -1,5 +1,15 @@
 # PCRE roadmap status
 
+## Native width-16 literal execution
+
+The [word literal record](PCRE-WORD-LITERAL.md) adds bounded case-sensitive
+literal compilation and matching over original 16-bit input. Raw and strict
+UTF modes reuse shared literal nodes and call policies, with native offsets,
+owned compiled values, deterministic work and cancellation. The native
+matrix covers 7,680 outcomes; valid-Unicode literals also receive bounded
+managed cross-width checks. General regex lowering/backtracking, wider
+UTF-16 policies and release qualification remain open.
+
 ## Native width-16 navigation foundation
 
 The [UTF-16 navigation record](PCRE-UTF16-NAVIGATION.md) adds direct raw-unit
