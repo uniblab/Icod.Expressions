@@ -1,5 +1,14 @@
 # PCRE roadmap status
 
+## Native width-16 shared-parser sequences
+
+The [sequence record](PCRE-WORD-SEQUENCES.md) binds bounded ASCII regex source
+to the existing parser with a 16-bit numeric character domain. Straight
+literal/escape sequences and absolute assertions execute over original word
+subjects. The native matrix covers 7,680 outcomes, with bounded managed
+cross-width parity and quota checks. Non-ASCII regex source, broader lowering,
+backtracking and release qualification remain open; literal mode is preserved.
+
 ## Native width-16 literal execution
 
 The [word literal record](PCRE-WORD-LITERAL.md) adds bounded case-sensitive

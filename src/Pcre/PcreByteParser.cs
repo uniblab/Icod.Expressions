@@ -19,6 +19,7 @@ internal sealed partial class PcreByteParser {
 	private readonly bool literal;
 	private readonly bool noStartOptimize;
 	private readonly bool utf8;
+	private readonly int maximumCharacterValue;
 	private readonly bool ucp;
 	private readonly bool turkishCasing;
 	private readonly bool altExtendedClass;
@@ -60,7 +61,8 @@ internal sealed partial class PcreByteParser {
 	private ExtendedMode extended;
 
 	internal PcreByteParser( byte[] source, PcreByteOptions options,
-		PcreByteStartSettings settings, CancellationToken cancellationToken ) {
+		PcreByteStartSettings settings, CancellationToken cancellationToken, int codeUnitWidth = 8 ) {
+		if ( codeUnitWidth is not 8 and not 16 ) { throw new ArgumentOutOfRangeException( nameof( codeUnitWidth ) ); }
 		this.source = source;
 		literal = options.Literal;
 		noStartOptimize = settings.NoStartOptimize;
@@ -95,6 +97,7 @@ internal sealed partial class PcreByteParser {
 		matchUnsetBackreference = options.MatchUnsetBackreference;
 		maxVarLookbehind = options.MaxVarLookbehind;
 		utf8 = settings.Utf8;
+		maximumCharacterValue = utf8 ? 0x10FFFF : codeUnitWidth == 16 ? 0xFFFF : 0xFF;
 		ucp = settings.Ucp;
 		turkishCasing = settings.TurkishCasing;
 		asciiRestrictions = options.AsciiBsD ? AsciiRestriction.BackslashD : AsciiRestriction.None;
@@ -843,7 +846,7 @@ internal sealed partial class PcreByteParser {
 	private int ParseBracedHexValue( int offset ) => ParseBracedCharacterValue( offset, 16, "hex" );
 
 	private int ParseBracedCharacterValue( int offset, int radix, string kind ) {
-		var maximum = utf8 ? 0x10FFFF : 0xFF;
+		var maximum = maximumCharacterValue;
 		var scalar = 0;
 		var hasDigits = false;
 		while ( index < source.Length ) {
