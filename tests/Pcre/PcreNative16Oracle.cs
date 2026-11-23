@@ -15,10 +15,19 @@ internal sealed record PcreNative16Protocol(
 internal static class PcreNative16Oracle {
 	private const int MaximumUnits = 4096;
 
-	internal static PcreNative16Protocol Execute( ushort[] pattern, ushort[] subject, int mode, uint offset ) {
+	internal static PcreNative16Protocol Execute( ushort[] pattern, ushort[] subject, int mode, uint offset ) =>
+		ExecuteCore( pattern, subject, mode, offset, false, 0, 0 );
+
+	internal static PcreNative16Protocol ExecuteLiteral( ushort[] pattern, ushort[] subject, bool utf, uint offset,
+		int defaults = 0, int mask = 0 ) => ExecuteCore( pattern, subject, utf ? 1 : 0, offset, true, defaults, mask );
+
+	private static PcreNative16Protocol ExecuteCore( ushort[] pattern, ushort[] subject, int mode, uint offset,
+		bool literal, int defaults, int mask ) {
 		ArgumentNullException.ThrowIfNull( pattern );
 		ArgumentNullException.ThrowIfNull( subject );
 		if ( mode < 0 || ( mode & ~7 ) != 0 ) { throw new ArgumentOutOfRangeException( nameof( mode ) ); }
+		if ( defaults is < 0 or > 63 ) { throw new ArgumentOutOfRangeException( nameof( defaults ) ); }
+		if ( mask is < 0 or > 63 ) { throw new ArgumentOutOfRangeException( nameof( mask ) ); }
 		if ( pattern.Length > MaximumUnits ) { throw new ArgumentOutOfRangeException( nameof( pattern ) ); }
 		if ( subject.Length > MaximumUnits ) { throw new ArgumentOutOfRangeException( nameof( subject ) ); }
 		if ( IntPtr.Size != 8 || !AbiLayout().SequenceEqual( new[] { 64, 40, 80, 16, 24, 56, 32, 32, 56, 64, 8 } ) ) {
@@ -29,7 +38,9 @@ internal static class PcreNative16Oracle {
 		using var subjectMemory = NativeMemory.ForUnits( subject );
 		var input = new CompileInput {
 			Pattern = patternMemory.Pointer, Length = (uint)pattern.Length,
-			Flags = ( ( mode & 1 ) != 0 ? 0x80000u : 0u ) | ( ( mode & 2 ) != 0 ? 0x20000u : 0u ),
+			Flags = ( ( mode & 1 ) != 0 ? 0x80000u : 0u ) | ( ( mode & 2 ) != 0 ? 0x20000u : 0u )
+				| ( literal ? 0x02000000u : 0u ) | ( ( defaults & 1 ) != 0 ? 0x80000000u : 0u )
+				| ( ( defaults & 2 ) != 0 ? 0x20000000u : 0u ),
 			JitFlags = 1, Newline = 2, Bsr = 1, NestLimit = 512, MaxPatternLength = MaximumUnits,
 			ExtraOptions = ( mode & 4 ) != 0 ? 64u : 0u, MaxLookbehind = 255,
 			MaxCompiledLength = 1_048_576, OptimizationCount = 0, Optimizations = 0
@@ -51,7 +62,7 @@ internal static class PcreNative16Oracle {
 			using var vector = new NativeMemory( checked( ( (int)compiled.Captures + 1 ) * 2 * IntPtr.Size ) );
 			var matchInput = new MatchInput {
 				Code = compiled.Code, Subject = subjectMemory.Pointer, Length = (uint)subject.Length,
-				Start = offset, Options = 0,
+				Start = offset, Options = (uint)PcreNativeMatchPolicy.Options( defaults, mask ),
 				Settings = new MatchSettings { Limit = 1_000_000, Depth = 1024, Heap = 65536, OffsetLimit = 0, JitStack = 0 },
 				Vector = vector.Pointer, Callout = 0, CalloutData = 0
 			};
