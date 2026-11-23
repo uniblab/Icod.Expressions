@@ -1,5 +1,14 @@
 # PCRE roadmap status
 
+## Native 16-bit dot in straight sequences
+
+The [word dot record](PCRE-WORD-DOT.md) admits dot through the shared parser
+and original word-subject reader. Raw mode consumes one unit; strict UTF-16
+mode consumes one scalar. LF and dot-all behavior match the bounded native
+matrix of 8,448 policy outcomes, with four managed cross-width checks and
+exact work-step controls. Wider newline policies, classes, branching and
+captures remain open.
+
 ## Native 16-bit regex source spelling
 
 The [word source record](PCRE-WORD-PATTERN-SOURCE.md) admits direct BMP,

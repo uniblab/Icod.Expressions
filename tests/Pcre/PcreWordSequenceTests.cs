@@ -63,7 +63,6 @@ public sealed class PcreWordSequenceTests {
 	[InlineData( "(a){0}" )]
 	[InlineData( "a|b" )]
 	[InlineData( "a+" )]
-	[InlineData( "." )]
 	[InlineData( "[ab]" )]
 	[InlineData( "^a$" )]
 	[InlineData( "(?i)a" )]
