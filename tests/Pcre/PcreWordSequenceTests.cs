@@ -68,7 +68,6 @@ public sealed class PcreWordSequenceTests {
 	[InlineData( "^a$" )]
 	[InlineData( "(?i)a" )]
 	[InlineData( "(*UTF)a" )]
-	[InlineData( "é" )]
 	public void UnimplementedLoweringIsExplicit( string source ) {
 		Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 			PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );

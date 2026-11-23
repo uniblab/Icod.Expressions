@@ -66,7 +66,11 @@ internal sealed partial class PcreByteParser {
 	private bool TryConsumePatternWhiteSpace() {
 		var scalar = (int)source[index];
 		var width = 1;
-		if ( utf8 && scalar >= 0x80 ) {
+		if ( wordSource is not null && scalar >= 0x80 ) {
+			if ( !PcreUtf16.TryRead( wordSource, index, utf8, out scalar, out width ) ) {
+				throw Unsupported( index );
+			}
+		} else if ( utf8 && scalar >= 0x80 ) {
 			PcreUtf8.TryRead( source, index, out scalar, out width ); // Validated at compile entry.
 		}
 		// PCRE2 10.48 Pattern_White_Space, including raw byte NEL outside UTF mode.

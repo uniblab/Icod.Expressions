@@ -1,5 +1,14 @@
 # PCRE roadmap status
 
+## Native 16-bit regex source spelling
+
+The [word source record](PCRE-WORD-PATTERN-SOURCE.md) admits direct BMP,
+supplementary and raw surrogate literals through the shared parser while
+retaining original pattern code-unit offsets. Its 18 fixtures and all six
+compiled defaults and 64 call policies add 6,912 live native16 comparisons;
+four valid-Unicode cases also compare managed widths. Broader native16
+classes, branches, captures and the P10–P12 release gates remain open.
+
 ## ASCII and UTF inventory through PR #326 (2026-11-23)
 
 Revision 4 of *Icod.Expressions Architecture Critique and Production Development Roadmap*
