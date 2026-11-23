@@ -92,5 +92,17 @@ public sealed class PcreWordPatternSourceTests {
 			PcreWordSequenceCompiler.CompileSequence( "\uD800".AsMemory() ).Pattern!.Match( "\uD800".AsMemory() ).Match );
 	}
 
+	[Theory]
+	[InlineData( false )]
+	[InlineData( true )]
+	public void ExtendedModeSkipsWidePatternWhitespace( bool utf ) {
+		const string source = "(?x)\u200Eé";
+		var native = PcreNative16Oracle.ExecuteSequence( Words( source ), Words( "é" ), utf, 0 );
+		Assert.Equal( "M", native.Kind );
+		var compiled = PcreWordSequenceCompiler.CompileSequence( source.AsMemory(), new() { Utf16 = utf } );
+		Assert.True( compiled.IsSuccess );
+		Assert.Equal( new PcreWordCapture( 0, 1 ), compiled.Pattern!.Match( "é".AsMemory() ).Match );
+	}
+
 	private static ushort[] Words( string source ) => source.Select( unit => (ushort)unit ).ToArray();
 }

@@ -13,12 +13,14 @@ from the original pattern when consuming a literal. Raw mode consumes one
 unit, including isolated surrogates. UTF mode consumes one scalar, including
 a surrogate pair, after the existing validation pass. The parser therefore
 uses original code-unit offsets without a decoded-pattern offset map. Existing
-byte patterns use the same parser without this word source.
+byte patterns use the same parser without this word source. Extended-mode
+pattern whitespace also reads the original word value; unsupported bracket
+classes reject at their opening token before byte-only class parsing.
 
 Pattern length admission remains measured in original units. Quoted and
 escaped literal source uses the same reader. A malformed UTF-16 pattern is
 diagnosed at the first invalid source unit before grammar lowering. Unsupported
-character classes, captures, repetition, alternation and inline options keep
+character classes, captures, repetition, alternation and caseless options keep
 their explicit unsupported result. Full PCRE2 diagnostic identity remains a
 later gate; the current grammar reports the offending source token's original
 code-unit offset.
@@ -32,7 +34,8 @@ uses six compiled policy defaults and all 64 call masks for 6,912 live
 PCRE2-16 comparisons. Four additional valid-Unicode patterns compare managed
 byte and word scalar coordinates. Error cases check that a trailing escape
 after a supplementary literal reports the original word offset. Ownership
-and unsupported-class cases keep the current bounded admission contract.
+unsupported-class and wide extended-whitespace cases keep the current bounded
+admission contract.
 
 An independent preflight of the existing ordinary-regex native oracle used
 the statically linked PCRE2 10.48 and SLJIT revisions recorded in the

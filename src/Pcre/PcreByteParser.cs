@@ -271,7 +271,9 @@ internal sealed partial class PcreByteParser {
 	}
 
 	private PcreByteLiteral ParseWordLiteral() {
-		PcreUtf16.TryRead( wordSource!, index, utf8, out var value, out var width ); // Validated at compile entry.
+		if ( !PcreUtf16.TryRead( wordSource!, index, utf8, out var value, out var width ) ) {
+			throw Unsupported( index );
+		}
 		index += width;
 		return new( value );
 	}
@@ -292,6 +294,7 @@ internal sealed partial class PcreByteParser {
 			return CreateAnyCharacter( dotAll );
 		}
 		if ( value == (byte)'[' ) {
+			if ( wordSource is not null ) { throw Unsupported( offset ); }
 			if ( TryReadEmptyClass( out var negated ) ) {
 				return negated ? new PcreByteAny( true )
 					: new PcreByteClass( default, PrefixKind: PcreByteClassPrefix.Bitmap ) { IsEmptySource = true };
