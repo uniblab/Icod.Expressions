@@ -1,5 +1,14 @@
 # PCRE roadmap status
 
+## Native width-16 navigation foundation
+
+The [UTF-16 navigation record](PCRE-UTF16-NAVIGATION.md) adds direct raw-unit
+and strict-scalar reads in both directions, plus bounded compiled-literal
+encoding. Exhaustive managed tests and 4,456,448 independent native outcomes
+pin the representation boundary. This is a P10 building block; native16
+compilation, matching, resource/diagnostic policy and cross-width release
+qualification remain open. No shared grammar or byte execution changes.
+
 ## PR313 — interpreted FIRSTLINE restart boundaries
 
 The [first-line record](PCRE-INTERPRETED-FIRST-LINE-STATUS.md) starts an
