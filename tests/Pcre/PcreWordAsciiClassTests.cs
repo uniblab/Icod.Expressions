@@ -120,7 +120,7 @@ public sealed class PcreWordAsciiClassTests {
 	}
 
 	[Fact]
-	public void PredicateRangeBoundAndUnicodePropertyAdmissionRemainExplicit() {
+	public void PredicateRangeBoundAndScriptPropertyAdmissionRemainExplicit() {
 		var allowed = "[" + new string( 'a', 63 ) + @"\d]";
 		var rejected = "[" + new string( 'a', 64 ) + @"\d]";
 		Assert.Equal( new PcreWordCapture( 0, 1 ),
@@ -128,7 +128,7 @@ public sealed class PcreWordAsciiClassTests {
 		Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 			PcreWordSequenceCompiler.CompileSequence( rejected.AsMemory() ).Diagnostic?.Code );
 		Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
-			PcreWordSequenceCompiler.CompileSequence( @"[\p{L}]".AsMemory(), new() { Utf16 = true } ).Diagnostic?.Code );
+			PcreWordSequenceCompiler.CompileSequence( @"[\p{Greek}]".AsMemory(), new() { Utf16 = true } ).Diagnostic?.Code );
 	}
 
 	private static ushort[] Words( string source ) => source.Select( unit => (ushort)unit ).ToArray();

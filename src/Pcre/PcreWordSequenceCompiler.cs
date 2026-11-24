@@ -66,7 +66,12 @@ internal static class PcreWordSequenceCompiler {
 		or PcreByteScalarClassKind.AsciiGraph or PcreByteScalarClassKind.AsciiLower
 		or PcreByteScalarClassKind.AsciiPrintable or PcreByteScalarClassKind.AsciiPunctuation
 		or PcreByteScalarClassKind.AsciiUpper or PcreByteScalarClassKind.AsciiHexDigit
-		or PcreByteScalarClassKind.HorizontalSpace or PcreByteScalarClassKind.VerticalSpace;
+		or PcreByteScalarClassKind.HorizontalSpace or PcreByteScalarClassKind.VerticalSpace
+		or PcreByteScalarClassKind.Letter or PcreByteScalarClassKind.CasedLetter
+		or PcreByteScalarClassKind.CategoryOther or PcreByteScalarClassKind.CategoryMark
+		or PcreByteScalarClassKind.CategoryNumber or PcreByteScalarClassKind.CategoryPunctuation
+		or PcreByteScalarClassKind.CategorySymbol or PcreByteScalarClassKind.CategorySeparator
+		or PcreByteScalarClassKind.SpecificCategory;
 
 	private static PcreWordCompileResult Error( PcreWordDiagnosticCode code, int offset ) => new( null, new( code, offset ) );
 }
