@@ -62,6 +62,7 @@ internal sealed record PcreByteScalarSet(
 ) : PcreByteNode {
 	internal PcreByteScalarSetSource Source { get; init; }
 	internal int SourceLiteral { get; init; } = -1;
+	internal int SourceMemberCount { get; init; }
 }
 
 internal enum PcreScalarSetOperation { Operand, Not, And, Or, Subtract, Xor }

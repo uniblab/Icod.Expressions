@@ -8,7 +8,8 @@ internal static partial class PcreUtf8CaseFold {
 		left == right || Fold( left, restricted, turkish ) == Fold( right, restricted, turkish );
 
 	internal static PcreByteScalarRange[] CloseRanges(
-		IReadOnlyList<PcreByteScalarRange> ranges, CancellationToken cancellationToken, bool restricted = false, bool turkish = false
+		IReadOnlyList<PcreByteScalarRange> ranges, CancellationToken cancellationToken, bool restricted = false,
+		bool turkish = false, bool includeSurrogates = false
 	) {
 		cancellationToken.ThrowIfCancellationRequested();
 		if ( ranges.Count == 0 ) { return Array.Empty<PcreByteScalarRange>(); }
@@ -37,7 +38,9 @@ internal static partial class PcreUtf8CaseFold {
 		foreach ( var range in merged ) {
 			for ( var scalar = range.Start; scalar <= range.End; scalar++ ) {
 				if ( ( scalar & 1023 ) == 0 ) { cancellationToken.ThrowIfCancellationRequested(); }
-				if ( !Rune.IsValid( scalar ) ) { continue; } // A range may straddle the surrogate gap.
+				if ( !Rune.IsValid( scalar ) && !( includeSurrogates && scalar is >= 0xD800 and <= 0xDFFF ) ) {
+					continue; // Strict ranges may straddle the surrogate gap.
+				}
 				var key = Fold( scalar, restricted, turkish );
 				bitmap[key >> 5] |= 1u << ( key & 31 );
 				minimum = Math.Min( minimum, key );

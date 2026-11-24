@@ -55,7 +55,8 @@ internal sealed class PcreCompiledWordPattern {
 				if ( !Step() ) { return Exhausted(); } // One comparison or zero-width assertion.
 				switch ( node ) {
 					case PcreByteLiteral literal:
-						if ( PcreUtf16.TryRead( input, position, options.Utf16, out var value, out var width ) && value == literal.Value ) {
+						if ( PcreUtf16.TryRead( input, position, options.Utf16, out var value, out var width )
+							&& LiteralEquals( value, literal ) ) {
 							position += width;
 						} else { matched = false; }
 						break;
@@ -68,8 +69,13 @@ internal sealed class PcreCompiledWordPattern {
 					case PcreByteScalarSet set:
 						if ( PcreUtf16.TryRead( input, position, options.Utf16, out var classValue, out var classWidth ) ) {
 							var included = false;
+							var rangeValue = set.Caseless && ( options.Utf16 || options.Ucp )
+								? PcreUtf8CaseFold.Fold( classValue, set.CaselessRestricted ) : classValue;
+							var opposite = set.Caseless && !options.Utf16 && !options.Ucp
+								? AsciiOppositeCase( classValue ) : rangeValue;
 							foreach ( var range in set.Ranges.Span ) {
-								if ( classValue >= range.Start && classValue <= range.End ) { included = true; break; }
+								if ( rangeValue >= range.Start && rangeValue <= range.End
+									|| opposite >= range.Start && opposite <= range.End ) { included = true; break; }
 							}
 							if ( !included ) {
 								foreach ( var predicate in set.Predicates.Span ) {
@@ -112,4 +118,16 @@ internal sealed class PcreCompiledWordPattern {
 			candidate += advance;
 		}
 	}
+
+	private bool LiteralEquals( int value, PcreByteLiteral literal ) {
+		if ( value == literal.Value ) { return true; }
+		if ( !literal.Caseless ) { return false; }
+		if ( options.Utf16 || options.Ucp ) {
+			return PcreUtf8CaseFold.Equals( value, literal.Value, literal.CaselessRestricted );
+		}
+		return AsciiOppositeCase( value ) == literal.Value;
+	}
+
+	private static int AsciiOppositeCase( int value ) => value is >= 'A' and <= 'Z' ? value + 32
+		: value is >= 'a' and <= 'z' ? value - 32 : value;
 }

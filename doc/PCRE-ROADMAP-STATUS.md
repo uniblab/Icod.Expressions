@@ -1,5 +1,15 @@
 # PCRE roadmap status
 
+## Native 16-bit caseless literals and classes
+
+The [word caseless record](PCRE-WORD-CASELESS.md) admits caller and inline
+caseless matching for straight literals, bounded brackets and pinned scalar
+predicates. Raw mode without UCP uses ASCII folding; strict UTF-16 and raw
+UCP use pinned Unicode 17 simple folding while preserving original code-unit
+coordinates. Fifty-two fixtures across six defaults and 64 call masks add
+19,968 PCRE2-16 outcomes. Ordered branches, repetition and captures remain
+open.
+
 ## Native 16-bit UCP shorthand and POSIX classes
 
 The [word UCP class record](PCRE-WORD-UCP-CLASSES.md) binds the shared
@@ -7,8 +17,8 @@ Unicode-aware `\d`, `\w`, `\s`, POSIX and special-property predicates to
 raw words and strict UTF-16 scalars. Caller UCP and the five ASCII
 restrictions select membership without changing subject representation.
 Seventy-five fixtures across six defaults and 64 call masks add 28,800
-PCRE2-16 outcomes. Caseless matching, ordered execution and captures remain
-open.
+PCRE2-16 outcomes. The following caseless increment adds folding; ordered
+execution and captures remain open.
 
 ## Native 16-bit binary and bidi properties
 
