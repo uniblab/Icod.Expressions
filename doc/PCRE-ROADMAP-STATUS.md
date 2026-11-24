@@ -1,5 +1,14 @@
 # PCRE roadmap status
 
+## Native 16-bit ordered top-level alternatives
+
+The [word alternative record](PCRE-WORD-ALTERNATIVES.md) admits up to 64
+ordered top-level straight branches. Each candidate start tries source
+branches in order, with empty-match and end-anchored policy rejection
+allowing later branches at the same start. Fifty-four fixtures across six
+defaults and 64 call masks add 20,736 PCRE2-16 outcomes in raw and strict
+UTF-16 modes. Repetition, nested execution and captures remain open.
+
 ## Native 16-bit caseless literals and classes
 
 The [word caseless record](PCRE-WORD-CASELESS.md) admits caller and inline
@@ -7,8 +16,8 @@ caseless matching for straight literals, bounded brackets and pinned scalar
 predicates. Raw mode without UCP uses ASCII folding; strict UTF-16 and raw
 UCP use pinned Unicode 17 simple folding while preserving original code-unit
 coordinates. Fifty-two fixtures across six defaults and 64 call masks add
-19,968 PCRE2-16 outcomes. Ordered branches, repetition and captures remain
-open.
+19,968 PCRE2-16 outcomes. The following alternative increment adds ordered
+top-level branches; repetition and captures remain open.
 
 ## Native 16-bit UCP shorthand and POSIX classes
 

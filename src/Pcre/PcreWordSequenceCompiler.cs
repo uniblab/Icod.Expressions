@@ -39,17 +39,23 @@ internal static class PcreWordSequenceCompiler {
 			var parser = new PcreByteParser( grammarSource, grammarOptions, settings, cancellationToken,
 				codeUnitWidth: 16, wordSource: source );
 			var root = parser.Parse();
-			if ( parser.GroupCount != 0 || root.Branches.Count != 1 ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
-			var nodes = root.Branches[0];
-			foreach ( var node in nodes ) {
-				cancellationToken.ThrowIfCancellationRequested();
-				if ( node is PcreByteLiteral or PcreByteAny
-					or PcreByteAnchor { IsLineBoundary: false, IsDisabled: false } or PcreByteSearchStart
-					|| node is PcreByteScalarClass property && IsWordClassPredicate( property.Kind )
-					|| node is PcreByteScalarSet set && IsSupportedSet( set ) ) { continue; }
+			if ( parser.GroupCount != 0 || root.Branches.Count is < 1 or > 64 ) {
 				return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
 			}
-			return new( new( nodes.ToArray(), options ), null );
+			var branches = new PcreByteNode[root.Branches.Count][];
+			for ( var branch = 0; branch < branches.Length; branch++ ) {
+				var nodes = root.Branches[branch];
+				foreach ( var node in nodes ) {
+					cancellationToken.ThrowIfCancellationRequested();
+					if ( node is PcreByteLiteral or PcreByteAny
+						or PcreByteAnchor { IsLineBoundary: false, IsDisabled: false } or PcreByteSearchStart
+						|| node is PcreByteScalarClass property && IsWordClassPredicate( property.Kind )
+						|| node is PcreByteScalarSet set && IsSupportedSet( set ) ) { continue; }
+					return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
+				}
+				branches[branch] = nodes.ToArray();
+			}
+			return new( new( branches, options ), null );
 		} catch ( PcreByteParseException error ) {
 			return Error( error.Diagnostic.Code == PcreByteDiagnosticCode.UnsupportedSyntax
 				? PcreWordDiagnosticCode.UnsupportedSyntax : PcreWordDiagnosticCode.InvalidSyntax, error.Diagnostic.ByteOffset );

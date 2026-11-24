@@ -35,5 +35,6 @@ The LF-terminated output SHA-256 was:
 
 `7c77a9768360f7fbf32a536e59033f0a08fd4736a3c9cb60551a6743b42b5e46`
 
-Ordered branches and repetition, durable captures, expanded compile
-settings and the broader P10–P12 release gates remain open.
+The following [alternative increment](PCRE-WORD-ALTERNATIVES.md) adds ordered
+top-level branches. Repetition, durable captures, expanded compile settings
+and the broader P10–P12 release gates remain open.
