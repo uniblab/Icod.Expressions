@@ -1,5 +1,14 @@
 # PCRE roadmap status
 
+## Native 16-bit literal character classes
+
+The [word class record](PCRE-WORD-CLASSES.md) admits bounded literal, range
+and negated bracket classes through the shared scalar-range node. Raw mode
+reads 16-bit units and strict UTF-16 reads scalars. Twenty-two fixtures across
+six compiled defaults and 64 call masks supply 8,448 native comparisons, with
+four managed cross-width checks. Predicate/caseless classes, ordered branches,
+captures and the broad P10–P12 gates remain open.
+
 ## Native 16-bit dot in straight sequences
 
 The [word dot record](PCRE-WORD-DOT.md) admits dot through the shared parser
