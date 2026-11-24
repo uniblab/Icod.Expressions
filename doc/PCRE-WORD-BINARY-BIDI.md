@@ -12,7 +12,7 @@ Raw matching tests individual 16-bit code units, including surrogates.
 Strict UTF-16 matching reads scalars, including supplementary pairs, and
 reports group-zero captures in original code units. The word compiler's
 64-member bracket bound and one-step predicate work accounting still apply.
-Unrecognized or nonbinary special properties, including `\p{XWD}`, remain
+Unrecognized or nonbinary special properties, including `\p{XUC}`, remain
 outside this word sequence profile.
 
 ## Evidence
@@ -39,5 +39,6 @@ errors. Its LF-terminated output SHA-256 was:
 
 `4d28cd67e9553326e9d63826cdfa625aab46e02bc6744723e8c6f9d50556a656`
 
-Unicode-aware shorthand/POSIX predicates, caseless word matching, ordered
+The following [UCP class increment](PCRE-WORD-UCP-CLASSES.md) admits
+Unicode-aware shorthand/POSIX predicates. Caseless word matching, ordered
 branches, repetition, captures and the broader P10–P12 gates remain open.

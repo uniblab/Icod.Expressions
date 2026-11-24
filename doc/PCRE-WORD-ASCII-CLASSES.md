@@ -17,12 +17,13 @@ not become an ASCII class member. The existing word matcher reports original
 Standalone predicates consume one match step. Bracket classes admit at most
 64 combined ranges and predicates, and one class attempt consumes one step
 after candidate admission. This bounds comparison work within a step.
-UCP settings and caseless word classes remain explicitly unsupported in
-this binding. Following increments admit [fixed whitespace](PCRE-WORD-FIXED-SPACE.md)
+The following [UCP class increment](PCRE-WORD-UCP-CLASSES.md) selects
+Unicode membership and ASCII restrictions. Caseless word classes remain
+unsupported in this binding. Following increments admit [fixed whitespace](PCRE-WORD-FIXED-SPACE.md)
 and [Unicode general categories](PCRE-WORD-GENERAL-CATEGORIES.md). A further
 [script increment](PCRE-WORD-SCRIPTS.md) covers primary and extended scripts;
 the [binary and bidi increment](PCRE-WORD-BINARY-BIDI.md) admits its pinned
-properties. Unicode-aware shorthand/POSIX classes remain separate work.
+properties. The UCP class increment adds Unicode-aware shorthand/POSIX classes.
 
 ## Evidence
 
@@ -42,5 +43,5 @@ SHA-256 was:
 
 `7e70c252b9c232bb8d39dd2d2b835d439a9d595538fbe5168c1738c60da8f76b`
 
-General Unicode class predicates, word casing, ordered execution,
+Word casing, ordered execution,
 captures and cross-width release qualification remain roadmap work.

@@ -2,6 +2,12 @@ namespace Icod.Expressions.Pcre;
 
 internal sealed record PcreWordOptions {
 	public bool Utf16 { get; init; }
+	public bool Ucp { get; init; }
+	public bool AsciiBsD { get; init; }
+	public bool AsciiBsS { get; init; }
+	public bool AsciiBsW { get; init; }
+	public bool AsciiPosix { get; init; }
+	public bool AsciiDigit { get; init; }
 	public PcreMatchPolicy Policy { get; init; }
 	public int MatchWorkLimit { get; init; } = 1_000_000;
 	public uint MaxPatternLength { get; init; } = 4096;
