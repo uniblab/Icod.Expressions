@@ -34,4 +34,5 @@ without an error; its LF-terminated output SHA-256 was:
 The independent native oracle and pinned PCRE2 10.48/SLJIT revisions are
 recorded in the [word sequence evidence](PCRE-WORD-SEQUENCES.md). Ordered
 variable repetition, nested execution, durable captures and the broader
-P10–P12 gates remain open.
+P10–P12 gates remain open. The following [variable-repeat increment](PCRE-WORD-VARIABLE-REPEATS.md)
+admits one finite variable count per top-level path.
