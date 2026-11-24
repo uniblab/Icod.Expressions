@@ -6,8 +6,9 @@ nodes. Each subject candidate tries branches in original source order. A
 failed or policy-rejected branch leaves the same candidate available to later
 branches. `NOTEMPTY`, `NOTEMPTY_ATSTART` and `ENDANCHORED` therefore apply
 to each complete path without changing leftmost-first selection. Empty
-branches are first-class paths. Captures, nested groups and repeats remain
-explicitly unsupported.
+branches are first-class paths. The [fixed-repeat increment](PCRE-WORD-FIXED-REPEATS.md)
+now admits exact atom counts; captures, nested groups and variable repeats
+remain explicitly unsupported.
 
 The immutable compiled pattern owns branch arrays. Candidate, branch, node,
 completion and scalar-advance steps consume the existing work quota with
