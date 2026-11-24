@@ -744,17 +744,17 @@ internal sealed partial class PcreByteParser {
 			var set = horizontal ? PcreByteSet.HorizontalSpace : PcreByteSet.VerticalSpace;
 			return new PcreByteClass( negated ? set.Complement() : set );
 		}
-		if ( ( utf8 || ucp || classAlgebra ) && ( value is (byte)'d' or (byte)'D' ) ) {
+		if ( ( utf8 || ucp || classAlgebra || wordSource is not null ) && ( value is (byte)'d' or (byte)'D' ) ) {
 			var unicode = ucp && !HasAsciiRestriction( AsciiRestriction.BackslashD );
 			return CreatePropertyClass( new( unicode ? PcreByteScalarClassKind.DecimalDigit
 				: PcreByteScalarClassKind.AsciiDigit, value == (byte)'D' ), !inBracket || unicode );
 		}
-		if ( ( utf8 || ucp || classAlgebra ) && ( value is (byte)'w' or (byte)'W' ) ) {
+		if ( ( utf8 || ucp || classAlgebra || wordSource is not null ) && ( value is (byte)'w' or (byte)'W' ) ) {
 			var unicode = ucp && !HasAsciiRestriction( AsciiRestriction.BackslashW );
 			return CreatePropertyClass( new( unicode ? PcreByteScalarClassKind.UnicodeWord
 				: PcreByteScalarClassKind.AsciiWord, value == (byte)'W' ), !inBracket || unicode );
 		}
-		if ( ( utf8 || ucp || classAlgebra ) && ( value is (byte)'s' or (byte)'S' ) ) {
+		if ( ( utf8 || ucp || classAlgebra || wordSource is not null ) && ( value is (byte)'s' or (byte)'S' ) ) {
 			var unicode = ucp && !HasAsciiRestriction( AsciiRestriction.BackslashS );
 			return CreatePropertyClass( new( unicode ? PcreByteScalarClassKind.UnicodeSpace
 				: PcreByteScalarClassKind.AsciiSpace, value == (byte)'S' ), !inBracket || unicode );
@@ -957,7 +957,7 @@ internal sealed partial class PcreByteParser {
 	}
 
 	private PcreByteNode CreatePropertyClass( PcreByteScalarClass property, bool prefixAny = true ) {
-		if ( utf8 || classAlgebra ) { return property; }
+		if ( utf8 || classAlgebra || wordSource is not null ) { return property; }
 		var members = PcreByteSet.FromPredicate( value => {
 			cancellationToken.ThrowIfCancellationRequested();
 			return PcreScalarClassMembership.Contains( property.Kind, value, property.Category, caseless, property.PropertyValue ) != property.Negated;

@@ -71,8 +71,21 @@ internal sealed class PcreCompiledWordPattern {
 							foreach ( var range in set.Ranges.Span ) {
 								if ( classValue >= range.Start && classValue <= range.End ) { included = true; break; }
 							}
+							if ( !included ) {
+								foreach ( var predicate in set.Predicates.Span ) {
+									if ( PcreScalarClassMembership.Contains( predicate.Kind, classValue ) != predicate.Negated ) {
+										included = true; break;
+									}
+								}
+							}
 							if ( included != set.Negated ) { position += classWidth; }
 							else { matched = false; }
+						} else { matched = false; }
+						break;
+					case PcreByteScalarClass property:
+						if ( PcreUtf16.TryRead( input, position, options.Utf16, out var propertyValue, out var propertyWidth )
+							&& PcreScalarClassMembership.Contains( property.Kind, propertyValue ) != property.Negated ) {
+							position += propertyWidth;
 						} else { matched = false; }
 						break;
 					case PcreByteAnchor anchor: matched = position == ( anchor.IsStart ? 0 : input.Length ); break;

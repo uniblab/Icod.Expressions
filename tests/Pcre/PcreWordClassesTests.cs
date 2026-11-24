@@ -83,7 +83,7 @@ public sealed class PcreWordClassesTests {
 	}
 
 	[Fact]
-	public void ClassAdmissionBoundsRangeScanningAndRejectsPredicates() {
+	public void ClassAdmissionBoundsRangeScanningAndRejectsUnicodePredicates() {
 		var sixtyFour = "[" + new string( 'a', 64 ) + "]";
 		var sixtyFive = "[" + new string( 'a', 65 ) + "]";
 		Assert.Equal( new PcreWordCapture( 0, 1 ),
