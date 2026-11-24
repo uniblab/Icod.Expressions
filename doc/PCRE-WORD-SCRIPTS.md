@@ -15,7 +15,8 @@ contract. Bracket sets admit at most 64 combined ranges and predicates;
 one standalone or bracket script comparison consumes one match work step
 with a bounded table lookup.
 
-Binary properties, Unicode-aware shorthand/POSIX classes, caseless word
+The following [binary and bidi increment](PCRE-WORD-BINARY-BIDI.md) admits
+their pinned predicates. Unicode-aware shorthand/POSIX classes, caseless word
 matching, ordered branches and captures remain follow-on work.
 
 ## Evidence

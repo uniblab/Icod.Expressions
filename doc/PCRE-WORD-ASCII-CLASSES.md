@@ -21,7 +21,8 @@ UCP settings and caseless word classes remain explicitly unsupported in
 this binding. Following increments admit [fixed whitespace](PCRE-WORD-FIXED-SPACE.md)
 and [Unicode general categories](PCRE-WORD-GENERAL-CATEGORIES.md). A further
 [script increment](PCRE-WORD-SCRIPTS.md) covers primary and extended scripts;
-binary properties remain separate work.
+the [binary and bidi increment](PCRE-WORD-BINARY-BIDI.md) admits its pinned
+properties. Unicode-aware shorthand/POSIX classes remain separate work.
 
 ## Evidence
 
