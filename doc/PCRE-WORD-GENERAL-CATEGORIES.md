@@ -17,8 +17,9 @@ managed UTF-8 and UTF-16 capture coordinates.
 
 The existing bracket bound admits up to 64 combined ranges and predicates.
 A standalone or bracket predicate consumes one match step after candidate
-admission, with bounded table lookup inside that step. Scripts, binary
-properties, Unicode-aware shorthand/POSIX classes, caseless folding,
+admission, with bounded table lookup inside that step. The following
+[script increment](PCRE-WORD-SCRIPTS.md) adds bounded script predicates.
+Binary properties, Unicode-aware shorthand/POSIX classes, caseless folding,
 ordered branches and captures remain follow-on work.
 
 ## Evidence
