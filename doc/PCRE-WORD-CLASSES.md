@@ -10,8 +10,9 @@ remain in the subject's original 16-bit units.
 
 The word matcher checks at most 64 source ranges per class attempt. A larger
 range list is explicitly unsupported at compilation, keeping work per match
-step bounded. Property predicates and shorthand classes remain unsupported
-in this binding. Caseless classes remain unsupported until word-width folding
+step bounded. The following [ASCII predicate increment](PCRE-WORD-ASCII-CLASSES.md)
+adds bounded shorthand and POSIX members. Unicode property predicates and
+caseless classes remain unsupported until word-width folding
 uses the pinned Unicode data. Class membership consumes one match work step,
 with the existing candidate, validation, policy and cancellation costs.
 
@@ -33,6 +34,6 @@ compilation for each row. The LF-terminated output SHA-256 was:
 
 `e7a7986c55bf1b7dc267e17a6d1c1001b226bc12f5582f5a626a4381f0d3abd7`
 
-General property and POSIX classes, word-width casing, class algebra,
+Unicode property and Unicode-aware POSIX classes, word-width casing, class algebra,
 alternation, repetition, captures and cross-width release qualification
 remain separate roadmap work.

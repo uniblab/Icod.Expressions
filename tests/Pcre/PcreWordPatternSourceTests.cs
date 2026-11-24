@@ -85,7 +85,7 @@ public sealed class PcreWordPatternSourceTests {
 		Array.Fill( source, 'x' );
 		Assert.Equal( new PcreWordCapture( 0, 3 ), pattern.Match( "é😀".AsMemory() ).Match );
 		Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
-			PcreWordSequenceCompiler.CompileSequence( @"[\d]".AsMemory() ).Diagnostic?.Code );
+			PcreWordSequenceCompiler.CompileSequence( @"[\p{L}]".AsMemory(), new() { Utf16 = true } ).Diagnostic?.Code );
 		Assert.Equal( PcreWordDiagnosticCode.InvalidUtf16Pattern,
 			PcreWordSequenceCompiler.CompileSequence( "😀\uD800".AsMemory(), new() { Utf16 = true } ).Diagnostic?.Code );
 		Assert.Equal( new PcreWordCapture( 0, 1 ),
