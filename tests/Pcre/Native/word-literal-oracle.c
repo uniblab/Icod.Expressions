@@ -47,10 +47,11 @@ int main(void) {
             if (i < 6) { if (!sep) { return 2; } *sep = 0; p = sep + 1; }
             else if (sep) { return 2; }
         }
-        unsigned id = number(v[0]), utf = number(v[1]), defaults = number(v[2]), mask = number(v[3]), start = number(v[6]);
-        if (utf > 1 || defaults > 63 || mask > 63) { return 2; }
+        unsigned id = number(v[0]), mode = number(v[1]), defaults = number(v[2]), mask = number(v[3]), start = number(v[6]);
+        if (mode > 3 || defaults > 63 || mask > 63) { return 2; }
         size_t plen, slen; uint16_t *pattern = units(v[4], &plen), *subject = units(v[5], &slen);
-        uint32_t flags = (ORACLE_LITERAL ? PCRE2_LITERAL : 0) | (utf ? PCRE2_UTF : 0) | policy(defaults & 3);
+        uint32_t flags = (ORACLE_LITERAL ? PCRE2_LITERAL : 0) | (mode & 1 ? PCRE2_UTF : 0)
+            | (mode & 2 ? PCRE2_UCP : 0) | policy(defaults & 3);
         int error; PCRE2_SIZE offset; pcre2_code *code = pcre2_compile(pattern, plen, flags, &error, &offset, NULL);
         printf("%u|%u|%u|", id, defaults, mask);
         if (!code) { printf("E|%d|%zu\n", error, (size_t)offset); free(pattern); free(subject); continue; }

@@ -1,13 +1,24 @@
 # PCRE roadmap status
 
+## Native 16-bit UCP shorthand and POSIX classes
+
+The [word UCP class record](PCRE-WORD-UCP-CLASSES.md) binds the shared
+Unicode-aware `\d`, `\w`, `\s`, POSIX and special-property predicates to
+raw words and strict UTF-16 scalars. Caller UCP and the five ASCII
+restrictions select membership without changing subject representation.
+Seventy-five fixtures across six defaults and 64 call masks add 28,800
+PCRE2-16 outcomes. Caseless matching, ordered execution and captures remain
+open.
+
 ## Native 16-bit binary and bidi properties
 
 The [word binary and bidi record](PCRE-WORD-BINARY-BIDI.md) admits the pinned
 Unicode 17 binary properties and bidi classes as standalone atoms and bounded
 bracket predicates. Fifty-one raw/strict fixtures across six compiled defaults
 and 64 call masks add 19,584 native PCRE2-16 comparisons; an 80-name sweep
-checks both modes. Unicode-aware shorthand/POSIX classes, caseless matching,
-ordered execution and captures remain open.
+checks both modes. The following UCP class increment adds Unicode-aware
+shorthand/POSIX classes; caseless matching, ordered execution and captures
+remain open.
 
 ## Native 16-bit Unicode script properties
 

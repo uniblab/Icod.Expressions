@@ -128,7 +128,7 @@ public sealed class PcreWordAsciiClassTests {
 		Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 			PcreWordSequenceCompiler.CompileSequence( rejected.AsMemory() ).Diagnostic?.Code );
 		Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
-			PcreWordSequenceCompiler.CompileSequence( @"[\p{XWD}]".AsMemory(), new() { Utf16 = true } ).Diagnostic?.Code );
+			PcreWordSequenceCompiler.CompileSequence( @"[\p{XUC}]".AsMemory(), new() { Utf16 = true } ).Diagnostic?.Code );
 	}
 
 	private static ushort[] Words( string source ) => source.Select( unit => (ushort)unit ).ToArray();

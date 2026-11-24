@@ -27,7 +27,11 @@ internal static class PcreWordSequenceCompiler {
 			cancellationToken.ThrowIfCancellationRequested();
 			grammarSource[index] = source[index] > 127 ? (byte)0x80 : (byte)source[index];
 		}
-		var grammarOptions = new PcreByteOptions { Utf8 = options.Utf16 };
+		var grammarOptions = new PcreByteOptions {
+			Utf8 = options.Utf16, Ucp = options.Ucp,
+			AsciiBsD = options.AsciiBsD, AsciiBsS = options.AsciiBsS, AsciiBsW = options.AsciiBsW,
+			AsciiPosix = options.AsciiPosix, AsciiDigit = options.AsciiDigit
+		};
 		var settings = PcreByteStartSettings.Parse( grammarSource, grammarOptions, cancellationToken );
 		if ( settings.BodyOffset != 0 ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
 		try {
@@ -73,7 +77,13 @@ internal static class PcreWordSequenceCompiler {
 		or PcreByteScalarClassKind.CategorySymbol or PcreByteScalarClassKind.CategorySeparator
 		or PcreByteScalarClassKind.SpecificCategory
 		or PcreByteScalarClassKind.Script or PcreByteScalarClassKind.ScriptExtensions
-		or PcreByteScalarClassKind.BinaryProperty or PcreByteScalarClassKind.BidiClass;
+		or PcreByteScalarClassKind.BinaryProperty or PcreByteScalarClassKind.BidiClass
+		or PcreByteScalarClassKind.DecimalDigit or PcreByteScalarClassKind.UnicodeWord
+		or PcreByteScalarClassKind.UnicodeSpace or PcreByteScalarClassKind.UnicodeAlnum
+		or PcreByteScalarClassKind.UnicodeBlank or PcreByteScalarClassKind.UnicodeControl
+		or PcreByteScalarClassKind.UnicodeGraph or PcreByteScalarClassKind.UnicodeLower
+		or PcreByteScalarClassKind.UnicodePrintable or PcreByteScalarClassKind.UnicodePunctuation
+		or PcreByteScalarClassKind.UnicodeUpper or PcreByteScalarClassKind.UnicodeHexDigit;
 
 	private static PcreWordCompileResult Error( PcreWordDiagnosticCode code, int offset ) => new( null, new( code, offset ) );
 }
