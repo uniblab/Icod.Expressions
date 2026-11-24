@@ -35,4 +35,6 @@ SHA-256 was:
 The independent native oracle and pinned PCRE2 10.48/SLJIT revisions are
 recorded in the [word sequence evidence](PCRE-WORD-SEQUENCES.md). Dynamic
 unbounded repetition, multiple variable repeats, nested execution, durable
-captures and the broader P10–P12 gates remain open.
+captures and the broader P10–P12 gates remain open. The following
+[multiple-repeat increment](PCRE-WORD-MULTIPLE-REPEATS.md) admits several
+finite variable counts within the same global path bound.

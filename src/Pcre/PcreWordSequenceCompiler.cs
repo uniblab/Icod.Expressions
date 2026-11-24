@@ -48,22 +48,31 @@ internal static class PcreWordSequenceCompiler {
 			var branches = new List<PcreByteNode[]>();
 			for ( var branch = 0; branch < root.Branches.Count; branch++ ) {
 				var nodes = root.Branches[branch];
-				var variableIndex = -1;
-				PcreByteRepeat? variable = null;
+				var variables = new List<(int Index, PcreByteRepeat Repeat)>();
+				var choices = 1;
 				for ( var index = 0; index < nodes.Count; index++ ) {
 					cancellationToken.ThrowIfCancellationRequested();
 					if ( nodes[index] is not PcreByteRepeat repeat || repeat.Minimum == repeat.Maximum ) { continue; }
-					if ( variableIndex >= 0 || repeat.Minimum < 0 || repeat.Maximum > MaximumExactRepeat
+					if ( repeat.Minimum < 0 || repeat.Maximum > MaximumExactRepeat
 						|| !IsSupportedAtom( repeat.Child ) ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
-					variableIndex = index;
-					variable = repeat;
+					var range = repeat.Maximum - repeat.Minimum + 1;
+					if ( range > 64 / choices ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
+					choices *= range;
+					variables.Add( (index, repeat) );
 				}
-				var choices = variable is null ? 1 : variable.Maximum - variable.Minimum + 1;
 				if ( choices > 64 - branches.Count ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
+				var counts = new int[nodes.Count];
+				Array.Fill( counts, -1 );
 				for ( var choice = 0; choice < choices; choice++ ) {
-					var count = variable is null ? 0
-						: variable.Greedy ? variable.Maximum - choice : variable.Minimum + choice;
-					if ( !TryExpandBranch( nodes, variableIndex, count, cancellationToken, out var expanded ) ) {
+					var ordinal = choice;
+					for ( var index = variables.Count - 1; index >= 0; index-- ) {
+						var (nodeIndex, repeat) = variables[index];
+						var range = repeat.Maximum - repeat.Minimum + 1;
+						var digit = ordinal % range;
+						ordinal /= range;
+						counts[nodeIndex] = repeat.Greedy ? repeat.Maximum - digit : repeat.Minimum + digit;
+					}
+					if ( !TryExpandBranch( nodes, counts, cancellationToken, out var expanded ) ) {
 						return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
 					}
 					branches.Add( expanded );
@@ -76,15 +85,15 @@ internal static class PcreWordSequenceCompiler {
 		}
 	}
 
-	private static bool TryExpandBranch( IReadOnlyList<PcreByteNode> nodes, int variableIndex, int variableCount,
+	private static bool TryExpandBranch( IReadOnlyList<PcreByteNode> nodes, int[] counts,
 		CancellationToken cancellationToken, out PcreByteNode[] expanded ) {
 		var output = new List<PcreByteNode>();
 		for ( var index = 0; index < nodes.Count; index++ ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			var node = nodes[index];
 			if ( node is PcreByteRepeat repeat ) {
-				var count = index == variableIndex ? variableCount : repeat.Maximum;
-				if ( index != variableIndex && repeat.Minimum != repeat.Maximum
+				var count = counts[index] >= 0 ? counts[index] : repeat.Maximum;
+				if ( counts[index] < 0 && repeat.Minimum != repeat.Maximum
 					|| count is < 0 or > MaximumExactRepeat || !IsSupportedAtom( repeat.Child )
 					|| output.Count > MaximumExpandedNodes - count ) {
 					expanded = []; return false;
