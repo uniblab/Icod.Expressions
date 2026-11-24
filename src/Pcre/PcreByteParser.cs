@@ -327,7 +327,8 @@ internal sealed partial class PcreByteParser {
 	}
 
 	private PcreByteNode CreateAnyCharacter( bool includeNewline ) =>
-		utf8 || newline == PcreByteNewline.CrLf || newline == PcreByteNewline.Any && includeNewline ? new PcreByteAny( includeNewline )
+		wordSource is not null || utf8 || newline == PcreByteNewline.CrLf || newline == PcreByteNewline.Any && includeNewline
+			? new PcreByteAny( includeNewline )
 			: new PcreByteClass( includeNewline ? PcreByteSet.AllBytes
 				: newline switch {
 					PcreByteNewline.AnyCrLf => PcreByteSet.DotAnyCrLf,
@@ -663,6 +664,7 @@ internal sealed partial class PcreByteParser {
 		if ( value == (byte)'C' ) {
 			if ( inBracket ) { throw Invalid( offset, "a code-unit escape is not a character class member" ); }
 			if ( neverBackslashC ) { throw Invalid( offset, "code-unit escapes are disabled by the caller" ); }
+			if ( wordSource is not null ) { throw Unsupported( offset ); }
 			if ( utf8 ) { throw Unsupported( offset ); }
 			return new PcreByteAny( true );
 		}

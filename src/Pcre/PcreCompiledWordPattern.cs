@@ -59,6 +59,12 @@ internal sealed class PcreCompiledWordPattern {
 							position += width;
 						} else { matched = false; }
 						break;
+					case PcreByteAny any:
+						if ( PcreUtf16.TryRead( input, position, options.Utf16, out var dotValue, out var dotWidth )
+							&& ( any.DotAll || dotValue != '\n' ) ) {
+							position += dotWidth;
+						} else { matched = false; }
+						break;
 					case PcreByteAnchor anchor: matched = position == ( anchor.IsStart ? 0 : input.Length ); break;
 					case PcreByteSearchStart: matched = position == startOffset; break;
 					default: throw new InvalidOperationException( "Unsupported node reached the word sequence executor." );
