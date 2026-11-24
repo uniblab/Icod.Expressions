@@ -28,7 +28,8 @@ internal static class PcreWordSequenceCompiler {
 			grammarSource[index] = source[index] > 127 ? (byte)0x80 : (byte)source[index];
 		}
 		var grammarOptions = new PcreByteOptions {
-			Utf8 = options.Utf16, Ucp = options.Ucp,
+			Utf8 = options.Utf16, Ucp = options.Ucp, Caseless = options.Caseless,
+			CaselessRestricted = options.CaselessRestricted,
 			AsciiBsD = options.AsciiBsD, AsciiBsS = options.AsciiBsS, AsciiBsW = options.AsciiBsW,
 			AsciiPosix = options.AsciiPosix, AsciiDigit = options.AsciiDigit
 		};
@@ -42,10 +43,10 @@ internal static class PcreWordSequenceCompiler {
 			var nodes = root.Branches[0];
 			foreach ( var node in nodes ) {
 				cancellationToken.ThrowIfCancellationRequested();
-				if ( node is PcreByteLiteral { Caseless: false } or PcreByteAny
+				if ( node is PcreByteLiteral or PcreByteAny
 					or PcreByteAnchor { IsLineBoundary: false, IsDisabled: false } or PcreByteSearchStart
-					|| node is PcreByteScalarClass { Caseless: false } property && IsWordClassPredicate( property.Kind )
-					|| node is PcreByteScalarSet { Caseless: false } set && IsSupportedSet( set ) ) { continue; }
+					|| node is PcreByteScalarClass property && IsWordClassPredicate( property.Kind )
+					|| node is PcreByteScalarSet set && IsSupportedSet( set ) ) { continue; }
 				return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
 			}
 			return new( new( nodes.ToArray(), options ), null );
@@ -56,7 +57,7 @@ internal static class PcreWordSequenceCompiler {
 	}
 
 	private static bool IsSupportedSet( PcreByteScalarSet set ) {
-		if ( set.Ranges.Length + set.Predicates.Length is < 1 or > 64 ) { return false; }
+		if ( set.SourceMemberCount > 64 || set.Ranges.Length + set.Predicates.Length is < 1 or > 64 ) { return false; }
 		foreach ( var predicate in set.Predicates.Span ) {
 			if ( !IsWordClassPredicate( predicate.Kind ) ) { return false; }
 		}

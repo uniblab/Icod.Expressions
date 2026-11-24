@@ -38,5 +38,7 @@ The LF-terminated output SHA-256 was:
 
 `ade8a4e8f7217b7da3452f8e29e95586d55fe1dbc266dd5243f673bb29a31193`
 
-Caseless word matching, ordered branches and repetition, durable captures,
-full strict/tolerant UTF policy and the P10–P12 release gates remain open.
+The following [caseless increment](PCRE-WORD-CASELESS.md) admits folded
+straight literals and bounded classes. Ordered branches and repetition,
+durable captures, full strict/tolerant UTF policy and the P10–P12 release
+gates remain open.

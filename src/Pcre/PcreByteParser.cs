@@ -355,10 +355,12 @@ internal sealed partial class PcreByteParser {
 				var sourceKind = sourceTermCount == 1 && soleLiteral
 					? PcreByteScalarSetSource.Literal : PcreByteScalarSetSource.Class;
 				var sourceLiteral = sourceKind == PcreByteScalarSetSource.Literal ? ranges[0].Start : -1;
-				return new( caseless && utf8 ? PcreUtf8CaseFold.CloseRanges( ranges, cancellationToken, caselessRestricted, turkishCasing )
+				return new( caseless && ( utf8 || wordSource is not null && ucp )
+					? PcreUtf8CaseFold.CloseRanges( ranges, cancellationToken, caselessRestricted, turkishCasing,
+						wordSource is not null && !utf8 )
 					: ranges.ToArray(), predicates.ToArray(), negated,
 					explicitNewline && !( negated && sourceTermCount == 1 && soleLiteral ) ) {
-					Source = sourceKind, SourceLiteral = sourceLiteral
+					Source = sourceKind, SourceLiteral = sourceLiteral, SourceMemberCount = sourceTermCount
 				};
 			}
 			var first = quoting ? ParseQuotedLiteral() : ParseUtf8BracketItem( openingOffset );
