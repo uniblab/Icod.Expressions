@@ -737,7 +737,7 @@ internal sealed partial class PcreByteParser {
 		if ( value is (byte)'h' or (byte)'H' or (byte)'v' or (byte)'V' ) {
 			var horizontal = value is (byte)'h' or (byte)'H';
 			var negated = value is (byte)'H' or (byte)'V';
-			if ( utf8 || classAlgebra ) {
+			if ( utf8 || classAlgebra || wordSource is not null ) {
 				return new PcreByteScalarClass( horizontal ? PcreByteScalarClassKind.HorizontalSpace
 					: PcreByteScalarClassKind.VerticalSpace, negated );
 			}
