@@ -40,7 +40,7 @@ internal static class PcreWordSequenceCompiler {
 				cancellationToken.ThrowIfCancellationRequested();
 				if ( node is PcreByteLiteral { Caseless: false } or PcreByteAny
 					or PcreByteAnchor { IsLineBoundary: false, IsDisabled: false } or PcreByteSearchStart
-					|| node is PcreByteScalarClass { Caseless: false } property && IsAsciiClass( property.Kind )
+					|| node is PcreByteScalarClass { Caseless: false } property && IsWordClassPredicate( property.Kind )
 					|| node is PcreByteScalarSet { Caseless: false } set && IsSupportedSet( set ) ) { continue; }
 				return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
 			}
@@ -54,18 +54,19 @@ internal static class PcreWordSequenceCompiler {
 	private static bool IsSupportedSet( PcreByteScalarSet set ) {
 		if ( set.Ranges.Length + set.Predicates.Length is < 1 or > 64 ) { return false; }
 		foreach ( var predicate in set.Predicates.Span ) {
-			if ( !IsAsciiClass( predicate.Kind ) ) { return false; }
+			if ( !IsWordClassPredicate( predicate.Kind ) ) { return false; }
 		}
 		return true;
 	}
 
-	private static bool IsAsciiClass( PcreByteScalarClassKind kind ) => kind is
+	private static bool IsWordClassPredicate( PcreByteScalarClassKind kind ) => kind is
 		PcreByteScalarClassKind.AsciiDigit or PcreByteScalarClassKind.AsciiWord or PcreByteScalarClassKind.AsciiSpace
 		or PcreByteScalarClassKind.Ascii or PcreByteScalarClassKind.AsciiAlnum or PcreByteScalarClassKind.AsciiAlpha
 		or PcreByteScalarClassKind.AsciiBlank or PcreByteScalarClassKind.AsciiControl
 		or PcreByteScalarClassKind.AsciiGraph or PcreByteScalarClassKind.AsciiLower
 		or PcreByteScalarClassKind.AsciiPrintable or PcreByteScalarClassKind.AsciiPunctuation
-		or PcreByteScalarClassKind.AsciiUpper or PcreByteScalarClassKind.AsciiHexDigit;
+		or PcreByteScalarClassKind.AsciiUpper or PcreByteScalarClassKind.AsciiHexDigit
+		or PcreByteScalarClassKind.HorizontalSpace or PcreByteScalarClassKind.VerticalSpace;
 
 	private static PcreWordCompileResult Error( PcreWordDiagnosticCode code, int offset ) => new( null, new( code, offset ) );
 }

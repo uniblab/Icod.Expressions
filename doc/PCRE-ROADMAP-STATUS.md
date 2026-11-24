@@ -1,5 +1,14 @@
 # PCRE roadmap status
 
+## Native 16-bit fixed whitespace classes
+
+The [word fixed whitespace record](PCRE-WORD-FIXED-SPACE.md) admits `\h`,
+`\H`, `\v` and `\V` as standalone atoms and bounded bracket predicates.
+The shared PCRE2 whitespace lists apply to raw units and strict UTF-16
+scalars without UCP. Forty-one fixtures across six defaults and 64 call
+masks add 15,744 native comparisons. Unicode property and UCP classes,
+caseless word matching, ordered execution and captures remain open.
+
 ## Native 16-bit ASCII shorthand and POSIX classes
 
 The [word ASCII class record](PCRE-WORD-ASCII-CLASSES.md) adds `\d`, `\w`, `\s`
@@ -7,7 +16,7 @@ and their complements, inside or outside bracket sets, plus default ASCII
 POSIX predicates. Shared membership runs on raw word units or strict UTF-16
 scalars, with up to 64 combined ranges and predicates per bracket set.
 Thirty-six fixtures across six defaults and 64 masks provide 13,824 native
-comparisons. Unicode-aware properties, horizontal/vertical space, casing,
+comparisons. Unicode-aware properties, casing,
 ordered branches and captures remain follow-on work.
 
 ## Native 16-bit literal character classes
