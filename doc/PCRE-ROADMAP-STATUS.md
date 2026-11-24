@@ -1,5 +1,14 @@
 # PCRE roadmap status
 
+## Native 16-bit binary and bidi properties
+
+The [word binary and bidi record](PCRE-WORD-BINARY-BIDI.md) admits the pinned
+Unicode 17 binary properties and bidi classes as standalone atoms and bounded
+bracket predicates. Fifty-one raw/strict fixtures across six compiled defaults
+and 64 call masks add 19,584 native PCRE2-16 comparisons; an 80-name sweep
+checks both modes. Unicode-aware shorthand/POSIX classes, caseless matching,
+ordered execution and captures remain open.
+
 ## Native 16-bit Unicode script properties
 
 The [word script record](PCRE-WORD-SCRIPTS.md) admits primary script and
@@ -7,8 +16,8 @@ script-extension predicates as standalone atoms and bounded bracket members.
 Raw units and strict UTF-16 scalars use the pinned Unicode 17 script table.
 Forty-one fixtures across six defaults and 64 masks yield 15,744 native
 comparisons, plus a 175-name primary/extended sweep in both modes. Binary
-properties, UCP shorthand, casing, ordered execution and captures remain
-open.
+and bidi properties follow in the next record; UCP shorthand, casing,
+ordered execution and captures remain open.
 
 ## Native 16-bit Unicode general categories
 
