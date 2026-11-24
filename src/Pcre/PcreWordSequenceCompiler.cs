@@ -39,6 +39,7 @@ internal static class PcreWordSequenceCompiler {
 			foreach ( var node in nodes ) {
 				cancellationToken.ThrowIfCancellationRequested();
 				if ( node is PcreByteLiteral { Caseless: false } or PcreByteAny
+					or PcreByteScalarSet { Caseless: false, Predicates: { IsEmpty: true }, Ranges: { Length: > 0 and <= 64 } }
 					or PcreByteAnchor { IsLineBoundary: false, IsDisabled: false } or PcreByteSearchStart ) { continue; }
 				return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
 			}

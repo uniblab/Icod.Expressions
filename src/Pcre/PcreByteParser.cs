@@ -294,7 +294,7 @@ internal sealed partial class PcreByteParser {
 			return CreateAnyCharacter( dotAll );
 		}
 		if ( value == (byte)'[' ) {
-			if ( wordSource is not null ) { throw Unsupported( offset ); }
+			if ( wordSource is not null ) { return ParseUtf8Bracket( offset ); }
 			if ( TryReadEmptyClass( out var negated ) ) {
 				return negated ? new PcreByteAny( true )
 					: new PcreByteClass( default, PrefixKind: PcreByteClassPrefix.Bitmap ) { IsEmptySource = true };
@@ -391,6 +391,7 @@ internal sealed partial class PcreByteParser {
 	}
 
 	private PcreByteNode ParseUtf8BracketItem( int openingOffset ) {
+		if ( wordSource is not null && source[index] >= 0x80 ) { return ParseWordLiteral(); }
 		var offset = index;
 		var value = source[index++];
 		if ( value == (byte)'[' && index < source.Length
