@@ -1,12 +1,23 @@
 # PCRE roadmap status
 
+## Native 16-bit Unicode general categories
+
+The [word general category record](PCRE-WORD-GENERAL-CATEGORIES.md) admits
+group and specific Unicode categories in standalone atoms and bounded
+bracket sets, with complements and original 16-bit capture coordinates.
+Raw surrogate units and strict UTF-16 scalars use the pinned Unicode table.
+Forty-seven fixtures across six defaults and 64 masks supply 18,048 native
+comparisons, plus a 38-name category sweep in both modes. Script, binary,
+UCP shorthand and casing work remains open, as do ordered execution and
+captures.
+
 ## Native 16-bit fixed whitespace classes
 
 The [word fixed whitespace record](PCRE-WORD-FIXED-SPACE.md) admits `\h`,
 `\H`, `\v` and `\V` as standalone atoms and bounded bracket predicates.
 The shared PCRE2 whitespace lists apply to raw units and strict UTF-16
 scalars without UCP. Forty-one fixtures across six defaults and 64 call
-masks add 15,744 native comparisons. Unicode property and UCP classes,
+masks add 15,744 native comparisons. Script, binary and UCP classes,
 caseless word matching, ordered execution and captures remain open.
 
 ## Native 16-bit ASCII shorthand and POSIX classes

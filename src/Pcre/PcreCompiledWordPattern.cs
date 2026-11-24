@@ -73,7 +73,8 @@ internal sealed class PcreCompiledWordPattern {
 							}
 							if ( !included ) {
 								foreach ( var predicate in set.Predicates.Span ) {
-									if ( PcreScalarClassMembership.Contains( predicate.Kind, classValue ) != predicate.Negated ) {
+									if ( PcreScalarClassMembership.Contains( predicate.Kind, classValue, predicate.Category,
+										set.Caseless, predicate.PropertyValue ) != predicate.Negated ) {
 										included = true; break;
 									}
 								}
@@ -84,7 +85,8 @@ internal sealed class PcreCompiledWordPattern {
 						break;
 					case PcreByteScalarClass property:
 						if ( PcreUtf16.TryRead( input, position, options.Utf16, out var propertyValue, out var propertyWidth )
-							&& PcreScalarClassMembership.Contains( property.Kind, propertyValue ) != property.Negated ) {
+							&& PcreScalarClassMembership.Contains( property.Kind, propertyValue, property.Category,
+								property.Caseless, property.PropertyValue ) != property.Negated ) {
 							position += propertyWidth;
 						} else { matched = false; }
 						break;

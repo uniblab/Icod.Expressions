@@ -17,9 +17,10 @@ not become an ASCII class member. The existing word matcher reports original
 Standalone predicates consume one match step. Bracket classes admit at most
 64 combined ranges and predicates, and one class attempt consumes one step
 after candidate admission. This bounds comparison work within a step.
-Unicode property predicates, UCP settings and caseless word classes remain
-explicitly unsupported in this binding. The following [fixed whitespace
-increment](PCRE-WORD-FIXED-SPACE.md) admits horizontal and vertical space.
+UCP settings and caseless word classes remain explicitly unsupported in
+this binding. Following increments admit [fixed whitespace](PCRE-WORD-FIXED-SPACE.md)
+and [Unicode general categories](PCRE-WORD-GENERAL-CATEGORIES.md). Script
+and binary properties remain separate work.
 
 ## Evidence
 
