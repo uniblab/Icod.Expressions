@@ -2,6 +2,9 @@ namespace Icod.Expressions.Pcre;
 
 /// <summary>Admits a bounded width-16 sequence through the existing PCRE grammar.</summary>
 internal static class PcreWordSequenceCompiler {
+	private const int MaximumExpandedNodes = 4096;
+	private const int MaximumExactRepeat = 64;
+
 	internal static PcreWordCompileResult CompileSequence( ReadOnlyMemory<char> pattern, PcreWordOptions? options = null,
 		CancellationToken cancellationToken = default ) {
 		cancellationToken.ThrowIfCancellationRequested();
@@ -45,15 +48,23 @@ internal static class PcreWordSequenceCompiler {
 			var branches = new PcreByteNode[root.Branches.Count][];
 			for ( var branch = 0; branch < branches.Length; branch++ ) {
 				var nodes = root.Branches[branch];
+				var expanded = new List<PcreByteNode>();
 				foreach ( var node in nodes ) {
 					cancellationToken.ThrowIfCancellationRequested();
-					if ( node is PcreByteLiteral or PcreByteAny
-						or PcreByteAnchor { IsLineBoundary: false, IsDisabled: false } or PcreByteSearchStart
-						|| node is PcreByteScalarClass property && IsWordClassPredicate( property.Kind )
-						|| node is PcreByteScalarSet set && IsSupportedSet( set ) ) { continue; }
-					return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
+					if ( node is PcreByteRepeat repeat ) {
+						if ( repeat.Minimum != repeat.Maximum || repeat.Maximum is < 0 or > MaximumExactRepeat
+							|| !IsSupportedAtom( repeat.Child ) || expanded.Count > MaximumExpandedNodes - repeat.Maximum ) {
+							return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
+						}
+						for ( var count = 0; count < repeat.Maximum; count++ ) {
+							cancellationToken.ThrowIfCancellationRequested();
+							expanded.Add( repeat.Child );
+						}
+					} else if ( IsSupportedNode( node ) && expanded.Count < MaximumExpandedNodes ) {
+						expanded.Add( node );
+					} else { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
 				}
-				branches[branch] = nodes.ToArray();
+				branches[branch] = expanded.ToArray();
 			}
 			return new( new( branches, options ), null );
 		} catch ( PcreByteParseException error ) {
@@ -61,6 +72,13 @@ internal static class PcreWordSequenceCompiler {
 				? PcreWordDiagnosticCode.UnsupportedSyntax : PcreWordDiagnosticCode.InvalidSyntax, error.Diagnostic.ByteOffset );
 		}
 	}
+
+	private static bool IsSupportedNode( PcreByteNode node ) => IsSupportedAtom( node )
+		|| node is PcreByteAnchor { IsLineBoundary: false, IsDisabled: false } or PcreByteSearchStart;
+
+	private static bool IsSupportedAtom( PcreByteNode node ) => node is PcreByteLiteral or PcreByteAny
+		|| node is PcreByteScalarClass property && IsWordClassPredicate( property.Kind )
+		|| node is PcreByteScalarSet set && IsSupportedSet( set );
 
 	private static bool IsSupportedSet( PcreByteScalarSet set ) {
 		if ( set.SourceMemberCount > 64 || set.Ranges.Length + set.Predicates.Length is < 1 or > 64 ) { return false; }

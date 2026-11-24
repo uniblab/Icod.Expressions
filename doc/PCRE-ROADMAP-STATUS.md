@@ -1,5 +1,14 @@
 # PCRE roadmap status
 
+## Native 16-bit fixed-count atom repetition
+
+The [word repeat record](PCRE-WORD-FIXED-REPEATS.md) admits exact counts up to
+64 for supported atoms by bounded compile-time expansion. Each branch holds
+at most 4,096 nodes; the ordinary match work counter charges each comparison.
+Fifty fixtures across six defaults and 64 call masks add 19,200 PCRE2-16
+outcomes. Variable repeats, nested execution, durable captures and full
+cross-width parity remain open.
+
 ## Native 16-bit ordered top-level alternatives
 
 The [word alternative record](PCRE-WORD-ALTERNATIVES.md) admits up to 64
@@ -128,15 +137,15 @@ The two families need separate compatibility evidence. [Public provider contract
 |---|---|---|
 | Raw 8-bit, including ASCII | The parser and bounded, iterative matcher operate on original bytes, including NUL and 0x80–0xFF. They implement ordered alternatives, repetition, captures with rollback, backreferences, lookarounds and control verbs. Results use byte offsets. | Freeze the accepted syntax, options, diagnostics and resource behavior against PCRE2-8. Qualify both ASCII-heavy searches and raw high-byte cases. |
 | UTF-8 | Forward and reverse scalar reads preserve byte offsets. The engine supports strict validation, tolerant matching across valid fragments, Unicode properties, UCP classes, case folding, word boundaries, graphemes and newline conventions within the tested profile. | Close strict and tolerant error/start-offset coverage, remaining optimizer differences and the byte performance baseline. Decide the UTF code-unit escape and callout contracts. |
-| Raw 16-bit | Case-sensitive literal patterns accept every 16-bit value, including isolated surrogates. The shared regex parser also admits straight sequences of literals, escapes and the assertions `\A`, `\G` and `\z`. Wide values can be written as numeric escapes. | Accept native non-ASCII regex spelling and general classes, ordered branches, repeats and captures. The current executor reports group zero only. |
-| Strict UTF-16 | The same two entry points read the original `char` memory directly. Supplementary literals match as scalars. Starts, diagnostics and group zero use 16-bit code units. For example, a single supplementary match occupies two units here and four bytes in UTF-8. | Bring Unicode classes, folding, graphemes, newline handling, reverse lookbehind and the general VM to this width. Freeze invalid-surrogate behavior, including the disposition of tolerant mode, and durable capture results. |
+| Raw 16-bit | Literal and bounded sequence entry points read original units, including isolated surrogates. The shared parser admits native non-ASCII spelling, dot, bounded scalar classes, absolute assertions, up to 64 ordered top-level branches and fixed atom repeats. Caseless and UCP predicates use pinned Unicode tables. | Add variable repetition, nested execution and durable captures; the current executor reports group zero only. |
+| Strict UTF-16 | The same two entry points read original `char` memory directly and match supplementary scalars. The admitted sequence grammar includes classes, caseless predicates, ordered branches and fixed atom repeats. Starts, diagnostics and group zero use 16-bit code units. | Add graphemes, newline handling, reverse lookbehind and the general VM. Freeze invalid-surrogate behavior, including the disposition of tolerant mode, and durable capture results. |
 
 Three choices matter for interpreting these rows. First, raw bytes and UTF-8 both
 represent ASCII directly, while UCP and its ASCII restrictions separately control
 what expressions such as `\d` match. Keeping Grep's ASCII-digit default and its `(?-aD)`
-override is part of its consumer contract. Second, the 16-bit regex entry currently
-accepts ASCII **pattern spelling** only. The literal entry accepts native text in
-both word modes. Third, strict byte matching validates the whole subject, while the
+override is part of its consumer contract. Second, the bounded 16-bit regex
+entry accepts native non-ASCII pattern spelling and preserves code-unit offsets.
+Third, strict byte matching validates the whole subject, while the
 current strict word sequence validates from the requested start because it cannot
 look behind. Preserve and test that distinction when extending lookbehind.
 [Byte syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md) ·
@@ -175,19 +184,12 @@ look behind. Preserve and test that distinction when extending lookbehind.
 
 ### Recommended delivery order and completion criteria
 
-1. **Extend native 16-bit pattern reading (P02/P10).** This is the next implementation
-   PR. Teach the shared grammar to read direct non-ASCII literals in a straight
-   sequence. Compare raw values above 0xFF, isolated raw surrogates, BMP text and
-   supplementary UTF-16 spellings with PCRE2-16. Check diagnostics after a
-   supplementary literal in original pattern units, and run the existing byte
-   grammar suite to protect its offsets. Keep subject reads native.
-2. **Broaden word execution (P10/P11).** Admit dot, classes and line anchors over
-   the full word or scalar domain. Then share ordered branch/repeat frames and
-   capture rollback before adding references, assertions, calls and verbs. Verify
-   high raw words, CRLF, empty retries and unset captures at each step. Reuse the
-   pinned Unicode tables for UCP, folding and graphemes. Check reverse traversal,
-   malformed boundaries, cancellation and budget exhaustion against the matching
-   width's contract as each feature lands.
+1. **Broaden word execution (P10/P11).** Extend exact atom counts to ordered
+   variable repetition, then share nested branch/repeat frames and capture
+   rollback before adding references, assertions, calls and verbs. Verify
+   empty retries, CRLF, unset captures and original code-unit coordinates at
+   each step. Expand the admitted newline and grapheme grammar and preserve
+   cancellation and budget exhaustion across each new path.
 3. **Finish the byte freeze alongside the word work (P00/P01/P09).** Record
    supported, rejected and deferred forms with native fixtures, including
    callouts and UTF `\C`. Expand the pinned corpus and Perl overlap with provenance.
