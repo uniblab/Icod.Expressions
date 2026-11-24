@@ -71,7 +71,8 @@ internal static class PcreWordSequenceCompiler {
 		or PcreByteScalarClassKind.CategoryOther or PcreByteScalarClassKind.CategoryMark
 		or PcreByteScalarClassKind.CategoryNumber or PcreByteScalarClassKind.CategoryPunctuation
 		or PcreByteScalarClassKind.CategorySymbol or PcreByteScalarClassKind.CategorySeparator
-		or PcreByteScalarClassKind.SpecificCategory;
+		or PcreByteScalarClassKind.SpecificCategory
+		or PcreByteScalarClassKind.Script or PcreByteScalarClassKind.ScriptExtensions;
 
 	private static PcreWordCompileResult Error( PcreWordDiagnosticCode code, int offset ) => new( null, new( code, offset ) );
 }

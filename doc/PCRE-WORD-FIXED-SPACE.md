@@ -16,7 +16,8 @@ The existing limit admits no more than 64 combined ranges and predicates
 per bracket set. A standalone or bracket whitespace comparison consumes one
 match work step; this finite set bounds the work within the step. The
 following [general category increment](PCRE-WORD-GENERAL-CATEGORIES.md)
-adds bounded category predicates. UCP shorthand, scripts, binary properties,
+adds bounded category predicates. [Script predicates](PCRE-WORD-SCRIPTS.md)
+follow; UCP shorthand, binary properties,
 caseless word matching, branches and captures remain separate roadmap work.
 
 ## Evidence

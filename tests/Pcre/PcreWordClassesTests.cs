@@ -83,7 +83,7 @@ public sealed class PcreWordClassesTests {
 	}
 
 	[Fact]
-	public void ClassAdmissionBoundsRangeScanningAndRejectsScriptPredicates() {
+	public void ClassAdmissionBoundsRangeScanningAndRejectsOtherProperties() {
 		var sixtyFour = "[" + new string( 'a', 64 ) + "]";
 		var sixtyFive = "[" + new string( 'a', 65 ) + "]";
 		Assert.Equal( new PcreWordCapture( 0, 1 ),
@@ -91,7 +91,7 @@ public sealed class PcreWordClassesTests {
 		Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 			PcreWordSequenceCompiler.CompileSequence( sixtyFive.AsMemory() ).Diagnostic?.Code );
 		Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
-			PcreWordSequenceCompiler.CompileSequence( @"[\p{Greek}]".AsMemory(), new() { Utf16 = true } ).Diagnostic?.Code );
+			PcreWordSequenceCompiler.CompileSequence( @"[\p{XWD}]".AsMemory(), new() { Utf16 = true } ).Diagnostic?.Code );
 	}
 
 	private static ushort[] Words( string source ) => source.Select( unit => (ushort)unit ).ToArray();

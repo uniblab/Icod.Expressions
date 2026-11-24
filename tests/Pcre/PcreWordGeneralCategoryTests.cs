@@ -147,7 +147,7 @@ public sealed class PcreWordGeneralCategoryTests {
 	}
 
 	[Fact]
-	public void GeneralCategoryBoundAndNonCategoryAdmissionStayExplicit() {
+	public void GeneralCategoryBoundAndOtherPropertyAdmissionStayExplicit() {
 		var allowed = "[" + new string( 'a', 63 ) + @"\p{L}]";
 		var rejected = "[" + new string( 'a', 64 ) + @"\p{L}]";
 		Assert.Equal( new PcreWordCapture( 0, 1 ),
@@ -155,7 +155,7 @@ public sealed class PcreWordGeneralCategoryTests {
 		Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 			PcreWordSequenceCompiler.CompileSequence( rejected.AsMemory() ).Diagnostic?.Code );
 		Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
-			PcreWordSequenceCompiler.CompileSequence( @"\p{Greek}".AsMemory(), new() { Utf16 = true } ).Diagnostic?.Code );
+			PcreWordSequenceCompiler.CompileSequence( @"\p{XWD}".AsMemory(), new() { Utf16 = true } ).Diagnostic?.Code );
 	}
 
 	private static ushort[] Words( string source ) => source.Select( unit => (ushort)unit ).ToArray();

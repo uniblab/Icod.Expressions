@@ -35,6 +35,6 @@ compilation for each row. The LF-terminated output SHA-256 was:
 
 `e7a7986c55bf1b7dc267e17a6d1c1001b226bc12f5582f5a626a4381f0d3abd7`
 
-Script/binary properties and Unicode-aware POSIX classes, word-width casing, class algebra,
+Binary properties and Unicode-aware POSIX classes, word-width casing, class algebra,
 alternation, repetition, captures and cross-width release qualification
 remain separate roadmap work.

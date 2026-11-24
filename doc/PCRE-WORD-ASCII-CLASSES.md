@@ -19,8 +19,9 @@ Standalone predicates consume one match step. Bracket classes admit at most
 after candidate admission. This bounds comparison work within a step.
 UCP settings and caseless word classes remain explicitly unsupported in
 this binding. Following increments admit [fixed whitespace](PCRE-WORD-FIXED-SPACE.md)
-and [Unicode general categories](PCRE-WORD-GENERAL-CATEGORIES.md). Script
-and binary properties remain separate work.
+and [Unicode general categories](PCRE-WORD-GENERAL-CATEGORIES.md). A further
+[script increment](PCRE-WORD-SCRIPTS.md) covers primary and extended scripts;
+binary properties remain separate work.
 
 ## Evidence
 
