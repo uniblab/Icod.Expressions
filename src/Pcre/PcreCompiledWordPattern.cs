@@ -96,7 +96,7 @@ internal sealed class PcreCompiledWordPattern {
 			for ( var index = first; index < nodes.Length; index++ ) {
 				if ( !Step() ) { return -1; }
 				switch ( nodes[index] ) {
-					case PcreByteLiteral or PcreByteAny or PcreByteScalarSet or PcreByteScalarClass:
+					case PcreByteLiteral or PcreByteAny or PcreByteScalarSet or PcreByteScalarClass or PcreByteNewlineSequence:
 						if ( !TryConsumeAtom( nodes[index], source, end, out var width ) ) { return 0; }
 						end += width;
 						break;
@@ -112,6 +112,7 @@ internal sealed class PcreCompiledWordPattern {
 						break;
 					case PcreByteRepeat repeat:
 						var count = 0;
+						var repeatStart = end;
 						if ( repeat.Greedy ) {
 							while ( true ) {
 								if ( !Step() ) { return -1; }
@@ -123,11 +124,8 @@ internal sealed class PcreCompiledWordPattern {
 								var outcome = TryRepeatFinish( nodes, index + 1, source, end, candidate, out var acceptedEnd );
 								if ( outcome != 0 ) { end = acceptedEnd; return outcome; }
 								if ( index == nodes.Length - 1 || count == repeat.Minimum ) { break; }
-								if ( !Step() ) { return -1; } // Rewind one previously matched scalar.
-								if ( !PcreUtf16.TryReadPrevious( source, end, options.Utf16, out _, out var rewindWidth ) ) {
-									throw new InvalidOperationException( "Invalid word repeat rewind." );
-								}
-								end -= rewindWidth;
+								if ( !Step() ) { return -1; } // Rewind one complete matched atom.
+								end -= RepeatRewindWidth( repeat.Child, source, end, repeatStart );
 								count--;
 							}
 						} else {
@@ -175,12 +173,13 @@ internal sealed class PcreCompiledWordPattern {
 					var node = nodes[nodeIndex];
 					if ( !Step() ) { return Exhausted(); } // Comparison, repeat admission or assertion.
 					switch ( node ) {
-						case PcreByteLiteral or PcreByteAny or PcreByteScalarSet or PcreByteScalarClass:
+						case PcreByteLiteral or PcreByteAny or PcreByteScalarSet or PcreByteScalarClass or PcreByteNewlineSequence:
 							matched = TryConsumeAtom( node, input, position, out var atomWidth );
 							if ( matched ) { position += atomWidth; }
 							break;
 						case PcreByteRepeat repeat:
 							var count = 0;
+							var repeatStart = position;
 							if ( repeat.Greedy ) {
 								while ( true ) {
 									if ( !Step() ) { return Exhausted(); }
@@ -193,11 +192,8 @@ internal sealed class PcreCompiledWordPattern {
 									if ( outcome < 0 ) { return Exhausted(); }
 									if ( outcome > 0 ) { return new( new( candidate, end - candidate ), null ); }
 									if ( nodeIndex == nodes.Length - 1 || count == repeat.Minimum ) { break; }
-									if ( !Step() ) { return Exhausted(); } // Rewind one previously matched scalar.
-									if ( !PcreUtf16.TryReadPrevious( input, position, options.Utf16, out _, out var width ) ) {
-										throw new InvalidOperationException( "Invalid word repeat rewind." );
-									}
-									position -= width;
+									if ( !Step() ) { return Exhausted(); } // Rewind one complete matched atom.
+									position -= RepeatRewindWidth( repeat.Child, input, position, repeatStart );
 									count--;
 								}
 							} else {
@@ -248,6 +244,11 @@ internal sealed class PcreCompiledWordPattern {
 
 	private bool TryConsumeAtom( PcreByteNode node, ReadOnlySpan<char> input, int position, out int width ) {
 		if ( !PcreUtf16.TryRead( input, position, options.Utf16, out var value, out width ) ) { return false; }
+		if ( node is PcreByteNewlineSequence ) {
+			if ( !PcreSpaceCharacters.IsVertical( value ) ) { return false; }
+			if ( value == '\r' && position < input.Length - 1 && input[position + 1] == '\n' ) { width = 2; }
+			return true;
+		}
 		return node switch {
 			PcreByteLiteral literal => LiteralEquals( value, literal ),
 			PcreByteAny any => any.DotAll || value != '\n',
@@ -256,6 +257,17 @@ internal sealed class PcreCompiledWordPattern {
 			PcreByteScalarSet set => ContainsSet( set, value ),
 			_ => throw new InvalidOperationException( "Unsupported word repeat atom." )
 		};
+	}
+
+	private int RepeatRewindWidth( PcreByteNode node, ReadOnlySpan<char> input, int position, int repeatStart ) {
+		// A CRLF consumed by \R is indivisible. A leading LF may instead have
+		// been consumed at the repeat's start, after a CR matched by its prefix.
+		if ( node is PcreByteNewlineSequence && position - repeatStart >= 2
+			&& input[position - 2] == '\r' && input[position - 1] == '\n' ) { return 2; }
+		if ( !PcreUtf16.TryReadPrevious( input, position, options.Utf16, out _, out var width ) ) {
+			throw new InvalidOperationException( "Invalid word repeat rewind." );
+		}
+		return width;
 	}
 
 	private bool ContainsSet( PcreByteScalarSet set, int value ) {
