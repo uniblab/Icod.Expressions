@@ -110,10 +110,10 @@ public sealed class PcreWordTwoUnboundedTests {
 	}
 
 	[Fact]
-	public void ThreeRepeatsAndUnsupportedWrappersRemainOutsideAdmission() {
+	public void FourRepeatsAndUnsupportedWrappersRemainOutsideAdmission() {
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( "a{64,}bc{64,}d".AsMemory() ).IsSuccess );
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( "x?a*b*c".AsMemory() ).IsSuccess );
-		foreach ( var source in new[] { "a*b*c*", "a*b?c*d*", "a*b*c?d*", "a*b{0,2}c*d*",
+		foreach ( var source in new[] { "a*b*c*d*", "a*b?c*d*", "a*b*c?d*", "a*b{0,2}c*d*",
 			"a{65,}b*c", "a*b{65,}c", "(a*)b*c", "a*+b*c" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
