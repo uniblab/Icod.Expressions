@@ -51,108 +51,68 @@ internal static class PcreWordSequenceCompiler {
 			var admittedPaths = 0;
 			for ( var branch = 0; branch < root.Branches.Count; branch++ ) {
 				var nodes = root.Branches[branch];
-				var prefixVariables = new List<(int Index, PcreByteRepeat Repeat)>();
-				var suffixVariables = new List<(int Index, PcreByteRepeat Repeat)>();
-				var tailVariables = new List<(int Index, PcreByteRepeat Repeat)>();
-				var unboundedIndex = -1;
-				var secondUnboundedIndex = -1;
-				var unboundedCount = 0;
-				var prefixChoices = 1;
-				var suffixChoices = 1;
-				var tailChoices = 1;
+				List<(int Index, PcreByteRepeat Repeat)>[] variables = [new(), new(), new(), new()];
+				var products = new[] { 1, 1, 1, 1 };
+				var repeats = new List<PcreByteRepeat>();
 				for ( var index = 0; index < nodes.Count; index++ ) {
 					cancellationToken.ThrowIfCancellationRequested();
 					if ( nodes[index] is not PcreByteRepeat repeat || repeat.Minimum == repeat.Maximum ) { continue; }
 					if ( repeat.Maximum == int.MaxValue ) {
-						if ( unboundedCount == 3 || repeat.Minimum is < 0 or > MaximumExactRepeat
+						if ( repeats.Count == 3 || repeat.Minimum is < 0 or > MaximumExactRepeat
 							|| !IsSupportedAtom( repeat.Child ) ) {
 							return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
 						}
-						if ( unboundedCount == 0 ) { unboundedIndex = index; }
-						else if ( unboundedCount == 1 ) { secondUnboundedIndex = index; }
-						unboundedCount++;
+						repeats.Add( repeat );
 						continue;
 					}
 					if ( repeat.Minimum < 0 || repeat.Maximum > MaximumExactRepeat
 						|| !IsSupportedAtom( repeat.Child ) ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
 					var range = repeat.Maximum - repeat.Minimum + 1;
-					if ( unboundedCount == 2 ) {
-						if ( range > 64 / tailChoices ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
-						tailChoices *= range;
-						tailVariables.Add( (index, repeat) );
-					} else if ( unboundedIndex >= 0 ) {
-						if ( range > 64 / suffixChoices ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
-						suffixChoices *= range;
-						suffixVariables.Add( (index, repeat) );
-					} else {
-						if ( range > 64 / prefixChoices ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
-						prefixChoices *= range;
-						prefixVariables.Add( (index, repeat) );
+					var segment = repeats.Count;
+					if ( range > 64 / products[segment] ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
+					products[segment] *= range;
+					variables[segment].Add( (index, repeat) );
+				}
+				var depth = repeats.Count;
+				var pathCount = 1;
+				for ( var segment = 0; segment <= depth; segment++ ) {
+					if ( products[segment] > ( 64 - admittedPaths ) / pathCount ) {
+						return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
 					}
+					pathCount *= products[segment];
 				}
-				if ( unboundedCount == 3 && ( suffixVariables.Count != 0 || tailVariables.Count != 0 )
-					|| prefixChoices > ( 64 - admittedPaths ) / ( suffixChoices * tailChoices ) ) {
-					return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
-				}
-				admittedPaths += prefixChoices * suffixChoices * tailChoices;
+				admittedPaths += pathCount;
 				var counts = new int[nodes.Count];
 				Array.Fill( counts, -1 );
-				for ( var prefixChoice = 0; prefixChoice < prefixChoices; prefixChoice++ ) {
-					SelectCounts( prefixVariables, prefixChoice, counts );
-					if ( unboundedCount == 2 && ( suffixChoices > 1 || tailChoices > 1 ) ) {
-						var middleAlternatives = new PcreByteNode[suffixChoices][];
-						PcreByteNode[]? firstPrefix = null;
-						for ( var middleChoice = 0; middleChoice < suffixChoices; middleChoice++ ) {
-							SelectCounts( suffixVariables, middleChoice, counts );
-							var tails = new PcreByteNode[tailChoices][];
-							PcreByteNode[]? middleWithSecond = null;
-							for ( var tailChoice = 0; tailChoice < tailChoices; tailChoice++ ) {
-								SelectCounts( tailVariables, tailChoice, counts );
-								if ( !TryExpandBranch( nodes, counts, cancellationToken, out var expanded ) ) {
-									return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
-								}
-								var first = Array.FindIndex( expanded, node => ReferenceEquals( node, nodes[unboundedIndex] ) );
-								var second = Array.FindIndex( expanded, node => ReferenceEquals( node, nodes[secondUnboundedIndex] ) );
-								if ( first < 0 || second <= first ) {
-									throw new InvalidOperationException( "Missing ordered word repeat nodes." );
-								}
-								firstPrefix ??= expanded[..( first + 1 )];
-								middleWithSecond ??= expanded[( first + 1 )..( second + 1 )];
-								tails[tailChoice] = expanded[( second + 1 )..];
-							}
-							if ( tailChoices > 1 ) {
-								middleAlternatives[middleChoice] = [.. middleWithSecond!, new PcreWordSuffixChoices( tails )];
-							} else {
-								middleAlternatives[middleChoice] = [.. middleWithSecond!, .. tails[0]];
-							}
-						}
-						if ( suffixChoices > 1 ) {
-							branches.Add( [.. firstPrefix!, new PcreWordSuffixChoices( middleAlternatives )] );
-						} else {
-							branches.Add( [.. firstPrefix!, .. middleAlternatives[0]] );
-						}
-						continue;
+				var paths = new PcreByteNode[pathCount][];
+				var positions = new int[pathCount][];
+				for ( var ordinal = 0; ordinal < pathCount; ordinal++ ) {
+					var remainder = ordinal;
+					for ( var segment = depth; segment >= 0; segment-- ) {
+						SelectCounts( variables[segment], remainder % products[segment], counts );
+						remainder /= products[segment];
 					}
-					if ( suffixChoices == 1 ) {
-						if ( !TryExpandBranch( nodes, counts, cancellationToken, out var expanded ) ) {
-							return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
-						}
-						branches.Add( expanded );
-						continue;
+					if ( !TryExpandBranch( nodes, counts, cancellationToken, out var expanded ) ) {
+						return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
 					}
-					var suffixes = new PcreByteNode[suffixChoices][];
-					PcreByteNode[]? prefix = null;
-					for ( var suffixChoice = 0; suffixChoice < suffixChoices; suffixChoice++ ) {
-						SelectCounts( suffixVariables, suffixChoice, counts );
-						if ( !TryExpandBranch( nodes, counts, cancellationToken, out var expanded ) ) {
-							return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
+					paths[ordinal] = expanded;
+					positions[ordinal] = new int[depth];
+					for ( var repeatIndex = 0; repeatIndex < depth; repeatIndex++ ) {
+						var position = Array.FindIndex( expanded, node => ReferenceEquals( node, repeats[repeatIndex] ) );
+						if ( position < ( repeatIndex == 0 ? 0 : positions[ordinal][repeatIndex - 1] + 1 ) ) {
+							throw new InvalidOperationException( "Missing ordered word repeat nodes." );
 						}
-						var repeatIndex = Array.FindIndex( expanded, node => ReferenceEquals( node, nodes[unboundedIndex] ) );
-						if ( repeatIndex < 0 ) { throw new InvalidOperationException( "Missing word repeat node." ); }
-						prefix ??= expanded[..( repeatIndex + 1 )];
-						suffixes[suffixChoice] = expanded[( repeatIndex + 1 )..];
+						positions[ordinal][repeatIndex] = position;
 					}
-					branches.Add( [.. prefix!, new PcreWordSuffixChoices( suffixes )] );
+				}
+				if ( depth == 0 ) { branches.AddRange( paths ); continue; }
+				var outerStride = pathCount / products[0];
+				for ( var choice = 0; choice < products[0]; choice++ ) {
+					var firstPath = choice * outerStride;
+					var prefix = paths[firstPath][..( positions[firstPath][0] + 1 )];
+					var continuation = BuildContinuation( paths, positions, products, depth,
+						1, firstPath, outerStride, cancellationToken );
+					branches.Add( [.. prefix, .. continuation] );
 				}
 			}
 			return new( new( branches.ToArray(), options ), null );
@@ -160,6 +120,27 @@ internal static class PcreWordSequenceCompiler {
 			return Error( error.Diagnostic.Code == PcreByteDiagnosticCode.UnsupportedSyntax
 				? PcreWordDiagnosticCode.UnsupportedSyntax : PcreWordDiagnosticCode.InvalidSyntax, error.Diagnostic.ByteOffset );
 		}
+	}
+
+	private static PcreByteNode[] BuildContinuation( PcreByteNode[][] paths, int[][] positions, int[] products,
+		int depth, int segment, int firstPath, int groupSize, CancellationToken cancellationToken ) {
+		var alternatives = new PcreByteNode[products[segment]][];
+		var stride = groupSize / products[segment];
+		for ( var choice = 0; choice < products[segment]; choice++ ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			var path = firstPath + choice * stride;
+			var firstNode = positions[path][segment - 1] + 1;
+			if ( segment == depth ) {
+				alternatives[choice] = paths[path][firstNode..];
+			} else {
+				var section = paths[path][firstNode..( positions[path][segment] + 1 )];
+				var continuation = BuildContinuation( paths, positions, products, depth,
+					segment + 1, path, stride, cancellationToken );
+				alternatives[choice] = [.. section, .. continuation];
+			}
+		}
+		if ( alternatives.Length > 1 ) { return [new PcreWordSuffixChoices( alternatives )]; }
+		return alternatives[0];
 	}
 
 	private static void SelectCounts( IReadOnlyList<(int Index, PcreByteRepeat Repeat)> variables,
