@@ -73,6 +73,19 @@ internal sealed class PcreCompiledWordPattern {
 			return ( !endAnchored || end == source.Length )
 				&& !( empty && ( notEmpty || notEmptyAtStart && candidate == startOffset ) ) ? 1 : 0;
 		}
+		int TryRepeatFinish( PcreByteNode[] nodes, int first, ReadOnlySpan<char> source, int at,
+			int candidate, out int end ) {
+			if ( first >= nodes.Length || nodes[first] is not PcreWordSuffixChoices choices ) {
+				return TryFinish( nodes, first, source, at, candidate, out end );
+			}
+			foreach ( var suffix in choices.Alternatives ) {
+				if ( choices.Alternatives.Length > 1 && !Step() ) { end = at; return -1; }
+				var outcome = TryFinish( suffix, 0, source, at, candidate, out end );
+				if ( outcome != 0 ) { return outcome; }
+			}
+			end = at;
+			return 0;
+		}
 		for ( var candidate = startOffset; ; ) {
 			if ( !Step() ) { return Exhausted(); } // Candidate admission.
 			for ( var branch = 0; branch < branches.Length; branch++ ) {
@@ -97,8 +110,8 @@ internal sealed class PcreCompiledWordPattern {
 									position += repeatWidth;
 									count++;
 								}
-							while ( count >= repeat.Minimum ) {
-									var outcome = TryFinish( nodes, nodeIndex + 1, input, position, candidate, out var end );
+								while ( count >= repeat.Minimum ) {
+									var outcome = TryRepeatFinish( nodes, nodeIndex + 1, input, position, candidate, out var end );
 									if ( outcome < 0 ) { return Exhausted(); }
 									if ( outcome > 0 ) { return new( new( candidate, end - candidate ), null ); }
 									if ( nodeIndex == nodes.Length - 1 || count == repeat.Minimum ) { break; }
@@ -112,7 +125,7 @@ internal sealed class PcreCompiledWordPattern {
 							} else {
 								while ( true ) {
 									if ( count >= repeat.Minimum ) {
-										var outcome = TryFinish( nodes, nodeIndex + 1, input, position, candidate, out var end );
+										var outcome = TryRepeatFinish( nodes, nodeIndex + 1, input, position, candidate, out var end );
 										if ( outcome < 0 ) { return Exhausted(); }
 										if ( outcome > 0 ) { return new( new( candidate, end - candidate ), null ); }
 									}
