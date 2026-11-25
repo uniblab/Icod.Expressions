@@ -115,7 +115,7 @@ public sealed class PcreWordVariableRepeatTests {
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( "a{1,64}".AsMemory() ).IsSuccess );
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( "a{0,62}|x".AsMemory() ).IsSuccess );
 		foreach ( var source in new[] { "a{0,64}", "a{0,63}|x", "a{1,65}",
-			"a*b*c*", "a+b+c+", "a{2,}b*c*", "(?:a){1,2}", "a{0,2}+" } ) {
+			"a*b*c*d*", "a+b+c+d+", "a{2,}b*c*d*", "(?:a){1,2}", "a{0,2}+" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

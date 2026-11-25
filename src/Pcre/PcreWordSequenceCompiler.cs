@@ -64,12 +64,13 @@ internal static class PcreWordSequenceCompiler {
 					cancellationToken.ThrowIfCancellationRequested();
 					if ( nodes[index] is not PcreByteRepeat repeat || repeat.Minimum == repeat.Maximum ) { continue; }
 					if ( repeat.Maximum == int.MaxValue ) {
-						if ( unboundedCount == 2 || repeat.Minimum is < 0 or > MaximumExactRepeat
+						if ( unboundedCount == 3 || repeat.Minimum is < 0 or > MaximumExactRepeat
 							|| !IsSupportedAtom( repeat.Child ) ) {
 							return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
 						}
-						if ( unboundedCount++ == 0 ) { unboundedIndex = index; }
-						else { secondUnboundedIndex = index; }
+						if ( unboundedCount == 0 ) { unboundedIndex = index; }
+						else if ( unboundedCount == 1 ) { secondUnboundedIndex = index; }
+						unboundedCount++;
 						continue;
 					}
 					if ( repeat.Minimum < 0 || repeat.Maximum > MaximumExactRepeat
@@ -89,7 +90,8 @@ internal static class PcreWordSequenceCompiler {
 						prefixVariables.Add( (index, repeat) );
 					}
 				}
-				if ( prefixChoices > ( 64 - admittedPaths ) / ( suffixChoices * tailChoices ) ) {
+				if ( unboundedCount == 3 && ( suffixVariables.Count != 0 || tailVariables.Count != 0 )
+					|| prefixChoices > ( 64 - admittedPaths ) / ( suffixChoices * tailChoices ) ) {
 					return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
 				}
 				admittedPaths += prefixChoices * suffixChoices * tailChoices;
