@@ -93,13 +93,20 @@ public sealed class PcreWordBoundaryTests {
 			coordinates.WordCaptures( wordMatch.Match is { } w ? $"{w.CodeUnitIndex}:{w.CodeUnitLength}" : "" ) );
 	}
 
+	// Attribute strings are UTF-8 metadata and cannot preserve isolated surrogate units.
+	public static IEnumerable<object[]> MalformedCases {
+		get {
+			yield return new object[] { @"\bX", "\uD800X", 1, 0 };
+			yield return new object[] { @"\BX", "\uDC00X", 1, 0 };
+			yield return new object[] { @"X|\b", "\uD800X", 1, 0 };
+			yield return new object[] { @"\AX|X", "\uD800X", 1, 0 };
+			yield return new object[] { @"\bX", "\uDC00\uDC00X", 2, 0 };
+			yield return new object[] { @"\b", "\uD800", 1, 0 };
+		}
+	}
+
 	[Theory]
-	[InlineData( @"\bX", "\uD800X", 1, 0 )]
-	[InlineData( @"\BX", "\uDC00X", 1, 0 )]
-	[InlineData( @"X|\b", "\uD800X", 1, 0 )]
-	[InlineData( @"\AX|X", "\uD800X", 1, 0 )]
-	[InlineData( @"\bX", "\uDC00\uDC00X", 2, 0 )]
-	[InlineData( @"\b", "\uD800", 1, 0 )]
+	[MemberData( nameof( MalformedCases ) )]
 	public void StrictValidationIncludesNativeAssertionLookbehind( string source, string subject, int start, int invalid ) {
 		Assert.Equal( "X", PcreNative16Oracle.ExecuteSequence( Words( source ), Words( subject ), true, (uint)start ).Kind );
 		var pattern = PcreWordSequenceCompiler.CompileSequence( source.AsMemory(), new() { Utf16 = true } ).Pattern!;
@@ -107,10 +114,16 @@ public sealed class PcreWordBoundaryTests {
 			pattern.Match( subject.AsMemory(), start ).Diagnostic );
 	}
 
+	public static IEnumerable<object[]> EarlierMalformedCases {
+		get {
+			yield return new object[] { @"\BX", "\uD800aX", 2 };
+			yield return new object[] { @"X|\A", "\uD800aX", 2 };
+			yield return new object[] { "X", "\uD800X", 1 };
+		}
+	}
+
 	[Theory]
-	[InlineData( @"\BX", "\uD800aX", 2 )]
-	[InlineData( @"X|\A", "\uD800aX", 2 )]
-	[InlineData( "X", "\uD800X", 1 )]
+	[MemberData( nameof( EarlierMalformedCases ) )]
 	public void EarlierMalformedPrefixStaysOutsideValidationWindow( string source, string subject, int start ) {
 		var native = PcreNative16Oracle.ExecuteSequence( Words( source ), Words( subject ), true, (uint)start );
 		Assert.Equal( "M", native.Kind );
