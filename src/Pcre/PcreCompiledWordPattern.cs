@@ -48,6 +48,31 @@ internal sealed class PcreCompiledWordPattern {
 		var endAnchored = options.Policy.EndAnchored || policy.EndAnchored;
 		var notEmpty = options.Policy.NotEmpty || policy.NotEmpty;
 		var notEmptyAtStart = options.Policy.NotEmptyAtStart || policy.NotEmptyAtStart;
+		// -1: work exhausted; 0: failed or policy-rejected; 1: complete match.
+		int TryFinish( PcreByteNode[] nodes, int first, ReadOnlySpan<char> source, int at,
+			int candidate, out int end ) {
+			end = at;
+			for ( var index = first; index < nodes.Length; index++ ) {
+				if ( !Step() ) { return -1; }
+				switch ( nodes[index] ) {
+					case PcreByteLiteral or PcreByteAny or PcreByteScalarSet or PcreByteScalarClass:
+						if ( !TryConsumeAtom( nodes[index], source, end, out var width ) ) { return 0; }
+						end += width;
+						break;
+					case PcreByteAnchor anchor:
+						if ( end != ( anchor.IsStart ? 0 : source.Length ) ) { return 0; }
+						break;
+					case PcreByteSearchStart:
+						if ( end != startOffset ) { return 0; }
+						break;
+					default: throw new InvalidOperationException( "Unsupported word repeat continuation." );
+				}
+			}
+			if ( !Step() ) { return -1; }
+			var empty = end == candidate;
+			return ( !endAnchored || end == source.Length )
+				&& !( empty && ( notEmpty || notEmptyAtStart && candidate == startOffset ) ) ? 1 : 0;
+		}
 		for ( var candidate = startOffset; ; ) {
 			if ( !Step() ) { return Exhausted(); } // Candidate admission.
 			for ( var branch = 0; branch < branches.Length; branch++ ) {
@@ -55,7 +80,8 @@ internal sealed class PcreCompiledWordPattern {
 				var nodes = branches[branch];
 				var position = candidate;
 				var matched = true;
-				foreach ( var node in nodes ) {
+				for ( var nodeIndex = 0; nodeIndex < nodes.Length; nodeIndex++ ) {
+					var node = nodes[nodeIndex];
 					if ( !Step() ) { return Exhausted(); } // Comparison, repeat admission or assertion.
 					switch ( node ) {
 						case PcreByteLiteral or PcreByteAny or PcreByteScalarSet or PcreByteScalarClass:
@@ -71,24 +97,32 @@ internal sealed class PcreCompiledWordPattern {
 									position += repeatWidth;
 									count++;
 								}
-								matched = count >= repeat.Minimum;
+							while ( count >= repeat.Minimum ) {
+									var outcome = TryFinish( nodes, nodeIndex + 1, input, position, candidate, out var end );
+									if ( outcome < 0 ) { return Exhausted(); }
+									if ( outcome > 0 ) { return new( new( candidate, end - candidate ), null ); }
+									if ( nodeIndex == nodes.Length - 1 || count == repeat.Minimum ) { break; }
+									if ( !Step() ) { return Exhausted(); } // Rewind one previously matched scalar.
+									if ( !PcreUtf16.TryReadPrevious( input, position, options.Utf16, out _, out var width ) ) {
+										throw new InvalidOperationException( "Invalid word repeat rewind." );
+									}
+									position -= width;
+									count--;
+								}
 							} else {
 								while ( true ) {
 									if ( count >= repeat.Minimum ) {
-										if ( !Step() ) { return Exhausted(); } // Lazy completion and policy retry.
-										var empty = position == candidate;
-										if ( ( !endAnchored || position == input.Length )
-											&& !( empty && ( notEmpty || notEmptyAtStart && candidate == startOffset ) ) ) {
-											return new( new( candidate, position - candidate ), null );
-										}
+										var outcome = TryFinish( nodes, nodeIndex + 1, input, position, candidate, out var end );
+										if ( outcome < 0 ) { return Exhausted(); }
+										if ( outcome > 0 ) { return new( new( candidate, end - candidate ), null ); }
 									}
 									if ( !Step() ) { return Exhausted(); }
 									if ( !TryConsumeAtom( repeat.Child, input, position, out var repeatWidth ) ) { break; }
 									position += repeatWidth;
 									count++;
 								}
-								matched = false; // Every eligible count has already completed or been rejected.
 							}
+							matched = false; // Every eligible count has failed or been rejected.
 							break;
 						case PcreByteAnchor anchor: matched = position == ( anchor.IsStart ? 0 : input.Length ); break;
 						case PcreByteSearchStart: matched = position == startOffset; break;

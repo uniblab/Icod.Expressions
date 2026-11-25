@@ -49,18 +49,20 @@ internal static class PcreWordSequenceCompiler {
 			for ( var branch = 0; branch < root.Branches.Count; branch++ ) {
 				var nodes = root.Branches[branch];
 				var variables = new List<(int Index, PcreByteRepeat Repeat)>();
+				var unboundedIndex = -1;
 				var choices = 1;
 				for ( var index = 0; index < nodes.Count; index++ ) {
 					cancellationToken.ThrowIfCancellationRequested();
 					if ( nodes[index] is not PcreByteRepeat repeat || repeat.Minimum == repeat.Maximum ) { continue; }
 					if ( repeat.Maximum == int.MaxValue ) {
-						if ( index != nodes.Count - 1 || repeat.Minimum is < 0 or > MaximumExactRepeat
+						if ( unboundedIndex >= 0 || repeat.Minimum is < 0 or > MaximumExactRepeat
 							|| !IsSupportedAtom( repeat.Child ) ) {
 							return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
 						}
+						unboundedIndex = index;
 						continue;
 					}
-					if ( repeat.Minimum < 0 || repeat.Maximum > MaximumExactRepeat
+					if ( unboundedIndex >= 0 || repeat.Minimum < 0 || repeat.Maximum > MaximumExactRepeat
 						|| !IsSupportedAtom( repeat.Child ) ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
 					var range = repeat.Maximum - repeat.Minimum + 1;
 					if ( range > 64 / choices ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
@@ -79,7 +81,7 @@ internal static class PcreWordSequenceCompiler {
 						ordinal /= range;
 						counts[nodeIndex] = repeat.Greedy ? repeat.Maximum - digit : repeat.Minimum + digit;
 					}
-					if ( !TryExpandBranch( nodes, counts, cancellationToken, out var expanded ) ) {
+					if ( !TryExpandBranch( nodes, counts, unboundedIndex, cancellationToken, out var expanded ) ) {
 						return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
 					}
 					branches.Add( expanded );
@@ -92,14 +94,14 @@ internal static class PcreWordSequenceCompiler {
 		}
 	}
 
-	private static bool TryExpandBranch( IReadOnlyList<PcreByteNode> nodes, int[] counts,
+	private static bool TryExpandBranch( IReadOnlyList<PcreByteNode> nodes, int[] counts, int unboundedIndex,
 		CancellationToken cancellationToken, out PcreByteNode[] expanded ) {
 		var output = new List<PcreByteNode>();
 		for ( var index = 0; index < nodes.Count; index++ ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			var node = nodes[index];
 			if ( node is PcreByteRepeat repeat ) {
-				if ( repeat.Maximum == int.MaxValue && index == nodes.Count - 1
+				if ( repeat.Maximum == int.MaxValue && index == unboundedIndex
 					&& repeat.Minimum is >= 0 and <= MaximumExactRepeat && IsSupportedAtom( repeat.Child )
 					&& output.Count < MaximumExpandedNodes ) {
 					output.Add( repeat );
