@@ -1,5 +1,13 @@
 # PCRE roadmap status
 
+## Native 16-bit unbounded tail atom
+
+The [word tail-repeat record](PCRE-WORD-TAIL-UNBOUNDED.md) admits one
+subject-driven `*`, `+` or `{m,}` atom at the end of a top-level path,
+with lazy or greedy preference and a minimum up to 64. Forty-four fixtures
+across six defaults and 64 call masks add 16,896 PCRE2-16 outcomes.
+Unbounded continuations, nested execution and durable captures remain open.
+
 ## Native 16-bit multiple bounded variable repeats
 
 The [word multiple-repeat record](PCRE-WORD-MULTIPLE-REPEATS.md) admits
@@ -153,8 +161,8 @@ The two families need separate compatibility evidence. [Public provider contract
 |---|---|---|
 | Raw 8-bit, including ASCII | The parser and bounded, iterative matcher operate on original bytes, including NUL and 0x80–0xFF. They implement ordered alternatives, repetition, captures with rollback, backreferences, lookarounds and control verbs. Results use byte offsets. | Freeze the accepted syntax, options, diagnostics and resource behavior against PCRE2-8. Qualify both ASCII-heavy searches and raw high-byte cases. |
 | UTF-8 | Forward and reverse scalar reads preserve byte offsets. The engine supports strict validation, tolerant matching across valid fragments, Unicode properties, UCP classes, case folding, word boundaries, graphemes and newline conventions within the tested profile. | Close strict and tolerant error/start-offset coverage, remaining optimizer differences and the byte performance baseline. Decide the UTF code-unit escape and callout contracts. |
-| Raw 16-bit | Literal and bounded sequence entry points read original units, including isolated surrogates. The shared parser admits native non-ASCII spelling, dot, bounded scalar classes, absolute assertions, ordered top-level paths, fixed counts and multiple finite variable atom repeats per path. Caseless and UCP predicates use pinned Unicode tables. | Add unbounded repeats, nested execution and durable captures; the current executor reports group zero only. |
-| Strict UTF-16 | The same two entry points read original `char` memory directly and match supplementary scalars. The admitted sequence grammar includes classes, caseless predicates, ordered paths and multiple bounded variable atom repeats. Starts, diagnostics and group zero use 16-bit code units. | Add graphemes, newline handling, reverse lookbehind and the general VM. Freeze invalid-surrogate behavior, including the disposition of tolerant mode, and durable capture results. |
+| Raw 16-bit | Literal and bounded sequence entry points read original units, including isolated surrogates. The shared parser admits native non-ASCII spelling, dot, bounded scalar classes, absolute assertions, ordered top-level paths, finite repeats and one unbounded tail atom per path. Caseless and UCP predicates use pinned Unicode tables. | Add unbounded repeats with continuations, nested execution and durable captures; the current executor reports group zero only. |
+| Strict UTF-16 | The same two entry points read original `char` memory directly and match supplementary scalars. The admitted sequence grammar includes classes, caseless predicates, ordered paths, finite repeats and one unbounded tail atom. Starts, diagnostics and group zero use 16-bit code units. | Add graphemes, newline handling, reverse lookbehind and the general VM. Freeze invalid-surrogate behavior, including the disposition of tolerant mode, and durable capture results. |
 
 Three choices matter for interpreting these rows. First, raw bytes and UTF-8 both
 represent ASCII directly, while UCP and its ASCII restrictions separately control
@@ -200,8 +208,8 @@ look behind. Preserve and test that distinction when extending lookbehind.
 
 ### Recommended delivery order and completion criteria
 
-1. **Broaden word execution (P10/P11).** Extend finite atom count choices to
-   unbounded repeats, then share nested branch/repeat frames and capture
+1. **Broaden word execution (P10/P11).** Extend unbounded tail atom matching
+   to continuations, then share nested branch/repeat frames and capture
    rollback before adding references, assertions, calls and verbs. Verify
    empty retries, CRLF, unset captures and original code-unit coordinates at
    each step. Expand the admitted newline and grapheme grammar and preserve

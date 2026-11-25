@@ -53,6 +53,13 @@ internal static class PcreWordSequenceCompiler {
 				for ( var index = 0; index < nodes.Count; index++ ) {
 					cancellationToken.ThrowIfCancellationRequested();
 					if ( nodes[index] is not PcreByteRepeat repeat || repeat.Minimum == repeat.Maximum ) { continue; }
+					if ( repeat.Maximum == int.MaxValue ) {
+						if ( index != nodes.Count - 1 || repeat.Minimum is < 0 or > MaximumExactRepeat
+							|| !IsSupportedAtom( repeat.Child ) ) {
+							return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
+						}
+						continue;
+					}
 					if ( repeat.Minimum < 0 || repeat.Maximum > MaximumExactRepeat
 						|| !IsSupportedAtom( repeat.Child ) ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
 					var range = repeat.Maximum - repeat.Minimum + 1;
@@ -92,6 +99,12 @@ internal static class PcreWordSequenceCompiler {
 			cancellationToken.ThrowIfCancellationRequested();
 			var node = nodes[index];
 			if ( node is PcreByteRepeat repeat ) {
+				if ( repeat.Maximum == int.MaxValue && index == nodes.Count - 1
+					&& repeat.Minimum is >= 0 and <= MaximumExactRepeat && IsSupportedAtom( repeat.Child )
+					&& output.Count < MaximumExpandedNodes ) {
+					output.Add( repeat );
+					continue;
+				}
 				var count = counts[index] >= 0 ? counts[index] : repeat.Maximum;
 				if ( counts[index] < 0 && repeat.Minimum != repeat.Maximum
 					|| count is < 0 or > MaximumExactRepeat || !IsSupportedAtom( repeat.Child )

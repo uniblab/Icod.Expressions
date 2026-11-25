@@ -56,49 +56,39 @@ internal sealed class PcreCompiledWordPattern {
 				var position = candidate;
 				var matched = true;
 				foreach ( var node in nodes ) {
-					if ( !Step() ) { return Exhausted(); } // One comparison or zero-width assertion.
+					if ( !Step() ) { return Exhausted(); } // Comparison, repeat admission or assertion.
 					switch ( node ) {
-						case PcreByteLiteral literal:
-							if ( PcreUtf16.TryRead( input, position, options.Utf16, out var value, out var width )
-								&& LiteralEquals( value, literal ) ) {
-								position += width;
-							} else { matched = false; }
+						case PcreByteLiteral or PcreByteAny or PcreByteScalarSet or PcreByteScalarClass:
+							matched = TryConsumeAtom( node, input, position, out var atomWidth );
+							if ( matched ) { position += atomWidth; }
 							break;
-						case PcreByteAny any:
-							if ( PcreUtf16.TryRead( input, position, options.Utf16, out var dotValue, out var dotWidth )
-								&& ( any.DotAll || dotValue != '\n' ) ) {
-								position += dotWidth;
-							} else { matched = false; }
-							break;
-						case PcreByteScalarSet set:
-							if ( PcreUtf16.TryRead( input, position, options.Utf16, out var classValue, out var classWidth ) ) {
-								var included = false;
-								var rangeValue = set.Caseless && ( options.Utf16 || options.Ucp )
-									? PcreUtf8CaseFold.Fold( classValue, set.CaselessRestricted ) : classValue;
-								var opposite = set.Caseless && !options.Utf16 && !options.Ucp
-									? AsciiOppositeCase( classValue ) : rangeValue;
-								foreach ( var range in set.Ranges.Span ) {
-									if ( rangeValue >= range.Start && rangeValue <= range.End
-										|| opposite >= range.Start && opposite <= range.End ) { included = true; break; }
+						case PcreByteRepeat repeat:
+							var count = 0;
+							if ( repeat.Greedy ) {
+								while ( true ) {
+									if ( !Step() ) { return Exhausted(); }
+									if ( !TryConsumeAtom( repeat.Child, input, position, out var repeatWidth ) ) { break; }
+									position += repeatWidth;
+									count++;
 								}
-								if ( !included ) {
-									foreach ( var predicate in set.Predicates.Span ) {
-										if ( PcreScalarClassMembership.Contains( predicate.Kind, classValue, predicate.Category,
-											set.Caseless, predicate.PropertyValue ) != predicate.Negated ) {
-											included = true; break;
+								matched = count >= repeat.Minimum;
+							} else {
+								while ( true ) {
+									if ( count >= repeat.Minimum ) {
+										if ( !Step() ) { return Exhausted(); } // Lazy completion and policy retry.
+										var empty = position == candidate;
+										if ( ( !endAnchored || position == input.Length )
+											&& !( empty && ( notEmpty || notEmptyAtStart && candidate == startOffset ) ) ) {
+											return new( new( candidate, position - candidate ), null );
 										}
 									}
+									if ( !Step() ) { return Exhausted(); }
+									if ( !TryConsumeAtom( repeat.Child, input, position, out var repeatWidth ) ) { break; }
+									position += repeatWidth;
+									count++;
 								}
-								if ( included != set.Negated ) { position += classWidth; }
-								else { matched = false; }
-							} else { matched = false; }
-							break;
-						case PcreByteScalarClass property:
-							if ( PcreUtf16.TryRead( input, position, options.Utf16, out var propertyValue, out var propertyWidth )
-								&& PcreScalarClassMembership.Contains( property.Kind, propertyValue, property.Category,
-									property.Caseless, property.PropertyValue ) != property.Negated ) {
-								position += propertyWidth;
-							} else { matched = false; }
+								matched = false; // Every eligible count has already completed or been rejected.
+							}
 							break;
 						case PcreByteAnchor anchor: matched = position == ( anchor.IsStart ? 0 : input.Length ); break;
 						case PcreByteSearchStart: matched = position == startOffset; break;
@@ -122,6 +112,39 @@ internal sealed class PcreCompiledWordPattern {
 			}
 			candidate += advance;
 		}
+	}
+
+	private bool TryConsumeAtom( PcreByteNode node, ReadOnlySpan<char> input, int position, out int width ) {
+		if ( !PcreUtf16.TryRead( input, position, options.Utf16, out var value, out width ) ) { return false; }
+		return node switch {
+			PcreByteLiteral literal => LiteralEquals( value, literal ),
+			PcreByteAny any => any.DotAll || value != '\n',
+			PcreByteScalarClass property => PcreScalarClassMembership.Contains( property.Kind, value,
+				property.Category, property.Caseless, property.PropertyValue ) != property.Negated,
+			PcreByteScalarSet set => ContainsSet( set, value ),
+			_ => throw new InvalidOperationException( "Unsupported word repeat atom." )
+		};
+	}
+
+	private bool ContainsSet( PcreByteScalarSet set, int value ) {
+		var included = false;
+		var rangeValue = set.Caseless && ( options.Utf16 || options.Ucp )
+			? PcreUtf8CaseFold.Fold( value, set.CaselessRestricted ) : value;
+		var opposite = set.Caseless && !options.Utf16 && !options.Ucp
+			? AsciiOppositeCase( value ) : rangeValue;
+		foreach ( var range in set.Ranges.Span ) {
+			if ( rangeValue >= range.Start && rangeValue <= range.End
+				|| opposite >= range.Start && opposite <= range.End ) { included = true; break; }
+		}
+		if ( !included ) {
+			foreach ( var predicate in set.Predicates.Span ) {
+				if ( PcreScalarClassMembership.Contains( predicate.Kind, value, predicate.Category,
+					set.Caseless, predicate.PropertyValue ) != predicate.Negated ) {
+					included = true; break;
+				}
+			}
+		}
+		return included != set.Negated;
 	}
 
 	private bool LiteralEquals( int value, PcreByteLiteral literal ) {
