@@ -75,7 +75,7 @@ internal sealed class PcreCompiledWordPattern {
 								count++;
 							}
 							while ( count >= repeat.Minimum ) {
-								var outcome = TryFinish( nodes, index + 1, source, end, candidate, out var acceptedEnd );
+								var outcome = TryRepeatFinish( nodes, index + 1, source, end, candidate, out var acceptedEnd );
 								if ( outcome != 0 ) { end = acceptedEnd; return outcome; }
 								if ( index == nodes.Length - 1 || count == repeat.Minimum ) { break; }
 								if ( !Step() ) { return -1; } // Rewind one previously matched scalar.
@@ -88,7 +88,7 @@ internal sealed class PcreCompiledWordPattern {
 						} else {
 							while ( true ) {
 								if ( count >= repeat.Minimum ) {
-									var outcome = TryFinish( nodes, index + 1, source, end, candidate, out var acceptedEnd );
+									var outcome = TryRepeatFinish( nodes, index + 1, source, end, candidate, out var acceptedEnd );
 									if ( outcome != 0 ) { end = acceptedEnd; return outcome; }
 								}
 								if ( !Step() ) { return -1; }
