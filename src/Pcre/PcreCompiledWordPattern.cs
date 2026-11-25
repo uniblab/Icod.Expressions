@@ -57,6 +57,22 @@ internal sealed class PcreCompiledWordPattern {
 		var endAnchored = options.Policy.EndAnchored || policy.EndAnchored;
 		var notEmpty = options.Policy.NotEmpty || policy.NotEmpty;
 		var notEmptyAtStart = options.Policy.NotEmptyAtStart || policy.NotEmptyAtStart;
+		var notBol = options.Policy.NotBol || policy.NotBol;
+		var notEol = options.Policy.NotEol || policy.NotEol;
+		bool MatchAnchor( PcreByteNode node, ReadOnlySpan<char> source, int at ) => node switch {
+			PcreByteAnchor anchor => !anchor.IsDisabled
+				&& ( !anchor.IsLineBoundary || !( anchor.IsStart ? notBol : notEol ) )
+				&& at == ( anchor.IsStart ? 0 : source.Length ),
+			PcreByteLineAnchor { IsStart: true } start =>
+				at == 0 && !start.SuppressSubjectBoundary && !notBol
+				|| at > 0 && ( at < source.Length || start.AllowSubjectEnd ) && source[at - 1] == '\n',
+			PcreByteLineAnchor end =>
+				at == source.Length && !end.SuppressSubjectBoundary && !notEol
+				|| at < source.Length && source[at] == '\n',
+			PcreByteEndBeforeFinalLf end => !end.IsDisabled && ( !end.IsLineBoundary || !notEol )
+				&& ( at == source.Length || at == source.Length - 1 && source[at] == '\n' ),
+			_ => throw new InvalidOperationException( "Unsupported word anchor." )
+		};
 		int MatchBoundary( PcreByteWordBoundary boundary, ReadOnlySpan<char> source, int at ) {
 			var kind = boundary.UnicodeWord ? PcreByteScalarClassKind.UnicodeWord : PcreByteScalarClassKind.AsciiWord;
 			var beforeWord = false;
@@ -84,8 +100,8 @@ internal sealed class PcreCompiledWordPattern {
 						if ( !TryConsumeAtom( nodes[index], source, end, out var width ) ) { return 0; }
 						end += width;
 						break;
-					case PcreByteAnchor anchor:
-						if ( end != ( anchor.IsStart ? 0 : source.Length ) ) { return 0; }
+					case PcreByteAnchor or PcreByteLineAnchor or PcreByteEndBeforeFinalLf:
+						if ( !MatchAnchor( nodes[index], source, end ) ) { return 0; }
 						break;
 					case PcreByteSearchStart:
 						if ( end != startOffset ) { return 0; }
@@ -199,7 +215,9 @@ internal sealed class PcreCompiledWordPattern {
 							}
 							matched = false; // Every eligible count has failed or been rejected.
 							break;
-						case PcreByteAnchor anchor: matched = position == ( anchor.IsStart ? 0 : input.Length ); break;
+						case PcreByteAnchor or PcreByteLineAnchor or PcreByteEndBeforeFinalLf:
+							matched = MatchAnchor( node, input, position );
+							break;
 						case PcreByteSearchStart: matched = position == startOffset; break;
 						case PcreByteWordBoundary boundary:
 							var boundaryResult = MatchBoundary( boundary, input, position );

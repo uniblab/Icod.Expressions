@@ -62,7 +62,8 @@ internal static class PcreWordSequenceCompiler {
 				var repeats = new List<PcreByteRepeat>();
 				for ( var index = 0; index < nodes.Count; index++ ) {
 					cancellationToken.ThrowIfCancellationRequested();
-					inspectPreviousScalar |= nodes[index] is PcreByteWordBoundary or PcreByteAnchor { IsStart: true };
+					inspectPreviousScalar |= nodes[index] is PcreByteWordBoundary
+						or PcreByteAnchor { IsStart: true, IsLineBoundary: false };
 					if ( nodes[index] is not PcreByteRepeat repeat || repeat.Minimum == repeat.Maximum ) { continue; }
 					if ( repeat.Maximum == int.MaxValue ) {
 						if ( repeats.Count == MaximumUnboundedRepeats || repeat.Minimum is < 0 or > MaximumExactRepeat
@@ -193,7 +194,8 @@ internal static class PcreWordSequenceCompiler {
 	}
 
 	private static bool IsSupportedNode( PcreByteNode node ) => IsSupportedAtom( node )
-		|| node is PcreByteAnchor { IsLineBoundary: false, IsDisabled: false } or PcreByteSearchStart or PcreByteWordBoundary;
+		|| node is PcreByteAnchor or PcreByteLineAnchor or PcreByteEndBeforeFinalLf
+			or PcreByteSearchStart or PcreByteWordBoundary;
 
 	private static bool IsSupportedAtom( PcreByteNode node ) => node is PcreByteLiteral or PcreByteAny
 		|| node is PcreByteScalarClass property && IsWordClassPredicate( property.Kind )
