@@ -4,10 +4,12 @@ namespace Icod.Expressions.Pcre;
 internal sealed class PcreCompiledWordPattern {
 	private readonly PcreByteNode[][] branches;
 	private readonly PcreWordOptions options;
+	private readonly bool inspectPreviousScalar;
 	internal PcreCompiledWordPattern( PcreByteNode[] nodes, PcreWordOptions options ) : this( [nodes], options ) { }
-	internal PcreCompiledWordPattern( PcreByteNode[][] branches, PcreWordOptions options ) {
+	internal PcreCompiledWordPattern( PcreByteNode[][] branches, PcreWordOptions options, bool inspectPreviousScalar = false ) {
 		this.branches = branches;
 		this.options = options;
+		this.inspectPreviousScalar = inspectPreviousScalar;
 	}
 
 	internal PcreWordMatchResult Match( ReadOnlyMemory<char> subject, int startOffset = 0,
@@ -31,12 +33,19 @@ internal sealed class PcreCompiledWordPattern {
 		PcreWordMatchResult Exhausted() => new( null, new( PcreWordDiagnosticCode.MatchWorkLimitExceeded, 0 ) );
 		var input = subject.Span;
 		if ( options.Utf16 ) {
-			// Supported sequences have no lookbehind. Native strict validation starts
-			// at the requested offset; an earlier malformed prefix is not inspected.
+			// PCRE2 gives word boundaries and absolute-start assertions a one-character
+			// validation lookbehind, even when another alternative could match.
 			if ( startOffset > 0 && startOffset < input.Length && Char.IsLowSurrogate( input[startOffset] ) ) {
 				return new( null, new( PcreWordDiagnosticCode.InvalidStartOffset, startOffset ) );
 			}
-			for ( var offset = startOffset; offset < input.Length; ) {
+			var validationStart = startOffset;
+			if ( inspectPreviousScalar && validationStart > 0 ) {
+				do {
+					if ( !Step() ) { return Exhausted(); }
+					validationStart--;
+				} while ( validationStart > 0 && Char.IsLowSurrogate( input[validationStart] ) );
+			}
+			for ( var offset = validationStart; offset < input.Length; ) {
 				if ( !Step() ) { return Exhausted(); }
 				if ( !PcreUtf16.TryRead( input, offset, true, out _, out var width ) ) {
 					return new( null, new( PcreWordDiagnosticCode.InvalidUtf16Subject, offset ) );
@@ -48,6 +57,22 @@ internal sealed class PcreCompiledWordPattern {
 		var endAnchored = options.Policy.EndAnchored || policy.EndAnchored;
 		var notEmpty = options.Policy.NotEmpty || policy.NotEmpty;
 		var notEmptyAtStart = options.Policy.NotEmptyAtStart || policy.NotEmptyAtStart;
+		int MatchBoundary( PcreByteWordBoundary boundary, ReadOnlySpan<char> source, int at ) {
+			var kind = boundary.UnicodeWord ? PcreByteScalarClassKind.UnicodeWord : PcreByteScalarClassKind.AsciiWord;
+			var beforeWord = false;
+			if ( at > 0 ) {
+				if ( !Step() ) { return -1; }
+				beforeWord = PcreUtf16.TryReadPrevious( source, at, options.Utf16, out var before, out _ )
+					&& PcreScalarClassMembership.Contains( kind, before );
+			}
+			var afterWord = false;
+			if ( at < source.Length ) {
+				if ( !Step() ) { return -1; }
+				afterWord = PcreUtf16.TryRead( source, at, options.Utf16, out var after, out _ )
+					&& PcreScalarClassMembership.Contains( kind, after );
+			}
+			return ( beforeWord != afterWord ) == boundary.IsBoundary ? 1 : 0;
+		}
 		// -1: work exhausted; 0: failed or policy-rejected; 1: complete match.
 		int TryFinish( PcreByteNode[] nodes, int first, ReadOnlySpan<char> source, int at,
 			int candidate, out int end ) {
@@ -64,6 +89,10 @@ internal sealed class PcreCompiledWordPattern {
 						break;
 					case PcreByteSearchStart:
 						if ( end != startOffset ) { return 0; }
+						break;
+					case PcreByteWordBoundary boundary:
+						var boundaryResult = MatchBoundary( boundary, source, end );
+						if ( boundaryResult != 1 ) { return boundaryResult; }
 						break;
 					case PcreByteRepeat repeat:
 						var count = 0;
@@ -172,6 +201,11 @@ internal sealed class PcreCompiledWordPattern {
 							break;
 						case PcreByteAnchor anchor: matched = position == ( anchor.IsStart ? 0 : input.Length ); break;
 						case PcreByteSearchStart: matched = position == startOffset; break;
+						case PcreByteWordBoundary boundary:
+							var boundaryResult = MatchBoundary( boundary, input, position );
+							if ( boundaryResult < 0 ) { return Exhausted(); }
+							matched = boundaryResult == 1;
+							break;
 						default: throw new InvalidOperationException( "Unsupported node reached the word sequence executor." );
 					}
 					if ( !matched ) { break; }

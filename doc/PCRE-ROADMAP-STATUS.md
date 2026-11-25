@@ -1,5 +1,14 @@
 # PCRE roadmap status
 
+## Native 16-bit word boundaries
+
+The [word-boundary record](PCRE-WORD-BOUNDARIES.md) adds `\b` and `\B`
+using ASCII or pinned Unicode word membership, including finite choices
+and all four supported repeat depths. Forty fixtures add 15,360 PCRE2-16
+comparisons. Strict validation now includes the preceding character when
+a boundary or `\A` occurs anywhere in the pattern. General nested
+execution, durable captures and broader newline/grapheme handling remain open.
+
 ## Native 16-bit four unbounded repeats and five choice levels
 
 The [four-repeat record](PCRE-WORD-FOUR-UNBOUNDED.md) extends the common
@@ -227,8 +236,8 @@ The two families need separate compatibility evidence. [Public provider contract
 |---|---|---|
 | Raw 8-bit, including ASCII | The parser and bounded, iterative matcher operate on original bytes, including NUL and 0x80–0xFF. They implement ordered alternatives, repetition, captures with rollback, backreferences, lookarounds and control verbs. Results use byte offsets. | Freeze the accepted syntax, options, diagnostics and resource behavior against PCRE2-8. Qualify both ASCII-heavy searches and raw high-byte cases. |
 | UTF-8 | Forward and reverse scalar reads preserve byte offsets. The engine supports strict validation, tolerant matching across valid fragments, Unicode properties, UCP classes, case folding, word boundaries, graphemes and newline conventions within the tested profile. | Close strict and tolerant error/start-offset coverage, remaining optimizer differences and the byte performance baseline. Decide the UTF code-unit escape and callout contracts. |
-| Raw 16-bit | Literal and bounded sequence entry points read original units, including isolated surrogates. The shared parser admits native non-ASCII spelling, dot, bounded scalar classes, absolute assertions, ordered top-level paths, finite repeats and up to four unbounded atoms with finite choices at each depth per path. Caseless and UCP predicates use pinned Unicode tables. | Add further unbounded repeats, general nested execution and durable captures; the current executor reports group zero only. |
-| Strict UTF-16 | The same two entry points read original `char` memory directly and match supplementary scalars. The admitted sequence grammar includes classes, caseless predicates, ordered paths, finite repeats and the bounded four-repeat slice with finite choices. Starts, diagnostics and group zero use 16-bit code units. | Add graphemes, newline handling, reverse lookbehind and the general VM. Freeze invalid-surrogate behavior, including the disposition of tolerant mode, and durable capture results. |
+| Raw 16-bit | Literal and bounded sequence entry points read original units, including isolated surrogates. The shared parser admits native non-ASCII spelling, dot, bounded scalar classes, absolute assertions, word boundaries, ordered top-level paths, finite repeats and up to four unbounded atoms with finite choices at each depth per path. Caseless and UCP predicates use pinned Unicode tables. | Add further unbounded repeats, general nested execution and durable captures; the current executor reports group zero only. |
+| Strict UTF-16 | The same two entry points read original `char` memory directly and match supplementary scalars. The admitted sequence grammar includes classes, caseless predicates, word boundaries, ordered paths, finite repeats and the bounded four-repeat slice with finite choices. Starts, diagnostics and group zero use 16-bit code units. | Add graphemes, newline handling, reverse lookbehind and the general VM. Freeze invalid-surrogate behavior, including the disposition of tolerant mode, and durable capture results. |
 
 Three choices matter for interpreting these rows. First, raw bytes and UTF-8 both
 represent ASCII directly, while UCP and its ASCII restrictions separately control
@@ -236,8 +245,9 @@ what expressions such as `\d` match. Keeping Grep's ASCII-digit default and its 
 override is part of its consumer contract. Second, the bounded 16-bit regex
 entry accepts native non-ASCII pattern spelling and preserves code-unit offsets.
 Third, strict byte matching validates the whole subject, while the
-current strict word sequence validates from the requested start because it cannot
-look behind. Preserve and test that distinction when extending lookbehind.
+current strict word sequence validates from the requested start, extended by
+one character when a word boundary or `\A` needs it. Preserve and test the
+native validation window when extending lookbehind.
 [Byte syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md) ·
 [Word literals](PCRE-WORD-LITERAL.md) · [Word sequences](PCRE-WORD-SEQUENCES.md)
 
