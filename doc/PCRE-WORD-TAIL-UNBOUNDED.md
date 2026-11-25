@@ -38,4 +38,6 @@ output SHA-256 was:
 The independent native oracle and pinned PCRE2 10.48/SLJIT revisions are
 recorded in the [word sequence evidence](PCRE-WORD-SEQUENCES.md). Unbounded
 repeats with continuations, nested execution, durable captures and the
-broader P10–P12 gates remain open.
+broader P10–P12 gates remain open. The following
+[continuation increment](PCRE-WORD-UNBOUNDED-CONTINUATIONS.md) admits one
+unbounded atom before a straight suffix.

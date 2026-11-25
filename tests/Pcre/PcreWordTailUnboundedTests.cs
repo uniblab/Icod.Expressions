@@ -127,7 +127,7 @@ public sealed class PcreWordTailUnboundedTests {
 	public void TailAdmissionAndContinuationRemainExplicit() {
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( "a{64,}".AsMemory() ).IsSuccess );
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( "a?b*".AsMemory() ).IsSuccess );
-		foreach ( var source in new[] { "a{65,}", "a*b", "a+?b", "a{2,}b", "a*b*", "(?:a)*", "a*+" } ) {
+		foreach ( var source in new[] { "a{65,}", "a*b?", "a+?b?", "a{2,}b?", "a*b*", "(?:a)*", "a*+" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

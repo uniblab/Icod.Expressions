@@ -105,11 +105,12 @@ public sealed class PcreWordFixedRepeatTests {
 			PcreWordSequenceCompiler.CompileSequence( "a{64}".AsMemory() ).Pattern!.Match( new string( 'a', 64 ).AsMemory() ).Match );
 		Assert.True( PcreWordSequenceCompiler.CompileSequence(
 			String.Concat( Enumerable.Repeat( "a{64}", 64 ) ).AsMemory() ).IsSuccess );
-		foreach ( var source in new[] { "a{65}", String.Concat( Enumerable.Repeat( "a{64}", 64 ), "a" ),
-			"a*b", "a+b", "a{2,}b", "(a){0}", "(?:a){2}",
+		foreach ( var source in new[] { "a{65}", String.Concat( Enumerable.Repeat( "a{64}", 64 ).Append( "a" ) ),
+			"a*b?", "a+b?", "a{2,}b?", "(a){0}", "(?:a){2}",
 			"a{2}+", "(?>a){2}" } ) {
-			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
-				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
+			var result = PcreWordSequenceCompiler.CompileSequence( source.AsMemory() );
+			Assert.True( result.Diagnostic?.Code == PcreWordDiagnosticCode.UnsupportedSyntax,
+				$"{source}: {result.Diagnostic}" );
 		}
 	}
 

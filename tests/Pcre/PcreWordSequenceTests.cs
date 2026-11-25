@@ -61,7 +61,7 @@ public sealed class PcreWordSequenceTests {
 	[Theory]
 	[InlineData( "(a)" )]
 	[InlineData( "(a){0}" )]
-	[InlineData( "a+b" )]
+	[InlineData( "a+b?" )]
 	[InlineData( "^a$" )]
 	[InlineData( "(*UTF)a" )]
 	public void UnimplementedLoweringIsExplicit( string source ) {
