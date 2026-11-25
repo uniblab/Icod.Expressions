@@ -49,6 +49,7 @@ internal static class PcreWordSequenceCompiler {
 				return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
 			}
 			var branches = new List<PcreByteNode[]>();
+			var inspectPreviousScalar = false;
 			var admittedPaths = 0;
 			for ( var branch = 0; branch < root.Branches.Count; branch++ ) {
 				var nodes = root.Branches[branch];
@@ -61,6 +62,7 @@ internal static class PcreWordSequenceCompiler {
 				var repeats = new List<PcreByteRepeat>();
 				for ( var index = 0; index < nodes.Count; index++ ) {
 					cancellationToken.ThrowIfCancellationRequested();
+					inspectPreviousScalar |= nodes[index] is PcreByteWordBoundary or PcreByteAnchor { IsStart: true };
 					if ( nodes[index] is not PcreByteRepeat repeat || repeat.Minimum == repeat.Maximum ) { continue; }
 					if ( repeat.Maximum == int.MaxValue ) {
 						if ( repeats.Count == MaximumUnboundedRepeats || repeat.Minimum is < 0 or > MaximumExactRepeat
@@ -120,7 +122,7 @@ internal static class PcreWordSequenceCompiler {
 					branches.Add( [.. prefix, .. continuation] );
 				}
 			}
-			return new( new( branches.ToArray(), options ), null );
+			return new( new( branches.ToArray(), options, inspectPreviousScalar ), null );
 		} catch ( PcreByteParseException error ) {
 			return Error( error.Diagnostic.Code == PcreByteDiagnosticCode.UnsupportedSyntax
 				? PcreWordDiagnosticCode.UnsupportedSyntax : PcreWordDiagnosticCode.InvalidSyntax, error.Diagnostic.ByteOffset );
@@ -191,7 +193,7 @@ internal static class PcreWordSequenceCompiler {
 	}
 
 	private static bool IsSupportedNode( PcreByteNode node ) => IsSupportedAtom( node )
-		|| node is PcreByteAnchor { IsLineBoundary: false, IsDisabled: false } or PcreByteSearchStart;
+		|| node is PcreByteAnchor { IsLineBoundary: false, IsDisabled: false } or PcreByteSearchStart or PcreByteWordBoundary;
 
 	private static bool IsSupportedAtom( PcreByteNode node ) => node is PcreByteLiteral or PcreByteAny
 		|| node is PcreByteScalarClass property && IsWordClassPredicate( property.Kind )
