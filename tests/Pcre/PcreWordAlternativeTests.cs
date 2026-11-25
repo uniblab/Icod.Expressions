@@ -106,7 +106,7 @@ public sealed class PcreWordAlternativeTests {
 			PcreWordSequenceCompiler.CompileSequence( allowed.AsMemory() ).Pattern!.Match( "a".AsMemory() ).Match );
 		Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 			PcreWordSequenceCompiler.CompileSequence( rejected.AsMemory() ).Diagnostic?.Code );
-		foreach ( var source in new[] { "(?:a|b)", "(a|b)", "a+b*|b", "a|^b" } ) {
+		foreach ( var source in new[] { "(?:a|b)", "(a|b)", "a+b*c*|b", "a|^b" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}
