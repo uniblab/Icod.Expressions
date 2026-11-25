@@ -1,5 +1,7 @@
 namespace Icod.Expressions.Pcre;
 
+internal sealed record PcreWordSuffixChoices( PcreByteNode[][] Alternatives ) : PcreByteNode;
+
 /// <summary>Admits a bounded width-16 sequence through the existing PCRE grammar.</summary>
 internal static class PcreWordSequenceCompiler {
 	private const int MaximumExpandedNodes = 4096;
@@ -46,11 +48,14 @@ internal static class PcreWordSequenceCompiler {
 				return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
 			}
 			var branches = new List<PcreByteNode[]>();
+			var admittedPaths = 0;
 			for ( var branch = 0; branch < root.Branches.Count; branch++ ) {
 				var nodes = root.Branches[branch];
-				var variables = new List<(int Index, PcreByteRepeat Repeat)>();
+				var prefixVariables = new List<(int Index, PcreByteRepeat Repeat)>();
+				var suffixVariables = new List<(int Index, PcreByteRepeat Repeat)>();
 				var unboundedIndex = -1;
-				var choices = 1;
+				var prefixChoices = 1;
+				var suffixChoices = 1;
 				for ( var index = 0; index < nodes.Count; index++ ) {
 					cancellationToken.ThrowIfCancellationRequested();
 					if ( nodes[index] is not PcreByteRepeat repeat || repeat.Minimum == repeat.Maximum ) { continue; }
@@ -62,35 +67,64 @@ internal static class PcreWordSequenceCompiler {
 						unboundedIndex = index;
 						continue;
 					}
-					if ( unboundedIndex >= 0 || repeat.Minimum < 0 || repeat.Maximum > MaximumExactRepeat
+					if ( repeat.Minimum < 0 || repeat.Maximum > MaximumExactRepeat
 						|| !IsSupportedAtom( repeat.Child ) ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
 					var range = repeat.Maximum - repeat.Minimum + 1;
-					if ( range > 64 / choices ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
-					choices *= range;
-					variables.Add( (index, repeat) );
+					if ( unboundedIndex >= 0 ) {
+						if ( range > 64 / suffixChoices ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
+						suffixChoices *= range;
+						suffixVariables.Add( (index, repeat) );
+					} else {
+						if ( range > 64 / prefixChoices ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
+						prefixChoices *= range;
+						prefixVariables.Add( (index, repeat) );
+					}
 				}
-				if ( choices > 64 - branches.Count ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
+				if ( prefixChoices > ( 64 - admittedPaths ) / suffixChoices ) {
+					return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
+				}
+				admittedPaths += prefixChoices * suffixChoices;
 				var counts = new int[nodes.Count];
 				Array.Fill( counts, -1 );
-				for ( var choice = 0; choice < choices; choice++ ) {
-					var ordinal = choice;
-					for ( var index = variables.Count - 1; index >= 0; index-- ) {
-						var (nodeIndex, repeat) = variables[index];
-						var range = repeat.Maximum - repeat.Minimum + 1;
-						var digit = ordinal % range;
-						ordinal /= range;
-						counts[nodeIndex] = repeat.Greedy ? repeat.Maximum - digit : repeat.Minimum + digit;
+				for ( var prefixChoice = 0; prefixChoice < prefixChoices; prefixChoice++ ) {
+					SelectCounts( prefixVariables, prefixChoice, counts );
+					if ( suffixChoices == 1 ) {
+						if ( !TryExpandBranch( nodes, counts, unboundedIndex, cancellationToken, out var expanded ) ) {
+							return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
+						}
+						branches.Add( expanded );
+						continue;
 					}
-					if ( !TryExpandBranch( nodes, counts, unboundedIndex, cancellationToken, out var expanded ) ) {
-						return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
+					var suffixes = new PcreByteNode[suffixChoices][];
+					PcreByteNode[]? prefix = null;
+					for ( var suffixChoice = 0; suffixChoice < suffixChoices; suffixChoice++ ) {
+						SelectCounts( suffixVariables, suffixChoice, counts );
+						if ( !TryExpandBranch( nodes, counts, unboundedIndex, cancellationToken, out var expanded ) ) {
+							return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
+						}
+						var repeatIndex = Array.FindIndex( expanded, node => ReferenceEquals( node, nodes[unboundedIndex] ) );
+						if ( repeatIndex < 0 ) { throw new InvalidOperationException( "Missing word repeat node." ); }
+						prefix ??= expanded[..( repeatIndex + 1 )];
+						suffixes[suffixChoice] = expanded[( repeatIndex + 1 )..];
 					}
-					branches.Add( expanded );
+					branches.Add( [.. prefix!, new PcreWordSuffixChoices( suffixes )] );
 				}
 			}
 			return new( new( branches.ToArray(), options ), null );
 		} catch ( PcreByteParseException error ) {
 			return Error( error.Diagnostic.Code == PcreByteDiagnosticCode.UnsupportedSyntax
 				? PcreWordDiagnosticCode.UnsupportedSyntax : PcreWordDiagnosticCode.InvalidSyntax, error.Diagnostic.ByteOffset );
+		}
+	}
+
+	private static void SelectCounts( IReadOnlyList<(int Index, PcreByteRepeat Repeat)> variables,
+		int choice, int[] counts ) {
+		for ( var index = variables.Count - 1; index >= 0; index-- ) {
+			var (nodeIndex, repeat) = variables[index];
+			var range = repeat.Maximum - repeat.Minimum + 1;
+			var digit = choice % range;
+			choice /= range;
+			counts[nodeIndex] = repeat.Greedy ? repeat.Maximum - digit : repeat.Minimum + digit;
 		}
 	}
 
