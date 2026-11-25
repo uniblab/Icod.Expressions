@@ -1,5 +1,15 @@
 # PCRE roadmap status
 
+## Native 16-bit two unbounded atom continuations
+
+The [two-repeat record](PCRE-WORD-TWO-UNBOUNDED.md) admits two unbounded
+atoms in a straight top-level path, including exact counts and assertions
+between them. Greedy or lazy second-repeat counts retry inside each
+first-repeat count. Forty-nine fixtures across six defaults and 64 call
+masks add 18,816 PCRE2-16 outcomes. Finite variable choices after the
+first repeat, more than two unbounded atoms, general nested execution and
+durable captures remain open.
+
 ## Native 16-bit unbounded repeat with finite suffix choices
 
 The [word suffix-choice record](PCRE-WORD-UNBOUNDED-SUFFIX-CHOICES.md)
@@ -180,8 +190,8 @@ The two families need separate compatibility evidence. [Public provider contract
 |---|---|---|
 | Raw 8-bit, including ASCII | The parser and bounded, iterative matcher operate on original bytes, including NUL and 0x80–0xFF. They implement ordered alternatives, repetition, captures with rollback, backreferences, lookarounds and control verbs. Results use byte offsets. | Freeze the accepted syntax, options, diagnostics and resource behavior against PCRE2-8. Qualify both ASCII-heavy searches and raw high-byte cases. |
 | UTF-8 | Forward and reverse scalar reads preserve byte offsets. The engine supports strict validation, tolerant matching across valid fragments, Unicode properties, UCP classes, case folding, word boundaries, graphemes and newline conventions within the tested profile. | Close strict and tolerant error/start-offset coverage, remaining optimizer differences and the byte performance baseline. Decide the UTF code-unit escape and callout contracts. |
-| Raw 16-bit | Literal and bounded sequence entry points read original units, including isolated surrogates. The shared parser admits native non-ASCII spelling, dot, bounded scalar classes, absolute assertions, ordered top-level paths, finite repeats and one unbounded atom with finite suffix choices per path. Caseless and UCP predicates use pinned Unicode tables. | Add multiple unbounded repeats, nested execution and durable captures; the current executor reports group zero only. |
-| Strict UTF-16 | The same two entry points read original `char` memory directly and match supplementary scalars. The admitted sequence grammar includes classes, caseless predicates, ordered paths, finite repeats and an unbounded atom with finite suffix choices. Starts, diagnostics and group zero use 16-bit code units. | Add graphemes, newline handling, reverse lookbehind and the general VM. Freeze invalid-surrogate behavior, including the disposition of tolerant mode, and durable capture results. |
+| Raw 16-bit | Literal and bounded sequence entry points read original units, including isolated surrogates. The shared parser admits native non-ASCII spelling, dot, bounded scalar classes, absolute assertions, ordered top-level paths, finite repeats and one unbounded atom with finite suffix choices or two unbounded atoms with straight continuations per path. Caseless and UCP predicates use pinned Unicode tables. | Add general nested repeat choices, further unbounded repeats and durable captures; the current executor reports group zero only. |
+| Strict UTF-16 | The same two entry points read original `char` memory directly and match supplementary scalars. The admitted sequence grammar includes classes, caseless predicates, ordered paths, finite repeats and the bounded two-repeat slice. Starts, diagnostics and group zero use 16-bit code units. | Add graphemes, newline handling, reverse lookbehind and the general VM. Freeze invalid-surrogate behavior, including the disposition of tolerant mode, and durable capture results. |
 
 Three choices matter for interpreting these rows. First, raw bytes and UTF-8 both
 represent ASCII directly, while UCP and its ASCII restrictions separately control
@@ -227,8 +237,8 @@ look behind. Preserve and test that distinction when extending lookbehind.
 
 ### Recommended delivery order and completion criteria
 
-1. **Broaden word execution (P10/P11).** Extend a single unbounded atom to
-   multiple repeats, then share nested branch/repeat frames and capture
+1. **Broaden word execution (P10/P11).** Extend the bounded two-repeat slice
+   to nested branch/repeat frames and capture
    rollback before adding references, assertions, calls and verbs. Verify
    empty retries, CRLF, unset captures and original code-unit coordinates at
    each step. Expand the admitted newline and grapheme grammar and preserve

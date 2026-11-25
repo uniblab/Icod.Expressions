@@ -65,6 +65,39 @@ internal sealed class PcreCompiledWordPattern {
 					case PcreByteSearchStart:
 						if ( end != startOffset ) { return 0; }
 						break;
+					case PcreByteRepeat repeat:
+						var count = 0;
+						if ( repeat.Greedy ) {
+							while ( true ) {
+								if ( !Step() ) { return -1; }
+								if ( !TryConsumeAtom( repeat.Child, source, end, out var repeatWidth ) ) { break; }
+								end += repeatWidth;
+								count++;
+							}
+							while ( count >= repeat.Minimum ) {
+								var outcome = TryFinish( nodes, index + 1, source, end, candidate, out var acceptedEnd );
+								if ( outcome != 0 ) { end = acceptedEnd; return outcome; }
+								if ( index == nodes.Length - 1 || count == repeat.Minimum ) { break; }
+								if ( !Step() ) { return -1; } // Rewind one previously matched scalar.
+								if ( !PcreUtf16.TryReadPrevious( source, end, options.Utf16, out _, out var rewindWidth ) ) {
+									throw new InvalidOperationException( "Invalid word repeat rewind." );
+								}
+								end -= rewindWidth;
+								count--;
+							}
+						} else {
+							while ( true ) {
+								if ( count >= repeat.Minimum ) {
+									var outcome = TryFinish( nodes, index + 1, source, end, candidate, out var acceptedEnd );
+									if ( outcome != 0 ) { end = acceptedEnd; return outcome; }
+								}
+								if ( !Step() ) { return -1; }
+								if ( !TryConsumeAtom( repeat.Child, source, end, out var repeatWidth ) ) { break; }
+								end += repeatWidth;
+								count++;
+							}
+						}
+						return 0;
 					default: throw new InvalidOperationException( "Unsupported word repeat continuation." );
 				}
 			}
