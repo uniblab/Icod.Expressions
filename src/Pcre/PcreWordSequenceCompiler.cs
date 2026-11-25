@@ -6,6 +6,7 @@ internal sealed record PcreWordSuffixChoices( PcreByteNode[][] Alternatives ) : 
 internal static class PcreWordSequenceCompiler {
 	private const int MaximumExpandedNodes = 4096;
 	private const int MaximumExactRepeat = 64;
+	private const int MaximumUnboundedRepeats = 4;
 
 	internal static PcreWordCompileResult CompileSequence( ReadOnlyMemory<char> pattern, PcreWordOptions? options = null,
 		CancellationToken cancellationToken = default ) {
@@ -51,14 +52,18 @@ internal static class PcreWordSequenceCompiler {
 			var admittedPaths = 0;
 			for ( var branch = 0; branch < root.Branches.Count; branch++ ) {
 				var nodes = root.Branches[branch];
-				List<(int Index, PcreByteRepeat Repeat)>[] variables = [new(), new(), new(), new()];
-				var products = new[] { 1, 1, 1, 1 };
+				var variables = new List<(int Index, PcreByteRepeat Repeat)>[MaximumUnboundedRepeats + 1];
+				var products = new int[variables.Length];
+				for ( var segment = 0; segment < variables.Length; segment++ ) {
+					variables[segment] = new();
+					products[segment] = 1;
+				}
 				var repeats = new List<PcreByteRepeat>();
 				for ( var index = 0; index < nodes.Count; index++ ) {
 					cancellationToken.ThrowIfCancellationRequested();
 					if ( nodes[index] is not PcreByteRepeat repeat || repeat.Minimum == repeat.Maximum ) { continue; }
 					if ( repeat.Maximum == int.MaxValue ) {
-						if ( repeats.Count == 3 || repeat.Minimum is < 0 or > MaximumExactRepeat
+						if ( repeats.Count == MaximumUnboundedRepeats || repeat.Minimum is < 0 or > MaximumExactRepeat
 							|| !IsSupportedAtom( repeat.Child ) ) {
 							return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
 						}
