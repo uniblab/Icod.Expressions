@@ -106,7 +106,7 @@ public sealed class PcreWordFixedRepeatTests {
 		Assert.True( PcreWordSequenceCompiler.CompileSequence(
 			String.Concat( Enumerable.Repeat( "a{64}", 64 ) ).AsMemory() ).IsSuccess );
 		foreach ( var source in new[] { "a{65}", String.Concat( Enumerable.Repeat( "a{64}", 64 ).Append( "a" ) ),
-			"a*b*c*d*", "a+b+c+d+", "a{2,}b*c*d*", "(a){0}", "(?:a){2}",
+			"a*b*c*d*e*", "a+b+c+d+e+", "a{2,}b*c*d*e*", "(a){0}", "(?:a){2}",
 			"a{2}+", "(?>a){2}" } ) {
 			var result = PcreWordSequenceCompiler.CompileSequence( source.AsMemory() );
 			Assert.True( result.Diagnostic?.Code == PcreWordDiagnosticCode.UnsupportedSyntax,
