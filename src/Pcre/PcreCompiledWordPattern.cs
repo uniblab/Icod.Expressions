@@ -5,16 +5,16 @@ internal sealed class PcreCompiledWordPattern {
 	private const int MaximumBacktrackFrames = 1024;
 	private readonly PcreByteNode[][] branches;
 	private readonly PcreWordOptions options;
-	private readonly bool inspectPreviousScalar;
+	private readonly int validationLookbehind;
 	private readonly char newlineCharacter;
 	private readonly bool bsrAnyCrLf;
 	public PcreCaptureInfo CaptureInfo { get; }
 	internal PcreCompiledWordPattern( PcreByteNode[] nodes, PcreWordOptions options ) : this( [nodes], options ) { }
-	internal PcreCompiledWordPattern( PcreByteNode[][] branches, PcreWordOptions options, bool inspectPreviousScalar = false,
+	internal PcreCompiledWordPattern( PcreByteNode[][] branches, PcreWordOptions options, int validationLookbehind = 0,
 		PcreByteNewline newline = PcreByteNewline.Lf, bool bsrAnyCrLf = false, PcreCaptureInfo? captureInfo = null ) {
 		this.branches = branches;
 		this.options = options;
-		this.inspectPreviousScalar = inspectPreviousScalar;
+		this.validationLookbehind = validationLookbehind;
 		newlineCharacter = (char)newline.Character();
 		this.bsrAnyCrLf = bsrAnyCrLf;
 		CaptureInfo = captureInfo ?? new( 0, new Dictionary<string, List<int>>(), default );
@@ -40,14 +40,15 @@ internal sealed class PcreCompiledWordPattern {
 		}
 		PcreWordMatchResult Exhausted() => new( null, new( PcreWordDiagnosticCode.MatchWorkLimitExceeded, 0 ) );
 		var input = subject.Span;
+		var reverseStart = 0;
 		if ( options.Utf16 ) {
-			// PCRE2 gives word boundaries and absolute-start assertions a one-character
-			// validation lookbehind, even when another alternative could match.
+			// Retained assertion widths extend native validation to the left. Word
+			// boundaries and absolute-start assertions require at least one character.
 			if ( startOffset > 0 && startOffset < input.Length && Char.IsLowSurrogate( input[startOffset] ) ) {
 				return new( null, new( PcreWordDiagnosticCode.InvalidStartOffset, startOffset ) );
 			}
 			var validationStart = startOffset;
-			if ( inspectPreviousScalar && validationStart > 0 ) {
+			for ( var previous = 0; previous < validationLookbehind && validationStart > 0; previous++ ) {
 				do {
 					if ( !Step() ) { return Exhausted(); }
 					validationStart--;
@@ -60,6 +61,9 @@ internal sealed class PcreCompiledWordPattern {
 				}
 				offset += width;
 			}
+			// These call-time flags select the pinned interpreter, whose reverse
+			// reads and word boundaries stop at the UTF validation window.
+			if ( policy.Anchored || policy.EndAnchored ) { reverseStart = validationStart; }
 		}
 		var anchored = options.Policy.Anchored || policy.Anchored;
 		var endAnchored = options.Policy.EndAnchored || policy.EndAnchored;
@@ -84,7 +88,7 @@ internal sealed class PcreCompiledWordPattern {
 		int MatchBoundary( PcreByteWordBoundary boundary, ReadOnlySpan<char> source, int at ) {
 			var kind = boundary.UnicodeWord ? PcreByteScalarClassKind.UnicodeWord : PcreByteScalarClassKind.AsciiWord;
 			var beforeWord = false;
-			if ( at > 0 ) {
+			if ( at > reverseStart ) {
 				if ( !Step() ) { return -1; }
 				beforeWord = PcreUtf16.TryReadPrevious( source, at, options.Utf16, out var before, out _ )
 					&& PcreScalarClassMembership.Contains( kind, before );
@@ -179,7 +183,9 @@ internal sealed class PcreCompiledWordPattern {
 						nodes = parent.Nodes;
 						index = parent.Index;
 						continuation = parent.Parent;
-						if ( parent.AssertionBoundary >= 0 ) {
+						if ( parent.AssertionEnd >= 0 && position != parent.AssertionEnd ) {
+							// A shorter/longer body must retry before the assertion can commit.
+						} else if ( parent.AssertionBoundary >= 0 ) {
 							// Atomic success discards only this assertion's internal choices.
 							var assertionFrames = frames!;
 							while ( assertionFrames.Count > parent.AssertionBoundary + 1 ) {
@@ -188,7 +194,7 @@ internal sealed class PcreCompiledWordPattern {
 							}
 							var guard = assertionFrames.Pop();
 							position = guard.Position;
-							if ( guard.Kind == FrameKind.PositiveLookahead ) {
+							if ( guard.Kind == FrameKind.PositiveAssertion ) {
 								if ( assertionFrames.Count == 0 ) { changes?.Clear(); }
 								continue; // Keep successful captures, even beyond the outer match.
 							}
@@ -214,12 +220,13 @@ internal sealed class PcreCompiledWordPattern {
 							end = position; return 1;
 						}
 					}
-				} else if ( nodes[index] is PcreWordLookahead assertion ) {
+				} else if ( nodes[index] is PcreWordAssertion assertion ) {
 					if ( !Step() ) { return -1; } // Assertion entry and capture rollback guard.
 					var boundary = frames?.Count ?? 0;
 					if ( !PushFrame( new( nodes, index + 1, position, position, 0, continuation,
-						assertion.IsPositive ? FrameKind.PositiveLookahead : FrameKind.NegativeLookahead ) ) ) { return -2; }
-					continuation = new( nodes, index + 1, continuation, AssertionBoundary: boundary );
+						assertion.IsPositive ? FrameKind.PositiveAssertion : FrameKind.NegativeAssertion ) ) ) { return -2; }
+					continuation = new( nodes, index + 1, continuation, AssertionBoundary: boundary,
+						AssertionEnd: assertion.IsBehind ? position : -1 );
 					nodes = assertion.Body;
 					index = 0;
 					continue;
@@ -247,6 +254,23 @@ internal sealed class PcreCompiledWordPattern {
 					if ( !Step() ) { return -1; } // Comparison, repeat admission or assertion.
 					var matched = true;
 					switch ( nodes[index] ) {
+						case PcreWordReverse reverse:
+							var reversed = position;
+							var reversedCount = 0;
+							while ( reversedCount < reverse.Maximum ) {
+								if ( !Step() ) { return -1; } // One original scalar/unit of left context.
+								if ( reversed <= reverseStart
+									|| !PcreUtf16.TryReadPrevious( source, reversed, options.Utf16, out _, out var reverseWidth ) ) { break; }
+								reversed -= reverseWidth;
+								reversedCount++;
+							}
+							matched = reversedCount >= reverse.Minimum;
+							if ( matched ) {
+								position = reversed;
+								if ( reversedCount > reverse.Minimum && !PushFrame( new( nodes, index + 1, position, 0,
+									reversedCount - reverse.Minimum, continuation, FrameKind.ReverseRetry ) ) ) { return -2; }
+							}
+							break;
 						case PcreByteLiteral or PcreByteAny or PcreByteScalarSet or PcreByteScalarClass or PcreByteNewlineSequence:
 							matched = TryConsumeAtom( nodes[index], source, position, out var width );
 							if ( matched ) { position += width; }
@@ -294,9 +318,16 @@ internal sealed class PcreCompiledWordPattern {
 					index = frame.Index;
 					position = frame.Position;
 					continuation = frame.Continuation;
-					if ( frame.Kind is FrameKind.PositiveLookahead or FrameKind.NegativeLookahead ) {
+					if ( frame.Kind is FrameKind.PositiveAssertion or FrameKind.NegativeAssertion ) {
 						if ( !Step() ) { return -1; } // Resolve an exhausted assertion body.
-						if ( frame.Kind == FrameKind.PositiveLookahead ) { continue; }
+						if ( frame.Kind == FrameKind.PositiveAssertion ) { continue; }
+					} else if ( frame.Kind == FrameKind.ReverseRetry ) {
+						if ( !Step() ) { return -1; } // Try the next shorter rewind after body choices.
+						if ( !PcreUtf16.TryRead( source, position, options.Utf16, out _, out var advance ) ) {
+							throw new InvalidOperationException( "A lookbehind retry lost its original character boundary." );
+						}
+						position += advance;
+						if ( frame.Count > 1 && !PushFrame( frame with { Position = position, Count = frame.Count - 1 } ) ) { return -2; }
 					} else if ( frame.Kind is FrameKind.RepeatExit or FrameKind.RepeatGrow ) {
 						if ( !Step() ) { return -1; } // Retry an iteration or its enclosing suffix.
 						if ( frame.Kind == FrameKind.RepeatExit ) { index++; }
@@ -371,11 +402,12 @@ internal sealed class PcreCompiledWordPattern {
 		FrameKind Kind = FrameKind.Retry, int ChangeCount = 0
 	);
 
-	private enum FrameKind { Retry, RepeatExit, RepeatGrow, PositiveLookahead, NegativeLookahead }
+	private enum FrameKind { Retry, RepeatExit, RepeatGrow, PositiveAssertion, NegativeAssertion, ReverseRetry }
 	private readonly record struct CaptureChange( int Number, PcreWordCapture? Previous );
 
 	private sealed record Continuation( PcreByteNode[] Nodes, int Index, Continuation? Parent,
-		PcreWordGroupRepeat? Repeat = null, int Count = 0, int Start = 0, int CaptureNumber = 0, int AssertionBoundary = -1 );
+		PcreWordGroupRepeat? Repeat = null, int Count = 0, int Start = 0, int CaptureNumber = 0,
+		int AssertionBoundary = -1, int AssertionEnd = -1 );
 
 	private bool TryConsumeAtom( PcreByteNode node, ReadOnlySpan<char> input, int position, out int width ) {
 		if ( !PcreUtf16.TryRead( input, position, options.Utf16, out var value, out width ) ) { return false; }

@@ -12,9 +12,11 @@ internal sealed record PcreWordGroupRepeat(
 	internal PcreByteNode[] Body { get; } = [Group];
 }
 
-internal sealed record PcreWordLookahead( PcreWordGroup Group, bool IsPositive ) : PcreByteNode {
+internal sealed record PcreWordAssertion( PcreWordGroup Group, bool IsPositive, bool IsBehind = false ) : PcreByteNode {
 	internal PcreByteNode[] Body { get; } = [Group];
 }
+
+internal sealed record PcreWordReverse( int Maximum, int Minimum ) : PcreByteNode;
 
 /// <summary>Admits a bounded width-16 sequence through the existing PCRE grammar.</summary>
 internal static class PcreWordSequenceCompiler {
@@ -66,16 +68,16 @@ internal static class PcreWordSequenceCompiler {
 				return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
 			}
 			var compiled = new Dictionary<PcreByteAlternatives, PcreWordGroup>( ReferenceEqualityComparer.Instance );
-			var pending = new Stack<(PcreByteAlternatives Body, int Depth, bool Complete)>();
-			var inspectPreviousScalar = false;
-			pending.Push( (root, 0, false) );
+			var pending = new Stack<(PcreByteAlternatives Body, int Depth, bool Complete, PcreByteLookbehind? Behind)>();
+			var validationLookbehind = 0;
+			pending.Push( (root, 0, false, null) );
 			while ( pending.TryPop( out var item ) ) {
 				cancellationToken.ThrowIfCancellationRequested();
 				if ( item.Depth > 64 || item.Body.Branches.Count is < 1 or > 64 ) {
 					return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
 				}
 				if ( !item.Complete ) {
-					pending.Push( (item.Body, item.Depth, true) );
+					pending.Push( (item.Body, item.Depth, true, item.Behind) );
 					foreach ( var path in item.Body.Branches ) {
 						foreach ( var node in path ) {
 							cancellationToken.ThrowIfCancellationRequested();
@@ -83,22 +85,23 @@ internal static class PcreWordSequenceCompiler {
 								PcreByteGroup direct => direct.Body,
 								PcreByteNoncapturingGroup direct => direct.Body,
 								PcreByteLookahead { NonAtomic: false } assertion => assertion.Body,
+								PcreByteLookbehind { NonAtomic: false } assertion => assertion.Body,
 								PcreByteRepeat { Child: PcreByteGroup repeated } => repeated.Body,
 								PcreByteRepeat { Child: PcreByteNoncapturingGroup repeated } => repeated.Body,
 								_ => null
 							};
 							if ( nestedBody is not null ) {
-								pending.Push( (nestedBody, item.Depth + 1, false) );
+								pending.Push( (nestedBody, item.Depth + 1, false, node as PcreByteLookbehind) );
 							}
 						}
 					}
 					continue;
 				}
-				var body = BuildBody( item.Body, compiled, ref inspectPreviousScalar, cancellationToken );
+				var body = BuildBody( item.Body, compiled, ref validationLookbehind, cancellationToken, item.Behind );
 				if ( body is null ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
 				compiled.Add( item.Body, body );
 			}
-			return new( new( compiled[root].Alternatives, options, inspectPreviousScalar, settings.Newline,
+			return new( new( compiled[root].Alternatives, options, validationLookbehind, settings.Newline,
 				settings.BsrAnyCrLf, parser.CreateCaptureInfo() ), null );
 		} catch ( PcreByteParseException error ) {
 			return Error( error.Diagnostic.Code == PcreByteDiagnosticCode.UnsupportedSyntax
@@ -107,8 +110,8 @@ internal static class PcreWordSequenceCompiler {
 	}
 
 	private static PcreWordGroup? BuildBody( PcreByteAlternatives root,
-		Dictionary<PcreByteAlternatives, PcreWordGroup> compiled, ref bool inspectPreviousScalar,
-		CancellationToken cancellationToken ) {
+		Dictionary<PcreByteAlternatives, PcreWordGroup> compiled, ref int validationLookbehind,
+		CancellationToken cancellationToken, PcreByteLookbehind? behind = null ) {
 		var branches = new List<PcreByteNode[]>();
 		var maximumNodes = 0;
 		var maximumRepeats = 0;
@@ -117,7 +120,8 @@ internal static class PcreWordSequenceCompiler {
 			var nodes = root.Branches[branch].Select( node => node switch {
 				PcreByteGroup group => compiled[group.Body] with { CaptureNumber = group.Number },
 				PcreByteNoncapturingGroup group => compiled[group.Body],
-				PcreByteLookahead { NonAtomic: false } assertion => new PcreWordLookahead( compiled[assertion.Body], assertion.IsPositive ),
+				PcreByteLookahead { NonAtomic: false } assertion => new PcreWordAssertion( compiled[assertion.Body], assertion.IsPositive ),
+				PcreByteLookbehind { NonAtomic: false } assertion => new PcreWordAssertion( compiled[assertion.Body], assertion.IsPositive, true ),
 				PcreByteRepeat { Child: PcreByteGroup group } repeat => new PcreWordGroupRepeat(
 					compiled[group.Body] with { CaptureNumber = group.Number }, repeat.Minimum, repeat.Maximum, repeat.Greedy,
 					repeat.Offset < 0 && repeat.Minimum == 1 ),
@@ -131,12 +135,19 @@ internal static class PcreWordSequenceCompiler {
 					repeat.Offset < 0 && repeat.Minimum == 1 ),
 				_ => node
 			} ).ToArray();
+			if ( behind is not null ) {
+				if ( behind.BranchLengths.Length != root.Branches.Count ) { return null; }
+				var maximum = behind.BranchLengths.Span[branch];
+				validationLookbehind = Math.Max( validationLookbehind, maximum );
+				// Each original branch owns its rewind, before any finite body choices.
+				nodes = [new PcreWordReverse( maximum, behind.Minimum < 0 ? maximum : behind.Minimum ), .. nodes];
+			}
 			var nestedPaths = 1;
 			var nestedRepeats = 0;
 			foreach ( var node in nodes ) {
 				cancellationToken.ThrowIfCancellationRequested();
 				var group = node as PcreWordGroup;
-				if ( node is PcreWordLookahead assertion ) { group = assertion.Group; }
+				if ( node is PcreWordAssertion assertion ) { group = assertion.Group; }
 				if ( node is PcreWordGroupRepeat repeat ) {
 					if ( repeat.Minimum is < 0 or > MaximumExactRepeat || repeat.Maximum < repeat.Minimum
 						|| repeat.Maximum != int.MaxValue && repeat.Maximum > MaximumExactRepeat ) { return null; }
@@ -153,7 +164,7 @@ internal static class PcreWordSequenceCompiler {
 			maximumRepeats = Math.Max( maximumRepeats, unboundedCount + nestedRepeats );
 			// A group also separates finite choices: its alternatives must retry before
 			// a preceding choice, and a following choice must retry before the group.
-			var boundaryCount = unboundedCount + nodes.Count( node => node is PcreWordGroup or PcreWordGroupRepeat or PcreWordLookahead );
+			var boundaryCount = unboundedCount + nodes.Count( node => node is PcreWordGroup or PcreWordGroupRepeat or PcreWordAssertion or PcreWordReverse );
 			var variables = new List<(int Index, PcreByteRepeat Repeat)>[boundaryCount + 1];
 			var products = new int[variables.Length];
 			for ( var segment = 0; segment < variables.Length; segment++ ) {
@@ -163,9 +174,10 @@ internal static class PcreWordSequenceCompiler {
 			var boundaries = new List<PcreByteNode>();
 			for ( var index = 0; index < nodes.Length; index++ ) {
 				cancellationToken.ThrowIfCancellationRequested();
-				inspectPreviousScalar |= nodes[index] is PcreByteWordBoundary
-					or PcreByteAnchor { IsStart: true, IsLineBoundary: false };
-				if ( nodes[index] is PcreWordGroup or PcreWordGroupRepeat or PcreWordLookahead ) { boundaries.Add( nodes[index] ); continue; }
+				if ( nodes[index] is PcreByteWordBoundary or PcreByteAnchor { IsStart: true, IsLineBoundary: false } ) {
+					validationLookbehind = Math.Max( validationLookbehind, 1 );
+				}
+				if ( nodes[index] is PcreWordGroup or PcreWordGroupRepeat or PcreWordAssertion or PcreWordReverse ) { boundaries.Add( nodes[index] ); continue; }
 				if ( nodes[index] is not PcreByteRepeat repeat || repeat.Minimum == repeat.Maximum ) { continue; }
 				if ( repeat.Maximum == int.MaxValue ) {
 					if ( repeat.Minimum is < 0 or > MaximumExactRepeat
@@ -299,7 +311,7 @@ internal static class PcreWordSequenceCompiler {
 				var weight = node switch {
 					PcreWordGroup group => group.ExpandedNodes + 1,
 					PcreWordGroupRepeat groupRepeat => groupRepeat.Group.ExpandedNodes + 2,
-					PcreWordLookahead assertion => assertion.Group.ExpandedNodes + 2,
+					PcreWordAssertion assertion => assertion.Group.ExpandedNodes + 2,
 					_ => 1
 				};
 				if ( weight > MaximumExpandedNodes - expandedNodes ) { expanded = []; return false; }
@@ -314,7 +326,7 @@ internal static class PcreWordSequenceCompiler {
 	private static bool IsSupportedNode( PcreByteNode node ) => IsSupportedAtom( node )
 		|| node is PcreByteAnchor or PcreByteLineAnchor or PcreByteEndBeforeFinalLf
 			or PcreByteSearchStart or PcreByteWordBoundary or PcreByteBackreference
-			or PcreWordGroup or PcreWordGroupRepeat or PcreWordLookahead;
+			or PcreWordGroup or PcreWordGroupRepeat or PcreWordAssertion or PcreWordReverse;
 
 	private static bool IsSupportedAtom( PcreByteNode node ) => node is PcreByteLiteral or PcreByteAny or PcreByteNewlineSequence
 		|| node is PcreByteScalarClass property && IsWordClassPredicate( property.Kind )

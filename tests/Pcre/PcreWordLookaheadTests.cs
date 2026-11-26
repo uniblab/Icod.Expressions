@@ -263,7 +263,7 @@ public sealed class PcreWordLookaheadTests {
 		Assert.Equal( "0:0", Spans( deep.Match( "a".AsMemory() ).Match ) );
 		foreach ( var source in new[] { String.Concat( "(?=", nested, ")" ), "(?=a?b?c?d?e?f?)g?",
 			String.Concat( "(?=", String.Concat( Enumerable.Repeat( "a*", 65 ) ), ")" ),
-			"(?=a)?", "(?=a)*", "(?=a){0}", "(?*a)", "(?<=a)b", "(?<!a)b", "(?>a)", "(?=a(*SKIP))" } ) {
+			"(?=a)?", "(?=a)*", "(?=a){0}", "(?*a)", "(?<=a)*", "(?<!a)*", "(?>a)", "(?=a(*SKIP))" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}
