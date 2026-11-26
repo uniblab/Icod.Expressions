@@ -197,7 +197,7 @@ internal static class PcreWordSequenceCompiler {
 		|| node is PcreByteAnchor or PcreByteLineAnchor or PcreByteEndBeforeFinalLf
 			or PcreByteSearchStart or PcreByteWordBoundary;
 
-	private static bool IsSupportedAtom( PcreByteNode node ) => node is PcreByteLiteral or PcreByteAny
+	private static bool IsSupportedAtom( PcreByteNode node ) => node is PcreByteLiteral or PcreByteAny or PcreByteNewlineSequence
 		|| node is PcreByteScalarClass property && IsWordClassPredicate( property.Kind )
 		|| node is PcreByteScalarSet set && IsSupportedSet( set );
 
