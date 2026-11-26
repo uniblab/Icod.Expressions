@@ -170,8 +170,8 @@ internal sealed partial class PcreByteParser {
 	}
 
 	private PcreByteNode FinishAssertion( GroupFrame frame, PcreByteAlternatives body ) {
-		// Retain the original literal instruction and its search/work behavior.
-		if ( !frame.NonAtomic && !frame.IsConditionAssertion && body.Branches.Count == 1 ) {
+		// Keep the byte fast path; word assertions retain their original scalar/unit nodes.
+		if ( wordSource is null && !frame.NonAtomic && !frame.IsConditionAssertion && body.Branches.Count == 1 ) {
 			var literals = body.Branches[0];
 			var bytes = new List<byte>();
 			Span<byte> encoded = stackalloc byte[4];
