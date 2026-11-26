@@ -100,7 +100,7 @@ public sealed class PcreWordLookaheadTests {
 				("(*NUL)(?m)(?=^a$)a", "x\u0000a\u0000y", 0, true, false),
 				("(?=(\\R))\\1", "\r\n", 0, true, false),
 				("(?!\\R).", "\r\nx", 0, true, false),
-				("(*BSR_ANYCRLF)(?!\\R).", "", 0, true, false),
+				("(*BSR_ANYCRLF)(?!\\R).", "\u0085", 0, true, false),
 				("(?=\\Z)", "a\n", 0, true, false),
 				("(?!\\z).", "😀", 0, true, false),
 				("(?=(a))a", "za", 1, true, false),
