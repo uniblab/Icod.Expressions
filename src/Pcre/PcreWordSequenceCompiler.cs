@@ -118,6 +118,11 @@ internal static class PcreWordSequenceCompiler {
 				PcreByteRepeat { Child: PcreByteNoncapturingGroup group } repeat => new PcreWordGroupRepeat(
 					compiled[group.Body], repeat.Minimum, repeat.Maximum, repeat.Greedy,
 					repeat.Offset < 0 && repeat.Minimum == 1 ),
+				// References consume whole captured strings, possibly empty. Reuse the
+				// variable-width group loop instead of scalar-atom expansion/rewinding.
+				PcreByteRepeat { Child: PcreByteBackreference reference } repeat => new PcreWordGroupRepeat(
+					new( [[reference]], 1, 1, 0 ), repeat.Minimum, repeat.Maximum, repeat.Greedy,
+					repeat.Offset < 0 && repeat.Minimum == 1 ),
 				_ => node
 			} ).ToArray();
 			var nestedPaths = 1;
@@ -300,7 +305,7 @@ internal static class PcreWordSequenceCompiler {
 
 	private static bool IsSupportedNode( PcreByteNode node ) => IsSupportedAtom( node )
 		|| node is PcreByteAnchor or PcreByteLineAnchor or PcreByteEndBeforeFinalLf
-			or PcreByteSearchStart or PcreByteWordBoundary or PcreWordGroup or PcreWordGroupRepeat;
+			or PcreByteSearchStart or PcreByteWordBoundary or PcreByteBackreference or PcreWordGroup or PcreWordGroupRepeat;
 
 	private static bool IsSupportedAtom( PcreByteNode node ) => node is PcreByteLiteral or PcreByteAny or PcreByteNewlineSequence
 		|| node is PcreByteScalarClass property && IsWordClassPredicate( property.Kind )
