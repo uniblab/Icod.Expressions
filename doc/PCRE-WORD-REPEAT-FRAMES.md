@@ -14,6 +14,8 @@ flattens deterministic sections once and retains ordered choice nodes only
 where finite counts require them. Each path still has at most 4,096 expanded
 nodes, each exact count or unbounded minimum is at most 64, and the combined
 finite-choice product across all top-level alternatives is at most 64.
+The shared parser's existing 256-repeat-state-mark ceiling also applies
+across the entire pattern; these per-path bounds do not supersede it.
 These bounds permit at most 64 pending repeat frames and six suffix-choice
 frames. A straight path without retries does not allocate a frame stack.
 

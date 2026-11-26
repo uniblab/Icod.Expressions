@@ -125,8 +125,12 @@ public sealed class PcreWordRepeatFrameTests {
 	public void RepeatDepthAndChoiceProductStayBoundedSeparately() {
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( Repeated( "a*", 64 ).AsMemory() ).IsSuccess );
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( ChoicePattern( 64, false ).AsMemory() ).IsSuccess );
-		var branches = String.Join( '|', Enumerable.Repeat( Repeated( "a*", 16 ), 64 ) );
+		var branches = String.Join( '|', Enumerable.Repeat( "a*", 63 ).Prepend( Repeated( "a*", 64 ) ) );
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( branches.AsMemory() ).IsSuccess );
+		// The shared parser still limits total repeat-state marks across branches.
+		var repeatLimited = String.Join( '|', Enumerable.Repeat( Repeated( "a*", 16 ), 64 ) );
+		Assert.Equal( PcreWordDiagnosticCode.InvalidSyntax,
+			PcreWordSequenceCompiler.CompileSequence( repeatLimited.AsMemory() ).Diagnostic?.Code );
 		foreach ( var source in new[] { Repeated( "a*", 65 ), String.Concat( ChoicePattern( 64, false ), "b?" ),
 			String.Concat( ChoicePattern( 64, false ), "|x" ), String.Concat( branches, "|x" ), "(?:a*)b*", "(a*)b*", "a*+b*" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
