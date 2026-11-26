@@ -179,22 +179,50 @@ internal sealed class PcreCompiledWordPattern {
 						nodes = parent.Nodes;
 						index = parent.Index;
 						continuation = parent.Parent;
-						if ( parent.Repeat is { } completedRepeat ) {
+						if ( parent.AssertionBoundary >= 0 ) {
+							// Atomic success discards only this assertion's internal choices.
+							var assertionFrames = frames!;
+							while ( assertionFrames.Count > parent.AssertionBoundary + 1 ) {
+								if ( !Step() ) { return -1; }
+								assertionFrames.Pop();
+							}
+							var guard = assertionFrames.Pop();
+							position = guard.Position;
+							if ( guard.Kind == FrameKind.PositiveLookahead ) {
+								if ( assertionFrames.Count == 0 ) { changes?.Clear(); }
+								continue; // Keep successful captures, even beyond the outer match.
+							}
+							if ( !RestoreCaptures( guard.ChangeCount ) ) { return -1; }
+							if ( assertionFrames.Count == 0 ) { changes?.Clear(); }
+							// A matching negative body fails into the enclosing retry stack.
+						} else if ( parent.Repeat is { } completedRepeat ) {
 							// Required counted copies may be empty. The optional unbounded
 							// loop stops on no progress; shorthand '+' also guards its first copy.
 							if ( completedRepeat.Maximum == int.MaxValue && position == parent.Start
 								&& ( parent.Count >= completedRepeat.Minimum || completedRepeat.CheckMinimumProgress ) ) {
 								index++;
 							} else if ( !ContinueGroupRepeat( completedRepeat, parent.Count + 1 ) ) { return -2; }
+							continue;
+						} else {
+							continue;
 						}
-						continue;
+					} else {
+						if ( !Step() ) { return -1; } // Completion, including policy rejection.
+						var empty = position == candidate;
+						if ( ( !endAnchored || position == source.Length )
+							&& !( empty && ( notEmpty || notEmptyAtStart && candidate == startOffset ) ) ) {
+							end = position; return 1;
+						}
 					}
-					if ( !Step() ) { return -1; } // Completion, including policy rejection.
-					var empty = position == candidate;
-					if ( ( !endAnchored || position == source.Length )
-						&& !( empty && ( notEmpty || notEmptyAtStart && candidate == startOffset ) ) ) {
-						end = position; return 1;
-					}
+				} else if ( nodes[index] is PcreWordLookahead assertion ) {
+					if ( !Step() ) { return -1; } // Assertion entry and capture rollback guard.
+					var boundary = frames?.Count ?? 0;
+					if ( !PushFrame( new( nodes, index + 1, position, position, 0, continuation,
+						assertion.IsPositive ? FrameKind.PositiveLookahead : FrameKind.NegativeLookahead ) ) ) { return -2; }
+					continuation = new( nodes, index + 1, continuation, AssertionBoundary: boundary );
+					nodes = assertion.Body;
+					index = 0;
+					continue;
 				} else if ( nodes[index] is PcreWordSuffixChoices firstChoices ) {
 					if ( !Step() ) { return -1; } // Ordered suffix choice admission.
 					if ( !PushFrame( new( nodes, index, position, position, 1, continuation ) ) ) { return -2; }
@@ -266,7 +294,10 @@ internal sealed class PcreCompiledWordPattern {
 					index = frame.Index;
 					position = frame.Position;
 					continuation = frame.Continuation;
-					if ( frame.Kind is FrameKind.RepeatExit or FrameKind.RepeatGrow ) {
+					if ( frame.Kind is FrameKind.PositiveLookahead or FrameKind.NegativeLookahead ) {
+						if ( !Step() ) { return -1; } // Resolve an exhausted assertion body.
+						if ( frame.Kind == FrameKind.PositiveLookahead ) { continue; }
+					} else if ( frame.Kind is FrameKind.RepeatExit or FrameKind.RepeatGrow ) {
 						if ( !Step() ) { return -1; } // Retry an iteration or its enclosing suffix.
 						if ( frame.Kind == FrameKind.RepeatExit ) { index++; }
 						else {
@@ -340,11 +371,11 @@ internal sealed class PcreCompiledWordPattern {
 		FrameKind Kind = FrameKind.Retry, int ChangeCount = 0
 	);
 
-	private enum FrameKind { Retry, RepeatExit, RepeatGrow }
+	private enum FrameKind { Retry, RepeatExit, RepeatGrow, PositiveLookahead, NegativeLookahead }
 	private readonly record struct CaptureChange( int Number, PcreWordCapture? Previous );
 
 	private sealed record Continuation( PcreByteNode[] Nodes, int Index, Continuation? Parent,
-		PcreWordGroupRepeat? Repeat = null, int Count = 0, int Start = 0, int CaptureNumber = 0 );
+		PcreWordGroupRepeat? Repeat = null, int Count = 0, int Start = 0, int CaptureNumber = 0, int AssertionBoundary = -1 );
 
 	private bool TryConsumeAtom( PcreByteNode node, ReadOnlySpan<char> input, int position, out int width ) {
 		if ( !PcreUtf16.TryRead( input, position, options.Utf16, out var value, out width ) ) { return false; }

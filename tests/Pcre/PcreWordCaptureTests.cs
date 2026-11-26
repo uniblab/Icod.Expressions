@@ -325,7 +325,6 @@ public sealed class PcreWordCaptureTests {
 
 	[Theory]
 	[InlineData( "(a)(?1)" )]
-	[InlineData( "(?=(a))a" )]
 	[InlineData( "(?<=(a))b" )]
 	[InlineData( "(?>a)" )]
 	[InlineData( "(a)*+" )]

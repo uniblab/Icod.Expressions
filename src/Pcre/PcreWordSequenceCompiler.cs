@@ -12,6 +12,10 @@ internal sealed record PcreWordGroupRepeat(
 	internal PcreByteNode[] Body { get; } = [Group];
 }
 
+internal sealed record PcreWordLookahead( PcreWordGroup Group, bool IsPositive ) : PcreByteNode {
+	internal PcreByteNode[] Body { get; } = [Group];
+}
+
 /// <summary>Admits a bounded width-16 sequence through the existing PCRE grammar.</summary>
 internal static class PcreWordSequenceCompiler {
 	private const int MaximumExpandedNodes = 4096;
@@ -78,6 +82,7 @@ internal static class PcreWordSequenceCompiler {
 							var nestedBody = node switch {
 								PcreByteGroup direct => direct.Body,
 								PcreByteNoncapturingGroup direct => direct.Body,
+								PcreByteLookahead { NonAtomic: false } assertion => assertion.Body,
 								PcreByteRepeat { Child: PcreByteGroup repeated } => repeated.Body,
 								PcreByteRepeat { Child: PcreByteNoncapturingGroup repeated } => repeated.Body,
 								_ => null
@@ -112,6 +117,7 @@ internal static class PcreWordSequenceCompiler {
 			var nodes = root.Branches[branch].Select( node => node switch {
 				PcreByteGroup group => compiled[group.Body] with { CaptureNumber = group.Number },
 				PcreByteNoncapturingGroup group => compiled[group.Body],
+				PcreByteLookahead { NonAtomic: false } assertion => new PcreWordLookahead( compiled[assertion.Body], assertion.IsPositive ),
 				PcreByteRepeat { Child: PcreByteGroup group } repeat => new PcreWordGroupRepeat(
 					compiled[group.Body] with { CaptureNumber = group.Number }, repeat.Minimum, repeat.Maximum, repeat.Greedy,
 					repeat.Offset < 0 && repeat.Minimum == 1 ),
@@ -130,6 +136,7 @@ internal static class PcreWordSequenceCompiler {
 			foreach ( var node in nodes ) {
 				cancellationToken.ThrowIfCancellationRequested();
 				var group = node as PcreWordGroup;
+				if ( node is PcreWordLookahead assertion ) { group = assertion.Group; }
 				if ( node is PcreWordGroupRepeat repeat ) {
 					if ( repeat.Minimum is < 0 or > MaximumExactRepeat || repeat.Maximum < repeat.Minimum
 						|| repeat.Maximum != int.MaxValue && repeat.Maximum > MaximumExactRepeat ) { return null; }
@@ -146,7 +153,7 @@ internal static class PcreWordSequenceCompiler {
 			maximumRepeats = Math.Max( maximumRepeats, unboundedCount + nestedRepeats );
 			// A group also separates finite choices: its alternatives must retry before
 			// a preceding choice, and a following choice must retry before the group.
-			var boundaryCount = unboundedCount + nodes.Count( node => node is PcreWordGroup or PcreWordGroupRepeat );
+			var boundaryCount = unboundedCount + nodes.Count( node => node is PcreWordGroup or PcreWordGroupRepeat or PcreWordLookahead );
 			var variables = new List<(int Index, PcreByteRepeat Repeat)>[boundaryCount + 1];
 			var products = new int[variables.Length];
 			for ( var segment = 0; segment < variables.Length; segment++ ) {
@@ -158,7 +165,7 @@ internal static class PcreWordSequenceCompiler {
 				cancellationToken.ThrowIfCancellationRequested();
 				inspectPreviousScalar |= nodes[index] is PcreByteWordBoundary
 					or PcreByteAnchor { IsStart: true, IsLineBoundary: false };
-				if ( nodes[index] is PcreWordGroup or PcreWordGroupRepeat ) { boundaries.Add( nodes[index] ); continue; }
+				if ( nodes[index] is PcreWordGroup or PcreWordGroupRepeat or PcreWordLookahead ) { boundaries.Add( nodes[index] ); continue; }
 				if ( nodes[index] is not PcreByteRepeat repeat || repeat.Minimum == repeat.Maximum ) { continue; }
 				if ( repeat.Maximum == int.MaxValue ) {
 					if ( repeat.Minimum is < 0 or > MaximumExactRepeat
@@ -292,6 +299,7 @@ internal static class PcreWordSequenceCompiler {
 				var weight = node switch {
 					PcreWordGroup group => group.ExpandedNodes + 1,
 					PcreWordGroupRepeat groupRepeat => groupRepeat.Group.ExpandedNodes + 2,
+					PcreWordLookahead assertion => assertion.Group.ExpandedNodes + 2,
 					_ => 1
 				};
 				if ( weight > MaximumExpandedNodes - expandedNodes ) { expanded = []; return false; }
@@ -305,7 +313,8 @@ internal static class PcreWordSequenceCompiler {
 
 	private static bool IsSupportedNode( PcreByteNode node ) => IsSupportedAtom( node )
 		|| node is PcreByteAnchor or PcreByteLineAnchor or PcreByteEndBeforeFinalLf
-			or PcreByteSearchStart or PcreByteWordBoundary or PcreByteBackreference or PcreWordGroup or PcreWordGroupRepeat;
+			or PcreByteSearchStart or PcreByteWordBoundary or PcreByteBackreference
+			or PcreWordGroup or PcreWordGroupRepeat or PcreWordLookahead;
 
 	private static bool IsSupportedAtom( PcreByteNode node ) => node is PcreByteLiteral or PcreByteAny or PcreByteNewlineSequence
 		|| node is PcreByteScalarClass property && IsWordClassPredicate( property.Kind )
