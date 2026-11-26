@@ -6,7 +6,7 @@ internal sealed record PcreWordSuffixChoices( PcreByteNode[][] Alternatives ) : 
 internal static class PcreWordSequenceCompiler {
 	private const int MaximumExpandedNodes = 4096;
 	private const int MaximumExactRepeat = 64;
-	private const int MaximumUnboundedRepeats = 4;
+	private const int MaximumUnboundedRepeats = 64;
 
 	internal static PcreWordCompileResult CompileSequence( ReadOnlyMemory<char> pattern, PcreWordOptions? options = null,
 		CancellationToken cancellationToken = default ) {
@@ -56,7 +56,9 @@ internal static class PcreWordSequenceCompiler {
 			var admittedPaths = 0;
 			for ( var branch = 0; branch < root.Branches.Count; branch++ ) {
 				var nodes = root.Branches[branch];
-				var variables = new List<(int Index, PcreByteRepeat Repeat)>[MaximumUnboundedRepeats + 1];
+				var unboundedCount = nodes.Count( node => node is PcreByteRepeat { Maximum: int.MaxValue } );
+				if ( unboundedCount > MaximumUnboundedRepeats ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
+				var variables = new List<(int Index, PcreByteRepeat Repeat)>[unboundedCount + 1];
 				var products = new int[variables.Length];
 				for ( var segment = 0; segment < variables.Length; segment++ ) {
 					variables[segment] = new();
@@ -122,7 +124,7 @@ internal static class PcreWordSequenceCompiler {
 					var firstPath = choice * outerStride;
 					var prefix = paths[firstPath][..( positions[firstPath][0] + 1 )];
 					var continuation = BuildContinuation( paths, positions, products, depth,
-						1, firstPath, outerStride, cancellationToken );
+						firstPath, outerStride, cancellationToken );
 					branches.Add( [.. prefix, .. continuation] );
 				}
 			}
@@ -134,24 +136,31 @@ internal static class PcreWordSequenceCompiler {
 	}
 
 	private static PcreByteNode[] BuildContinuation( PcreByteNode[][] paths, int[][] positions, int[] products,
-		int depth, int segment, int firstPath, int groupSize, CancellationToken cancellationToken ) {
-		var alternatives = new PcreByteNode[products[segment]][];
-		var stride = groupSize / products[segment];
-		for ( var choice = 0; choice < products[segment]; choice++ ) {
+		int depth, int firstPath, int groupSize, CancellationToken cancellationToken ) {
+		var tails = new PcreByteNode[groupSize][];
+		var stride = 1;
+		var nextChoiceSegment = depth + 1;
+		for ( var segment = depth; segment > 0; segment-- ) {
 			cancellationToken.ThrowIfCancellationRequested();
-			var path = firstPath + choice * stride;
-			var firstNode = positions[path][segment - 1] + 1;
-			if ( segment == depth ) {
-				alternatives[choice] = paths[path][firstNode..];
-			} else {
-				var section = paths[path][firstNode..( positions[path][segment] + 1 )];
-				var continuation = BuildContinuation( paths, positions, products, depth,
-					segment + 1, path, stride, cancellationToken );
-				alternatives[choice] = [.. section, .. continuation];
+			// Flatten deterministic sections once; only choice levels need tails.
+			if ( products[segment] == 1 && segment > 1 ) { continue; }
+			var width = stride * products[segment];
+			for ( var group = 0; group < groupSize; group += width ) {
+				var alternatives = new PcreByteNode[products[segment]][];
+				for ( var choice = 0; choice < alternatives.Length; choice++ ) {
+					cancellationToken.ThrowIfCancellationRequested();
+					var child = group + choice * stride;
+					var path = firstPath + child;
+					var firstNode = positions[path][segment - 1] + 1;
+					alternatives[choice] = nextChoiceSegment > depth ? paths[path][firstNode..]
+						: [.. paths[path][firstNode..( positions[path][nextChoiceSegment - 1] + 1 )], .. tails[child]];
+				}
+				tails[group] = alternatives.Length > 1 ? [new PcreWordSuffixChoices( alternatives )] : alternatives[0];
 			}
+			stride = width;
+			nextChoiceSegment = segment;
 		}
-		if ( alternatives.Length > 1 ) { return [new PcreWordSuffixChoices( alternatives )]; }
-		return alternatives[0];
+		return tails[0];
 	}
 
 	private static void SelectCounts( IReadOnlyList<(int Index, PcreByteRepeat Repeat)> variables,
