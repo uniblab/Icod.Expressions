@@ -1,5 +1,16 @@
 # PCRE roadmap status
 
+## Native 16-bit explicit repeat frames
+
+The [repeat-frame record](PCRE-WORD-REPEAT-FRAMES.md) replaces recursive
+continuation matching and construction with iterative execution and extends
+sequential unbounded atoms from four to 64 per path. Finite choices retain
+the shared 64-path bound. Sixty fixtures across eight defaults and 64 call
+masks add 30,720 PCRE2-16 comparisons, with exact quota, cancellation and
+state-reset checks. General nested groups/repeats and capture rollback are
+the next execution work; broader newline search and grapheme parity remain
+open.
+
 ## Native 16-bit single-unit newline and BSR profiles
 
 The [newline-profile record](PCRE-WORD-NEWLINE-PROFILES.md) adds effective
@@ -263,8 +274,8 @@ The two families need separate compatibility evidence. [Public provider contract
 |---|---|---|
 | Raw 8-bit, including ASCII | The parser and bounded, iterative matcher operate on original bytes, including NUL and 0x80–0xFF. They implement ordered alternatives, repetition, captures with rollback, backreferences, lookarounds and control verbs. Results use byte offsets. | Freeze the accepted syntax, options, diagnostics and resource behavior against PCRE2-8. Qualify both ASCII-heavy searches and raw high-byte cases. |
 | UTF-8 | Forward and reverse scalar reads preserve byte offsets. The engine supports strict validation, tolerant matching across valid fragments, Unicode properties, UCP classes, case folding, word boundaries, graphemes and newline conventions within the tested profile. | Close strict and tolerant error/start-offset coverage, remaining optimizer differences and the byte performance baseline. Decide the UTF code-unit escape and callout contracts. |
-| Raw 16-bit | Literal and bounded sequence entry points read original units, including isolated surrogates. The shared parser admits native non-ASCII spelling, dot, bounded scalar classes, absolute and LF/CR/NUL line assertions, word boundaries, newline sequences with independent BSR selectors, ordered top-level paths, finite repeats and up to four unbounded atoms with finite choices at each depth per path. Caseless and UCP predicates use pinned Unicode tables. | Add further unbounded repeats, general nested execution and durable captures; the current executor reports group zero only. |
-| Strict UTF-16 | The same two entry points read original `char` memory directly and match supplementary scalars. The admitted sequence grammar includes classes, caseless predicates, word boundaries, LF/CR/NUL line assertions, atomic newline sequences with BSR selectors, ordered paths, finite repeats and the bounded four-repeat slice with finite choices. Starts, diagnostics and group zero use 16-bit code units. | Add graphemes, CRLF/ANYCRLF/ANY newline search behavior, reverse lookbehind and the general VM. Freeze invalid-surrogate behavior, including the disposition of tolerant mode, and durable capture results. |
+| Raw 16-bit | Literal and bounded sequence entry points read original units, including isolated surrogates. The shared parser admits native non-ASCII spelling, dot, bounded scalar classes, absolute and LF/CR/NUL line assertions, word boundaries, newline sequences with independent BSR selectors, ordered top-level paths, finite repeats and up to 64 sequential unbounded atoms with finite choices at each depth per path, using explicit execution frames. Caseless and UCP predicates use pinned Unicode tables. | Add general nested execution and durable captures; the current executor reports group zero only. |
+| Strict UTF-16 | The same two entry points read original `char` memory directly and match supplementary scalars. The admitted sequence grammar includes classes, caseless predicates, word boundaries, LF/CR/NUL line assertions, atomic newline sequences with BSR selectors, ordered paths, finite repeats and up to 64 sequential unbounded atoms with finite choices and explicit execution frames. Starts, diagnostics and group zero use 16-bit code units. | Add graphemes, CRLF/ANYCRLF/ANY newline search behavior, reverse lookbehind and the general VM. Freeze invalid-surrogate behavior, including the disposition of tolerant mode, and durable capture results. |
 
 Three choices matter for interpreting these rows. First, raw bytes and UTF-8 both
 represent ASCII directly, while UCP and its ASCII restrictions separately control
@@ -311,8 +322,8 @@ native validation window when extending lookbehind.
 
 ### Recommended delivery order and completion criteria
 
-1. **Broaden word execution (P10/P11).** Extend the bounded four-repeat slice
-   to more repeat depths and general nested branch/repeat frames and capture
+1. **Broaden word execution (P10/P11).** Build on the explicit sequential
+   repeat frames to support general nested branches/repeats and capture
    rollback before adding references, assertions, calls and verbs. Verify
    empty retries, CRLF, unset captures and original code-unit coordinates at
    each step. Expand the admitted newline and grapheme grammar and preserve

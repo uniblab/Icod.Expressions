@@ -94,149 +94,105 @@ internal sealed class PcreCompiledWordPattern {
 			}
 			return ( beforeWord != afterWord ) == boundary.IsBoundary ? 1 : 0;
 		}
+		Stack<BacktrackFrame>? frames = null;
 		// -1: work exhausted; 0: failed or policy-rejected; 1: complete match.
-		int TryFinish( PcreByteNode[] nodes, int first, ReadOnlySpan<char> source, int at,
-			int candidate, out int end ) {
-			end = at;
-			for ( var index = first; index < nodes.Length; index++ ) {
-				if ( !Step() ) { return -1; }
-				switch ( nodes[index] ) {
-					case PcreByteLiteral or PcreByteAny or PcreByteScalarSet or PcreByteScalarClass or PcreByteNewlineSequence:
-						if ( !TryConsumeAtom( nodes[index], source, end, out var width ) ) { return 0; }
-						end += width;
-						break;
-					case PcreByteAnchor or PcreByteLineAnchor or PcreByteEndBeforeFinalLf:
-						if ( !MatchAnchor( nodes[index], source, end ) ) { return 0; }
-						break;
-					case PcreByteSearchStart:
-						if ( end != startOffset ) { return 0; }
-						break;
-					case PcreByteWordBoundary boundary:
-						var boundaryResult = MatchBoundary( boundary, source, end );
-						if ( boundaryResult != 1 ) { return boundaryResult; }
-						break;
-					case PcreByteRepeat repeat:
-						var count = 0;
-						var repeatStart = end;
-						if ( repeat.Greedy ) {
-							while ( true ) {
+		int TrySequence( PcreByteNode[] nodes, ReadOnlySpan<char> source, int candidate, out int end ) {
+			frames?.Clear();
+			var index = 0;
+			var position = candidate;
+			end = candidate;
+			while ( true ) {
+				if ( index == nodes.Length ) {
+					if ( !Step() ) { return -1; } // Completion, including policy rejection.
+					var empty = position == candidate;
+					if ( ( !endAnchored || position == source.Length )
+						&& !( empty && ( notEmpty || notEmptyAtStart && candidate == startOffset ) ) ) {
+						end = position; return 1;
+					}
+				} else if ( nodes[index] is PcreWordSuffixChoices firstChoices ) {
+					if ( !Step() ) { return -1; } // Ordered suffix choice admission.
+					( frames ??= new() ).Push( new( nodes, index, position, position, 1 ) );
+					nodes = firstChoices.Alternatives[0];
+					index = 0;
+					continue;
+				} else {
+					if ( !Step() ) { return -1; } // Comparison, repeat admission or assertion.
+					var matched = true;
+					switch ( nodes[index] ) {
+						case PcreByteLiteral or PcreByteAny or PcreByteScalarSet or PcreByteScalarClass or PcreByteNewlineSequence:
+							matched = TryConsumeAtom( nodes[index], source, position, out var width );
+							if ( matched ) { position += width; }
+							break;
+						case PcreByteAnchor or PcreByteLineAnchor or PcreByteEndBeforeFinalLf:
+							matched = MatchAnchor( nodes[index], source, position );
+							break;
+						case PcreByteSearchStart: matched = position == startOffset; break;
+						case PcreByteWordBoundary boundary:
+							var boundaryResult = MatchBoundary( boundary, source, position );
+							if ( boundaryResult < 0 ) { return -1; }
+							matched = boundaryResult == 1;
+							break;
+						case PcreByteRepeat repeat:
+							var count = 0;
+							var repeatStart = position;
+							while ( repeat.Greedy || count < repeat.Minimum ) {
 								if ( !Step() ) { return -1; }
-								if ( !TryConsumeAtom( repeat.Child, source, end, out var repeatWidth ) ) { break; }
-								end += repeatWidth;
+								if ( !TryConsumeAtom( repeat.Child, source, position, out var repeatWidth ) ) { break; }
+								position += repeatWidth;
 								count++;
 							}
-							while ( count >= repeat.Minimum ) {
-								var outcome = TryRepeatFinish( nodes, index + 1, source, end, candidate, out var acceptedEnd );
-								if ( outcome != 0 ) { end = acceptedEnd; return outcome; }
-								if ( index == nodes.Length - 1 || count == repeat.Minimum ) { break; }
-								if ( !Step() ) { return -1; } // Rewind one complete matched atom.
-								end -= RepeatRewindWidth( repeat.Child, source, end, repeatStart );
-								count--;
+							matched = count >= repeat.Minimum;
+							if ( matched && ( !repeat.Greedy || count > repeat.Minimum && index < nodes.Length - 1 ) ) {
+								( frames ??= new() ).Push( new( nodes, index, position, repeatStart, count ) );
 							}
-						} else {
-							while ( true ) {
-								if ( count >= repeat.Minimum ) {
-									var outcome = TryRepeatFinish( nodes, index + 1, source, end, candidate, out var acceptedEnd );
-									if ( outcome != 0 ) { end = acceptedEnd; return outcome; }
-								}
-								if ( !Step() ) { return -1; }
-								if ( !TryConsumeAtom( repeat.Child, source, end, out var repeatWidth ) ) { break; }
-								end += repeatWidth;
-								count++;
-							}
-						}
-						return 0;
-					default: throw new InvalidOperationException( "Unsupported word repeat continuation." );
+							break;
+						default: throw new InvalidOperationException( "Unsupported node reached the word sequence executor." );
+					}
+					if ( matched ) { index++; continue; }
 				}
+
+				var resumed = false;
+				while ( frames is not null && frames.TryPop( out var frame ) ) {
+					nodes = frame.Nodes;
+					index = frame.Index;
+					position = frame.Position;
+					if ( nodes[index] is PcreWordSuffixChoices choices ) {
+						if ( !Step() ) { return -1; }
+						if ( frame.Count + 1 < choices.Alternatives.Length ) {
+							frames.Push( frame with { Count = frame.Count + 1 } );
+						}
+						nodes = choices.Alternatives[frame.Count];
+						index = 0;
+					} else {
+						var repeat = (PcreByteRepeat)nodes[index];
+						if ( !Step() ) { return -1; } // Grow lazily or rewind one complete atom.
+						var count = frame.Count;
+						if ( repeat.Greedy ) {
+							position -= RepeatRewindWidth( repeat.Child, source, position, frame.RepeatStart );
+							count--;
+						} else {
+							if ( !TryConsumeAtom( repeat.Child, source, position, out var width ) ) { continue; }
+							position += width;
+							count++;
+						}
+						if ( !repeat.Greedy || count > repeat.Minimum ) {
+							frames.Push( frame with { Position = position, Count = count } );
+						}
+						index++;
+					}
+					resumed = true;
+					break;
+				}
+				if ( !resumed ) { return 0; }
 			}
-			if ( !Step() ) { return -1; }
-			var empty = end == candidate;
-			return ( !endAnchored || end == source.Length )
-				&& !( empty && ( notEmpty || notEmptyAtStart && candidate == startOffset ) ) ? 1 : 0;
-		}
-		int TryRepeatFinish( PcreByteNode[] nodes, int first, ReadOnlySpan<char> source, int at,
-			int candidate, out int end ) {
-			if ( first >= nodes.Length || nodes[first] is not PcreWordSuffixChoices choices ) {
-				return TryFinish( nodes, first, source, at, candidate, out end );
-			}
-			foreach ( var suffix in choices.Alternatives ) {
-				if ( choices.Alternatives.Length > 1 && !Step() ) { end = at; return -1; }
-				var outcome = TryFinish( suffix, 0, source, at, candidate, out end );
-				if ( outcome != 0 ) { return outcome; }
-			}
-			end = at;
-			return 0;
 		}
 		for ( var candidate = startOffset; ; ) {
 			if ( !Step() ) { return Exhausted(); } // Candidate admission.
 			for ( var branch = 0; branch < branches.Length; branch++ ) {
 				if ( branches.Length > 1 && !Step() ) { return Exhausted(); } // Ordered branch admission.
-				var nodes = branches[branch];
-				var position = candidate;
-				var matched = true;
-				for ( var nodeIndex = 0; nodeIndex < nodes.Length; nodeIndex++ ) {
-					var node = nodes[nodeIndex];
-					if ( !Step() ) { return Exhausted(); } // Comparison, repeat admission or assertion.
-					switch ( node ) {
-						case PcreByteLiteral or PcreByteAny or PcreByteScalarSet or PcreByteScalarClass or PcreByteNewlineSequence:
-							matched = TryConsumeAtom( node, input, position, out var atomWidth );
-							if ( matched ) { position += atomWidth; }
-							break;
-						case PcreByteRepeat repeat:
-							var count = 0;
-							var repeatStart = position;
-							if ( repeat.Greedy ) {
-								while ( true ) {
-									if ( !Step() ) { return Exhausted(); }
-									if ( !TryConsumeAtom( repeat.Child, input, position, out var repeatWidth ) ) { break; }
-									position += repeatWidth;
-									count++;
-								}
-								while ( count >= repeat.Minimum ) {
-									var outcome = TryRepeatFinish( nodes, nodeIndex + 1, input, position, candidate, out var end );
-									if ( outcome < 0 ) { return Exhausted(); }
-									if ( outcome > 0 ) { return new( new( candidate, end - candidate ), null ); }
-									if ( nodeIndex == nodes.Length - 1 || count == repeat.Minimum ) { break; }
-									if ( !Step() ) { return Exhausted(); } // Rewind one complete matched atom.
-									position -= RepeatRewindWidth( repeat.Child, input, position, repeatStart );
-									count--;
-								}
-							} else {
-								while ( true ) {
-									if ( count >= repeat.Minimum ) {
-										var outcome = TryRepeatFinish( nodes, nodeIndex + 1, input, position, candidate, out var end );
-										if ( outcome < 0 ) { return Exhausted(); }
-										if ( outcome > 0 ) { return new( new( candidate, end - candidate ), null ); }
-									}
-									if ( !Step() ) { return Exhausted(); }
-									if ( !TryConsumeAtom( repeat.Child, input, position, out var repeatWidth ) ) { break; }
-									position += repeatWidth;
-									count++;
-								}
-							}
-							matched = false; // Every eligible count has failed or been rejected.
-							break;
-						case PcreByteAnchor or PcreByteLineAnchor or PcreByteEndBeforeFinalLf:
-							matched = MatchAnchor( node, input, position );
-							break;
-						case PcreByteSearchStart: matched = position == startOffset; break;
-						case PcreByteWordBoundary boundary:
-							var boundaryResult = MatchBoundary( boundary, input, position );
-							if ( boundaryResult < 0 ) { return Exhausted(); }
-							matched = boundaryResult == 1;
-							break;
-						default: throw new InvalidOperationException( "Unsupported node reached the word sequence executor." );
-					}
-					if ( !matched ) { break; }
-				}
-				if ( matched ) {
-					if ( !Step() ) { return Exhausted(); } // Root completion, including policy rejection.
-					var empty = position == candidate;
-					if ( ( !endAnchored || position == input.Length )
-						&& !( empty && ( notEmpty || notEmptyAtStart && candidate == startOffset ) ) ) {
-						return new( new( candidate, position - candidate ), null );
-					}
-				}
+				var outcome = TrySequence( branches[branch], input, candidate, out var end );
+				if ( outcome < 0 ) { return Exhausted(); }
+				if ( outcome > 0 ) { return new( new( candidate, end - candidate ), null ); }
 			}
 			if ( anchored || candidate == input.Length ) { return new( null, null ); }
 			if ( !Step() ) { return Exhausted(); } // Advance one original unit/scalar.
@@ -246,6 +202,10 @@ internal sealed class PcreCompiledWordPattern {
 			candidate += advance;
 		}
 	}
+
+	private readonly record struct BacktrackFrame(
+		PcreByteNode[] Nodes, int Index, int Position, int RepeatStart, int Count
+	);
 
 	private bool TryConsumeAtom( PcreByteNode node, ReadOnlySpan<char> input, int position, out int width ) {
 		if ( !PcreUtf16.TryRead( input, position, options.Utf16, out var value, out width ) ) { return false; }
