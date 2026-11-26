@@ -2,6 +2,10 @@ namespace Icod.Expressions.Pcre;
 
 internal sealed record PcreWordSuffixChoices( PcreByteNode[][] Alternatives ) : PcreByteNode;
 
+internal sealed record PcreWordGroup(
+	PcreByteNode[][] Alternatives, int PathCount, int ExpandedNodes, int UnboundedRepeats
+) : PcreByteNode;
+
 /// <summary>Admits a bounded width-16 sequence through the existing PCRE grammar.</summary>
 internal static class PcreWordSequenceCompiler {
 	private const int MaximumExpandedNodes = 4096;
@@ -51,88 +55,136 @@ internal static class PcreWordSequenceCompiler {
 			if ( parser.GroupCount != 0 || root.Branches.Count is < 1 or > 64 ) {
 				return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
 			}
-			var branches = new List<PcreByteNode[]>();
+			var compiled = new Dictionary<PcreByteAlternatives, PcreWordGroup>( ReferenceEqualityComparer.Instance );
+			var pending = new Stack<(PcreByteAlternatives Body, int Depth, bool Complete)>();
 			var inspectPreviousScalar = false;
-			var admittedPaths = 0;
-			for ( var branch = 0; branch < root.Branches.Count; branch++ ) {
-				var nodes = root.Branches[branch];
-				var unboundedCount = nodes.Count( node => node is PcreByteRepeat { Maximum: int.MaxValue } );
-				if ( unboundedCount > MaximumUnboundedRepeats ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
-				var variables = new List<(int Index, PcreByteRepeat Repeat)>[unboundedCount + 1];
-				var products = new int[variables.Length];
-				for ( var segment = 0; segment < variables.Length; segment++ ) {
-					variables[segment] = new();
-					products[segment] = 1;
+			pending.Push( (root, 0, false) );
+			while ( pending.TryPop( out var item ) ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				if ( item.Depth > 64 || item.Body.Branches.Count is < 1 or > 64 ) {
+					return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
 				}
-				var repeats = new List<PcreByteRepeat>();
-				for ( var index = 0; index < nodes.Count; index++ ) {
-					cancellationToken.ThrowIfCancellationRequested();
-					inspectPreviousScalar |= nodes[index] is PcreByteWordBoundary
-						or PcreByteAnchor { IsStart: true, IsLineBoundary: false };
-					if ( nodes[index] is not PcreByteRepeat repeat || repeat.Minimum == repeat.Maximum ) { continue; }
-					if ( repeat.Maximum == int.MaxValue ) {
-						if ( repeats.Count == MaximumUnboundedRepeats || repeat.Minimum is < 0 or > MaximumExactRepeat
-							|| !IsSupportedAtom( repeat.Child ) ) {
-							return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
+				if ( !item.Complete ) {
+					pending.Push( (item.Body, item.Depth, true) );
+					foreach ( var path in item.Body.Branches ) {
+						foreach ( var node in path ) {
+							cancellationToken.ThrowIfCancellationRequested();
+							if ( node is PcreByteNoncapturingGroup group ) {
+								pending.Push( (group.Body, item.Depth + 1, false) );
+							}
 						}
-						repeats.Add( repeat );
-						continue;
 					}
-					if ( repeat.Minimum < 0 || repeat.Maximum > MaximumExactRepeat
-						|| !IsSupportedAtom( repeat.Child ) ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
-					var range = repeat.Maximum - repeat.Minimum + 1;
-					var segment = repeats.Count;
-					if ( range > 64 / products[segment] ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
-					products[segment] *= range;
-					variables[segment].Add( (index, repeat) );
+					continue;
 				}
-				var depth = repeats.Count;
-				var pathCount = 1;
-				for ( var segment = 0; segment <= depth; segment++ ) {
-					if ( products[segment] > ( 64 - admittedPaths ) / pathCount ) {
-						return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
-					}
-					pathCount *= products[segment];
-				}
-				admittedPaths += pathCount;
-				var counts = new int[nodes.Count];
-				Array.Fill( counts, -1 );
-				var paths = new PcreByteNode[pathCount][];
-				var positions = new int[pathCount][];
-				for ( var ordinal = 0; ordinal < pathCount; ordinal++ ) {
-					var remainder = ordinal;
-					for ( var segment = depth; segment >= 0; segment-- ) {
-						SelectCounts( variables[segment], remainder % products[segment], counts );
-						remainder /= products[segment];
-					}
-					if ( !TryExpandBranch( nodes, counts, cancellationToken, out var expanded ) ) {
-						return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
-					}
-					paths[ordinal] = expanded;
-					positions[ordinal] = new int[depth];
-					for ( var repeatIndex = 0; repeatIndex < depth; repeatIndex++ ) {
-						var position = Array.FindIndex( expanded, node => ReferenceEquals( node, repeats[repeatIndex] ) );
-						if ( position < ( repeatIndex == 0 ? 0 : positions[ordinal][repeatIndex - 1] + 1 ) ) {
-							throw new InvalidOperationException( "Missing ordered word repeat nodes." );
-						}
-						positions[ordinal][repeatIndex] = position;
-					}
-				}
-				if ( depth == 0 ) { branches.AddRange( paths ); continue; }
-				var outerStride = pathCount / products[0];
-				for ( var choice = 0; choice < products[0]; choice++ ) {
-					var firstPath = choice * outerStride;
-					var prefix = paths[firstPath][..( positions[firstPath][0] + 1 )];
-					var continuation = BuildContinuation( paths, positions, products, depth,
-						firstPath, outerStride, cancellationToken );
-					branches.Add( [.. prefix, .. continuation] );
-				}
+				var body = BuildBody( item.Body, compiled, ref inspectPreviousScalar, cancellationToken );
+				if ( body is null ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
+				compiled.Add( item.Body, body );
 			}
-			return new( new( branches.ToArray(), options, inspectPreviousScalar, settings.Newline, settings.BsrAnyCrLf ), null );
+			return new( new( compiled[root].Alternatives, options, inspectPreviousScalar, settings.Newline, settings.BsrAnyCrLf ), null );
 		} catch ( PcreByteParseException error ) {
 			return Error( error.Diagnostic.Code == PcreByteDiagnosticCode.UnsupportedSyntax
 				? PcreWordDiagnosticCode.UnsupportedSyntax : PcreWordDiagnosticCode.InvalidSyntax, error.Diagnostic.ByteOffset );
 		}
+	}
+
+	private static PcreWordGroup? BuildBody( PcreByteAlternatives root,
+		Dictionary<PcreByteAlternatives, PcreWordGroup> compiled, ref bool inspectPreviousScalar,
+		CancellationToken cancellationToken ) {
+		var branches = new List<PcreByteNode[]>();
+		var maximumNodes = 0;
+		var maximumRepeats = 0;
+		var admittedPaths = 0;
+		for ( var branch = 0; branch < root.Branches.Count; branch++ ) {
+			var nodes = root.Branches[branch].Select( node => node is PcreByteNoncapturingGroup group
+				? compiled[group.Body] : node ).ToArray();
+			var nestedPaths = 1;
+			var nestedRepeats = 0;
+			foreach ( var group in nodes.OfType<PcreWordGroup>() ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				if ( group.PathCount > 64 / nestedPaths ) { return null; }
+				nestedPaths *= group.PathCount;
+				nestedRepeats += group.UnboundedRepeats;
+			}
+			var unboundedCount = nodes.Count( node => node is PcreByteRepeat { Maximum: int.MaxValue } );
+			if ( unboundedCount + nestedRepeats > MaximumUnboundedRepeats ) { return null; }
+			maximumRepeats = Math.Max( maximumRepeats, unboundedCount + nestedRepeats );
+			// A group also separates finite choices: its alternatives must retry before
+			// a preceding choice, and a following choice must retry before the group.
+			var boundaryCount = unboundedCount + nodes.Count( node => node is PcreWordGroup );
+			var variables = new List<(int Index, PcreByteRepeat Repeat)>[boundaryCount + 1];
+			var products = new int[variables.Length];
+			for ( var segment = 0; segment < variables.Length; segment++ ) {
+				variables[segment] = new();
+				products[segment] = 1;
+			}
+			var boundaries = new List<PcreByteNode>();
+			for ( var index = 0; index < nodes.Length; index++ ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				inspectPreviousScalar |= nodes[index] is PcreByteWordBoundary
+					or PcreByteAnchor { IsStart: true, IsLineBoundary: false };
+				if ( nodes[index] is PcreWordGroup ) { boundaries.Add( nodes[index] ); continue; }
+				if ( nodes[index] is not PcreByteRepeat repeat || repeat.Minimum == repeat.Maximum ) { continue; }
+				if ( repeat.Maximum == int.MaxValue ) {
+					if ( repeat.Minimum is < 0 or > MaximumExactRepeat
+						|| !IsSupportedAtom( repeat.Child ) ) {
+						return null;
+					}
+					boundaries.Add( repeat );
+					continue;
+				}
+				if ( repeat.Minimum < 0 || repeat.Maximum > MaximumExactRepeat
+					|| !IsSupportedAtom( repeat.Child ) ) { return null; }
+				var range = repeat.Maximum - repeat.Minimum + 1;
+				var segment = boundaries.Count;
+				if ( range > 64 / products[segment] ) { return null; }
+				products[segment] *= range;
+				variables[segment].Add( (index, repeat) );
+			}
+			var depth = boundaries.Count;
+			var pathCount = 1;
+			for ( var segment = 0; segment <= depth; segment++ ) {
+				if ( products[segment] > ( 64 - admittedPaths ) / pathCount ) {
+					return null;
+				}
+				pathCount *= products[segment];
+			}
+			if ( nestedPaths > ( 64 - admittedPaths ) / pathCount ) { return null; }
+			admittedPaths += pathCount * nestedPaths;
+			var counts = new int[nodes.Length];
+			Array.Fill( counts, -1 );
+			var paths = new PcreByteNode[pathCount][];
+			var positions = new int[pathCount][];
+			for ( var ordinal = 0; ordinal < pathCount; ordinal++ ) {
+				var remainder = ordinal;
+				for ( var segment = depth; segment >= 0; segment-- ) {
+					SelectCounts( variables[segment], remainder % products[segment], counts );
+					remainder /= products[segment];
+				}
+				if ( !TryExpandBranch( nodes, counts, cancellationToken, out var expanded, out var expandedNodes ) ) {
+					return null;
+				}
+				maximumNodes = Math.Max( maximumNodes, expandedNodes );
+				paths[ordinal] = expanded;
+				positions[ordinal] = new int[depth];
+				for ( var boundary = 0; boundary < depth; boundary++ ) {
+					var position = Array.FindIndex( expanded, node => ReferenceEquals( node, boundaries[boundary] ) );
+					if ( position < ( boundary == 0 ? 0 : positions[ordinal][boundary - 1] + 1 ) ) {
+						throw new InvalidOperationException( "Missing ordered word continuation boundaries." );
+					}
+					positions[ordinal][boundary] = position;
+				}
+			}
+			if ( depth == 0 ) { branches.AddRange( paths ); continue; }
+			var outerStride = pathCount / products[0];
+			for ( var choice = 0; choice < products[0]; choice++ ) {
+				var firstPath = choice * outerStride;
+				var prefix = paths[firstPath][..( positions[firstPath][0] + 1 )];
+				var continuation = BuildContinuation( paths, positions, products, depth,
+					firstPath, outerStride, cancellationToken );
+				branches.Add( [.. prefix, .. continuation] );
+			}
+		}
+		return new( branches.ToArray(), admittedPaths, maximumNodes, maximumRepeats );
 	}
 
 	private static PcreByteNode[] BuildContinuation( PcreByteNode[][] paths, int[][] positions, int[] products,
@@ -175,7 +227,8 @@ internal static class PcreWordSequenceCompiler {
 	}
 
 	private static bool TryExpandBranch( IReadOnlyList<PcreByteNode> nodes, int[] counts,
-		CancellationToken cancellationToken, out PcreByteNode[] expanded ) {
+		CancellationToken cancellationToken, out PcreByteNode[] expanded, out int expandedNodes ) {
+		expandedNodes = 0;
 		var output = new List<PcreByteNode>();
 		for ( var index = 0; index < nodes.Count; index++ ) {
 			cancellationToken.ThrowIfCancellationRequested();
@@ -183,21 +236,26 @@ internal static class PcreWordSequenceCompiler {
 			if ( node is PcreByteRepeat repeat ) {
 				if ( repeat.Maximum == int.MaxValue
 					&& repeat.Minimum is >= 0 and <= MaximumExactRepeat && IsSupportedAtom( repeat.Child )
-					&& output.Count < MaximumExpandedNodes ) {
+					&& expandedNodes < MaximumExpandedNodes ) {
 					output.Add( repeat );
+					expandedNodes++;
 					continue;
 				}
 				var count = counts[index] >= 0 ? counts[index] : repeat.Maximum;
 				if ( counts[index] < 0 && repeat.Minimum != repeat.Maximum
 					|| count is < 0 or > MaximumExactRepeat || !IsSupportedAtom( repeat.Child )
-					|| output.Count > MaximumExpandedNodes - count ) {
+					|| expandedNodes > MaximumExpandedNodes - count ) {
 					expanded = []; return false;
 				}
+				expandedNodes += count;
 				for ( var copy = 0; copy < count; copy++ ) {
 					cancellationToken.ThrowIfCancellationRequested();
 					output.Add( repeat.Child );
 				}
-			} else if ( IsSupportedNode( node ) && output.Count < MaximumExpandedNodes ) {
+			} else if ( IsSupportedNode( node ) && expandedNodes < MaximumExpandedNodes ) {
+				var weight = node is PcreWordGroup group ? group.ExpandedNodes + 1 : 1;
+				if ( weight > MaximumExpandedNodes - expandedNodes ) { expanded = []; return false; }
+				expandedNodes += weight;
 				output.Add( node );
 			} else { expanded = []; return false; }
 		}
@@ -207,7 +265,7 @@ internal static class PcreWordSequenceCompiler {
 
 	private static bool IsSupportedNode( PcreByteNode node ) => IsSupportedAtom( node )
 		|| node is PcreByteAnchor or PcreByteLineAnchor or PcreByteEndBeforeFinalLf
-			or PcreByteSearchStart or PcreByteWordBoundary;
+			or PcreByteSearchStart or PcreByteWordBoundary or PcreWordGroup;
 
 	private static bool IsSupportedAtom( PcreByteNode node ) => node is PcreByteLiteral or PcreByteAny or PcreByteNewlineSequence
 		|| node is PcreByteScalarClass property && IsWordClassPredicate( property.Kind )
