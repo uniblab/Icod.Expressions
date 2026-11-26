@@ -7,7 +7,7 @@ fixed/bounded-variable assertions. Original branch widths drive whole-scalar
 or raw-unit rewinds; body choices retry before shorter lengths. Assertion
 guards retain successful captures, restore failed attempts and preserve
 atomic commitment. The strict validation window now includes retained
-lookbehind widths. 133 fixtures add 68,096 full-vector PCRE2-16 policy
+lookbehind widths. 143 fixtures add 73,216 full-vector PCRE2-16 policy
 comparisons. Non-atomic and directly quantified assertions remain next,
 followed by calls, conditions and verbs.
 

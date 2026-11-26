@@ -141,7 +141,17 @@ public sealed class PcreWordLookbehindTests {
 				("(?<=(?:a{64}){4})b", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab", 256, true, false),
 				("(?<=(?:a{64}){3}a{61}a{0,2})b", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab", 255, true, false),
 				("(?<=\ud800)a", "\ud800a", 0, false, false),
-				("(?<!(.\udc00))a", "𐀀a", 2, false, false)
+				("(?<!(.\udc00))a", "𐀀a", 2, false, false),
+				("(?<=\\ba)b", "aab", 2, true, false),
+				("(?<=\\Ba)b", "aab", 2, true, false),
+				("(?<!(?<=a)b)c", "abc", 2, true, false),
+				("(?<=(?<!a)b)c", "abc", 2, true, false),
+				("(?<=\\ba)b", "aab", 2, false, false),
+				("(?<=\\Ba)b", "aab", 2, false, false),
+				("(?<=(?<=a)b)c", "abc", 2, false, false),
+				("(?<!(?<=a)b)c", "abc", 2, false, false),
+				("(?<=(?<=(a?))b)c", "abc", 2, true, false),
+				("(?<=(?<=(a{1,2}))b)c", "aabc", 3, true, false)
 			};
 			for ( var id = 0; id < cases.Length; id++ ) {
 				var (source, subject, start, utf, ucp) = cases[id];

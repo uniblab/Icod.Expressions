@@ -40,6 +40,7 @@ internal sealed class PcreCompiledWordPattern {
 		}
 		PcreWordMatchResult Exhausted() => new( null, new( PcreWordDiagnosticCode.MatchWorkLimitExceeded, 0 ) );
 		var input = subject.Span;
+		var reverseStart = 0;
 		if ( options.Utf16 ) {
 			// Retained assertion widths extend native validation to the left. Word
 			// boundaries and absolute-start assertions require at least one character.
@@ -60,6 +61,9 @@ internal sealed class PcreCompiledWordPattern {
 				}
 				offset += width;
 			}
+			// These call-time flags select the pinned interpreter, whose reverse
+			// reads and word boundaries stop at the UTF validation window.
+			if ( policy.Anchored || policy.EndAnchored ) { reverseStart = validationStart; }
 		}
 		var anchored = options.Policy.Anchored || policy.Anchored;
 		var endAnchored = options.Policy.EndAnchored || policy.EndAnchored;
@@ -84,7 +88,7 @@ internal sealed class PcreCompiledWordPattern {
 		int MatchBoundary( PcreByteWordBoundary boundary, ReadOnlySpan<char> source, int at ) {
 			var kind = boundary.UnicodeWord ? PcreByteScalarClassKind.UnicodeWord : PcreByteScalarClassKind.AsciiWord;
 			var beforeWord = false;
-			if ( at > 0 ) {
+			if ( at > reverseStart ) {
 				if ( !Step() ) { return -1; }
 				beforeWord = PcreUtf16.TryReadPrevious( source, at, options.Utf16, out var before, out _ )
 					&& PcreScalarClassMembership.Contains( kind, before );
@@ -255,7 +259,8 @@ internal sealed class PcreCompiledWordPattern {
 							var reversedCount = 0;
 							while ( reversedCount < reverse.Maximum ) {
 								if ( !Step() ) { return -1; } // One original scalar/unit of left context.
-								if ( !PcreUtf16.TryReadPrevious( source, reversed, options.Utf16, out _, out var reverseWidth ) ) { break; }
+								if ( reversed <= reverseStart
+									|| !PcreUtf16.TryReadPrevious( source, reversed, options.Utf16, out _, out var reverseWidth ) ) { break; }
 								reversed -= reverseWidth;
 								reversedCount++;
 							}

@@ -42,6 +42,13 @@ scalar charges. Bodies inside zero-count groups still contribute metadata.
 Invalid surrogates outside the native validation window remain outside the
 validation pass. Malformed units inside it report their original offset.
 
+Call-time `Anchored` or `EndAnchored` selects the pinned native interpreter.
+For strict UTF-16, that path also bounds reverse reads and the previous-word
+test at the validation-window start. Compiled anchoring alone keeps the JIT
+profile. Nested assertions can therefore differ across these call policies
+when they would inspect preceding text outside the window. The word runner
+preserves that distinction without changing the outer anchoring contract.
+
 Rewind admission, every attempted reverse scalar/unit, every shorter-start
 retry, assertion return/end checks, capture restoration and atomic pruning
 share the cancellation-aware work budget. Rewind and assertion frames share
@@ -57,16 +64,16 @@ restrictions on references and unbounded consumed bodies remain in force.
 
 ## Evidence and remaining scope
 
-133 fixtures across eight compiled defaults and 64 call masks add 68,096
+143 fixtures across eight compiled defaults and 64 call masks add 73,216
 PCRE2-16 comparisons of status and every capture slot. They cover distinct
 branch lengths, greedy/lazy finite bodies, longest-first rewind ordering,
 atomic commitment, nested polarities, references, captures before group
 zero, Unicode casing/classes, supplementary scalars, raw surrogates, newline
 sequences, aliases, nonzero starts and the variable-width ceiling.
 
-Standalone pinned native preflight produced 29,676 matches and 38,420
+Standalone pinned native preflight produced 33,004 matches and 40,212
 misses, with no compile/match errors. Its LF-terminated output SHA-256 is
-`b23457a93585c20a74d0bece4b54a0ce5255ec5905a940add9de760f36651bf8`.
+`07c0b7792c5dddf74f3d36c21d9d1dae9695ca7c68a0cbe763353725680459db`.
 Build/provenance is retained in [word-sequence evidence](PCRE-WORD-SEQUENCES.md).
 
 Additional tests compare cross-width capture spans and values, exact work
