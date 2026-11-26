@@ -2,6 +2,7 @@ namespace Icod.Expressions.Pcre;
 
 /// <summary>Immutable width-16 sequence; matching reads the original subject view.</summary>
 internal sealed class PcreCompiledWordPattern {
+	private const int MaximumBacktrackFrames = 1024;
 	private readonly PcreByteNode[][] branches;
 	private readonly PcreWordOptions options;
 	private readonly bool inspectPreviousScalar;
@@ -95,13 +96,31 @@ internal sealed class PcreCompiledWordPattern {
 			return ( beforeWord != afterWord ) == boundary.IsBoundary ? 1 : 0;
 		}
 		Stack<BacktrackFrame>? frames = null;
-		// -1: work exhausted; 0: failed or policy-rejected; 1: complete match.
+		bool PushFrame( BacktrackFrame frame ) {
+			frames ??= new();
+			if ( frames.Count >= MaximumBacktrackFrames ) { return false; }
+			frames.Push( frame );
+			return true;
+		}
+		// -2: frame limit; -1: work exhausted; 0: failed or policy-rejected; 1: match.
 		int TrySequence( PcreByteNode[] nodes, ReadOnlySpan<char> source, int candidate, out int end ) {
 			frames?.Clear();
 			Continuation? continuation = null;
 			var index = 0;
 			var position = candidate;
 			end = candidate;
+			bool ContinueGroupRepeat( PcreWordGroupRepeat repeat, int count ) {
+				if ( count == repeat.Maximum ) { index++; return true; }
+				if ( count >= repeat.Minimum ) {
+					if ( !PushFrame( new( nodes, index, position, position, count, continuation,
+						repeat.Greedy ? FrameKind.RepeatExit : FrameKind.RepeatGrow ) ) ) { return false; }
+					if ( !repeat.Greedy ) { index++; return true; }
+				}
+				continuation = new( nodes, index, continuation, repeat, count, position );
+				nodes = repeat.Body;
+				index = 0;
+				return true;
+			}
 			while ( true ) {
 				if ( index == nodes.Length ) {
 					if ( continuation is { } parent ) {
@@ -109,6 +128,14 @@ internal sealed class PcreCompiledWordPattern {
 						nodes = parent.Nodes;
 						index = parent.Index;
 						continuation = parent.Parent;
+						if ( parent.Repeat is { } completedRepeat ) {
+							// Required counted copies may be empty. The optional unbounded
+							// loop stops on no progress; shorthand '+' also guards its first copy.
+							if ( completedRepeat.Maximum == int.MaxValue && position == parent.Start
+								&& ( parent.Count >= completedRepeat.Minimum || completedRepeat.CheckMinimumProgress ) ) {
+								index++;
+							} else if ( !ContinueGroupRepeat( completedRepeat, parent.Count + 1 ) ) { return -2; }
+						}
 						continue;
 					}
 					if ( !Step() ) { return -1; } // Completion, including policy rejection.
@@ -119,7 +146,7 @@ internal sealed class PcreCompiledWordPattern {
 					}
 				} else if ( nodes[index] is PcreWordSuffixChoices firstChoices ) {
 					if ( !Step() ) { return -1; } // Ordered suffix choice admission.
-					( frames ??= new() ).Push( new( nodes, index, position, position, 1, continuation ) );
+					if ( !PushFrame( new( nodes, index, position, position, 1, continuation ) ) ) { return -2; }
 					nodes = firstChoices.Alternatives[0];
 					index = 0;
 					continue;
@@ -127,11 +154,15 @@ internal sealed class PcreCompiledWordPattern {
 					if ( !Step() ) { return -1; } // Group entry.
 					if ( firstGroup.Alternatives.Length > 1 ) {
 						if ( !Step() ) { return -1; } // Ordered group branch admission.
-						( frames ??= new() ).Push( new( nodes, index, position, position, 1, continuation ) );
+						if ( !PushFrame( new( nodes, index, position, position, 1, continuation ) ) ) { return -2; }
 					}
 					continuation = new( nodes, index + 1, continuation );
 					nodes = firstGroup.Alternatives[0];
 					index = 0;
+					continue;
+				} else if ( nodes[index] is PcreWordGroupRepeat groupRepeat ) {
+					if ( !Step() ) { return -1; } // Repeated-group admission and first count decision.
+					if ( !ContinueGroupRepeat( groupRepeat, 0 ) ) { return -2; }
 					continue;
 				} else {
 					if ( !Step() ) { return -1; } // Comparison, repeat admission or assertion.
@@ -162,7 +193,7 @@ internal sealed class PcreCompiledWordPattern {
 							matched = count >= repeat.Minimum;
 							if ( matched && ( !repeat.Greedy || count > repeat.Minimum
 								&& ( index < nodes.Length - 1 || continuation is not null ) ) ) {
-								( frames ??= new() ).Push( new( nodes, index, position, repeatStart, count, continuation ) );
+								if ( !PushFrame( new( nodes, index, position, repeatStart, count, continuation ) ) ) { return -2; }
 							}
 							break;
 						default: throw new InvalidOperationException( "Unsupported node reached the word sequence executor." );
@@ -176,17 +207,26 @@ internal sealed class PcreCompiledWordPattern {
 					index = frame.Index;
 					position = frame.Position;
 					continuation = frame.Continuation;
-					if ( nodes[index] is PcreWordSuffixChoices choices ) {
+					if ( frame.Kind is FrameKind.RepeatExit or FrameKind.RepeatGrow ) {
+						if ( !Step() ) { return -1; } // Retry an iteration or its enclosing suffix.
+						if ( frame.Kind == FrameKind.RepeatExit ) { index++; }
+						else {
+							var growing = (PcreWordGroupRepeat)nodes[index];
+							continuation = new( nodes, index, continuation, growing, frame.Count, position );
+							nodes = growing.Body;
+							index = 0;
+						}
+					} else if ( nodes[index] is PcreWordSuffixChoices choices ) {
 						if ( !Step() ) { return -1; }
 						if ( frame.Count + 1 < choices.Alternatives.Length ) {
-							frames.Push( frame with { Count = frame.Count + 1 } );
+							if ( !PushFrame( frame with { Count = frame.Count + 1 } ) ) { return -2; }
 						}
 						nodes = choices.Alternatives[frame.Count];
 						index = 0;
 					} else if ( nodes[index] is PcreWordGroup group ) {
 						if ( !Step() ) { return -1; }
 						if ( frame.Count + 1 < group.Alternatives.Length ) {
-							frames.Push( frame with { Count = frame.Count + 1 } );
+							if ( !PushFrame( frame with { Count = frame.Count + 1 } ) ) { return -2; }
 						}
 						continuation = new( nodes, index + 1, continuation );
 						nodes = group.Alternatives[frame.Count];
@@ -204,7 +244,7 @@ internal sealed class PcreCompiledWordPattern {
 							count++;
 						}
 						if ( !repeat.Greedy || count > repeat.Minimum ) {
-							frames.Push( frame with { Position = position, Count = count } );
+							if ( !PushFrame( frame with { Position = position, Count = count } ) ) { return -2; }
 						}
 						index++;
 					}
@@ -219,6 +259,7 @@ internal sealed class PcreCompiledWordPattern {
 			for ( var branch = 0; branch < branches.Length; branch++ ) {
 				if ( branches.Length > 1 && !Step() ) { return Exhausted(); } // Ordered branch admission.
 				var outcome = TrySequence( branches[branch], input, candidate, out var end );
+				if ( outcome == -2 ) { return new( null, new( PcreWordDiagnosticCode.MatchDepthLimitExceeded, 0 ) ); }
 				if ( outcome < 0 ) { return Exhausted(); }
 				if ( outcome > 0 ) { return new( new( candidate, end - candidate ), null ); }
 			}
@@ -232,10 +273,14 @@ internal sealed class PcreCompiledWordPattern {
 	}
 
 	private readonly record struct BacktrackFrame(
-		PcreByteNode[] Nodes, int Index, int Position, int RepeatStart, int Count, Continuation? Continuation
+		PcreByteNode[] Nodes, int Index, int Position, int RepeatStart, int Count, Continuation? Continuation,
+		FrameKind Kind = FrameKind.Retry
 	);
 
-	private sealed record Continuation( PcreByteNode[] Nodes, int Index, Continuation? Parent );
+	private enum FrameKind { Retry, RepeatExit, RepeatGrow }
+
+	private sealed record Continuation( PcreByteNode[] Nodes, int Index, Continuation? Parent,
+		PcreWordGroupRepeat? Repeat = null, int Count = 0, int Start = 0 );
 
 	private bool TryConsumeAtom( PcreByteNode node, ReadOnlySpan<char> input, int position, out int width ) {
 		if ( !PcreUtf16.TryRead( input, position, options.Utf16, out var value, out width ) ) { return false; }

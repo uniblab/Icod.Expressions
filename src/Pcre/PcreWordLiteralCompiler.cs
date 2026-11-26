@@ -18,7 +18,8 @@ internal sealed record PcreWordOptions {
 
 internal enum PcreWordDiagnosticCode {
 	InvalidWorkLimit, PatternLengthLimitExceeded, InvalidUtf16Pattern,
-	InvalidUtf16Subject, InvalidStartOffset, MatchWorkLimitExceeded, InvalidSyntax, UnsupportedSyntax
+	InvalidUtf16Subject, InvalidStartOffset, MatchWorkLimitExceeded, InvalidSyntax, UnsupportedSyntax,
+	MatchDepthLimitExceeded
 }
 
 internal sealed record PcreWordDiagnostic( PcreWordDiagnosticCode Code, int CodeUnitOffset );
