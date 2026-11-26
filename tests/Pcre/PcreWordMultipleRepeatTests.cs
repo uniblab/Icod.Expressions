@@ -102,7 +102,7 @@ public sealed class PcreWordMultipleRepeatTests {
 			} ).Pattern!;
 			var match = pattern.Match( "a".AsMemory() );
 			if ( budget < required ) { Assert.Equal( PcreWordDiagnosticCode.MatchWorkLimitExceeded, match.Diagnostic?.Code ); }
-			else { Assert.Equal( new PcreWordCapture( 0, 1 ), match.Match ); }
+			else { Assert.Equal( new PcreWordCapture( 0, 1 ), match.Match?.Captures[0] ); }
 			Assert.Equal( Enumerable.Range( 1, budget ), trace );
 		}
 	}
@@ -113,7 +113,7 @@ public sealed class PcreWordMultipleRepeatTests {
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( "a?b?c?d?e?f?".AsMemory() ).IsSuccess );
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( "a{0,6}b{0,8}|x".AsMemory() ).IsSuccess );
 		foreach ( var source in new[] { "a{0,7}b{0,7}|x", "a{0,8}b{0,7}",
-			"a?b?c?d?e?f?g?", "a{0,6}b{0,8}|x|y", "(a?)b?" } ) {
+			"a?b?c?d?e?f?g?", "a{0,6}b{0,8}|x|y", "(?>a?)b?" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

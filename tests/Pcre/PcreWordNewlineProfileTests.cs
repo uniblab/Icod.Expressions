@@ -126,7 +126,7 @@ public sealed class PcreWordNewlineProfileTests {
 		Assert.Equal( "M", native.Kind ); Assert.Equal( "1:1", native.Captures );
 		var result = PcreWordSequenceCompiler.CompileSequence( source.AsMemory(), new() { Utf16 = true } )
 			.Pattern!.Match( subject.AsMemory(), 1 );
-		Assert.True( result.IsSuccess ); Assert.Equal( new PcreWordCapture( 1, 1 ), result.Match );
+		Assert.True( result.IsSuccess ); Assert.Equal( new PcreWordCapture( 1, 1 ), result.Match?.Captures[0] );
 	}
 
 	[Fact]
@@ -136,9 +136,9 @@ public sealed class PcreWordNewlineProfileTests {
 		Assert.Equal( PcreWordDiagnosticCode.InvalidSyntax, result.Diagnostic?.Code );
 		Assert.Equal( 5, result.Diagnostic?.CodeUnitOffset );
 		var literal = PcreWordLiteralCompiler.CompileLiteral( "(*CR)".AsMemory() ).Pattern!;
-		Assert.Equal( new PcreWordCapture( 0, 5 ), literal.Match( "(*CR)".AsMemory() ).Match );
+		Assert.Equal( new PcreWordCapture( 0, 5 ), literal.Match( "(*CR)".AsMemory() ).Match?.Captures[0] );
 		var sequence = PcreWordSequenceCompiler.CompileSequence( @"\Q(*CR)\E".AsMemory() ).Pattern!;
-		Assert.Equal( new PcreWordCapture( 0, 5 ), sequence.Match( "(*CR)".AsMemory() ).Match );
+		Assert.Equal( new PcreWordCapture( 0, 5 ), sequence.Match( "(*CR)".AsMemory() ).Match?.Captures[0] );
 	}
 
 	[Theory]

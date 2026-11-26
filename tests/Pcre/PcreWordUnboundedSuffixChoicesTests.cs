@@ -103,7 +103,7 @@ public sealed class PcreWordUnboundedSuffixChoicesTests {
 		var complete = PcreWordSequenceCompiler.CompileSequence( source.AsMemory(), new() {
 			MatchWorkLimit = 100, WorkObserver = completeTrace.Add
 		} ).Pattern!.Match( subject.AsMemory() );
-		Assert.Equal( new PcreWordCapture( 0, 4 ), complete.Match );
+		Assert.Equal( new PcreWordCapture( 0, 4 ), complete.Match?.Captures[0] );
 		Assert.True( completeTrace.Count > 0 );
 		foreach ( var budget in new[] { 1, completeTrace.Count - 1 } ) {
 			var trace = new List<int>();
@@ -122,7 +122,7 @@ public sealed class PcreWordUnboundedSuffixChoicesTests {
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( "a?b*c{0,31}".AsMemory() ).IsSuccess );
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( "a*b{0,62}|x".AsMemory() ).IsSuccess );
 		foreach ( var source in new[] { "a*b{0,64}", "a?b*c{0,32}", "a*b{0,63}|x",
-			"a?b*c{0,31}|x", "a*b?c?d?e?f?g?h?", "(a*)b?" } ) {
+			"a?b*c{0,31}|x", "a*b?c?d?e?f?g?h?", "(?>a*)b?" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

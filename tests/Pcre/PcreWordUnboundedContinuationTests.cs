@@ -109,7 +109,7 @@ public sealed class PcreWordUnboundedContinuationTests {
 			} ).Pattern!;
 			var match = pattern.Match( subject.AsMemory() );
 			if ( budget < required ) { Assert.Equal( PcreWordDiagnosticCode.MatchWorkLimitExceeded, match.Diagnostic?.Code ); }
-			else { Assert.Equal( new PcreWordCapture( 0, subject.Length ), match.Match ); }
+			else { Assert.Equal( new PcreWordCapture( 0, subject.Length ), match.Match?.Captures[0] ); }
 			Assert.Equal( Enumerable.Range( 1, budget ), trace );
 		}
 	}

@@ -1,4 +1,4 @@
-/* Development-only literal16 policy oracle; code-unit hex is host independent. */
+/* Development-only width-16 policy oracle; code-unit hex is host independent. */
 #define PCRE2_CODE_UNIT_WIDTH 16
 #include <pcre2.h>
 #include <errno.h>
@@ -61,8 +61,17 @@ int main(void) {
         int rc = pcre2_match(code, subject, slen, start, policy(mask | (defaults & ~3u)), data, NULL);
         if (rc == -1) { puts("N|"); }
         else if (rc < 0) { printf("X|%d\n", rc); }
-        else if (rc != 1) { return 3; }
-        else { PCRE2_SIZE *ov = pcre2_get_ovector_pointer(data); printf("M|%zu:%zu\n", (size_t)ov[0], (size_t)(ov[1] - ov[0])); }
+        else {
+            uint32_t captures = 0;
+            if (!rc || pcre2_pattern_info(code, PCRE2_INFO_CAPTURECOUNT, &captures)) { return 3; }
+            PCRE2_SIZE *ov = pcre2_get_ovector_pointer(data); printf("M|");
+            for (uint32_t group = 0; group <= captures; group++) {
+                if (group) { putchar(','); }
+                if (ov[group * 2] == PCRE2_UNSET) { putchar('-'); }
+                else { printf("%zu:%zu", (size_t)ov[group * 2], (size_t)(ov[group * 2 + 1] - ov[group * 2])); }
+            }
+            putchar('\n');
+        }
         pcre2_match_data_free(data); pcre2_code_free(code); free(pattern); free(subject);
     }
     return ferror(stdin) || ferror(stdout) ? 2 : 0;

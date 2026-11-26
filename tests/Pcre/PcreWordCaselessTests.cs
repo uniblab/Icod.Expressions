@@ -125,7 +125,7 @@ public sealed class PcreWordCaselessTests {
 			} ).Pattern!;
 			var match = pattern.Match( "K".AsMemory() );
 			if ( budget < required ) { Assert.Equal( PcreWordDiagnosticCode.MatchWorkLimitExceeded, match.Diagnostic?.Code ); }
-			else { Assert.Equal( new PcreWordCapture( 0, 1 ), match.Match ); }
+			else { Assert.Equal( new PcreWordCapture( 0, 1 ), match.Match?.Captures[0] ); }
 			Assert.Equal( Enumerable.Range( 1, budget ), trace );
 		}
 	}
@@ -135,7 +135,7 @@ public sealed class PcreWordCaselessTests {
 		var allowed = "(?i)[" + new string( 'a', 63 ) + @"\p{Lu}]";
 		var rejected = "(?i)[" + new string( 'a', 64 ) + @"\p{Lu}]";
 		Assert.Equal( new PcreWordCapture( 0, 1 ),
-			PcreWordSequenceCompiler.CompileSequence( allowed.AsMemory(), new() { Utf16 = true } ).Pattern!.Match( "A".AsMemory() ).Match );
+			PcreWordSequenceCompiler.CompileSequence( allowed.AsMemory(), new() { Utf16 = true } ).Pattern!.Match( "A".AsMemory() ).Match?.Captures[0] );
 		Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 			PcreWordSequenceCompiler.CompileSequence( rejected.AsMemory(), new() { Utf16 = true } ).Diagnostic?.Code );
 	}

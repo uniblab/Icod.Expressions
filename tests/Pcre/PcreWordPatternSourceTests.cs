@@ -83,13 +83,13 @@ public sealed class PcreWordPatternSourceTests {
 		var source = "é😀".ToCharArray();
 		var pattern = PcreWordSequenceCompiler.CompileSequence( source, new() { Utf16 = true } ).Pattern!;
 		Array.Fill( source, 'x' );
-		Assert.Equal( new PcreWordCapture( 0, 3 ), pattern.Match( "é😀".AsMemory() ).Match );
+		Assert.Equal( new PcreWordCapture( 0, 3 ), pattern.Match( "é😀".AsMemory() ).Match?.Captures[0] );
 		Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 			PcreWordSequenceCompiler.CompileSequence( @"[\p{XUC}]".AsMemory(), new() { Utf16 = true } ).Diagnostic?.Code );
 		Assert.Equal( PcreWordDiagnosticCode.InvalidUtf16Pattern,
 			PcreWordSequenceCompiler.CompileSequence( "😀\uD800".AsMemory(), new() { Utf16 = true } ).Diagnostic?.Code );
 		Assert.Equal( new PcreWordCapture( 0, 1 ),
-			PcreWordSequenceCompiler.CompileSequence( "\uD800".AsMemory() ).Pattern!.Match( "\uD800".AsMemory() ).Match );
+			PcreWordSequenceCompiler.CompileSequence( "\uD800".AsMemory() ).Pattern!.Match( "\uD800".AsMemory() ).Match?.Captures[0] );
 	}
 
 	[Theory]
@@ -101,7 +101,7 @@ public sealed class PcreWordPatternSourceTests {
 		Assert.Equal( "M", native.Kind );
 		var compiled = PcreWordSequenceCompiler.CompileSequence( source.AsMemory(), new() { Utf16 = utf } );
 		Assert.True( compiled.IsSuccess );
-		Assert.Equal( new PcreWordCapture( 0, 1 ), compiled.Pattern!.Match( "é".AsMemory() ).Match );
+		Assert.Equal( new PcreWordCapture( 0, 1 ), compiled.Pattern!.Match( "é".AsMemory() ).Match?.Captures[0] );
 	}
 
 	private static ushort[] Words( string source ) => source.Select( unit => (ushort)unit ).ToArray();

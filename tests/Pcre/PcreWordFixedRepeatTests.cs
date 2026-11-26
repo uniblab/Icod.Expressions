@@ -94,7 +94,7 @@ public sealed class PcreWordFixedRepeatTests {
 			} ).Pattern!;
 			var match = pattern.Match( "aa".AsMemory() );
 			if ( budget < required ) { Assert.Equal( PcreWordDiagnosticCode.MatchWorkLimitExceeded, match.Diagnostic?.Code ); }
-			else { Assert.Equal( new PcreWordCapture( 0, 2 ), match.Match ); }
+			else { Assert.Equal( new PcreWordCapture( 0, 2 ), match.Match?.Captures[0] ); }
 			Assert.Equal( Enumerable.Range( 1, budget ), trace );
 		}
 	}
@@ -102,11 +102,10 @@ public sealed class PcreWordFixedRepeatTests {
 	[Fact]
 	public void RepetitionAndExpandedNodeBoundsAreExplicit() {
 		Assert.Equal( new PcreWordCapture( 0, 64 ),
-			PcreWordSequenceCompiler.CompileSequence( "a{64}".AsMemory() ).Pattern!.Match( new string( 'a', 64 ).AsMemory() ).Match );
+			PcreWordSequenceCompiler.CompileSequence( "a{64}".AsMemory() ).Pattern!.Match( new string( 'a', 64 ).AsMemory() ).Match?.Captures[0] );
 		Assert.True( PcreWordSequenceCompiler.CompileSequence(
 			String.Concat( Enumerable.Repeat( "a{64}", 64 ) ).AsMemory() ).IsSuccess );
 		foreach ( var source in new[] { "a{65}", String.Concat( Enumerable.Repeat( "a{64}", 64 ).Append( "a" ) ),
-			"(a){0}",
 			"a{2}+", "(?>a){2}" } ) {
 			var result = PcreWordSequenceCompiler.CompileSequence( source.AsMemory() );
 			Assert.True( result.Diagnostic?.Code == PcreWordDiagnosticCode.UnsupportedSyntax,

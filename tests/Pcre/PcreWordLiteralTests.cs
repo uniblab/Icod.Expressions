@@ -84,7 +84,7 @@ public sealed class PcreWordLiteralTests {
 		var source = new string( 'a', 4096 );
 		var compiled = PcreWordLiteralCompiler.CompileLiteral( source.AsMemory(), new() { Utf16 = utf } );
 		Assert.True( compiled.IsSuccess );
-		Assert.Equal( new PcreWordCapture( 0, 4096 ), compiled.Pattern!.Match( source.AsMemory() ).Match );
+		Assert.Equal( new PcreWordCapture( 0, 4096 ), compiled.Pattern!.Match( source.AsMemory() ).Match?.Captures[0] );
 	}
 
 	[Theory]
@@ -126,7 +126,7 @@ public sealed class PcreWordLiteralTests {
 		var compiled = PcreWordLiteralCompiler.CompileLiteral( source.AsMemory( 1, 2 ), new() { Utf16 = true } ).Pattern!;
 		Array.Fill( source, 'Z' );
 		var subject = new[] { '\uDC00', 'a', '\uD800', '\uDC00', 'b', '\uD800' };
-		Assert.Equal( new PcreWordCapture( 1, 2 ), compiled.Match( subject.AsMemory( 1, 4 ) ).Match );
+		Assert.Equal( new PcreWordCapture( 1, 2 ), compiled.Match( subject.AsMemory( 1, 4 ) ).Match?.Captures[0] );
 		Assert.Equal( new[] { '\uDC00', 'a', '\uD800', '\uDC00', 'b', '\uD800' }, subject );
 	}
 
@@ -143,7 +143,7 @@ public sealed class PcreWordLiteralTests {
 				} ).Pattern!;
 				var result = compiled.Match( "ab".AsMemory() );
 				if ( budget < required ) { Assert.Equal( PcreWordDiagnosticCode.MatchWorkLimitExceeded, result.Diagnostic?.Code ); }
-				else { Assert.Equal( new PcreWordCapture( 1, 1 ), result.Match ); }
+				else { Assert.Equal( new PcreWordCapture( 1, 1 ), result.Match?.Captures[0] ); }
 				if ( observed ) { Assert.Equal( Enumerable.Range( 1, budget ), trace ); }
 			}
 		}

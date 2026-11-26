@@ -130,7 +130,7 @@ public sealed class PcreWordBoundaryTests {
 		var match = PcreWordSequenceCompiler.CompileSequence( source.AsMemory(), new() { Utf16 = true } )
 			.Pattern!.Match( subject.AsMemory(), start );
 		Assert.True( match.IsSuccess );
-		Assert.Equal( new PcreWordCapture( start, 1 ), match.Match );
+		Assert.Equal( new PcreWordCapture( start, 1 ), match.Match?.Captures[0] );
 	}
 
 	[Theory]
@@ -145,7 +145,7 @@ public sealed class PcreWordBoundaryTests {
 			} ).Pattern!;
 			var match = pattern.Match( "ab".AsMemory() );
 			if ( budget < required ) { Assert.Equal( PcreWordDiagnosticCode.MatchWorkLimitExceeded, match.Diagnostic?.Code ); }
-			else { Assert.Equal( new PcreWordCapture( 0, 1 ), match.Match ); }
+			else { Assert.Equal( new PcreWordCapture( 0, 1 ), match.Match?.Captures[0] ); }
 			Assert.Equal( Enumerable.Range( 1, budget ), trace );
 		}
 		using var cancellation = new CancellationTokenSource();
@@ -182,7 +182,7 @@ public sealed class PcreWordBoundaryTests {
 	[Fact]
 	public void BoundaryUsesTheSuppliedViewAndRejectsSplitScalarStarts() {
 		var pattern = PcreWordSequenceCompiler.CompileSequence( @"\bX".AsMemory(), new() { Utf16 = true } ).Pattern!;
-		Assert.Equal( new PcreWordCapture( 0, 1 ), pattern.Match( "aXb".AsMemory( 1, 1 ) ).Match );
+		Assert.Equal( new PcreWordCapture( 0, 1 ), pattern.Match( "aXb".AsMemory( 1, 1 ) ).Match?.Captures[0] );
 		Assert.Equal( new PcreWordDiagnostic( PcreWordDiagnosticCode.InvalidStartOffset, 1 ),
 			pattern.Match( "😀X".AsMemory(), 1 ).Diagnostic );
 		Assert.Equal( "X", PcreNative16Oracle.ExecuteSequence( Words( @"\bX" ), Words( "😀X" ), true, 1 ).Kind );
