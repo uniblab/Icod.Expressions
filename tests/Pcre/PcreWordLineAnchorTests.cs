@@ -105,7 +105,7 @@ public sealed class PcreWordLineAnchorTests {
 		var result = PcreWordSequenceCompiler.CompileSequence( source.AsMemory(), new() { Utf16 = true } )
 			.Pattern!.Match( subject.AsMemory(), 1 );
 		Assert.True( result.IsSuccess );
-		Assert.Equal( new PcreWordCapture( 1, 1 ), result.Match );
+		Assert.Equal( new PcreWordCapture( 1, 1 ), result.Match?.Captures[0] );
 	}
 
 	[Theory]
@@ -119,7 +119,7 @@ public sealed class PcreWordLineAnchorTests {
 			} ).Pattern!;
 			var result = pattern.Match( "a\n".AsMemory() );
 			if ( budget < required ) { Assert.Equal( PcreWordDiagnosticCode.MatchWorkLimitExceeded, result.Diagnostic?.Code ); }
-			else { Assert.Equal( new PcreWordCapture( 0, 1 ), result.Match ); }
+			else { Assert.Equal( new PcreWordCapture( 0, 1 ), result.Match?.Captures[0] ); }
 			Assert.Equal( Enumerable.Range( 1, budget ), trace );
 		}
 		using var cancellation = new CancellationTokenSource();
@@ -132,7 +132,7 @@ public sealed class PcreWordLineAnchorTests {
 	[Fact]
 	public void LineAssertionsRespectTheSuppliedSubjectView() {
 		var pattern = PcreWordSequenceCompiler.CompileSequence( "^a$".AsMemory() ).Pattern!;
-		Assert.Equal( new PcreWordCapture( 0, 1 ), pattern.Match( "xay".AsMemory( 1, 1 ) ).Match );
+		Assert.Equal( new PcreWordCapture( 0, 1 ), pattern.Match( "xay".AsMemory( 1, 1 ) ).Match?.Captures[0] );
 		Assert.Null( pattern.Match( "a\n\n".AsMemory() ).Match );
 	}
 

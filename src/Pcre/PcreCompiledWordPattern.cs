@@ -8,14 +8,16 @@ internal sealed class PcreCompiledWordPattern {
 	private readonly bool inspectPreviousScalar;
 	private readonly char newlineCharacter;
 	private readonly bool bsrAnyCrLf;
+	public PcreCaptureInfo CaptureInfo { get; }
 	internal PcreCompiledWordPattern( PcreByteNode[] nodes, PcreWordOptions options ) : this( [nodes], options ) { }
 	internal PcreCompiledWordPattern( PcreByteNode[][] branches, PcreWordOptions options, bool inspectPreviousScalar = false,
-		PcreByteNewline newline = PcreByteNewline.Lf, bool bsrAnyCrLf = false ) {
+		PcreByteNewline newline = PcreByteNewline.Lf, bool bsrAnyCrLf = false, PcreCaptureInfo? captureInfo = null ) {
 		this.branches = branches;
 		this.options = options;
 		this.inspectPreviousScalar = inspectPreviousScalar;
 		newlineCharacter = (char)newline.Character();
 		this.bsrAnyCrLf = bsrAnyCrLf;
+		CaptureInfo = captureInfo ?? new( 0, new Dictionary<string, List<int>>(), default );
 	}
 
 	internal PcreWordMatchResult Match( ReadOnlyMemory<char> subject, int startOffset = 0,
@@ -96,15 +98,36 @@ internal sealed class PcreCompiledWordPattern {
 			return ( beforeWord != afterWord ) == boundary.IsBoundary ? 1 : 0;
 		}
 		Stack<BacktrackFrame>? frames = null;
+		var captures = new PcreWordCapture?[CaptureInfo.CaptureCount + 1];
+		List<CaptureChange>? changes = null;
+		void SaveCapture( int number, int start, int end ) {
+			if ( frames is { Count: > 0 } ) {
+				changes ??= new();
+				changes.Add( new( number, captures[number] ) );
+			}
+			captures[number] = new( start, end - start );
+		}
+		bool RestoreCaptures( int changeCount ) {
+			if ( changes is null ) { return true; }
+			while ( changes.Count > changeCount ) {
+				if ( !Step() ) { return false; }
+				var change = changes[^1];
+				captures[change.Number] = change.Previous;
+				changes.RemoveAt( changes.Count - 1 );
+			}
+			return true;
+		}
 		bool PushFrame( BacktrackFrame frame ) {
 			frames ??= new();
 			if ( frames.Count >= MaximumBacktrackFrames ) { return false; }
-			frames.Push( frame );
+			frames.Push( frame with { ChangeCount = changes?.Count ?? 0 } );
 			return true;
 		}
 		// -2: frame limit; -1: work exhausted; 0: failed or policy-rejected; 1: match.
 		int TrySequence( PcreByteNode[] nodes, ReadOnlySpan<char> source, int candidate, out int end ) {
 			frames?.Clear();
+			changes?.Clear();
+			Array.Clear( captures );
 			Continuation? continuation = null;
 			var index = 0;
 			var position = candidate;
@@ -125,6 +148,7 @@ internal sealed class PcreCompiledWordPattern {
 				if ( index == nodes.Length ) {
 					if ( continuation is { } parent ) {
 						if ( !Step() ) { return -1; } // Return from a completed group branch.
+						if ( parent.CaptureNumber > 0 ) { SaveCapture( parent.CaptureNumber, parent.Start, position ); }
 						nodes = parent.Nodes;
 						index = parent.Index;
 						continuation = parent.Parent;
@@ -156,7 +180,7 @@ internal sealed class PcreCompiledWordPattern {
 						if ( !Step() ) { return -1; } // Ordered group branch admission.
 						if ( !PushFrame( new( nodes, index, position, position, 1, continuation ) ) ) { return -2; }
 					}
-					continuation = new( nodes, index + 1, continuation );
+					continuation = new( nodes, index + 1, continuation, Start: position, CaptureNumber: firstGroup.CaptureNumber );
 					nodes = firstGroup.Alternatives[0];
 					index = 0;
 					continue;
@@ -203,6 +227,8 @@ internal sealed class PcreCompiledWordPattern {
 
 				var resumed = false;
 				while ( frames is not null && frames.TryPop( out var frame ) ) {
+					if ( !RestoreCaptures( frame.ChangeCount ) ) { return -1; }
+					if ( frames.Count == 0 ) { changes?.Clear(); }
 					nodes = frame.Nodes;
 					index = frame.Index;
 					position = frame.Position;
@@ -228,7 +254,7 @@ internal sealed class PcreCompiledWordPattern {
 						if ( frame.Count + 1 < group.Alternatives.Length ) {
 							if ( !PushFrame( frame with { Count = frame.Count + 1 } ) ) { return -2; }
 						}
-						continuation = new( nodes, index + 1, continuation );
+						continuation = new( nodes, index + 1, continuation, Start: position, CaptureNumber: group.CaptureNumber );
 						nodes = group.Alternatives[frame.Count];
 						index = 0;
 					} else {
@@ -261,7 +287,11 @@ internal sealed class PcreCompiledWordPattern {
 				var outcome = TrySequence( branches[branch], input, candidate, out var end );
 				if ( outcome == -2 ) { return new( null, new( PcreWordDiagnosticCode.MatchDepthLimitExceeded, 0 ) ); }
 				if ( outcome < 0 ) { return Exhausted(); }
-				if ( outcome > 0 ) { return new( new( candidate, end - candidate ), null ); }
+				if ( outcome > 0 ) {
+					captures[0] = new( candidate, end - candidate );
+					// Transfer this call's capture array; no runner or subject memory escapes.
+					return new( new( candidate, end - candidate, Array.AsReadOnly( captures ), CaptureInfo ), null );
+				}
 			}
 			if ( anchored || candidate == input.Length ) { return new( null, null ); }
 			if ( !Step() ) { return Exhausted(); } // Advance one original unit/scalar.
@@ -274,13 +304,14 @@ internal sealed class PcreCompiledWordPattern {
 
 	private readonly record struct BacktrackFrame(
 		PcreByteNode[] Nodes, int Index, int Position, int RepeatStart, int Count, Continuation? Continuation,
-		FrameKind Kind = FrameKind.Retry
+		FrameKind Kind = FrameKind.Retry, int ChangeCount = 0
 	);
 
 	private enum FrameKind { Retry, RepeatExit, RepeatGrow }
+	private readonly record struct CaptureChange( int Number, PcreWordCapture? Previous );
 
 	private sealed record Continuation( PcreByteNode[] Nodes, int Index, Continuation? Parent,
-		PcreWordGroupRepeat? Repeat = null, int Count = 0, int Start = 0 );
+		PcreWordGroupRepeat? Repeat = null, int Count = 0, int Start = 0, int CaptureNumber = 0 );
 
 	private bool TryConsumeAtom( PcreByteNode node, ReadOnlySpan<char> input, int position, out int width ) {
 		if ( !PcreUtf16.TryRead( input, position, options.Utf16, out var value, out width ) ) { return false; }

@@ -3,7 +3,7 @@ namespace Icod.Expressions.Pcre;
 internal sealed record PcreWordSuffixChoices( PcreByteNode[][] Alternatives ) : PcreByteNode;
 
 internal sealed record PcreWordGroup(
-	PcreByteNode[][] Alternatives, int PathCount, int ExpandedNodes, int UnboundedRepeats
+	PcreByteNode[][] Alternatives, int PathCount, int ExpandedNodes, int UnboundedRepeats, int CaptureNumber = 0
 ) : PcreByteNode;
 
 internal sealed record PcreWordGroupRepeat(
@@ -58,7 +58,7 @@ internal static class PcreWordSequenceCompiler {
 			var parser = new PcreByteParser( grammarSource, grammarOptions, settings, cancellationToken,
 				codeUnitWidth: 16, wordSource: source );
 			var root = parser.Parse();
-			if ( parser.GroupCount != 0 || root.Branches.Count is < 1 or > 64 ) {
+			if ( root.Branches.Count is < 1 or > 64 ) {
 				return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
 			}
 			var compiled = new Dictionary<PcreByteAlternatives, PcreWordGroup>( ReferenceEqualityComparer.Instance );
@@ -75,13 +75,15 @@ internal static class PcreWordSequenceCompiler {
 					foreach ( var path in item.Body.Branches ) {
 						foreach ( var node in path ) {
 							cancellationToken.ThrowIfCancellationRequested();
-							var group = node switch {
-								PcreByteNoncapturingGroup direct => direct,
-								PcreByteRepeat { Child: PcreByteNoncapturingGroup repeated } => repeated,
+							var nestedBody = node switch {
+								PcreByteGroup direct => direct.Body,
+								PcreByteNoncapturingGroup direct => direct.Body,
+								PcreByteRepeat { Child: PcreByteGroup repeated } => repeated.Body,
+								PcreByteRepeat { Child: PcreByteNoncapturingGroup repeated } => repeated.Body,
 								_ => null
 							};
-							if ( group is not null ) {
-								pending.Push( (group.Body, item.Depth + 1, false) );
+							if ( nestedBody is not null ) {
+								pending.Push( (nestedBody, item.Depth + 1, false) );
 							}
 						}
 					}
@@ -91,7 +93,8 @@ internal static class PcreWordSequenceCompiler {
 				if ( body is null ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
 				compiled.Add( item.Body, body );
 			}
-			return new( new( compiled[root].Alternatives, options, inspectPreviousScalar, settings.Newline, settings.BsrAnyCrLf ), null );
+			return new( new( compiled[root].Alternatives, options, inspectPreviousScalar, settings.Newline,
+				settings.BsrAnyCrLf, parser.CreateCaptureInfo() ), null );
 		} catch ( PcreByteParseException error ) {
 			return Error( error.Diagnostic.Code == PcreByteDiagnosticCode.UnsupportedSyntax
 				? PcreWordDiagnosticCode.UnsupportedSyntax : PcreWordDiagnosticCode.InvalidSyntax, error.Diagnostic.ByteOffset );
@@ -107,7 +110,11 @@ internal static class PcreWordSequenceCompiler {
 		var admittedPaths = 0;
 		for ( var branch = 0; branch < root.Branches.Count; branch++ ) {
 			var nodes = root.Branches[branch].Select( node => node switch {
+				PcreByteGroup group => compiled[group.Body] with { CaptureNumber = group.Number },
 				PcreByteNoncapturingGroup group => compiled[group.Body],
+				PcreByteRepeat { Child: PcreByteGroup group } repeat => new PcreWordGroupRepeat(
+					compiled[group.Body] with { CaptureNumber = group.Number }, repeat.Minimum, repeat.Maximum, repeat.Greedy,
+					repeat.Offset < 0 && repeat.Minimum == 1 ),
 				PcreByteRepeat { Child: PcreByteNoncapturingGroup group } repeat => new PcreWordGroupRepeat(
 					compiled[group.Body], repeat.Minimum, repeat.Maximum, repeat.Greedy,
 					repeat.Offset < 0 && repeat.Minimum == 1 ),

@@ -132,7 +132,7 @@ public sealed class PcreWordNestedAlternativeTests {
 			Assert.True( compiled.IsSuccess );
 			var result = compiled.Pattern!.Match( "a".AsMemory() );
 			if ( budget < required ) { Assert.Equal( PcreWordDiagnosticCode.MatchWorkLimitExceeded, result.Diagnostic?.Code ); }
-			else { Assert.Equal( new PcreWordCapture( 0, 1 ), result.Match ); }
+			else { Assert.Equal( new PcreWordCapture( 0, 1 ), result.Match?.Captures[0] ); }
 			Assert.Equal( Enumerable.Range( 1, budget ), trace );
 		}
 		using var cancellation = new CancellationTokenSource();
@@ -140,7 +140,7 @@ public sealed class PcreWordNestedAlternativeTests {
 			WorkObserver = work => { if ( work == depth + 3 ) { cancellation.Cancel(); } }
 		} ).Pattern!;
 		Assert.Throws<OperationCanceledException>( () => cancelled.Match( "a".AsMemory(), cancellationToken: cancellation.Token ) );
-		Assert.Equal( new PcreWordCapture( 0, 1 ), cancelled.Match( "a".AsMemory() ).Match );
+		Assert.Equal( new PcreWordCapture( 0, 1 ), cancelled.Match( "a".AsMemory() ).Match?.Captures[0] );
 	}
 
 	[Theory]
@@ -178,7 +178,7 @@ public sealed class PcreWordNestedAlternativeTests {
 		}
 		foreach ( var source in new[] { Nested( "a", 65 ), String.Concat( choices, "(?:a|b)" ),
 			String.Concat( choices, "|x" ), String.Concat( choices, "a?" ), String.Concat( repeats, "a*" ),
-			String.Concat( "a", expanded ), "(a|b)",
+			String.Concat( "a", expanded ),
 			"(?>a|b)", "(?=a)b", "(?<=a)b", "a*+", "(?:a(*ACCEPT)|b)" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
@@ -213,7 +213,7 @@ public sealed class PcreWordNestedAlternativeTests {
 		var plain = "(?:(?:a)|b)";
 		Assert.Equal( "M", PcreNative16Oracle.ExecuteSequence( Words( plain ), Words( subject ), true, 1 ).Kind );
 		var pattern = PcreWordSequenceCompiler.CompileSequence( plain.AsMemory(), new() { Utf16 = true } ).Pattern!;
-		Assert.Equal( new PcreWordCapture( 1, 1 ), pattern.Match( subject.AsMemory(), 1 ).Match );
+		Assert.Equal( new PcreWordCapture( 1, 1 ), pattern.Match( subject.AsMemory(), 1 ).Match?.Captures[0] );
 		Assert.Equal( new PcreWordDiagnostic( PcreWordDiagnosticCode.InvalidStartOffset, 1 ),
 			pattern.Match( "😀a".AsMemory(), 1 ).Diagnostic );
 	}
@@ -224,7 +224,7 @@ public sealed class PcreWordNestedAlternativeTests {
 		var compiled = PcreWordSequenceCompiler.CompileSequence( source );
 		Assert.True( compiled.IsSuccess );
 		Array.Fill( source, 'x' );
-		Assert.Equal( new PcreWordCapture( 0, 1 ), compiled.Pattern!.Match( "abc".AsMemory() ).Match );
+		Assert.Equal( new PcreWordCapture( 0, 1 ), compiled.Pattern!.Match( "abc".AsMemory() ).Match?.Captures[0] );
 		using var cancellation = new CancellationTokenSource();
 		cancellation.Cancel();
 		Assert.Throws<OperationCanceledException>( () => PcreWordSequenceCompiler.CompileSequence(

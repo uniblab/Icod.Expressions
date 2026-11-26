@@ -77,7 +77,7 @@ public sealed class PcreWordClassesTests {
 			} ).Pattern!;
 			var result = pattern.Match( "a".AsMemory() );
 			if ( budget < required ) { Assert.Equal( PcreWordDiagnosticCode.MatchWorkLimitExceeded, result.Diagnostic?.Code ); }
-			else { Assert.Equal( new PcreWordCapture( 0, 1 ), result.Match ); }
+			else { Assert.Equal( new PcreWordCapture( 0, 1 ), result.Match?.Captures[0] ); }
 			Assert.Equal( Enumerable.Range( 1, budget ), trace );
 		}
 	}
@@ -87,7 +87,7 @@ public sealed class PcreWordClassesTests {
 		var sixtyFour = "[" + new string( 'a', 64 ) + "]";
 		var sixtyFive = "[" + new string( 'a', 65 ) + "]";
 		Assert.Equal( new PcreWordCapture( 0, 1 ),
-			PcreWordSequenceCompiler.CompileSequence( sixtyFour.AsMemory() ).Pattern!.Match( "a".AsMemory() ).Match );
+			PcreWordSequenceCompiler.CompileSequence( sixtyFour.AsMemory() ).Pattern!.Match( "a".AsMemory() ).Match?.Captures[0] );
 		Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 			PcreWordSequenceCompiler.CompileSequence( sixtyFive.AsMemory() ).Diagnostic?.Code );
 		Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,

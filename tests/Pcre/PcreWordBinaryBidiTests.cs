@@ -117,7 +117,7 @@ public sealed class PcreWordBinaryBidiTests {
 			} ).Pattern!;
 			var match = pattern.Match( "#".AsMemory() );
 			if ( budget < required ) { Assert.Equal( PcreWordDiagnosticCode.MatchWorkLimitExceeded, match.Diagnostic?.Code ); }
-			else { Assert.Equal( new PcreWordCapture( 0, 1 ), match.Match ); }
+			else { Assert.Equal( new PcreWordCapture( 0, 1 ), match.Match?.Captures[0] ); }
 			Assert.Equal( Enumerable.Range( 1, budget ), trace );
 		}
 	}
@@ -127,7 +127,7 @@ public sealed class PcreWordBinaryBidiTests {
 		var allowed = "[" + new string( 'a', 63 ) + @"\p{Emoji}]";
 		var rejected = "[" + new string( 'a', 64 ) + @"\p{Emoji}]";
 		Assert.Equal( new PcreWordCapture( 0, 1 ),
-			PcreWordSequenceCompiler.CompileSequence( allowed.AsMemory() ).Pattern!.Match( "#".AsMemory() ).Match );
+			PcreWordSequenceCompiler.CompileSequence( allowed.AsMemory() ).Pattern!.Match( "#".AsMemory() ).Match?.Captures[0] );
 		Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 			PcreWordSequenceCompiler.CompileSequence( rejected.AsMemory() ).Diagnostic?.Code );
 		Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,

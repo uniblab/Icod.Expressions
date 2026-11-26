@@ -107,7 +107,7 @@ public sealed class PcreWordNewlineSequenceTests {
 			} ).Pattern!;
 			var result = pattern.Match( "\r\n".AsMemory() );
 			if ( budget < required ) { Assert.Equal( PcreWordDiagnosticCode.MatchWorkLimitExceeded, result.Diagnostic?.Code ); }
-			else { Assert.True( result.IsSuccess ); Assert.Equal( new PcreWordCapture( 0, 2 ), result.Match ); }
+			else { Assert.True( result.IsSuccess ); Assert.Equal( new PcreWordCapture( 0, 2 ), result.Match?.Captures[0] ); }
 			Assert.Equal( Enumerable.Range( 1, budget ), trace );
 		}
 		using var cancellation = new CancellationTokenSource();
@@ -120,12 +120,12 @@ public sealed class PcreWordNewlineSequenceTests {
 	[Fact]
 	public void NewlineSequencesRespectSubjectViewsAndValidationStart() {
 		var pattern = PcreWordSequenceCompiler.CompileSequence( @"\R".AsMemory(), new() { Utf16 = true } ).Pattern!;
-		Assert.Equal( new PcreWordCapture( 0, 1 ), pattern.Match( "\r\n".AsMemory( 0, 1 ) ).Match );
-		Assert.Equal( new PcreWordCapture( 0, 1 ), pattern.Match( "\r\n".AsMemory( 1, 1 ) ).Match );
+		Assert.Equal( new PcreWordCapture( 0, 1 ), pattern.Match( "\r\n".AsMemory( 0, 1 ) ).Match?.Captures[0] );
+		Assert.Equal( new PcreWordCapture( 0, 1 ), pattern.Match( "\r\n".AsMemory( 1, 1 ) ).Match?.Captures[0] );
 		var subject = "\uD800\r\n";
 		var native = PcreNative16Oracle.ExecuteSequence( Words( @"\R" ), Words( subject ), true, 1 );
 		Assert.Equal( "M", native.Kind ); Assert.Equal( "1:2", native.Captures );
-		Assert.Equal( new PcreWordCapture( 1, 2 ), pattern.Match( subject.AsMemory(), 1 ).Match );
+		Assert.Equal( new PcreWordCapture( 1, 2 ), pattern.Match( subject.AsMemory(), 1 ).Match?.Captures[0] );
 		Assert.Equal( PcreWordDiagnosticCode.InvalidUtf16Subject, pattern.Match( subject.AsMemory() ).Diagnostic?.Code );
 	}
 

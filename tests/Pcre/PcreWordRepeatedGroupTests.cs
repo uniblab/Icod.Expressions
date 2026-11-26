@@ -154,7 +154,7 @@ public sealed class PcreWordRepeatedGroupTests {
 			Assert.True( compiled.IsSuccess );
 			var result = compiled.Pattern!.Match( ReadOnlyMemory<char>.Empty );
 			if ( budget < required ) { Assert.Equal( PcreWordDiagnosticCode.MatchWorkLimitExceeded, result.Diagnostic?.Code ); }
-			else { Assert.Equal( new PcreWordCapture( 0, 0 ), result.Match ); }
+			else { Assert.Equal( new PcreWordCapture( 0, 0 ), result.Match?.Captures[0] ); }
 			Assert.Equal( Enumerable.Range( 1, budget ), trace );
 		}
 	}
@@ -164,12 +164,12 @@ public sealed class PcreWordRepeatedGroupTests {
 		var compiled = PcreWordSequenceCompiler.CompileSequence( @"\A(?:a)*\z".AsMemory() );
 		Assert.True( compiled.IsSuccess );
 		var pattern = compiled.Pattern!;
-		Assert.Equal( new PcreWordCapture( 0, 1023 ), pattern.Match( new string( 'a', 1023 ).AsMemory() ).Match );
+		Assert.Equal( new PcreWordCapture( 0, 1023 ), pattern.Match( new string( 'a', 1023 ).AsMemory() ).Match?.Captures[0] );
 		Assert.Equal( PcreWordDiagnosticCode.MatchDepthLimitExceeded,
 			pattern.Match( new string( 'a', 1024 ).AsMemory() ).Diagnostic?.Code );
-		Assert.Equal( new PcreWordCapture( 0, 2 ), pattern.Match( "aa".AsMemory() ).Match );
+		Assert.Equal( new PcreWordCapture( 0, 2 ), pattern.Match( "aa".AsMemory() ).Match?.Captures[0] );
 		var lazy = PcreWordSequenceCompiler.CompileSequence( @"\A(?:a)*?\z".AsMemory() ).Pattern!;
-		Assert.Equal( new PcreWordCapture( 0, 2048 ), lazy.Match( new string( 'a', 2048 ).AsMemory() ).Match );
+		Assert.Equal( new PcreWordCapture( 0, 2048 ), lazy.Match( new string( 'a', 2048 ).AsMemory() ).Match?.Captures[0] );
 	}
 
 	[Fact]
@@ -191,7 +191,7 @@ public sealed class PcreWordRepeatedGroupTests {
 			WorkObserver = work => { if ( work == 6 ) { cancellation.Cancel(); } }
 		} ).Pattern!;
 		Assert.Throws<OperationCanceledException>( () => pattern.Match( "aaaa".AsMemory(), cancellationToken: cancellation.Token ) );
-		Assert.Equal( new PcreWordCapture( 0, 4 ), pattern.Match( "aaaa".AsMemory() ).Match );
+		Assert.Equal( new PcreWordCapture( 0, 4 ), pattern.Match( "aaaa".AsMemory() ).Match?.Captures[0] );
 		Assert.Throws<OperationCanceledException>( () => PcreWordSequenceCompiler.CompileSequence(
 			NestedRepeat( "a", 64 ).AsMemory(), cancellationToken: cancellation.Token ) );
 	}
@@ -205,7 +205,7 @@ public sealed class PcreWordRepeatedGroupTests {
 		foreach ( var source in new[] { String.Concat( choices, "g?" ), String.Concat( choices, "|x" ),
 			"(?:a?b?c?d?e?f?g?)*", "(?:a){65}", "(?:a){65,}", "(?:a){0,65}", NestedRepeat( "a", 65 ),
 			String.Concat( "(?:", Repeated( "a*", 64 ), ")*" ),
-			String.Concat( "(?:", Repeated( "a{64}", 64 ), ")*" ), "(a)*", "(a){0}",
+			String.Concat( "(?:", Repeated( "a{64}", 64 ), ")*" ),
 			"(?:a)*+", "(?>a)*", "(?=a)*", "(?:a(*ACCEPT))*" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
@@ -223,7 +223,7 @@ public sealed class PcreWordRepeatedGroupTests {
 				compiled.Pattern!.Match( subject.AsMemory(), 1 ).Diagnostic );
 		}
 		var plain = PcreWordSequenceCompiler.CompileSequence( "(?:a){0}a".AsMemory(), new() { Utf16 = true } ).Pattern!;
-		Assert.Equal( new PcreWordCapture( 1, 1 ), plain.Match( subject.AsMemory(), 1 ).Match );
+		Assert.Equal( new PcreWordCapture( 1, 1 ), plain.Match( subject.AsMemory(), 1 ).Match?.Captures[0] );
 	}
 
 	[Fact]

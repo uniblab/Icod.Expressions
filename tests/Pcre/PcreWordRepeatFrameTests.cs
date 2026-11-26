@@ -118,7 +118,7 @@ public sealed class PcreWordRepeatFrameTests {
 		}
 		var raw = PcreWordSequenceCompiler.CompileSequence( String.Concat( Repeated( @"\x{D800}*", 64 ), "x" ).AsMemory() );
 		Assert.True( raw.IsSuccess );
-		Assert.Equal( new PcreWordCapture( 0, 2 ), raw.Pattern!.Match( "\uD800x".AsMemory() ).Match );
+		Assert.Equal( new PcreWordCapture( 0, 2 ), raw.Pattern!.Match( "\uD800x".AsMemory() ).Match?.Captures[0] );
 	}
 
 	[Fact]
@@ -132,7 +132,7 @@ public sealed class PcreWordRepeatFrameTests {
 		Assert.Equal( PcreWordDiagnosticCode.InvalidSyntax,
 			PcreWordSequenceCompiler.CompileSequence( repeatLimited.AsMemory() ).Diagnostic?.Code );
 		foreach ( var source in new[] { Repeated( "a*", 65 ), String.Concat( ChoicePattern( 64, false ), "b?" ),
-			String.Concat( ChoicePattern( 64, false ), "|x" ), String.Concat( branches, "|x" ), "(?:a*)*+b*", "(a*)b*", "a*+b*" } ) {
+			String.Concat( ChoicePattern( 64, false ), "|x" ), String.Concat( branches, "|x" ), "(?:a*)*+b*", "(?>a*)b*", "a*+b*" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

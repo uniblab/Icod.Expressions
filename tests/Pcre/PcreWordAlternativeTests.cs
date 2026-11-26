@@ -93,7 +93,7 @@ public sealed class PcreWordAlternativeTests {
 			} ).Pattern!;
 			var match = pattern.Match( "a".AsMemory() );
 			if ( budget < required ) { Assert.Equal( PcreWordDiagnosticCode.MatchWorkLimitExceeded, match.Diagnostic?.Code ); }
-			else { Assert.Equal( new PcreWordCapture( 0, 1 ), match.Match ); }
+			else { Assert.Equal( new PcreWordCapture( 0, 1 ), match.Match?.Captures[0] ); }
 			Assert.Equal( Enumerable.Range( 1, budget ), trace );
 		}
 	}
@@ -103,11 +103,11 @@ public sealed class PcreWordAlternativeTests {
 		var allowed = String.Join( '|', Enumerable.Repeat( "x", 63 ).Append( "a" ) );
 		var rejected = String.Concat( allowed, "|a" );
 		Assert.Equal( new PcreWordCapture( 0, 1 ),
-			PcreWordSequenceCompiler.CompileSequence( allowed.AsMemory() ).Pattern!.Match( "a".AsMemory() ).Match );
+			PcreWordSequenceCompiler.CompileSequence( allowed.AsMemory() ).Pattern!.Match( "a".AsMemory() ).Match?.Captures[0] );
 		Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 			PcreWordSequenceCompiler.CompileSequence( rejected.AsMemory() ).Diagnostic?.Code );
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( "(?:a|b)".AsMemory() ).IsSuccess );
-		foreach ( var source in new[] { "(a|b)", "(*CRLF)a|^b" } ) {
+		foreach ( var source in new[] { "(*CRLF)a|^b" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

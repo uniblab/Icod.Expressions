@@ -59,8 +59,6 @@ public sealed class PcreWordSequenceTests {
 	}
 
 	[Theory]
-	[InlineData( "(a)" )]
-	[InlineData( "(a){0}" )]
 	[InlineData( "(?>a+)b*c*d*e*" )]
 	[InlineData( "(*CRLF)^a$" )]
 	[InlineData( "(*UTF)a" )]
@@ -98,7 +96,7 @@ public sealed class PcreWordSequenceTests {
 				} ).Pattern!;
 				var result = pattern.Match( "a".AsMemory() );
 				if ( budget < required ) { Assert.Equal( PcreWordDiagnosticCode.MatchWorkLimitExceeded, result.Diagnostic?.Code ); }
-				else { Assert.Equal( new PcreWordCapture( 0, 1 ), result.Match ); }
+				else { Assert.Equal( new PcreWordCapture( 0, 1 ), result.Match?.Captures[0] ); }
 				if ( observed ) { Assert.Equal( Enumerable.Range( 1, budget ), trace ); }
 			}
 		}
@@ -109,7 +107,7 @@ public sealed class PcreWordSequenceTests {
 		var source = @"\x{100}".ToCharArray();
 		var compiled = PcreWordSequenceCompiler.CompileSequence( source ).Pattern!;
 		Array.Fill( source, 'X' );
-		Assert.Equal( new PcreWordCapture( 0, 1 ), compiled.Match( "\u0100".AsMemory() ).Match );
+		Assert.Equal( new PcreWordCapture( 0, 1 ), compiled.Match( "\u0100".AsMemory() ).Match?.Captures[0] );
 		Assert.Equal( PcreWordDiagnosticCode.PatternLengthLimitExceeded,
 			PcreWordSequenceCompiler.CompileSequence( new string( 'a', 4097 ).AsMemory() ).Diagnostic?.Code );
 		Assert.Equal( PcreWordDiagnosticCode.InvalidUtf16Pattern,

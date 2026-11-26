@@ -104,7 +104,7 @@ public sealed class PcreWordVariableRepeatTests {
 			} ).Pattern!;
 			var match = pattern.Match( "ab".AsMemory() );
 			if ( budget < required ) { Assert.Equal( PcreWordDiagnosticCode.MatchWorkLimitExceeded, match.Diagnostic?.Code ); }
-			else { Assert.Equal( new PcreWordCapture( 0, 2 ), match.Match ); }
+			else { Assert.Equal( new PcreWordCapture( 0, 2 ), match.Match?.Captures[0] ); }
 			Assert.Equal( Enumerable.Range( 1, budget ), trace );
 		}
 	}

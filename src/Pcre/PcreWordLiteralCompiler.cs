@@ -24,7 +24,17 @@ internal enum PcreWordDiagnosticCode {
 
 internal sealed record PcreWordDiagnostic( PcreWordDiagnosticCode Code, int CodeUnitOffset );
 internal readonly record struct PcreWordCapture( int CodeUnitIndex, int CodeUnitLength );
-internal sealed record PcreWordMatchResult( PcreWordCapture? Match, PcreWordDiagnostic? Diagnostic ) {
+internal sealed record PcreWordMatch( int CodeUnitIndex, int CodeUnitLength,
+	IReadOnlyList<PcreWordCapture?> Captures, PcreCaptureInfo CaptureInfo ) {
+	public PcreWordCapture? GetCapture( string name ) {
+		var numbers = CaptureInfo.GetLookupGroupNumbers( name );
+		for ( var index = 0; index < numbers.Count; index++ ) {
+			if ( Captures[numbers[index]] is { } capture ) { return capture; }
+		}
+		return null;
+	}
+}
+internal sealed record PcreWordMatchResult( PcreWordMatch? Match, PcreWordDiagnostic? Diagnostic ) {
 	public bool IsSuccess => Diagnostic is null;
 }
 internal sealed record PcreWordCompileResult( PcreCompiledWordPattern? Pattern, PcreWordDiagnostic? Diagnostic ) {

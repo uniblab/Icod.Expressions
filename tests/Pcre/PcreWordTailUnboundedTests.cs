@@ -103,7 +103,7 @@ public sealed class PcreWordTailUnboundedTests {
 			} ).Pattern!;
 			var match = pattern.Match( "aa".AsMemory() );
 			if ( budget < required ) { Assert.Equal( PcreWordDiagnosticCode.MatchWorkLimitExceeded, match.Diagnostic?.Code ); }
-			else { Assert.Equal( new PcreWordCapture( 0, source.EndsWith( '?' ) ? 0 : 2 ), match.Match ); }
+			else { Assert.Equal( new PcreWordCapture( 0, source.EndsWith( '?' ) ? 0 : 2 ), match.Match?.Captures[0] ); }
 			Assert.Equal( Enumerable.Range( 1, budget ), trace );
 		}
 	}
@@ -120,7 +120,7 @@ public sealed class PcreWordTailUnboundedTests {
 		var lazy = PcreWordSequenceCompiler.CompileSequence( "a*?".AsMemory(), new() {
 			MatchWorkLimit = 3
 		} ).Pattern!;
-		Assert.Equal( new PcreWordCapture( 0, 0 ), lazy.Match( subject.AsMemory() ).Match );
+		Assert.Equal( new PcreWordCapture( 0, 0 ), lazy.Match( subject.AsMemory() ).Match?.Captures[0] );
 	}
 
 	[Fact]

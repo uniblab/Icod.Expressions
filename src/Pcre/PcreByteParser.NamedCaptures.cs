@@ -3,7 +3,7 @@ using System.Text;
 namespace Icod.Expressions.Pcre;
 
 internal sealed partial class PcreByteParser {
-	private const int MaximumNameBytes = 128;
+	private const int MaximumNameUnits = 128;
 	private readonly Dictionary<string, List<int>> namedCaptures = new( StringComparer.Ordinal );
 	private readonly List<(string Name, int Number)> captureNames = new();
 	private bool hasNamedReferences;
@@ -55,15 +55,16 @@ internal sealed partial class PcreByteParser {
 			if ( braced && source[index] is (byte)' ' or (byte)'\t' ) { break; }
 			var scalar = (int)source[index];
 			var width = 1;
-			if ( utf8 ) { PcreUtf8.TryRead( source, index, out scalar, out width ); } // Validated at compile entry.
+			if ( wordSource is not null ) { PcreUtf16.TryRead( wordSource, index, utf8, out scalar, out width ); }
+			else if ( utf8 ) { PcreUtf8.TryRead( source, index, out scalar, out width ); } // Validated at compile entry.
 			var letter = scalar == '_' || ( utf8 ? PcreScalarClassMembership.Contains( PcreByteScalarClassKind.Letter, scalar )
 				: scalar is >= 'A' and <= 'Z' or >= 'a' and <= 'z' );
 			var digit = utf8 ? PcreScalarClassMembership.Contains( PcreByteScalarClassKind.DecimalDigit, scalar ) : scalar is >= '0' and <= '9';
 			if ( !letter && ( index == start || !digit ) ) {
 				throw Invalid( offset, "invalid capture name" );
 			}
-			if ( index - start + width > MaximumNameBytes ) {
-				throw Invalid( offset, "capture name exceeds 128 bytes" );
+			if ( index - start + width > MaximumNameUnits ) {
+				throw Invalid( offset, wordSource is null ? "capture name exceeds 128 bytes" : "capture name exceeds 128 code units" );
 			}
 			index += width;
 		}
@@ -71,13 +72,15 @@ internal sealed partial class PcreByteParser {
 		if ( length == 0 ) { throw Invalid( offset, "capture name must not be empty" ); }
 		if ( braced ) { SkipBraceHorizontalSpace(); }
 		if ( allowSubroutineArguments && index < source.Length && source[index] == (byte)'(' ) {
-			return ( utf8 ? Encoding.UTF8 : Encoding.ASCII ).GetString( source, start, length );
+			return wordSource is not null ? new string( wordSource, start, length )
+				: ( utf8 ? Encoding.UTF8 : Encoding.ASCII ).GetString( source, start, length );
 		}
 		if ( index >= source.Length || source[index] != terminator ) {
 			throw Invalid( offset, "unclosed capture name" );
 		}
 		if ( !allowSubroutineArguments ) { index++; }
-		return ( utf8 ? Encoding.UTF8 : Encoding.ASCII ).GetString( source, start, length );
+		return wordSource is not null ? new string( wordSource, start, length )
+			: ( utf8 ? Encoding.UTF8 : Encoding.ASCII ).GetString( source, start, length );
 	}
 
 	private PcreByteAlternatives ResolveNamedReferences( PcreByteAlternatives alternatives ) {
