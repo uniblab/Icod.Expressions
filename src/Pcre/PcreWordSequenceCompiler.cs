@@ -39,8 +39,11 @@ internal static class PcreWordSequenceCompiler {
 			AsciiBsD = options.AsciiBsD, AsciiBsS = options.AsciiBsS, AsciiBsW = options.AsciiBsW,
 			AsciiPosix = options.AsciiPosix, AsciiDigit = options.AsciiDigit
 		};
-		var settings = PcreByteStartSettings.Parse( grammarSource, grammarOptions, cancellationToken );
-		if ( settings.BodyOffset != 0 ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
+		var settings = PcreByteStartSettings.Parse( grammarSource, grammarOptions, cancellationToken, newlineOnly: true );
+		// Pair-aware conventions also alter native bumpalong and prefix proofs.
+		if ( settings.Newline is not ( PcreByteNewline.Lf or PcreByteNewline.Cr or PcreByteNewline.Nul ) ) {
+			return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
+		}
 		try {
 			var parser = new PcreByteParser( grammarSource, grammarOptions, settings, cancellationToken,
 				codeUnitWidth: 16, wordSource: source );
@@ -123,7 +126,7 @@ internal static class PcreWordSequenceCompiler {
 					branches.Add( [.. prefix, .. continuation] );
 				}
 			}
-			return new( new( branches.ToArray(), options, inspectPreviousScalar ), null );
+			return new( new( branches.ToArray(), options, inspectPreviousScalar, settings.Newline, settings.BsrAnyCrLf ), null );
 		} catch ( PcreByteParseException error ) {
 			return Error( error.Diagnostic.Code == PcreByteDiagnosticCode.UnsupportedSyntax
 				? PcreWordDiagnosticCode.UnsupportedSyntax : PcreWordDiagnosticCode.InvalidSyntax, error.Diagnostic.ByteOffset );

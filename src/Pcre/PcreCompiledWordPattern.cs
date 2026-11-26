@@ -5,11 +5,16 @@ internal sealed class PcreCompiledWordPattern {
 	private readonly PcreByteNode[][] branches;
 	private readonly PcreWordOptions options;
 	private readonly bool inspectPreviousScalar;
+	private readonly char newlineCharacter;
+	private readonly bool bsrAnyCrLf;
 	internal PcreCompiledWordPattern( PcreByteNode[] nodes, PcreWordOptions options ) : this( [nodes], options ) { }
-	internal PcreCompiledWordPattern( PcreByteNode[][] branches, PcreWordOptions options, bool inspectPreviousScalar = false ) {
+	internal PcreCompiledWordPattern( PcreByteNode[][] branches, PcreWordOptions options, bool inspectPreviousScalar = false,
+		PcreByteNewline newline = PcreByteNewline.Lf, bool bsrAnyCrLf = false ) {
 		this.branches = branches;
 		this.options = options;
 		this.inspectPreviousScalar = inspectPreviousScalar;
+		newlineCharacter = (char)newline.Character();
+		this.bsrAnyCrLf = bsrAnyCrLf;
 	}
 
 	internal PcreWordMatchResult Match( ReadOnlyMemory<char> subject, int startOffset = 0,
@@ -65,12 +70,12 @@ internal sealed class PcreCompiledWordPattern {
 				&& at == ( anchor.IsStart ? 0 : source.Length ),
 			PcreByteLineAnchor { IsStart: true } start =>
 				at == 0 && !start.SuppressSubjectBoundary && !notBol
-				|| at > 0 && ( at < source.Length || start.AllowSubjectEnd ) && source[at - 1] == '\n',
+				|| at > 0 && ( at < source.Length || start.AllowSubjectEnd ) && source[at - 1] == newlineCharacter,
 			PcreByteLineAnchor end =>
 				at == source.Length && !end.SuppressSubjectBoundary && !notEol
-				|| at < source.Length && source[at] == '\n',
+				|| at < source.Length && source[at] == newlineCharacter,
 			PcreByteEndBeforeFinalLf end => !end.IsDisabled && ( !end.IsLineBoundary || !notEol )
-				&& ( at == source.Length || at == source.Length - 1 && source[at] == '\n' ),
+				&& ( at == source.Length || at == source.Length - 1 && source[at] == newlineCharacter ),
 			_ => throw new InvalidOperationException( "Unsupported word anchor." )
 		};
 		int MatchBoundary( PcreByteWordBoundary boundary, ReadOnlySpan<char> source, int at ) {
@@ -245,13 +250,13 @@ internal sealed class PcreCompiledWordPattern {
 	private bool TryConsumeAtom( PcreByteNode node, ReadOnlySpan<char> input, int position, out int width ) {
 		if ( !PcreUtf16.TryRead( input, position, options.Utf16, out var value, out width ) ) { return false; }
 		if ( node is PcreByteNewlineSequence ) {
-			if ( !PcreSpaceCharacters.IsVertical( value ) ) { return false; }
+			if ( bsrAnyCrLf ? value is not ( '\r' or '\n' ) : !PcreSpaceCharacters.IsVertical( value ) ) { return false; }
 			if ( value == '\r' && position < input.Length - 1 && input[position + 1] == '\n' ) { width = 2; }
 			return true;
 		}
 		return node switch {
 			PcreByteLiteral literal => LiteralEquals( value, literal ),
-			PcreByteAny any => any.DotAll || value != '\n',
+			PcreByteAny any => any.DotAll || value != newlineCharacter,
 			PcreByteScalarClass property => PcreScalarClassMembership.Contains( property.Kind, value,
 				property.Category, property.Caseless, property.PropertyValue ) != property.Negated,
 			PcreByteScalarSet set => ContainsSet( set, value ),

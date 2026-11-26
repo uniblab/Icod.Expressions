@@ -130,8 +130,8 @@ public sealed class PcreWordNewlineSequenceTests {
 	}
 
 	[Theory]
-	[InlineData( @"(*BSR_ANYCRLF)\R" )]
-	[InlineData( @"(*BSR_UNICODE)\R" )]
+	[InlineData( @"(*ANYCRLF)\R" )]
+	[InlineData( @"(*ANY)\R" )]
 	[InlineData( @"\X" )]
 	[InlineData( @"\R++" )]
 	public void OtherNewlineProfilesAndExecutionFormsRemainExplicit( string source ) {
