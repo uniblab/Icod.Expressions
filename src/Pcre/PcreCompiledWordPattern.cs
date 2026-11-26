@@ -99,6 +99,33 @@ internal sealed class PcreCompiledWordPattern {
 		}
 		Stack<BacktrackFrame>? frames = null;
 		var captures = new PcreWordCapture?[CaptureInfo.CaptureCount + 1];
+		int MatchReference( PcreByteBackreference reference, ReadOnlySpan<char> source, int position, out int end ) {
+			end = position;
+			var capture = captures[reference.Number];
+			if ( !reference.DuplicateNumbers.IsEmpty ) {
+				capture = null;
+				foreach ( var number in reference.DuplicateNumbers.Span ) {
+					if ( !Step() ) { return -1; } // Declaration-ordered participation lookup.
+					capture = captures[number];
+					if ( capture.HasValue ) { break; } // Empty captures participate too.
+				}
+			}
+			// A comparison failure cannot select a later duplicate-name slot.
+			if ( capture is not { } span ) { return reference.UnsetMatchesEmpty ? 1 : 0; }
+			var capturedEnd = span.CodeUnitIndex + span.CodeUnitLength;
+			var candidate = position;
+			for ( var offset = span.CodeUnitIndex; offset < capturedEnd; ) {
+				if ( !Step() ) { return -1; } // One captured scalar/raw-unit comparison.
+				if ( !PcreUtf16.TryRead( source, offset, options.Utf16, out var left, out var leftWidth )
+					|| leftWidth > capturedEnd - offset
+					|| !PcreUtf16.TryRead( source, candidate, options.Utf16, out var right, out var rightWidth )
+					|| !ScalarEquals( left, right, reference.Caseless, reference.CaselessRestricted ) ) { return 0; }
+				offset += leftWidth;
+				candidate += rightWidth;
+			}
+			end = candidate;
+			return 1;
+		}
 		List<CaptureChange>? changes = null;
 		void SaveCapture( int number, int start, int end ) {
 			if ( frames is { Count: > 0 } ) {
@@ -204,6 +231,12 @@ internal sealed class PcreCompiledWordPattern {
 							var boundaryResult = MatchBoundary( boundary, source, position );
 							if ( boundaryResult < 0 ) { return -1; }
 							matched = boundaryResult == 1;
+							break;
+						case PcreByteBackreference reference:
+							var referenceResult = MatchReference( reference, source, position, out var referenceEnd );
+							if ( referenceResult < 0 ) { return -1; }
+							matched = referenceResult == 1;
+							if ( matched ) { position = referenceEnd; }
 							break;
 						case PcreByteRepeat repeat:
 							var count = 0;
@@ -362,13 +395,16 @@ internal sealed class PcreCompiledWordPattern {
 		return included != set.Negated;
 	}
 
-	private bool LiteralEquals( int value, PcreByteLiteral literal ) {
-		if ( value == literal.Value ) { return true; }
-		if ( !literal.Caseless ) { return false; }
+	private bool LiteralEquals( int value, PcreByteLiteral literal ) =>
+		ScalarEquals( value, literal.Value, literal.Caseless, literal.CaselessRestricted );
+
+	private bool ScalarEquals( int left, int right, bool caseless, bool restricted ) {
+		if ( left == right ) { return true; }
+		if ( !caseless ) { return false; }
 		if ( options.Utf16 || options.Ucp ) {
-			return PcreUtf8CaseFold.Equals( value, literal.Value, literal.CaselessRestricted );
+			return PcreUtf8CaseFold.Equals( left, right, restricted );
 		}
-		return AsciiOppositeCase( value ) == literal.Value;
+		return AsciiOppositeCase( left ) == right;
 	}
 
 	private static int AsciiOppositeCase( int value ) => value is >= 'A' and <= 'Z' ? value + 32
