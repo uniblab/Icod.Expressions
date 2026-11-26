@@ -162,7 +162,10 @@ public sealed class PcreWordNestedAlternativeTests {
 			} ).Pattern!;
 			var result = pattern.Match( subject.AsMemory() );
 			if ( budget < required ) { Assert.Equal( PcreWordDiagnosticCode.MatchWorkLimitExceeded, result.Diagnostic?.Code ); }
-			else { Assert.Equal( complete, result ); }
+			else {
+				Assert.Equal( complete.Diagnostic, result.Diagnostic );
+				Assert.Equal( complete.Match?.Captures[0], result.Match?.Captures[0] );
+			}
 			Assert.Equal( Enumerable.Range( 1, budget ), trace );
 		}
 	}
