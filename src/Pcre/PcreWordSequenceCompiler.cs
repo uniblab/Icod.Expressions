@@ -442,7 +442,8 @@ internal static class PcreWordSequenceCompiler {
 					first = FirstNode( node );
 					if ( !first.Empty ) { break; }
 				}
-				if ( common.HasValue && common.Value != first ) { common = (null, false); break; }
+				if ( common.HasValue && ( common.Value.Empty != first.Empty
+					|| !SameFirstUnit( common.Value.Literal, first.Literal ) ) ) { common = (null, false); break; }
 				common = first;
 			}
 			firstUnits.Add( body, common ?? (null, true) );
@@ -485,11 +486,16 @@ internal static class PcreWordSequenceCompiler {
 					} else if ( inside ) { first = FirstNode( node ).Literal; }
 					break;
 				}
-				if ( first is null || common is not null && common != first ) { return null; }
+				if ( first is null || common is not null && !SameFirstUnit( common, first ) ) { return null; }
 				common = first;
 			}
 			return common;
 		}
+
+		// Native first-unit flags carry caselessness, not lexical r. Both literals
+		// have already passed the multi-case-set gate, so r cannot change this pair.
+		static bool SameFirstUnit( PcreByteLiteral? left, PcreByteLiteral? right ) => left is null ? right is null
+			: right is not null && left.Value == right.Value && left.Caseless == right.Caseless;
 
 		PcreByteLiteral? UnitLiteral( PcreByteLiteral literal ) {
 			if ( literal.Caseless && ( options.Utf16 || options.Ucp )

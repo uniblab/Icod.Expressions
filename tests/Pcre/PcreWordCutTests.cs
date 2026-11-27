@@ -1063,6 +1063,22 @@ public sealed class PcreWordCutTests {
 				("(*COMMIT)(?=a).", "xaab", 0, true, true),
 				("(*COMMIT:)(?=a).", "xaab", 0, true, true),
 				("(?i)(*COMMIT)𐐀", "xaab", 0, true, true),
+				("(*COMMIT)(?r:a)|a", "xa", 0, false, false),
+				("(*COMMIT)(?ir:a)|(?i:a)", "xA", 0, false, false),
+				("(*COMMIT)(?i:a)|(?ir:a)", "xa", 0, false, false),
+				("(*COMMIT)(?r:é)|é", "xé", 0, false, false),
+				("(*COMMIT)(?ir:é)|(?i:é)", "xÉ", 0, false, false),
+				("(*COMMIT)(?ir:k)|(?i:k)", "xK", 0, false, false),
+				("(*COMMIT)(?i:k)|(?ir:k)", "xK", 0, false, false),
+				("(*COMMIT)(?ir:s)|(?i:s)", "xS", 0, false, false),
+				("(*COMMIT)(?r:a)|a", "xa", 0, true, true),
+				("(*COMMIT)(?ir:a)|(?i:a)", "xA", 0, true, true),
+				("(*COMMIT)(?i:a)|(?ir:a)", "xa", 0, true, true),
+				("(*COMMIT)(?r:é)|é", "xé", 0, true, true),
+				("(*COMMIT)(?ir:é)|(?i:é)", "xÉ", 0, true, true),
+				("(*COMMIT)(?ir:k)|(?i:k)", "xK", 0, true, true),
+				("(*COMMIT)(?i:k)|(?ir:k)", "xK", 0, true, true),
+				("(*COMMIT)(?ir:s)|(?i:s)", "xS", 0, true, true),
 			};
 			for ( var id = 0; id < cases.Length; id++ ) {
 				var (source, subject, start, utf, ucp) = cases[id];
@@ -1081,8 +1097,9 @@ public sealed class PcreWordCutTests {
 		} );
 		Assert.True( compiled.IsSuccess, $"cut {id}: {compiled.Diagnostic}" );
 		var patternUnits = Words( source ); var subjectUnits = Words( subject );
+		var nativePolicies = PcreNative16Oracle.ExecuteSequencePolicies( patternUnits, subjectUnits, utf, (uint)start, defaults, ucp );
 		for ( var mask = 0; mask < 64; mask++ ) {
-			var native = PcreNative16Oracle.ExecuteSequence( patternUnits, subjectUnits, utf, (uint)start, defaults, mask, ucp );
+			var native = nativePolicies[mask];
 			Assert.True( native.Kind is "M" or "N", $"native {id}/{defaults}/{mask}: {native}" );
 			var result = compiled.Pattern!.Match( subject.AsMemory(), PcreMatchPolicyConsumer.Policy( mask ), start );
 			Assert.True( result.IsSuccess, $"managed {id}/{defaults}/{mask}: {result.Diagnostic}" );

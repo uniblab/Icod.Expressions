@@ -664,8 +664,9 @@ public sealed class PcreWordAcceptTests {
 		} );
 		Assert.True( compiled.IsSuccess, $"accept {id}: {compiled.Diagnostic}" );
 		var patternUnits = Words( source ); var subjectUnits = Words( subject );
+		var nativePolicies = PcreNative16Oracle.ExecuteSequencePolicies( patternUnits, subjectUnits, utf, (uint)start, defaults, ucp );
 		for ( var mask = 0; mask < 64; mask++ ) {
-			var native = PcreNative16Oracle.ExecuteSequence( patternUnits, subjectUnits, utf, (uint)start, defaults, mask, ucp );
+			var native = nativePolicies[mask];
 			Assert.True( native.Kind is "M" or "N", $"native {id}/{defaults}/{mask}: {native}" );
 			var result = compiled.Pattern!.Match( subject.AsMemory(), PcreMatchPolicyConsumer.Policy( mask ), start );
 			Assert.True( result.IsSuccess, $"managed {id}/{defaults}/{mask}: {result.Diagnostic}" );

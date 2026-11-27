@@ -5,9 +5,11 @@
 The [cut record](PCRE-WORD-CUTS.md) adds candidate abandonment, committed search
 failure, scope catches and named cut labels. Selected-capture rollback and accepted
 call labels follow native JIT/interpreter dispatch. Original-unit candidate proofs
-cover leading COMMIT and the bounded PRUNE literal scan cache. 1,054 fixtures add
-539,648 full-vector and label policy comparisons. THEN and SKIP are next; public
+cover leading COMMIT and the bounded PRUNE literal scan cache. 1,070 fixtures add
+547,840 full-vector and label policy comparisons. THEN and SKIP are next; public
 word entry points and the remaining broader profile gates still follow.
+Native policy batches compile once per defaults row while retaining every mask
+and comparison, reducing repeated native setup during CI.
 Asserted-only COMMIT start proofs remain explicitly unqualified pending their
 required-unit/start-bitmap interactions.
 
