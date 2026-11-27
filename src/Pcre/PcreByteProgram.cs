@@ -2814,10 +2814,10 @@ internal sealed class PcreByteProgramCompiler {
 		ScheduleNode( repeat.Child );
 	}
 
-	private void CompileUnboundedRepeat( PcreByteRepeat repeat, int initialProgress = -1 ) {
+	private void CompileUnboundedRepeat( PcreByteRepeat repeat, int initialProgress = -1, int mark = -1 ) {
 		var loop = Emit( PcreByteOpcode.Split );
 		var bodyStart = instructions.Count;
-		var mark = AllocateMark();
+		if ( mark < 0 ) { mark = AllocateMark(); }
 		Emit( PcreByteOpcode.Mark, mark );
 		compileWork.Push( () => {
 			var loopProgress = Emit( PcreByteOpcode.Progress, mark );
@@ -2842,7 +2842,8 @@ internal sealed class PcreByteProgramCompiler {
 				// Stop there when it is empty, retaining earlier required copies.
 				var initialMark = AllocateMark();
 				Emit( PcreByteOpcode.Mark, initialMark );
-				compileWork.Push( () => CompileUnboundedRepeat( repeat, Emit( PcreByteOpcode.Progress, initialMark ) ) );
+				// The loop can reuse this journaled mark after the initial check.
+				compileWork.Push( () => CompileUnboundedRepeat( repeat, Emit( PcreByteOpcode.Progress, initialMark ), initialMark ) );
 				ScheduleNode( repeat.Child );
 				return;
 			}

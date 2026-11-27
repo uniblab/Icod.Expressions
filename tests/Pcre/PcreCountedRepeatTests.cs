@@ -57,6 +57,14 @@ public sealed class PcreCountedRepeatTests {
 	}
 
 	[Fact]
+	public void CountedGroupProgressKeepsTheExistingRepeatStateBudget() {
+		var source = String.Concat( Enumerable.Repeat( "(?:){1,}", 256 ) );
+		Assert.Equal( new PcreByteCapture( 0, 0 ), Compile( source ).Match( ReadOnlyMemory<byte>.Empty ).Match?.Captures[0] );
+		Assert.Equal( PcreByteDiagnosticCode.PatternRepeatLimitExceeded,
+			PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( String.Concat( source, "(?:){1,}" ) ) ).Diagnostic?.Code );
+	}
+
+	[Fact]
 	public void NestedExpansionIsBoundedAtCompileTime() {
 		var result = PcreByteCompiler.Compile( "(?:a{100}){100}"u8.ToArray() );
 		Assert.Equal( PcreByteDiagnosticCode.PatternRepeatLimitExceeded, result.Diagnostic?.Code );
