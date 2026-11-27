@@ -2,6 +2,9 @@ namespace Icod.Expressions.Pcre;
 
 internal sealed record PcreWordSuffixChoices( PcreByteNode[][] Alternatives ) : PcreByteNode;
 
+internal sealed record PcreWordPathMark( string Name ) : PcreByteNode;
+internal sealed record PcreWordFailure( string? Mark = null ) : PcreByteNode;
+
 internal sealed record PcreWordGroup(
 	PcreByteNode[][] Alternatives, int PathCount, int ExpandedNodes, int UnboundedRepeats, int CaptureNumber = 0,
 	int[]? SourceBranchStarts = null, bool[]? CheckAssertionEnds = null
@@ -188,6 +191,9 @@ internal static class PcreWordSequenceCompiler {
 					continue;
 				}
 				nodes[original] = node switch {
+					PcreBytePathMark mark => new PcreWordPathMark( VisibleMark( mark.WordName! ) ),
+					PcreByteFailure failure => new PcreWordFailure(
+						failure.WordName is { Length: > 0 } name ? VisibleMark( name ) : null ),
 					PcreByteNode repeated when AssertionRepeat( repeated ) is { } repeat =>
 						BuildAssertionRepeat( repeat, compiled, repeated is PcreByteAtomic ),
 					PcreByteGroup group => compiled[group.Body] with { CaptureNumber = group.Number },
@@ -336,6 +342,11 @@ internal static class PcreWordSequenceCompiler {
 
 	private static bool IsContinuationBoundary( PcreByteNode node ) => node is PcreWordGroup or PcreWordGroupRepeat
 		or PcreWordAssertion or PcreWordAtomic or PcreWordReverse or PcreByteSubroutineCall or PcreWordConditional;
+
+	private static string VisibleMark( string name ) {
+		var nul = name.IndexOf( '\0' );
+		return nul < 0 ? name : name[..nul];
+	}
 
 	private static PcreByteAlternatives? ConditionalBody( PcreByteNode node ) => node switch {
 		PcreByteCaptureConditional conditional => conditional.Body,
@@ -492,6 +503,7 @@ internal static class PcreWordSequenceCompiler {
 	}
 
 	private static bool IsSupportedNode( PcreByteNode node ) => IsSupportedAtom( node )
+		|| node is PcreWordPathMark or PcreWordFailure
 		|| node is PcreByteAnchor or PcreByteLineAnchor or PcreByteEndBeforeFinalLf
 			or PcreByteSearchStart or PcreByteWordBoundary or PcreByteBackreference
 			or PcreWordGroup or PcreWordGroupRepeat or PcreWordAssertion or PcreWordAtomic or PcreWordReverse or PcreByteSubroutineCall or PcreWordConditional;

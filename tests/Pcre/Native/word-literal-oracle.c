@@ -9,6 +9,9 @@
 #ifndef ORACLE_LITERAL
 #define ORACLE_LITERAL 1
 #endif
+#ifndef ORACLE_MARKS
+#define ORACLE_MARKS 0
+#endif
 static unsigned number(const char *s) {
     char *end; errno = 0; unsigned long n = strtoul(s, &end, 10);
     if (!*s || *s == '-' || *end || errno || n > UINT32_MAX) { exit(2); }
@@ -69,6 +72,10 @@ int main(void) {
                 if (group) { putchar(','); }
                 if (ov[group * 2] == PCRE2_UNSET) { putchar('-'); }
                 else { printf("%zu:%zu", (size_t)ov[group * 2], (size_t)(ov[group * 2 + 1] - ov[group * 2])); }
+            }
+            if (ORACLE_MARKS) {
+                PCRE2_SPTR mark = pcre2_get_mark(data); putchar('|');
+                if (mark) { while (*mark) { printf("%04X", (unsigned)*mark++); } }
             }
             putchar('\n');
         }

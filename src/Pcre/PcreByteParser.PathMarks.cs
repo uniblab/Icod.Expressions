@@ -9,7 +9,8 @@ internal sealed partial class PcreByteParser {
 			throw Invalid( index - 1, "MARK requires a name" );
 		}
 		if ( !TryConsumeGroupAlias( "*MARK:"u8 ) && !TryConsumeGroupAlias( "*:"u8 ) ) { return null; }
-		return new( ReadControlVerbName( "MARK", requireName: true ) );
+		var name = ReadControlVerbName( "MARK", requireName: true, out var wordName );
+		return new( name, wordName );
 	}
 
 	private PcreByteNode? TryParseNamedSkip() {
@@ -26,9 +27,14 @@ internal sealed partial class PcreByteParser {
 
 	private PcreByteNode? TryParseNamedImmediateVerb() {
 		if ( TryConsumeGroupAlias( "*ACCEPT:"u8 ) ) { return new PcreByteAccept( ReadControlVerbName( "ACCEPT", requireName: false ) ); }
-		if ( TryConsumeGroupAlias( "*FAIL:"u8 ) ) { return new PcreByteFailure( ReadControlVerbName( "FAIL", requireName: false ) ); }
-		if ( TryConsumeGroupAlias( "*F:"u8 ) ) { return new PcreByteFailure( ReadControlVerbName( "F", requireName: false ) ); }
+		if ( TryConsumeGroupAlias( "*FAIL:"u8 ) ) { return ReadNamedFailure( "FAIL" ); }
+		if ( TryConsumeGroupAlias( "*F:"u8 ) ) { return ReadNamedFailure( "F" ); }
 		return null; // Preserve the existing malformed-group byte for bare unfinished headers.
+	}
+
+	private PcreByteFailure ReadNamedFailure( string verb ) {
+		var name = ReadControlVerbName( verb, requireName: false, out var wordName );
+		return new( name, wordName );
 	}
 
 	private PcreByteNode? TryParseNamedCut() {
@@ -45,8 +51,16 @@ internal sealed partial class PcreByteParser {
 		return null;
 	}
 
-	private ReadOnlyMemory<byte> ReadControlVerbName( string verb, bool requireName ) {
-		if ( altVerbNames ) { return ReadAlternateControlVerbName( verb, requireName ); }
+	private ReadOnlyMemory<byte> ReadControlVerbName( string verb, bool requireName ) =>
+		ReadControlVerbName( verb, requireName, out _ );
+
+	private ReadOnlyMemory<byte> ReadControlVerbName( string verb, bool requireName, out string? wordName ) {
+		wordName = null;
+		if ( altVerbNames ) {
+			// Alternate-name escapes are not yet part of the word options profile.
+			if ( wordSource is not null ) { throw Unsupported( index ); }
+			return ReadAlternateControlVerbName( verb, requireName );
+		}
 		var start = index;
 		// Without ALT_VERBNAMES, backslashes and extended-mode trivia are raw
 		// name bytes. Only the first closing parenthesis terminates this token.
@@ -57,9 +71,11 @@ internal sealed partial class PcreByteParser {
 		if ( index == source.Length ) { throw Invalid( index, String.Concat( "unterminated ", verb, " name" ) ); }
 		var length = index - start;
 		if ( length > 255 || requireName && length == 0 ) {
-			throw Invalid( index, String.Concat( verb, requireName ? " name must contain 1 to 255 bytes" : " name must contain at most 255 bytes" ) );
+			throw Invalid( index, String.Concat( verb, requireName ? " name must contain 1 to 255 " : " name must contain at most 255 ",
+				wordSource is null ? "bytes" : "code units" ) );
 		}
 		var name = source.AsMemory( start, length );
+		if ( wordSource is not null ) { wordName = new string( wordSource, start, length ); }
 		index++;
 		return name;
 	}

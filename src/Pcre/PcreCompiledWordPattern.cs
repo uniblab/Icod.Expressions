@@ -107,6 +107,7 @@ internal sealed class PcreCompiledWordPattern {
 		}
 		Stack<BacktrackFrame>? frames = null;
 		var activeCall = -1;
+		var mark = String.Empty;
 		var captures = new PcreWordCapture?[CaptureInfo.CaptureCount + 1];
 		int MatchReference( PcreByteBackreference reference, ReadOnlySpan<char> source, int position, out int end ) {
 			end = position;
@@ -158,7 +159,7 @@ internal sealed class PcreCompiledWordPattern {
 		bool PushFrame( BacktrackFrame frame ) {
 			frames ??= new();
 			if ( frames.Count >= MaximumBacktrackFrames ) { return false; }
-			frames.Push( frame with { ChangeCount = changes?.Count ?? 0, VisibleEnd = visibleEnd, ActiveCall = activeCall } );
+			frames.Push( frame with { ChangeCount = changes?.Count ?? 0, VisibleEnd = visibleEnd, ActiveCall = activeCall, Mark = mark } );
 			return true;
 		}
 		bool ReturnCaptures( int checkpoint, ReadOnlyMemory<int> selected ) {
@@ -186,6 +187,7 @@ internal sealed class PcreCompiledWordPattern {
 			Array.Clear( captures );
 			visibleEnd = source.Length;
 			activeCall = -1;
+			mark = String.Empty;
 			Continuation? continuation = null;
 			var index = 0;
 			var position = candidate;
@@ -250,6 +252,7 @@ internal sealed class PcreCompiledWordPattern {
 								continue; // Keep successful captures, even beyond the outer match.
 							}
 							if ( !RestoreCaptures( guard.ChangeCount ) ) { return -1; }
+							mark = guard.Mark!;
 							if ( guardFrames.Count == 0 ) { changes?.Clear(); }
 							// A matching negative body fails into the enclosing retry stack.
 						} else if ( parent.Repeat is { } completedRepeat ) {
@@ -356,6 +359,16 @@ internal sealed class PcreCompiledWordPattern {
 					if ( !Step() ) { return -1; } // Comparison, repeat admission or assertion.
 					var matched = true;
 					switch ( nodes[index] ) {
+						case PcreWordPathMark pathMark:
+							mark = pathMark.Name;
+							break;
+						case PcreWordFailure failure:
+							if ( failure.Mark is { } failureMark ) {
+								mark = failureMark;
+								if ( !Step() ) { return -1; } // Named FAIL expands to MARK followed by FAIL.
+							}
+							matched = false;
+							break;
 						case PcreWordReverse reverse:
 							var reversed = position;
 							var reversedCount = 0;
@@ -422,6 +435,7 @@ internal sealed class PcreCompiledWordPattern {
 					continuation = frame.Continuation;
 					visibleEnd = frame.VisibleEnd;
 					activeCall = frame.ActiveCall;
+					mark = frame.Mark!;
 					if ( frame.Kind is FrameKind.PositiveCondition or FrameKind.NegativeCondition ) {
 						if ( !Step() ) { return -1; } // Exhausted test rolls back before selecting the other arm.
 						EnterConditionalArm( (PcreWordConditional)nodes[index], frame.Kind == FrameKind.NegativeCondition );
@@ -493,7 +507,7 @@ internal sealed class PcreCompiledWordPattern {
 				if ( outcome > 0 ) {
 					captures[0] = new( candidate, end - candidate );
 					// Transfer this call's capture array; no runner or subject memory escapes.
-					return new( new( candidate, end - candidate, Array.AsReadOnly( captures ), CaptureInfo ), null );
+					return new( new( candidate, end - candidate, Array.AsReadOnly( captures ), CaptureInfo ) { MarkName = mark }, null );
 				}
 			}
 			if ( anchored || candidate == input.Length ) { return new( null, null ); }
@@ -507,7 +521,7 @@ internal sealed class PcreCompiledWordPattern {
 
 	private readonly record struct BacktrackFrame(
 		PcreByteNode[] Nodes, int Index, int Position, int RepeatStart, int Count, Continuation? Continuation,
-		FrameKind Kind = FrameKind.Retry, int ChangeCount = 0, int VisibleEnd = 0, int ActiveCall = -1
+		FrameKind Kind = FrameKind.Retry, int ChangeCount = 0, int VisibleEnd = 0, int ActiveCall = -1, string? Mark = null
 	);
 
 	private enum FrameKind { Retry, RepeatExit, RepeatGrow, PositiveAssertion, NegativeAssertion, PositiveCondition, NegativeCondition, AtomicGroup, Subroutine, ReverseRetry }
