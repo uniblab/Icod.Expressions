@@ -4,6 +4,7 @@ internal sealed record PcreWordSuffixChoices( PcreByteNode[][] Alternatives ) : 
 
 internal sealed record PcreWordPathMark( string Name ) : PcreByteNode;
 internal sealed record PcreWordFailure( string? Mark = null ) : PcreByteNode;
+internal sealed record PcreWordAccept( string? Mark = null ) : PcreByteNode;
 
 internal sealed record PcreWordGroup(
 	PcreByteNode[][] Alternatives, int PathCount, int ExpandedNodes, int UnboundedRepeats, int CaptureNumber = 0,
@@ -87,6 +88,8 @@ internal static class PcreWordSequenceCompiler {
 			var compiled = new Dictionary<PcreByteAlternatives, PcreWordGroup>( ReferenceEqualityComparer.Instance );
 			var pending = new Stack<(PcreByteAlternatives Body, int Depth, bool Complete, PcreByteLookbehind? Behind)>();
 			var validationLookbehind = 0;
+			var hasAccept = false;
+			var hasSelectedReturns = false;
 			pending.Push( (root, 0, false, null) );
 			while ( pending.TryPop( out var item ) ) {
 				cancellationToken.ThrowIfCancellationRequested();
@@ -102,6 +105,8 @@ internal static class PcreWordSequenceCompiler {
 							while ( nested is PcreByteRepeat or PcreByteAtomic ) {
 								nested = nested is PcreByteRepeat repeat ? repeat.Child : ( (PcreByteAtomic)nested ).Child;
 							}
+							hasAccept |= nested is PcreByteAccept;
+							hasSelectedReturns |= nested is PcreByteSubroutineCall selected && !selected.ReturnedCaptures.IsEmpty;
 							var nestedBody = nested switch {
 								PcreByteGroup direct => direct.Body,
 								PcreByteNoncapturingGroup direct => direct.Body,
@@ -130,6 +135,10 @@ internal static class PcreWordSequenceCompiler {
 				compiled.Add( item.Body, body );
 			}
 			var targets = new Dictionary<int, PcreByteNode[]>();
+			// The pinned interpreter reports INTERNAL (-44) when ACCEPT returns
+			// selected captures. Keep this combination outside the bounded profile
+			// until its cross-dispatch contract is qualified, including erased bodies.
+			if ( hasAccept && hasSelectedReturns ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
 			foreach ( var (number, target) in parser.SubroutineTargets ) {
 				cancellationToken.ThrowIfCancellationRequested();
 				// Integer call edges can refer to the root or a recursive definition.
@@ -138,7 +147,7 @@ internal static class PcreWordSequenceCompiler {
 				targets.Add( number, [compiled[target.Body]] );
 			}
 			return new( new( compiled[root].Alternatives, options, validationLookbehind, settings.Newline,
-				settings.BsrAnyCrLf, parser.CreateCaptureInfo(), targets ), null );
+				settings.BsrAnyCrLf, parser.CreateCaptureInfo(), targets, parser.HasNonAtomicAccept ), null );
 		} catch ( PcreByteParseException error ) {
 			return Error( error.Diagnostic.Code == PcreByteDiagnosticCode.UnsupportedSyntax
 				? PcreWordDiagnosticCode.UnsupportedSyntax : PcreWordDiagnosticCode.InvalidSyntax, error.Diagnostic.ByteOffset );
@@ -191,6 +200,9 @@ internal static class PcreWordSequenceCompiler {
 					continue;
 				}
 				nodes[original] = node switch {
+					PcreByteAccept accept => BuildAccept( accept ),
+					PcreByteRepeat { Child: PcreByteAccept accept } repeat => new PcreWordGroupRepeat(
+						new( [[BuildAccept( accept )]], 1, 1, 0 ), repeat.Minimum, repeat.Maximum, repeat.Greedy, true ),
 					PcreBytePathMark mark => new PcreWordPathMark( VisibleMark( mark.WordName! ) ),
 					PcreByteFailure failure => new PcreWordFailure(
 						failure.WordName is { Length: > 0 } name ? VisibleMark( name ) : null ),
@@ -503,10 +515,13 @@ internal static class PcreWordSequenceCompiler {
 	}
 
 	private static bool IsSupportedNode( PcreByteNode node ) => IsSupportedAtom( node )
-		|| node is PcreWordPathMark or PcreWordFailure
+		|| node is PcreWordPathMark or PcreWordFailure or PcreWordAccept
 		|| node is PcreByteAnchor or PcreByteLineAnchor or PcreByteEndBeforeFinalLf
 			or PcreByteSearchStart or PcreByteWordBoundary or PcreByteBackreference
 			or PcreWordGroup or PcreWordGroupRepeat or PcreWordAssertion or PcreWordAtomic or PcreWordReverse or PcreByteSubroutineCall or PcreWordConditional;
+
+	private static PcreWordAccept BuildAccept( PcreByteAccept accept ) =>
+		new( accept.WordName is { Length: > 0 } name ? VisibleMark( name ) : null );
 
 	private static bool IsSupportedAtom( PcreByteNode node ) => node is PcreByteLiteral or PcreByteAny or PcreByteNewlineSequence
 		|| node is PcreByteScalarClass property && IsWordClassPredicate( property.Kind )

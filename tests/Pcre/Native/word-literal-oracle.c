@@ -12,6 +12,9 @@
 #ifndef ORACLE_MARKS
 #define ORACLE_MARKS 0
 #endif
+#ifndef ORACLE_INTERPRETER_FALLBACK
+#define ORACLE_INTERPRETER_FALLBACK 0
+#endif
 static unsigned number(const char *s) {
     char *end; errno = 0; unsigned long n = strtoul(s, &end, 10);
     if (!*s || *s == '-' || *end || errno || n > UINT32_MAX) { exit(2); }
@@ -59,7 +62,11 @@ int main(void) {
         printf("%u|%u|%u|", id, defaults, mask);
         if (!code) { printf("E|%d|%zu\n", error, (size_t)offset); free(pattern); free(subject); continue; }
         int jit = pcre2_jit_compile(code, PCRE2_JIT_COMPLETE); PCRE2_SIZE size = 0;
-        if (jit || pcre2_pattern_info(code, PCRE2_INFO_JITSIZE, &size) || !size) { return 3; }
+        if (pcre2_pattern_info(code, PCRE2_INFO_JITSIZE, &size)) { return 3; }
+        if (jit || !size) {
+            /* ACCEPT in a lexical non-atomic assertion disables native JIT. */
+            if (!ORACLE_INTERPRETER_FALLBACK || jit != PCRE2_ERROR_JIT_UNSUPPORTED || size) { return 3; }
+        }
         pcre2_match_data *data = pcre2_match_data_create_from_pattern(code, NULL); if (!data) { return 2; }
         int rc = pcre2_match(code, subject, slen, start, policy(mask | (defaults & ~3u)), data, NULL);
         if (rc == -1) { puts("N|"); }
