@@ -4,7 +4,7 @@
 
 The [failure and label record](PCRE-WORD-FAILURE-MARKS.md) adds FAIL/F and MARK,
 including named failure and the short MARK alias. Original word labels preserve
-Unicode, raw surrogate units, 255-unit limits and NUL visibility. Existing retry
+Unicode, raw surrogate units, width-specific limits and NUL visibility. Existing retry
 frames restore labels across alternatives, groups, assertions and calls without
 adding saved frames. 542 fixtures add 277,504 native capture/label comparisons.
 ACCEPT and the remaining cut verbs are next.

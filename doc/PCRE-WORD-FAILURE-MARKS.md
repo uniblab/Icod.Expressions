@@ -14,8 +14,10 @@ strings owned by the compiled pattern and exposed on successful word matches as
 `MarkName`; results retain their label across subsequent and concurrent matches.
 No subject copying or transcoding is introduced.
 
-The 255-unit limit counts the entire original argument, including units after a
-NUL and both halves of a surrogate pair. Raw mode preserves isolated surrogate
+Native 16-bit labels have a 65,535-unit capacity, while byte labels retain their
+255-byte limit. The word profile checks its smaller 4,096-unit whole-pattern
+budget first, including label units after a NUL and both halves of a surrogate
+pair. A 4,088-unit MARK label reaches that pattern ceiling. Raw mode preserves isolated surrogate
 units. Strict mode validates the entire source before parsing, including label
 text after a NUL. At execution, only the prefix before the first NUL is visible.
 An empty FAIL argument emits no label assignment; a nonempty argument beginning
@@ -38,15 +40,17 @@ at match time: NUL truncation happens during compilation. Labels add no independ
 history stack; the 1,024 saved-frame limit and atomic reclamation are unchanged.
 All source arms and ignored tails remain subject to the existing bounded grammar,
 node, path, repetition and nesting limits. Native FAIL lookbehind width termination
-continues to come from the shared parser.
+continues to come from the shared parser. Unresolved nested lookbehinds in
+native width-terminated tails still return UnsupportedSyntax; four native-valid
+patterns explicitly pin this existing bounded-profile limitation.
 
 ## Evidence and remaining work
 
 542 fixtures across eight compiled defaults and all 64 call masks contribute
 277,504 full-vector and successful-label comparisons against pinned PCRE2-16.
-The native preflight produced 198,656 matches and 78,848 misses with no errors.
+The native preflight produced 200,704 matches and 76,800 misses with no errors.
 Its LF output SHA-256 is
-`d94f6b9f5118e1c4d173e87e058c978dc05c513d0ac24a699ff5fbcc628aab9c`.
+`c86aa8058a4e2898d56070bcfa3e10be84c77b7ee12858a54c4e691826d54167`.
 The existing word policy oracle accepts `ORACLE_MARKS=1` to append successful
 labels as four-digit hexadecimal code units; its default output is unchanged.
 Provenance remains in [word-sequence evidence](PCRE-WORD-SEQUENCES.md).

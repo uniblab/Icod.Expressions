@@ -67,10 +67,6 @@ public sealed class PcreWordFailureMarkTests {
 				("(?<!a(*F)b*)X", "aX", 0, true, false),
 				("(?<=(*F)a*|ab)X", "abX", 0, false, false),
 				("(?<=(*F)a*|ab)X", "abX", 0, true, false),
-				("(?<=(*F)(?<=a*))X", "X", 0, false, false),
-				("(?<=(*F)(?<=a*))X", "X", 0, true, false),
-				("(?<!(*F)(?=(?<=a*)))X", "X", 0, false, false),
-				("(?<!(*F)(?=(?<=a*)))X", "X", 0, true, false),
 				("(?<=(?:a(*F)b*|bc))X", "bcX", 0, false, false),
 				("(?<=(?:a(*F)b*|bc))X", "bcX", 0, true, false),
 				("(?<!(*F))(?<x>X)", "X", 0, false, false),
@@ -263,10 +259,6 @@ public sealed class PcreWordFailureMarkTests {
 				("(?<!a(*F:N)b*)X", "aX", 0, true, false),
 				("(?<=(*F:N)a*|ab)X", "abX", 0, false, false),
 				("(?<=(*F:N)a*|ab)X", "abX", 0, true, false),
-				("(?<=(*F:N)(?<=a*))X", "X", 0, false, false),
-				("(?<=(*F:N)(?<=a*))X", "X", 0, true, false),
-				("(?<!(*F:N)(?=(?<=a*)))X", "X", 0, false, false),
-				("(?<!(*F:N)(?=(?<=a*)))X", "X", 0, true, false),
 				("(?<=(?:a(*F:N)b*|bc))X", "bcX", 0, false, false),
 				("(?<=(?:a(*F:N)b*|bc))X", "bcX", 0, true, false),
 				("(?<!(*F:N))(?<x>X)", "X", 0, false, false),
@@ -551,6 +543,14 @@ public sealed class PcreWordFailureMarkTests {
 				("(*MARK:😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀X)a", "a", 0, true, false),
 				("(*MARK:\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000)a", "a", 0, false, false),
 				("(*MARK:\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000)a", "a", 0, true, false),
+				("(*MARK:éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé)a", "a", 0, false, false),
+				("(*MARK:éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé)a", "a", 0, true, false),
+				("(*MARK:😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀)a", "a", 0, false, false),
+				("(*MARK:😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀)a", "a", 0, true, false),
+				("(*MARK:\u0000xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)a", "a", 0, false, false),
+				("(*MARK:\u0000xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)a", "a", 0, true, false),
+				("(*MARK:éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé)a", "a", 0, false, false),
+				("(*MARK:éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé)a", "a", 0, true, false),
 			};
 			for ( var id = 0; id < cases.Length; id++ ) {
 				var (source, subject, start, utf, ucp) = cases[id];
@@ -717,7 +717,7 @@ public sealed class PcreWordFailureMarkTests {
 	[Theory]
 	[InlineData( false )]
 	[InlineData( true )]
-	public void LabelLengthCountsOriginalUnitsIncludingNulAndSurrogatePairs( bool utf ) {
+	public void WordLabelsExceedByteLimitsAndRetainOriginalUnits( bool utf ) {
 		foreach ( var header in new[] { "(*MARK:", "(*:", "(*FAIL:", "(*F:" } ) {
 			foreach ( var label in new[] { new string( 'é', 255 ), new string( 'é', 256 ),
 				String.Concat( String.Concat( Enumerable.Repeat( "😀", 127 ) ), "X" ),
@@ -725,14 +725,41 @@ public sealed class PcreWordFailureMarkTests {
 				var source = String.Concat( header, label, ")a" );
 				var native = PcreNative16Oracle.ExecuteSequence( Words( source ), Words( "a" ), utf, 0 );
 				var compiled = PcreWordSequenceCompiler.CompileSequence( source.AsMemory(), new() { Utf16 = utf } );
-				if ( label.Length > 255 ) {
-					Assert.Equal( "E", native.Kind );
-					Assert.Equal( new PcreWordDiagnostic( PcreWordDiagnosticCode.InvalidSyntax, header.Length + label.Length ), compiled.Diagnostic );
-				} else {
-					Assert.True( compiled.IsSuccess ); var result = compiled.Pattern!.Match( "a".AsMemory() ); Assert.True( result.IsSuccess );
-					Assert.Equal( native.Captures, Spans( result.Match ) ); Assert.Equal( native.Mark, MarkHex( result.Match ) );
-				}
+				Assert.True( compiled.IsSuccess ); var result = compiled.Pattern!.Match( "a".AsMemory() ); Assert.True( result.IsSuccess );
+				Assert.True( native.Kind is "M" or "N" );
+				Assert.Equal( native.Captures, Spans( result.Match ) ); Assert.Equal( native.Mark, MarkHex( result.Match ) );
 			}
+		}
+	}
+
+	[Fact]
+	public void WordLabelLengthUsesTheWholePatternBudgetWithoutChangingTheByteLimit() {
+		var wordOnly = String.Concat( "(*MARK:", new string( 'x', 256 ), ")a" );
+		Assert.True( PcreWordSequenceCompiler.CompileSequence( wordOnly.AsMemory() ).IsSuccess );
+		Assert.Equal( PcreByteDiagnosticCode.InvalidSyntax, PcreByteCompiler.Compile( Encoding.ASCII.GetBytes( wordOnly ) ).Diagnostic?.Code );
+		var label = new string( 'é', 4088 ); var atLimit = String.Concat( "(*MARK:", label, ")" );
+		Assert.Equal( 4096, atLimit.Length );
+		var native = PcreNative16Oracle.ExecuteSequence( Words( atLimit ), Array.Empty<ushort>(), true, 0 );
+		Assert.Equal( "M", native.Kind ); Assert.Equal( Hex( label ), native.Mark );
+		var compiled = PcreWordSequenceCompiler.CompileSequence( atLimit.AsMemory(), new() { Utf16 = true, MatchWorkLimit = 3 } );
+		Assert.True( compiled.IsSuccess ); Assert.Equal( label, compiled.Pattern!.Match( ReadOnlyMemory<char>.Empty ).Match!.MarkName );
+		Assert.Equal( new PcreWordDiagnostic( PcreWordDiagnosticCode.PatternLengthLimitExceeded, 0 ),
+			PcreWordSequenceCompiler.CompileSequence( String.Concat( atLimit, "a" ).AsMemory() ).Diagnostic );
+		Assert.Equal( PcreWordDiagnosticCode.PatternLengthLimitExceeded,
+			PcreWordSequenceCompiler.CompileSequence( atLimit.AsMemory(), new() { MaxPatternLength = 4095 } ).Diagnostic?.Code );
+	}
+
+	[Theory]
+	[InlineData( "(?<=(*F)(?<=a*))X" )]
+	[InlineData( "(?<!(*F)(?=(?<=a*)))X" )]
+	[InlineData( "(?<=(*F:N)(?<=a*))X" )]
+	[InlineData( "(?<!(*F:N)(?=(?<=a*)))X" )]
+	public void NativeSuppressedBehindWidthsRemainOutsideTheBoundedWordProfile( string source ) {
+		foreach ( var utf in new[] { false, true } ) {
+			var native = PcreNative16Oracle.ExecuteSequence( Words( source ), Words( "X" ), utf, 0 );
+			Assert.True( native.Kind is "M" or "N" );
+			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
+				PcreWordSequenceCompiler.CompileSequence( source.AsMemory(), new() { Utf16 = utf } ).Diagnostic?.Code );
 		}
 	}
 

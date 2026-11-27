@@ -70,9 +70,12 @@ internal sealed partial class PcreByteParser {
 		}
 		if ( index == source.Length ) { throw Invalid( index, String.Concat( "unterminated ", verb, " name" ) ); }
 		var length = index - start;
-		if ( length > 255 || requireName && length == 0 ) {
-			throw Invalid( index, String.Concat( verb, requireName ? " name must contain 1 to 255 " : " name must contain at most 255 ",
-				wordSource is null ? "bytes" : "code units" ) );
+		// Native stores the length in one code unit: 255 bytes or 65,535 words.
+		// The word compiler's smaller whole-pattern budget is checked before parsing.
+		var maximum = wordSource is null ? 255 : 65535;
+		if ( length > maximum || requireName && length == 0 ) {
+			throw Invalid( index, String.Concat( verb, requireName ? " name must contain 1 to " : " name must contain at most ",
+				maximum.ToString( System.Globalization.CultureInfo.InvariantCulture ), wordSource is null ? " bytes" : " code units" ) );
 		}
 		var name = source.AsMemory( start, length );
 		if ( wordSource is not null ) { wordName = new string( wordSource, start, length ); }
