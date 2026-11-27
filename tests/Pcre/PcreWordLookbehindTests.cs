@@ -316,7 +316,7 @@ public sealed class PcreWordLookbehindTests {
 		foreach ( var source in new[] { String.Concat( "(?<=", nested, ")" ), "(?<=a{0,64})",
 			"(?<=(?:a{64}){3}a{62}a{0,2})", "(?<=(?:(?:a{64}){64}){16})",
 			"(?<=a?b?c?d?e?f?)g?", "(?<=a*)", "(?<=a){65}", "(?<=a){64,}", "(?<=(?>(*SKIP:N)a)){0}",
-			"(?<*a){65}", "(?<!a(*SKIP))", "(a)(?<=a)(?1)(*SKIP:N)" } ) {
+			"(?<*a){65}", "(?<!a(*SKIP:pending))", "(a)(?<=a)(?1)(*SKIP:N)" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

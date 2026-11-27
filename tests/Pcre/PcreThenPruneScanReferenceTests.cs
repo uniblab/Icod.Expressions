@@ -13,6 +13,10 @@ public sealed class PcreThenPruneScanReferenceTests {
 	public void ByteScanReuseMatchesNativeDispatchAndRootWrapperDepth( bool utf ) {
 		var cases = new List<(string Pattern, string Subject)> {
 			("a+(*THEN)(*PRUNE)X|a", "aaa"),
+			("a+(*SKIP)(*PRUNE)X|a", "aaa"),
+			("a+(*SKIP:)(*PRUNE:P)X|(a)", "aaa"),
+			("(*NO_JIT)a+(*SKIP)(*PRUNE)X|a", "aaa"),
+			("(*NO_START_OPT)a+(*SKIP)(*PRUNE)X|a", "aaa"),
 			("a+(*THEN:N)(*PRUNE:P)X|(a)", "aaa"),
 			("a+(*THEN)(*PRUNE)(*F)|a", "aaa"),
 			("a+(*THEN)(*PRUNE)a|a", "aaa"),

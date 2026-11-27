@@ -766,7 +766,7 @@ public sealed class PcreWordFailureMarkTests {
 
 	[Fact]
 	public void IgnoredTailsKeepSourceAdmissionAndStrictValidation() {
-		foreach ( var source in new[] { "(*F)(*SKIP:N)", "(*F)(*SKIP)", "(?(DEFINE)(*MARK:x)(*SKIP))",
+		foreach ( var source in new[] { "(*F)(*SKIP:N)", "(*F)(*SKIP:pending)", "(?(DEFINE)(*MARK:x)(*SKIP:pending))",
 			"(*MARK:x)(?<=a*)", "(?<=(*MARK:x)a*)b", "(?<=a*(*F))b", "(*F)a{65}" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax, PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

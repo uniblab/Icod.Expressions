@@ -129,6 +129,7 @@ internal sealed class PcreCompiledWordPattern {
 		var captures = new PcreWordCapture?[CaptureInfo.CaptureCount + 1];
 		Dictionary<int, PcreWordCapture?>? cutCaptures = null;
 		var pruneLiteralEnd = -1;
+		var skipRestart = -1;
 		int MatchReference( PcreByteBackreference reference, ReadOnlySpan<char> source, int position, out int end ) {
 			end = position;
 			var capture = captures[reference.Number];
@@ -397,7 +398,7 @@ internal sealed class PcreCompiledWordPattern {
 							break;
 						case PcreWordCut cut:
 							Continuation? thenOwner = null;
-							if ( cut.Then ) {
+							if ( cut.Kind == PcreWordCutKind.Then ) {
 								for ( var scope = continuation; scope is not null; scope = scope.Parent ) {
 									if ( !Step() ) { return -1; } // Only source alternatives own THEN.
 									if ( scope.ThenBoundary >= 0 ) { thenOwner = scope; break; }
@@ -408,7 +409,7 @@ internal sealed class PcreCompiledWordPattern {
 							while ( cutScope is not null ) {
 								if ( !Step() ) { return -1; } // Only active scopes catch a cut.
 								if ( cutScope.CallCheckpoint >= 0 || cutScope.CatchesCut
-									|| cut.Then && cutScope.GuardBoundary >= 0 && !cutScope.AtomicGroup
+									|| cut.Kind == PcreWordCutKind.Then && cutScope.GuardBoundary >= 0 && !cutScope.AtomicGroup
 										&& ( interpreted || thenOwner is not null || activeCall < 0 || cutScope.NonAtomicAssertion ) ) { break; }
 								cutScope = cutScope.Parent;
 							}
@@ -419,7 +420,9 @@ internal sealed class PcreCompiledWordPattern {
 								cutScope = thenOwner;
 							}
 							if ( !PushFrame( new( nodes, index, position, cutBoundary, 0, continuation,
-								thenOwner is not null ? FrameKind.ThenAlternative : cut.Commit ? FrameKind.Commit : FrameKind.Prune,
+								thenOwner is not null ? FrameKind.ThenAlternative : cut.Kind switch {
+									PcreWordCutKind.Commit => FrameKind.Commit, PcreWordCutKind.Skip => FrameKind.Skip, _ => FrameKind.Prune
+								},
 								CutScope: cutScope ) ) ) { return -2; }
 							if ( cut.Mark is { } cutMark ) { SetMark( cutMark ); }
 							break;
@@ -550,7 +553,7 @@ internal sealed class PcreCompiledWordPattern {
 					visibleEnd = frame.VisibleEnd;
 					activeCall = frame.ActiveCall;
 					RestoreMark( frame.MarkVersion, frame.Mark! );
-					if ( frame.Kind is FrameKind.Prune or FrameKind.Commit or FrameKind.ThenAlternative ) {
+					if ( frame.Kind is FrameKind.Prune or FrameKind.Commit or FrameKind.ThenAlternative or FrameKind.Skip ) {
 						if ( !Step() ) { return -1; } // Reaching a cut, rather than executing it, discards choices.
 						if ( !interpreted && frame.CutScope is { CallCheckpoint: >= 0 } callScope
 							&& !callScope.ReturnedCaptures.IsEmpty && changes is not null ) {
@@ -579,7 +582,10 @@ internal sealed class PcreCompiledWordPattern {
 							var nextBranch = frames.Pop();
 							frames.Push( nextBranch with { Count = owner.ThenNext } );
 						}
-						if ( frame.RepeatStart == 0 ) { return frame.Kind == FrameKind.Commit ? 3 : 2; }
+						if ( frame.RepeatStart == 0 ) {
+							if ( frame.Kind == FrameKind.Skip && frame.Position > candidate ) { skipRestart = frame.Position; }
+							return frame.Kind == FrameKind.Commit ? 3 : 2;
+						}
 						continue; // The retained guard resolves the failed call/assertion.
 					} else if ( frame.Kind is FrameKind.PositiveCondition or FrameKind.NegativeCondition ) {
 						if ( !Step() ) { return -1; } // Exhausted test rolls back before selecting the other arm.
@@ -652,6 +658,7 @@ internal sealed class PcreCompiledWordPattern {
 			}
 		}
 		for ( var candidate = startOffset; ; ) {
+			skipRestart = -1;
 			acceptedMarks?.Clear();
 			cutCaptures?.Clear();
 			if ( !Step() ) { return Exhausted(); } // Candidate admission.
@@ -673,6 +680,13 @@ internal sealed class PcreCompiledWordPattern {
 					return new( new( candidate, end - candidate, Array.AsReadOnly( captures ), CaptureInfo ) { MarkName = mark }, null );
 				}
 			}
+			// Native JIT permits explicit forward SKIP entry even with compiled
+			// anchoring. Interpreter anchoring stops before any forced restart.
+			if ( skipRestart > candidate && !( interpreted && anchored ) ) {
+				if ( !Step() ) { return Exhausted(); } // Enter an original-unit SKIP target.
+				candidate = skipRestart;
+				continue;
+			}
 			if ( anchored || candidate == input.Length ) { return new( null, null ); }
 			if ( !Step() ) { return Exhausted(); } // Advance one original unit/scalar.
 			if ( !PcreUtf16.TryRead( input, candidate, options.Utf16, out _, out var advance ) ) {
@@ -688,7 +702,7 @@ internal sealed class PcreCompiledWordPattern {
 		string? Mark = null, int MarkVersion = 0, Continuation? CutScope = null
 	);
 
-	private enum FrameKind { Retry, RepeatExit, RepeatGrow, PositiveAssertion, NegativeAssertion, PositiveCondition, NegativeCondition, AtomicGroup, Subroutine, ReverseRetry, Prune, Commit, ThenAlternative }
+	private enum FrameKind { Retry, RepeatExit, RepeatGrow, PositiveAssertion, NegativeAssertion, PositiveCondition, NegativeCondition, AtomicGroup, Subroutine, ReverseRetry, Prune, Commit, ThenAlternative, Skip }
 	private readonly record struct CaptureChange( int Number, PcreWordCapture? Previous );
 
 	private sealed record Continuation( PcreByteNode[] Nodes, int Index, Continuation? Parent,
