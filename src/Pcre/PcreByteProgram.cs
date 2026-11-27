@@ -2697,7 +2697,8 @@ internal sealed class PcreByteProgramCompiler {
 		assertionAccepts = new();
 		assertionCaptureStart = openCaptures.Count;
 		compileWork.Push( () => {
-			var exit = Emit( PcreByteOpcode.AssertionExit, second: nonAtomic ? 4 : 0 );
+			var exit = Emit( PcreByteOpcode.AssertionExit,
+				second: ( nonAtomic ? 4 : 0 ) | ( nonAtomic && !reverseLengths.IsEmpty ? 32 : 0 ) );
 			FinishAssertionAccepts( exit, priorAccepts, priorCaptureStart );
 			thenTarget = priorThenTarget;
 			Patch( enter, instructions.Count, flags );
@@ -2837,6 +2838,7 @@ internal sealed class PcreByteProgramCompiler {
 		if ( index < repeat.Minimum ) {
 			if ( index == repeat.Minimum - 1 && repeat.Maximum == int.MaxValue
 				&& ( repeat.Child is PcreByteGroup or PcreByteNoncapturingGroup
+					or PcreByteCaptureConditional or PcreByteRecursionConditional or PcreByteStaticConditional or PcreByteAssertionConditional
 					or PcreByteAtomic { Child: PcreByteNoncapturingGroup }
 					|| repeat.Child is PcreByteSubroutineCall && repeat.Minimum == 1 ) ) {
 				// Native puts the repeating ket on the final required group copy,

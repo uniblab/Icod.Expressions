@@ -58,7 +58,7 @@ public sealed class PcreCountedRepeatTests {
 
 	[Fact]
 	public void CountedGroupProgressKeepsTheExistingRepeatStateBudget() {
-		foreach ( var repeated in new[] { "(?:){1,}", "(?1){1,}" } ) {
+		foreach ( var repeated in new[] { "(?:){1,}", "(?1){1,}", "(?(1)){1,}", "(?(R)){1,}", "(?(?=)){1,}" } ) {
 			var source = String.Concat( "(?(DEFINE)())", String.Concat( Enumerable.Repeat( repeated, 256 ) ) );
 			Assert.Equal( new PcreByteCapture( 0, 0 ), Compile( source ).Match( ReadOnlyMemory<byte>.Empty ).Match?.Captures[0] );
 			Assert.Equal( PcreByteDiagnosticCode.PatternRepeatLimitExceeded,
