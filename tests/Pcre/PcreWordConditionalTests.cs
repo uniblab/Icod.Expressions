@@ -559,7 +559,7 @@ public sealed class PcreWordConditionalTests {
 		}
 		foreach ( var source in new[] { String.Concat( "(?(VERSION=10.48)", atDepth, ")" ),
 			"(?(R)a?b?c?d?e?f?|x)", "(?(R)a?b?c?d?e?|f?g?h?i?j?)k?",
-			"(?(?=a|b)a?b?c?d?e?|x)", "(?(VERSION=10.48)a|(*ACCEPT))",
+			"(?(?=a|b)a?b?c?d?e?|x)", "(?(VERSION=10.48)a|(*COMMIT))",
 			"(?(DEFINE)(a)){65}", "(?(?=a)b|c){65}", "(*ANY)(?(R)a|b)" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax, PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

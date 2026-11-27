@@ -352,7 +352,9 @@ internal static class PcreWordSequenceCompiler {
 			SourceBranchStarts: sourceBranchStarts, CheckAssertionEnds: checkAssertionEnds );
 	}
 
-	private static bool IsContinuationBoundary( PcreByteNode node ) => node is PcreWordGroup or PcreWordGroupRepeat
+	// A label write must execute once before finite suffix choices. Replaying it
+	// on every expanded branch would erase a later accepted callee's committed label.
+	private static bool IsContinuationBoundary( PcreByteNode node ) => node is PcreWordPathMark or PcreWordGroup or PcreWordGroupRepeat
 		or PcreWordAssertion or PcreWordAtomic or PcreWordReverse or PcreByteSubroutineCall or PcreWordConditional;
 
 	private static string VisibleMark( string name ) {

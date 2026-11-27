@@ -281,7 +281,7 @@ public sealed class PcreWordNonAtomicAssertionTests {
 		}
 		foreach ( var source in new[] { "(?*a?b?c?d?e?f?)g?", "(?<*a?b?c?d?e?f?)g?",
 			"(?<*a*)", "(?<*(?:a{64}){3}a{62}a{0,2})",
-			"(?*a){65}", "(?*a){64,}", "(?*(?>(*ACCEPT)a)){0}", "(?<*a){65}", "(?*(?>(*ACCEPT)a))", "(?*a(*ACCEPT))" } ) {
+			"(?*a){65}", "(?*a){64,}", "(?*(?>(*COMMIT)a)){0}", "(?<*a){65}", "(?*(?>(*COMMIT)a))", "(?*a(*COMMIT))" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

@@ -122,7 +122,7 @@ public sealed class PcreWordUnboundedSuffixChoicesTests {
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( "a?b*c{0,31}".AsMemory() ).IsSuccess );
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( "a*b{0,62}|x".AsMemory() ).IsSuccess );
 		foreach ( var source in new[] { "a*b{0,64}", "a?b*c{0,32}", "a*b{0,63}|x",
-			"a?b*c{0,31}|x", "a*b?c?d?e?f?g?h?", "(?>(*ACCEPT)a*)b?" } ) {
+			"a?b*c{0,31}|x", "a*b?c?d?e?f?g?h?", "(?>(*COMMIT)a*)b?" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

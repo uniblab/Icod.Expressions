@@ -33,7 +33,8 @@ Interpreted assertion-condition ACCEPT restores the condition's entry label.
 Native JIT accepted calls instead commit the callee's label across checkpoints
 that share the entry write. Write identities and match-local committed values
 preserve that distinction without extra retry frames. Earlier distinct writes
-still roll back, and committed values reset at the next candidate.
+still roll back, and committed values reset at the next candidate. MARK is a
+continuation boundary so finite suffix retries do not replay an earlier write.
 
 ## Bounds and qualification limits
 
@@ -50,9 +51,9 @@ is established. Ordinary selected returns without ACCEPT remain supported.
 
 ## Evidence
 
-The differential corpus contains 621 raw16/UTF16 fixtures, each run with eight
-compiled defaults and all 64 call masks: 317,952 native PCRE2-16 comparisons.
-The local native preflight produced 197,200 matches and 120,752 nonmatches, with
+The differential corpus contains 637 raw16/UTF16 fixtures, each run with eight
+compiled defaults and all 64 call masks: 326,144 native PCRE2-16 comparisons.
+The local native preflight produced 205,392 matches and 120,752 nonmatches, with
 no compile/match errors in this corpus. It compares full capture vectors and
 successful labels. The selected-return native error is pinned separately.
 
@@ -63,12 +64,14 @@ The native reference is PCRE2 10.48 at
 The last option admits only native JIT_UNSUPPORTED (-68) with zero JIT size;
 all other unexpected JIT outcomes remain errors. Default oracle output and
 strict JIT checks remain unchanged. The LF protocol SHA-256 is
-`d0851c44830cce9dcfefa08a7f9ed3ecbfd36a1db10f8eaeb64e852609b5a773`.
+`ec246e68377cf4faa9658ca5c9c6739a7d00926dfae35ad2d57d7a8945aafb09`.
 
 Additional tests pin explicit captures/labels, lexical interpreter dispatch,
 exact work costs, cancellation at every observed transition, frame exhaustion
 and reuse, original-unit syntax diagnostics, source bounds, strict UTF validation,
-cross-width captured values and concurrent ownership. Managed validation runs
+cross-width captured values and concurrent ownership. Diagnostic tests pin native
+error positions separately from the established managed offending-token positions.
+Older admission tests now use COMMIT as the still-unsupported control sentinel. Managed validation runs
 through the six-host CI matrix; this development workspace has no .NET SDK.
 
 ## Remaining work

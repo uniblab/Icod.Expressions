@@ -253,8 +253,6 @@ public sealed class PcreWordAcceptTests {
 				("\\A(?(DEFINE)(?<x>a(*ACCEPT:N)b))(?&x)c|ac", "ac", 0, true, false),
 				("\\A(?(DEFINE)(?<x>a(?&x)?(*ACCEPT:N)b))(?&x)c|aac", "aac", 0, false, false),
 				("\\A(?(DEFINE)(?<x>a(?&x)?(*ACCEPT:N)b))(?&x)c|aac", "aac", 0, true, false),
-				("(*asr:a(*ACCEPT:N))X", "a", 0, false, false),
-				("(*asr:a(*ACCEPT:N))X", "a", 0, true, false),
 				("é(*ACCEPT:N)X|é", "é", 0, false, false),
 				("é(*ACCEPT:N)X|é", "é", 0, true, false),
 				("(*MARK:M)(a(*ACCEPT:N)*b)c", "abc", 0, false, false),
@@ -630,6 +628,24 @@ public sealed class PcreWordAcceptTests {
 				("(*ACCEPT:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa)x", "a", 0, true, false),
 				("(*ACCEPT:éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé)x", "a", 0, false, false),
 				("(*ACCEPT:éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé)x", "a", 0, true, false),
+				("(*MARK:M)a{0,2}(?:(?&x)c|ab)(?(DEFINE)(?<x>b(*ACCEPT:N)))", "aab", 0, false, false),
+				("(*MARK:M)a{0,2}(?:(?&x)c|ab)(?(DEFINE)(?<x>b(*ACCEPT:N)))", "aab", 0, true, false),
+				("(*MARK:N)a{0,2}(?:(?&x)c|ab)(?(DEFINE)(?<x>b(*ACCEPT:N)))", "aab", 0, false, false),
+				("(*MARK:N)a{0,2}(?:(?&x)c|ab)(?(DEFINE)(?<x>b(*ACCEPT:N)))", "aab", 0, true, false),
+				("(*MARK:M)a{0,2}?(?:(?&x)c|ab)(?(DEFINE)(?<x>b(*ACCEPT:N)))", "aab", 0, false, false),
+				("(*MARK:M)a{0,2}?(?:(?&x)c|ab)(?(DEFINE)(?<x>b(*ACCEPT:N)))", "aab", 0, true, false),
+				("(*MARK:N)a{0,2}?(?:(?&x)c|ab)(?(DEFINE)(?<x>b(*ACCEPT:N)))", "aab", 0, false, false),
+				("(*MARK:N)a{0,2}?(?:(?&x)c|ab)(?(DEFINE)(?<x>b(*ACCEPT:N)))", "aab", 0, true, false),
+				("(*MARK:M)a?(?:(?&x)c|ab)(?(DEFINE)(?<x>b(*ACCEPT:N)))", "aab", 0, false, false),
+				("(*MARK:M)a?(?:(?&x)c|ab)(?(DEFINE)(?<x>b(*ACCEPT:N)))", "aab", 0, true, false),
+				("(*MARK:N)a?(?:(?&x)c|ab)(?(DEFINE)(?<x>b(*ACCEPT:N)))", "aab", 0, false, false),
+				("(*MARK:N)a?(?:(?&x)c|ab)(?(DEFINE)(?<x>b(*ACCEPT:N)))", "aab", 0, true, false),
+				("(*MARK:M)a??(?:(?&x)c|ab)(?(DEFINE)(?<x>b(*ACCEPT:N)))", "aab", 0, false, false),
+				("(*MARK:M)a??(?:(?&x)c|ab)(?(DEFINE)(?<x>b(*ACCEPT:N)))", "aab", 0, true, false),
+				("(*MARK:N)a??(?:(?&x)c|ab)(?(DEFINE)(?<x>b(*ACCEPT:N)))", "aab", 0, false, false),
+				("(*MARK:N)a??(?:(?&x)c|ab)(?(DEFINE)(?<x>b(*ACCEPT:N)))", "aab", 0, true, false),
+				("(*MARK:M)(?:(*MARK:N)a{0,2}(?:(?&x)c|ab)|aab)(?(DEFINE)(?<x>b(*ACCEPT:N)))", "aab", 0, false, false),
+				("(*MARK:M)(?:(*MARK:N)a{0,2}(?:(?&x)c|ab)|aab)(?(DEFINE)(?<x>b(*ACCEPT:N)))", "aab", 0, true, false),
 			};
 			for ( var id = 0; id < cases.Length; id++ ) {
 				var (source, subject, start, utf, ucp) = cases[id];
@@ -742,15 +758,15 @@ public sealed class PcreWordAcceptTests {
 	}
 
 	[Theory]
-	[InlineData( "é😀(*ACCEPT:unterminated" )]
-	[InlineData( "é😀(*ACCEPT)**" )]
-	[InlineData( "é😀(*ACCEPT){65536}" )]
-	[InlineData( "é😀(*ACCEPT)\\k<missing>" )]
-	public void AcceptedTailsStillReceiveOriginalUnitSyntaxDiagnostics( string source ) {
+	[InlineData( "é😀(*ACCEPT:unterminated", 24, 24 )]
+	[InlineData( "é😀(*ACCEPT)**", 14, 13 )]
+	[InlineData( "é😀(*ACCEPT){65536}", 18, 12 )]
+	[InlineData( "é😀(*ACCEPT)\\k<missing>", 15, 12 )]
+	public void AcceptedTailsStillReceiveOriginalUnitSyntaxDiagnostics( string source, int nativeOffset, int managedOffset ) {
 		var native = PcreNative16Oracle.ExecuteSequence( Words( source ), [], true, 0 );
-		Assert.Equal( "E", native.Kind );
+		Assert.Equal( "E", native.Kind ); Assert.Equal( nativeOffset, (int)native.ErrorOffset );
 		var result = PcreWordSequenceCompiler.CompileSequence( source.AsMemory(), new() { Utf16 = true } );
-		Assert.Equal( PcreWordDiagnosticCode.InvalidSyntax, result.Diagnostic?.Code ); Assert.Equal( (int)native.ErrorOffset, result.Diagnostic!.CodeUnitOffset );
+		Assert.Equal( PcreWordDiagnosticCode.InvalidSyntax, result.Diagnostic?.Code ); Assert.Equal( managedOffset, result.Diagnostic!.CodeUnitOffset );
 	}
 
 	[Theory]
@@ -765,7 +781,7 @@ public sealed class PcreWordAcceptTests {
 
 	[Fact]
 	public void AcceptanceRetainsSourceAdmissionAndStrictValidation() {
-		foreach ( var source in new[] { "(*ACCEPT)\\X", "(*ACCEPT)(*PRUNE)", "(*ACCEPT)(?:a){65}", "(?<=(a(*ACCEPT)(?<=b*)))x" } ) {
+		foreach ( var source in new[] { "(*ACCEPT)\\X", "(*asr:a(*ACCEPT:N))X", "(*ACCEPT)(*PRUNE)", "(*ACCEPT)(?:a){65}", "(?<=(a(*ACCEPT)(?<=b*)))x" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax, PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}
 		var sourceAtLimit = String.Concat( "(*ACCEPT:", new string( 'é', 4086 ), ")" );

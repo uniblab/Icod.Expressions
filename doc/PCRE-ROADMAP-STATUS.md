@@ -6,7 +6,7 @@ The [ACCEPT record](PCRE-WORD-ACCEPT.md) adds immediate root, assertion and
 subroutine exits, direct quantifiers, synthetic capture closes and original-word
 labels. Lexical non-atomic ACCEPT retains native interpreter dispatch even in
 erased bodies; policy rejection and accepted-call label rollback follow their
-respective native paths. 621 fixtures add 317,952 capture/label comparisons.
+respective native paths. 637 fixtures add 326,144 capture/label comparisons.
 ACCEPT with selected-capture returns remains explicitly unqualified because the
 pinned interpreter reports INTERNAL. PRUNE, COMMIT, THEN and SKIP are next.
 

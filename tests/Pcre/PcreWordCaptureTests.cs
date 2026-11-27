@@ -324,11 +324,11 @@ public sealed class PcreWordCaptureTests {
 	}
 
 	[Theory]
-	[InlineData( "(a)(?1)(*ACCEPT)" )]
+	[InlineData( "(a)(?1)(*COMMIT)" )]
 	[InlineData( "(?<*(a)){65}b" )]
-	[InlineData( "(?>(*ACCEPT)a)" )]
+	[InlineData( "(?>(*COMMIT)a)" )]
 	[InlineData( "(a){65,}+" )]
-	[InlineData( "(a)(*ACCEPT)" )]
+	[InlineData( "(a)(*COMMIT)" )]
 	public void CaptureDependentExecutionStillRequiresExplicitAdmission( string source ) {
 		Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 			PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
