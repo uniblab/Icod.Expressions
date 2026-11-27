@@ -83,17 +83,16 @@ internal static class PcreWordSequenceCompiler {
 					foreach ( var path in item.Body.Branches ) {
 						foreach ( var node in path ) {
 							cancellationToken.ThrowIfCancellationRequested();
-							var nestedBody = node switch {
+							var nested = AssertionRepeat( node )?.Child ?? ( node is PcreByteRepeat repeat ? repeat.Child : node );
+							var nestedBody = nested switch {
 								PcreByteGroup direct => direct.Body,
 								PcreByteNoncapturingGroup direct => direct.Body,
 								PcreByteLookahead assertion => assertion.Body,
 								PcreByteLookbehind assertion => assertion.Body,
-								PcreByteRepeat { Child: PcreByteGroup repeated } => repeated.Body,
-								PcreByteRepeat { Child: PcreByteNoncapturingGroup repeated } => repeated.Body,
 								_ => null
 							};
 							if ( nestedBody is not null ) {
-								pending.Push( (nestedBody, item.Depth + 1, false, node as PcreByteLookbehind) );
+								pending.Push( (nestedBody, item.Depth + 1, false, nested as PcreByteLookbehind) );
 							}
 						}
 					}
@@ -119,13 +118,18 @@ internal static class PcreWordSequenceCompiler {
 		var maximumRepeats = 0;
 		var admittedPaths = 0;
 		for ( var branch = 0; branch < root.Branches.Count; branch++ ) {
+			foreach ( var node in root.Branches[branch] ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				if ( AssertionRepeat( node ) is { } repeat
+					&& ( repeat.Minimum is < 0 or > MaximumExactRepeat || repeat.Maximum < repeat.Minimum
+						|| repeat.Maximum > MaximumExactRepeat ) ) { return null; }
+			}
 			var nodes = root.Branches[branch].Select( node => node switch {
+				PcreByteNode repeated when AssertionRepeat( repeated ) is { } repeat =>
+					BuildAssertionRepeat( repeat, compiled, repeated is PcreByteAtomic ),
 				PcreByteGroup group => compiled[group.Body] with { CaptureNumber = group.Number },
 				PcreByteNoncapturingGroup group => compiled[group.Body],
-				PcreByteLookahead assertion => new PcreWordAssertion(
-					compiled[assertion.Body], assertion.IsPositive, NonAtomic: assertion.NonAtomic ),
-				PcreByteLookbehind assertion => new PcreWordAssertion(
-					compiled[assertion.Body], assertion.IsPositive, true, assertion.NonAtomic, assertion.Minimum >= 0 ),
+				PcreByteLookahead or PcreByteLookbehind => BuildAssertion( node, compiled ),
 				PcreByteRepeat { Child: PcreByteGroup group } repeat => new PcreWordGroupRepeat(
 					compiled[group.Body] with { CaptureNumber = group.Number }, repeat.Minimum, repeat.Maximum, repeat.Greedy,
 					repeat.Offset < 0 && repeat.Minimum == 1 ),
@@ -244,6 +248,35 @@ internal static class PcreWordSequenceCompiler {
 			}
 		}
 		return new( branches.ToArray(), admittedPaths, maximumNodes, maximumRepeats );
+	}
+
+	private static PcreByteRepeat? AssertionRepeat( PcreByteNode node ) => node switch {
+		PcreByteRepeat { Child: PcreByteLookahead or PcreByteLookbehind } repeat => repeat,
+		PcreByteAtomic { Child: PcreByteRepeat { Child: PcreByteLookahead or PcreByteLookbehind } repeat } => repeat,
+		_ => null
+	};
+
+	private static PcreWordAssertion BuildAssertion( PcreByteNode node,
+		Dictionary<PcreByteAlternatives, PcreWordGroup> compiled ) => node switch {
+		PcreByteLookahead assertion => new( compiled[assertion.Body], assertion.IsPositive, NonAtomic: assertion.NonAtomic ),
+		PcreByteLookbehind assertion => new( compiled[assertion.Body], assertion.IsPositive,
+			true, assertion.NonAtomic, assertion.Minimum >= 0 ),
+		_ => throw new InvalidOperationException( "Expected a word assertion." )
+	};
+
+	private static PcreByteNode BuildAssertionRepeat( PcreByteRepeat repeat,
+		Dictionary<PcreByteAlternatives, PcreWordGroup> compiled, bool possessive ) {
+		var assertion = BuildAssertion( repeat.Child, compiled );
+		var body = new PcreWordGroup( [[assertion]], assertion.Group.PathCount,
+			assertion.Group.ExpandedNodes + 2, assertion.Group.UnboundedRepeats );
+		// The parser normalizes unlimited direct assertions to minimum + one.
+		// Keep every finite iteration; captures can change without consuming input.
+		var repeated = new PcreWordGroupRepeat( body, repeat.Minimum, repeat.Maximum, repeat.Greedy, false );
+		if ( !possessive ) { return repeated; }
+		// This entire repeat is zero-width. An atomic positive guard can commit
+		// its choices without adding another executor or admitting consuming atomics.
+		return new PcreWordAssertion( new( [[repeated]], body.PathCount,
+			body.ExpandedNodes + 2, body.UnboundedRepeats ), true );
 	}
 
 	private static PcreByteNode[] BuildContinuation( PcreByteNode[][] paths, int[][] positions, int[] products,

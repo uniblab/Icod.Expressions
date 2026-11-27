@@ -1,5 +1,15 @@
 # PCRE roadmap status
 
+## Native 16-bit direct assertion repeats
+
+The [assertion-repeat record](PCRE-WORD-ASSERTION-REPEATS.md) adds greedy,
+lazy and possessive direct quantifiers to atomic and non-atomic lookarounds.
+Normalized finite iterations preserve capture growth at an unchanged subject
+position; optional exits and possessive commits reuse existing retry guards.
+243 fixtures add 124,416 full-vector PCRE2-16 policy comparisons. General
+atomic groups and consuming possessive repetition are next, then calls,
+conditions and verbs.
+
 ## Native 16-bit non-atomic assertions
 
 The [non-atomic assertion record](PCRE-WORD-NONATOMIC-ASSERTIONS.md) adds
@@ -332,9 +342,9 @@ Revision 4 of *Icod.Expressions Architecture Critique and Production Development
 code-unit widths. ASCII data can already be searched directly as bytes. The largest
 remaining implementation gap is general regex execution on .NET strings. The byte
 engine is substantially further along, with its compatibility and release review
-still open. This inventory was first recorded after #326 and now includes the lookbehind work in
-[PR #360](https://github.com/uniblab/Icod.Expressions/pull/360) and the
-non-atomic assertion increment above. Qualification evidence for earlier
+still open. This inventory was first recorded after #326 and now includes merged
+[PR #361](https://github.com/uniblab/Icod.Expressions/pull/361) and the
+direct assertion-repeat increment above. Qualification evidence for earlier
 milestones remains dated below.
 
 ### What callers can exercise today
@@ -348,8 +358,8 @@ The two families need separate compatibility evidence. [Public provider contract
 |---|---|---|
 | Raw 8-bit, including ASCII | The parser and bounded, iterative matcher operate on original bytes, including NUL and 0x80–0xFF. They implement ordered alternatives, repetition, captures with rollback, backreferences, lookarounds and control verbs. Results use byte offsets. | Freeze the accepted syntax, options, diagnostics and resource behavior against PCRE2-8. Qualify both ASCII-heavy searches and raw high-byte cases. |
 | UTF-8 | Forward and reverse scalar reads preserve byte offsets. The engine supports strict validation, tolerant matching across valid fragments, Unicode properties, UCP classes, case folding, word boundaries, graphemes and newline conventions within the tested profile. | Close strict and tolerant error/start-offset coverage, remaining optimizer differences and the byte performance baseline. Decide the UTF code-unit escape and callout contracts. |
-| Raw 16-bit | Literal and bounded sequence entry points read original units, including isolated surrogates. The shared parser admits native non-ASCII spelling, dot, bounded scalar classes, absolute and LF/CR/NUL line assertions, word boundaries, newline sequences with independent BSR selectors, ordered paths, nested and repeated groups, finite atom counts and up to 64 retained unbounded repeats, using explicit retry, return and iteration frames. Numbered/named captures have journaled rollback and immutable results; numbered/relative/named backreferences support repetition. Atomic positive/negative lookahead and fixed/bounded-variable lookbehind preserve captures and original positions. Non-atomic positive assertions can resume retained body choices. Caseless and UCP predicates use pinned Unicode tables. | Add directly quantified assertions, calls, conditions and verbs; qualify the broader grammar and package consumer. |
-| Strict UTF-16 | The same two entry points read original `char` memory directly and match supplementary scalars. The admitted sequence grammar includes classes, caseless predicates, word boundaries, LF/CR/NUL line assertions, atomic newline sequences with BSR selectors, ordered paths, nested and repeated groups, finite atom counts and explicit retry/return/iteration frames with empty-progress guards. Numbered/named captures use journaled rollback and immutable results; names read original UTF-16. Backreferences compare captured scalars with reference-local casing and support repetition. Atomic and non-atomic lookahead and fixed/bounded-variable lookbehind share scalar-aware bodies and the capture journal, including native endpoint visibility. Starts, diagnostics and all capture spans use 16-bit code units. | Add graphemes, CRLF/ANYCRLF/ANY newline search behavior, directly quantified assertions, calls, conditions and verbs. Freeze invalid-surrogate behavior, including the disposition of tolerant mode. |
+| Raw 16-bit | Literal and bounded sequence entry points read original units, including isolated surrogates. The shared parser admits native non-ASCII spelling, dot, bounded scalar classes, absolute and LF/CR/NUL line assertions, word boundaries, newline sequences with independent BSR selectors, ordered paths, nested and repeated groups, finite atom counts and up to 64 retained unbounded repeats, using explicit retry, return and iteration frames. Numbered/named captures have journaled rollback and immutable results; numbered/relative/named backreferences support repetition. Atomic positive/negative lookahead and fixed/bounded-variable lookbehind preserve captures and original positions. Non-atomic positive assertions can resume retained body choices. Direct greedy/lazy/possessive assertion repeats preserve finite count and capture semantics. Caseless and UCP predicates use pinned Unicode tables. | Add general atomic groups, consuming possessive repetition, calls, conditions and verbs; qualify the broader grammar and package consumer. |
+| Strict UTF-16 | The same two entry points read original `char` memory directly and match supplementary scalars. The admitted sequence grammar includes classes, caseless predicates, word boundaries, LF/CR/NUL line assertions, atomic newline sequences with BSR selectors, ordered paths, nested and repeated groups, finite atom counts and explicit retry/return/iteration frames with empty-progress guards. Numbered/named captures use journaled rollback and immutable results; names read original UTF-16. Backreferences compare captured scalars with reference-local casing and support repetition. Atomic and non-atomic lookahead and fixed/bounded-variable lookbehind share scalar-aware bodies and the capture journal, including native endpoint visibility. Direct greedy/lazy/possessive assertion repeats retain finite count and capture behavior. Starts, diagnostics and all capture spans use 16-bit code units. | Add graphemes, CRLF/ANYCRLF/ANY newline search behavior, general atomic groups, consuming possessive repetition, calls, conditions and verbs. Freeze invalid-surrogate behavior, including the disposition of tolerant mode. |
 
 Three choices matter for interpreting these rows. First, raw bytes and UTF-8 both
 represent ASCII directly, while UCP and its ASCII restrictions separately control
@@ -398,8 +408,9 @@ and call targets expand.
 ### Recommended delivery order and completion criteria
 
 1. **Broaden word execution (P10/P11).** Extend the capture/reference-aware
-   nested branch/repeat executor from resumable lookarounds to directly
-   quantified assertions, then calls, conditions and verbs. Verify
+   nested branch/repeat executor from directly quantified lookarounds to
+   general atomic groups and consuming possessive repetition, then calls,
+   conditions and verbs. Verify
    empty retries, CRLF, unset captures and original code-unit coordinates at
    each step. Expand the admitted newline and grapheme grammar and preserve
    cancellation and budget exhaustion across each new path.
