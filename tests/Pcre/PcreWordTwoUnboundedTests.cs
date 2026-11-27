@@ -113,7 +113,7 @@ public sealed class PcreWordTwoUnboundedTests {
 	public void RepeatMinimumBoundsAndUnsupportedWrappersRemainOutsideAdmission() {
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( "a{64,}bc{64,}d".AsMemory() ).IsSuccess );
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( "x?a*b*c".AsMemory() ).IsSuccess );
-		foreach ( var source in new[] { "a{65,}b*c", "a*b{65,}c", "(?>(*ACCEPT)a*)b*c", "a{65,}+b*c" } ) {
+		foreach ( var source in new[] { "a{65,}b*c", "a*b{65,}c", "(?>(*COMMIT)a*)b*c", "a{65,}+b*c" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

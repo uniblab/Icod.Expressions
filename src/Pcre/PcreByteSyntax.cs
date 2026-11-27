@@ -17,7 +17,7 @@ internal sealed record PcreByteGrapheme : PcreByteNode;
 
 internal sealed record PcreByteFailure( ReadOnlyMemory<byte> Name = default, string? WordName = null ) : PcreByteNode;
 
-internal sealed record PcreByteAccept( ReadOnlyMemory<byte> Name = default ) : PcreByteNode;
+internal sealed record PcreByteAccept( ReadOnlyMemory<byte> Name = default, string? WordName = null ) : PcreByteNode;
 
 internal sealed record PcreBytePrune( ReadOnlyMemory<byte> Name = default ) : PcreByteNode;
 

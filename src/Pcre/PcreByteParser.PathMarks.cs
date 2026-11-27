@@ -26,7 +26,10 @@ internal sealed partial class PcreByteParser {
 	}
 
 	private PcreByteNode? TryParseNamedImmediateVerb() {
-		if ( TryConsumeGroupAlias( "*ACCEPT:"u8 ) ) { return new PcreByteAccept( ReadControlVerbName( "ACCEPT", requireName: false ) ); }
+		if ( TryConsumeGroupAlias( "*ACCEPT:"u8 ) ) {
+			var name = ReadControlVerbName( "ACCEPT", requireName: false, out var wordName );
+			return new PcreByteAccept( name, wordName );
+		}
 		if ( TryConsumeGroupAlias( "*FAIL:"u8 ) ) { return ReadNamedFailure( "FAIL" ); }
 		if ( TryConsumeGroupAlias( "*F:"u8 ) ) { return ReadNamedFailure( "F" ); }
 		return null; // Preserve the existing malformed-group byte for bare unfinished headers.
