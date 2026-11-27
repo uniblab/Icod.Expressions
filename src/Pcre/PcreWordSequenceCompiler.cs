@@ -12,7 +12,9 @@ internal sealed record PcreWordGroupRepeat(
 	internal PcreByteNode[] Body { get; } = [Group];
 }
 
-internal sealed record PcreWordAssertion( PcreWordGroup Group, bool IsPositive, bool IsBehind = false ) : PcreByteNode {
+internal sealed record PcreWordAssertion(
+	PcreWordGroup Group, bool IsPositive, bool IsBehind = false, bool NonAtomic = false, bool VariableBehind = false
+) : PcreByteNode {
 	internal PcreByteNode[] Body { get; } = [Group];
 }
 
@@ -84,8 +86,8 @@ internal static class PcreWordSequenceCompiler {
 							var nestedBody = node switch {
 								PcreByteGroup direct => direct.Body,
 								PcreByteNoncapturingGroup direct => direct.Body,
-								PcreByteLookahead { NonAtomic: false } assertion => assertion.Body,
-								PcreByteLookbehind { NonAtomic: false } assertion => assertion.Body,
+								PcreByteLookahead assertion => assertion.Body,
+								PcreByteLookbehind assertion => assertion.Body,
 								PcreByteRepeat { Child: PcreByteGroup repeated } => repeated.Body,
 								PcreByteRepeat { Child: PcreByteNoncapturingGroup repeated } => repeated.Body,
 								_ => null
@@ -120,8 +122,10 @@ internal static class PcreWordSequenceCompiler {
 			var nodes = root.Branches[branch].Select( node => node switch {
 				PcreByteGroup group => compiled[group.Body] with { CaptureNumber = group.Number },
 				PcreByteNoncapturingGroup group => compiled[group.Body],
-				PcreByteLookahead { NonAtomic: false } assertion => new PcreWordAssertion( compiled[assertion.Body], assertion.IsPositive ),
-				PcreByteLookbehind { NonAtomic: false } assertion => new PcreWordAssertion( compiled[assertion.Body], assertion.IsPositive, true ),
+				PcreByteLookahead assertion => new PcreWordAssertion(
+					compiled[assertion.Body], assertion.IsPositive, NonAtomic: assertion.NonAtomic ),
+				PcreByteLookbehind assertion => new PcreWordAssertion(
+					compiled[assertion.Body], assertion.IsPositive, true, assertion.NonAtomic, assertion.Minimum >= 0 ),
 				PcreByteRepeat { Child: PcreByteGroup group } repeat => new PcreWordGroupRepeat(
 					compiled[group.Body] with { CaptureNumber = group.Number }, repeat.Minimum, repeat.Maximum, repeat.Greedy,
 					repeat.Offset < 0 && repeat.Minimum == 1 ),
