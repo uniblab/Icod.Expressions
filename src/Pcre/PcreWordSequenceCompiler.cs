@@ -7,7 +7,7 @@ internal sealed record PcreWordGroup(
 ) : PcreByteNode;
 
 internal sealed record PcreWordGroupRepeat(
-	PcreWordGroup Group, int Minimum, int Maximum, bool Greedy, bool CheckMinimumProgress
+	PcreWordGroup Group, int Minimum, int Maximum, bool Greedy, bool CheckFinalRequiredProgress
 ) : PcreByteNode {
 	internal PcreByteNode[] Body { get; } = [Group];
 }
@@ -15,6 +15,10 @@ internal sealed record PcreWordGroupRepeat(
 internal sealed record PcreWordAssertion(
 	PcreWordGroup Group, bool IsPositive, bool IsBehind = false, bool NonAtomic = false, bool VariableBehind = false
 ) : PcreByteNode {
+	internal PcreByteNode[] Body { get; } = [Group];
+}
+
+internal sealed record PcreWordAtomic( PcreWordGroup Group ) : PcreByteNode {
 	internal PcreByteNode[] Body { get; } = [Group];
 }
 
@@ -83,7 +87,10 @@ internal static class PcreWordSequenceCompiler {
 					foreach ( var path in item.Body.Branches ) {
 						foreach ( var node in path ) {
 							cancellationToken.ThrowIfCancellationRequested();
-							var nested = AssertionRepeat( node )?.Child ?? ( node is PcreByteRepeat repeat ? repeat.Child : node );
+							var nested = node;
+							while ( nested is PcreByteRepeat or PcreByteAtomic ) {
+								nested = nested is PcreByteRepeat repeat ? repeat.Child : ( (PcreByteAtomic)nested ).Child;
+							}
 							var nestedBody = nested switch {
 								PcreByteGroup direct => direct.Body,
 								PcreByteNoncapturingGroup direct => direct.Body,
@@ -124,25 +131,44 @@ internal static class PcreWordSequenceCompiler {
 					&& ( repeat.Minimum is < 0 or > MaximumExactRepeat || repeat.Maximum < repeat.Minimum
 						|| repeat.Maximum > MaximumExactRepeat ) ) { return null; }
 			}
-			var nodes = root.Branches[branch].Select( node => node switch {
-				PcreByteNode repeated when AssertionRepeat( repeated ) is { } repeat =>
-					BuildAssertionRepeat( repeat, compiled, repeated is PcreByteAtomic ),
-				PcreByteGroup group => compiled[group.Body] with { CaptureNumber = group.Number },
-				PcreByteNoncapturingGroup group => compiled[group.Body],
-				PcreByteLookahead or PcreByteLookbehind => BuildAssertion( node, compiled ),
-				PcreByteRepeat { Child: PcreByteGroup group } repeat => new PcreWordGroupRepeat(
-					compiled[group.Body] with { CaptureNumber = group.Number }, repeat.Minimum, repeat.Maximum, repeat.Greedy,
-					repeat.Offset < 0 && repeat.Minimum == 1 ),
-				PcreByteRepeat { Child: PcreByteNoncapturingGroup group } repeat => new PcreWordGroupRepeat(
-					compiled[group.Body], repeat.Minimum, repeat.Maximum, repeat.Greedy,
-					repeat.Offset < 0 && repeat.Minimum == 1 ),
-				// References consume whole captured strings, possibly empty. Reuse the
-				// variable-width group loop instead of scalar-atom expansion/rewinding.
-				PcreByteRepeat { Child: PcreByteBackreference reference } repeat => new PcreWordGroupRepeat(
-					new( [[reference]], 1, 1, 0 ), repeat.Minimum, repeat.Maximum, repeat.Greedy,
-					repeat.Offset < 0 && repeat.Minimum == 1 ),
-				_ => node
-			} ).ToArray();
+			var nodes = new PcreByteNode[root.Branches[branch].Count];
+			for ( var original = 0; original < nodes.Length; original++ ) {
+				var node = root.Branches[branch][original];
+				cancellationToken.ThrowIfCancellationRequested();
+				if ( node is PcreByteAtomic atomic && AssertionRepeat( atomic ) is null ) {
+					// Source groups are already compiled in postorder. A possessive
+					// repeat needs one synthetic branch through the ordinary lowering;
+					// this does not recursively walk nested source group bodies.
+					var atomicBody = atomic.Child is PcreByteNoncapturingGroup group ? compiled[group.Body]
+						: atomic.Child is PcreByteRepeat ? BuildBody( new( [new[] { atomic.Child }] ),
+							compiled, ref validationLookbehind, cancellationToken ) : null;
+					if ( atomicBody is null ) { return null; }
+					nodes[original] = new PcreWordAtomic( atomicBody );
+					continue;
+				}
+				nodes[original] = node switch {
+					PcreByteNode repeated when AssertionRepeat( repeated ) is { } repeat =>
+						BuildAssertionRepeat( repeat, compiled, repeated is PcreByteAtomic ),
+					PcreByteGroup group => compiled[group.Body] with { CaptureNumber = group.Number },
+					PcreByteNoncapturingGroup group => compiled[group.Body],
+					PcreByteLookahead or PcreByteLookbehind => BuildAssertion( node, compiled ),
+					PcreByteRepeat { Child: PcreByteGroup group } repeat => new PcreWordGroupRepeat(
+						compiled[group.Body] with { CaptureNumber = group.Number }, repeat.Minimum, repeat.Maximum, repeat.Greedy,
+						true ),
+					PcreByteRepeat { Child: PcreByteNoncapturingGroup group } repeat => new PcreWordGroupRepeat(
+						compiled[group.Body], repeat.Minimum, repeat.Maximum, repeat.Greedy,
+						true ),
+					PcreByteRepeat { Child: PcreByteAtomic { Child: PcreByteNoncapturingGroup group } } repeat =>
+						new PcreWordGroupRepeat( AtomicIteration( compiled[group.Body] ),
+							repeat.Minimum, repeat.Maximum, repeat.Greedy, true ),
+					// References consume whole captured strings, possibly empty. Reuse the
+					// variable-width group loop instead of scalar-atom expansion/rewinding.
+					PcreByteRepeat { Child: PcreByteBackreference reference } repeat => new PcreWordGroupRepeat(
+						new( [[reference]], 1, 1, 0 ), repeat.Minimum, repeat.Maximum, repeat.Greedy,
+						repeat.Offset < 0 && repeat.Minimum == 1 ),
+					_ => node
+				};
+			}
 			if ( behind is not null ) {
 				if ( behind.BranchLengths.Length != root.Branches.Count ) { return null; }
 				var maximum = behind.BranchLengths.Span[branch];
@@ -156,6 +182,7 @@ internal static class PcreWordSequenceCompiler {
 				cancellationToken.ThrowIfCancellationRequested();
 				var group = node as PcreWordGroup;
 				if ( node is PcreWordAssertion assertion ) { group = assertion.Group; }
+				if ( node is PcreWordAtomic atomic ) { group = atomic.Group; }
 				if ( node is PcreWordGroupRepeat repeat ) {
 					if ( repeat.Minimum is < 0 or > MaximumExactRepeat || repeat.Maximum < repeat.Minimum
 						|| repeat.Maximum != int.MaxValue && repeat.Maximum > MaximumExactRepeat ) { return null; }
@@ -172,7 +199,7 @@ internal static class PcreWordSequenceCompiler {
 			maximumRepeats = Math.Max( maximumRepeats, unboundedCount + nestedRepeats );
 			// A group also separates finite choices: its alternatives must retry before
 			// a preceding choice, and a following choice must retry before the group.
-			var boundaryCount = unboundedCount + nodes.Count( node => node is PcreWordGroup or PcreWordGroupRepeat or PcreWordAssertion or PcreWordReverse );
+			var boundaryCount = unboundedCount + nodes.Count( node => node is PcreWordGroup or PcreWordGroupRepeat or PcreWordAssertion or PcreWordAtomic or PcreWordReverse );
 			var variables = new List<(int Index, PcreByteRepeat Repeat)>[boundaryCount + 1];
 			var products = new int[variables.Length];
 			for ( var segment = 0; segment < variables.Length; segment++ ) {
@@ -185,7 +212,7 @@ internal static class PcreWordSequenceCompiler {
 				if ( nodes[index] is PcreByteWordBoundary or PcreByteAnchor { IsStart: true, IsLineBoundary: false } ) {
 					validationLookbehind = Math.Max( validationLookbehind, 1 );
 				}
-				if ( nodes[index] is PcreWordGroup or PcreWordGroupRepeat or PcreWordAssertion or PcreWordReverse ) { boundaries.Add( nodes[index] ); continue; }
+				if ( nodes[index] is PcreWordGroup or PcreWordGroupRepeat or PcreWordAssertion or PcreWordAtomic or PcreWordReverse ) { boundaries.Add( nodes[index] ); continue; }
 				if ( nodes[index] is not PcreByteRepeat repeat || repeat.Minimum == repeat.Maximum ) { continue; }
 				if ( repeat.Maximum == int.MaxValue ) {
 					if ( repeat.Minimum is < 0 or > MaximumExactRepeat
@@ -256,6 +283,9 @@ internal static class PcreWordSequenceCompiler {
 		_ => null
 	};
 
+	private static PcreWordGroup AtomicIteration( PcreWordGroup body ) =>
+		new( [[new PcreWordAtomic( body )]], body.PathCount, body.ExpandedNodes + 2, body.UnboundedRepeats );
+
 	private static PcreWordAssertion BuildAssertion( PcreByteNode node,
 		Dictionary<PcreByteAlternatives, PcreWordGroup> compiled ) => node switch {
 		PcreByteLookahead assertion => new( compiled[assertion.Body], assertion.IsPositive, NonAtomic: assertion.NonAtomic ),
@@ -274,7 +304,7 @@ internal static class PcreWordSequenceCompiler {
 		var repeated = new PcreWordGroupRepeat( body, repeat.Minimum, repeat.Maximum, repeat.Greedy, false );
 		if ( !possessive ) { return repeated; }
 		// This entire repeat is zero-width. An atomic positive guard can commit
-		// its choices without adding another executor or admitting consuming atomics.
+		// its choices while preserving the established direct-assertion work path.
 		return new PcreWordAssertion( new( [[repeated]], body.PathCount,
 			body.ExpandedNodes + 2, body.UnboundedRepeats ), true );
 	}
@@ -349,6 +379,7 @@ internal static class PcreWordSequenceCompiler {
 					PcreWordGroup group => group.ExpandedNodes + 1,
 					PcreWordGroupRepeat groupRepeat => groupRepeat.Group.ExpandedNodes + 2,
 					PcreWordAssertion assertion => assertion.Group.ExpandedNodes + 2,
+					PcreWordAtomic atomic => atomic.Group.ExpandedNodes + 2,
 					_ => 1
 				};
 				if ( weight > MaximumExpandedNodes - expandedNodes ) { expanded = []; return false; }
@@ -363,7 +394,7 @@ internal static class PcreWordSequenceCompiler {
 	private static bool IsSupportedNode( PcreByteNode node ) => IsSupportedAtom( node )
 		|| node is PcreByteAnchor or PcreByteLineAnchor or PcreByteEndBeforeFinalLf
 			or PcreByteSearchStart or PcreByteWordBoundary or PcreByteBackreference
-			or PcreWordGroup or PcreWordGroupRepeat or PcreWordAssertion or PcreWordReverse;
+			or PcreWordGroup or PcreWordGroupRepeat or PcreWordAssertion or PcreWordAtomic or PcreWordReverse;
 
 	private static bool IsSupportedAtom( PcreByteNode node ) => node is PcreByteLiteral or PcreByteAny or PcreByteNewlineSequence
 		|| node is PcreByteScalarClass property && IsWordClassPredicate( property.Kind )

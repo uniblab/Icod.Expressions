@@ -185,36 +185,37 @@ internal sealed class PcreCompiledWordPattern {
 						nodes = parent.Nodes;
 						index = parent.Index;
 						continuation = parent.Parent;
-						if ( parent.AssertionBoundary >= 0 ) { visibleEnd = parent.SavedEnd; }
+						if ( parent.GuardBoundary >= 0 ) { visibleEnd = parent.SavedEnd; }
 						if ( parent.AssertionEnd >= 0 && position != parent.AssertionEnd ) {
 							// A shorter/longer body must retry before the assertion can commit.
-						} else if ( parent.AssertionBoundary >= 0 ) {
+						} else if ( parent.GuardBoundary >= 0 ) {
 							if ( parent.NonAtomicAssertion ) {
 								// Keep the body's choices and guard so a failing suffix can
 								// re-enter it with the original capture checkpoint and return.
 								position = parent.Start;
 								continue;
 							}
-							// Atomic success discards only this assertion's internal choices.
-							var assertionFrames = frames!;
-							while ( assertionFrames.Count > parent.AssertionBoundary + 1 ) {
+							// Commit only choices made inside this assertion or atomic group.
+							var guardFrames = frames!;
+							while ( guardFrames.Count > parent.GuardBoundary + 1 ) {
 								if ( !Step() ) { return -1; }
-								assertionFrames.Pop();
+								guardFrames.Pop();
 							}
-							var guard = assertionFrames.Pop();
-							position = guard.Position;
-							if ( guard.Kind == FrameKind.PositiveAssertion ) {
-								if ( assertionFrames.Count == 0 ) { changes?.Clear(); }
+							var guard = guardFrames.Pop();
+							if ( guard.Kind != FrameKind.AtomicGroup ) { position = guard.Position; }
+							if ( guard.Kind is FrameKind.PositiveAssertion or FrameKind.AtomicGroup ) {
+								if ( guardFrames.Count == 0 ) { changes?.Clear(); }
 								continue; // Keep successful captures, even beyond the outer match.
 							}
 							if ( !RestoreCaptures( guard.ChangeCount ) ) { return -1; }
-							if ( assertionFrames.Count == 0 ) { changes?.Clear(); }
+							if ( guardFrames.Count == 0 ) { changes?.Clear(); }
 							// A matching negative body fails into the enclosing retry stack.
 						} else if ( parent.Repeat is { } completedRepeat ) {
-							// Required counted copies may be empty. The optional unbounded
-							// loop stops on no progress; shorthand '+' also guards its first copy.
+							// Earlier required copies may be empty. Native group repeats
+							// check the final required copy before entering the optional loop.
 							if ( completedRepeat.Maximum == int.MaxValue && position == parent.Start
-								&& ( parent.Count >= completedRepeat.Minimum || completedRepeat.CheckMinimumProgress ) ) {
+								&& ( parent.Count >= completedRepeat.Minimum || completedRepeat.CheckFinalRequiredProgress
+									&& parent.Count + 1 >= completedRepeat.Minimum ) ) {
 								index++;
 							} else if ( !ContinueGroupRepeat( completedRepeat, parent.Count + 1 ) ) { return -2; }
 							continue;
@@ -234,11 +235,19 @@ internal sealed class PcreCompiledWordPattern {
 					var boundary = frames?.Count ?? 0;
 					if ( !PushFrame( new( nodes, index + 1, position, position, 0, continuation,
 						assertion.IsPositive ? FrameKind.PositiveAssertion : FrameKind.NegativeAssertion ) ) ) { return -2; }
-					continuation = new( nodes, index + 1, continuation, Start: position, AssertionBoundary: boundary,
+					continuation = new( nodes, index + 1, continuation, Start: position, GuardBoundary: boundary,
 						AssertionEnd: assertion.IsBehind ? position : -1, NonAtomicAssertion: assertion.NonAtomic, SavedEnd: visibleEnd );
 					// Native JIT caps nested reads at a variable lookbehind's endpoint.
 					if ( assertion.VariableBehind && !policy.Anchored && !policy.EndAnchored ) { visibleEnd = position; }
 					nodes = assertion.Body;
+					index = 0;
+					continue;
+				} else if ( nodes[index] is PcreWordAtomic atomic ) {
+					if ( !Step() ) { return -1; } // Atomic entry and capture rollback guard.
+					var boundary = frames?.Count ?? 0;
+					if ( !PushFrame( new( nodes, index + 1, position, position, 0, continuation, FrameKind.AtomicGroup ) ) ) { return -2; }
+					continuation = new( nodes, index + 1, continuation, GuardBoundary: boundary, SavedEnd: visibleEnd );
+					nodes = atomic.Body;
 					index = 0;
 					continue;
 				} else if ( nodes[index] is PcreWordSuffixChoices firstChoices ) {
@@ -330,9 +339,9 @@ internal sealed class PcreCompiledWordPattern {
 					position = frame.Position;
 					continuation = frame.Continuation;
 					visibleEnd = frame.VisibleEnd;
-					if ( frame.Kind is FrameKind.PositiveAssertion or FrameKind.NegativeAssertion ) {
-						if ( !Step() ) { return -1; } // Resolve an exhausted assertion body.
-						if ( frame.Kind == FrameKind.PositiveAssertion ) { continue; }
+					if ( frame.Kind is FrameKind.PositiveAssertion or FrameKind.NegativeAssertion or FrameKind.AtomicGroup ) {
+						if ( !Step() ) { return -1; } // Resolve an exhausted guarded body.
+						if ( frame.Kind != FrameKind.NegativeAssertion ) { continue; }
 					} else if ( frame.Kind == FrameKind.ReverseRetry ) {
 						if ( !Step() ) { return -1; } // Try the next shorter rewind after body choices.
 						if ( !PcreUtf16.TryRead( source, position, options.Utf16, out _, out var advance ) ) {
@@ -414,12 +423,12 @@ internal sealed class PcreCompiledWordPattern {
 		FrameKind Kind = FrameKind.Retry, int ChangeCount = 0, int VisibleEnd = 0
 	);
 
-	private enum FrameKind { Retry, RepeatExit, RepeatGrow, PositiveAssertion, NegativeAssertion, ReverseRetry }
+	private enum FrameKind { Retry, RepeatExit, RepeatGrow, PositiveAssertion, NegativeAssertion, AtomicGroup, ReverseRetry }
 	private readonly record struct CaptureChange( int Number, PcreWordCapture? Previous );
 
 	private sealed record Continuation( PcreByteNode[] Nodes, int Index, Continuation? Parent,
 		PcreWordGroupRepeat? Repeat = null, int Count = 0, int Start = 0, int CaptureNumber = 0,
-		int AssertionBoundary = -1, int AssertionEnd = -1, bool NonAtomicAssertion = false, int SavedEnd = -1 );
+		int GuardBoundary = -1, int AssertionEnd = -1, bool NonAtomicAssertion = false, int SavedEnd = -1 );
 
 	private bool TryConsumeAtom( PcreByteNode node, ReadOnlySpan<char> input, int position, out int width ) {
 		if ( !PcreUtf16.TryRead( input, position, options.Utf16, out var value, out width ) ) { return false; }

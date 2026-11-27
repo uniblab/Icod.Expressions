@@ -2814,10 +2814,10 @@ internal sealed class PcreByteProgramCompiler {
 		ScheduleNode( repeat.Child );
 	}
 
-	private void CompileUnboundedRepeat( PcreByteRepeat repeat, int initialProgress = -1 ) {
+	private void CompileUnboundedRepeat( PcreByteRepeat repeat, int initialProgress = -1, int mark = -1 ) {
 		var loop = Emit( PcreByteOpcode.Split );
 		var bodyStart = instructions.Count;
-		var mark = AllocateMark();
+		if ( mark < 0 ) { mark = AllocateMark(); }
 		Emit( PcreByteOpcode.Mark, mark );
 		compileWork.Push( () => {
 			var loopProgress = Emit( PcreByteOpcode.Progress, mark );
@@ -2835,6 +2835,18 @@ internal sealed class PcreByteProgramCompiler {
 
 	private void CompileCountedRepeat( PcreByteRepeat repeat, int index ) {
 		if ( index < repeat.Minimum ) {
+			if ( index == repeat.Minimum - 1 && repeat.Maximum == int.MaxValue
+				&& repeat.Child is PcreByteGroup or PcreByteNoncapturingGroup
+					or PcreByteAtomic { Child: PcreByteNoncapturingGroup } ) {
+				// Native places the repeating ket on the final required group copy.
+				// Stop there when it is empty, retaining earlier required copies.
+				var initialMark = AllocateMark();
+				Emit( PcreByteOpcode.Mark, initialMark );
+				// The loop can reuse this journaled mark after the initial check.
+				compileWork.Push( () => CompileUnboundedRepeat( repeat, Emit( PcreByteOpcode.Progress, initialMark ), initialMark ) );
+				ScheduleNode( repeat.Child );
+				return;
+			}
 			compileWork.Push( () => CompileCountedRepeat( repeat, index + 1 ) );
 			ScheduleNode( repeat.Child );
 			return;

@@ -133,7 +133,7 @@ public sealed class PcreWordNewlineSequenceTests {
 	[InlineData( @"(*ANYCRLF)\R" )]
 	[InlineData( @"(*ANY)\R" )]
 	[InlineData( @"\X" )]
-	[InlineData( @"\R++" )]
+	[InlineData( @"\R{65,}+" )]
 	public void OtherNewlineProfilesAndExecutionFormsRemainExplicit( string source ) {
 		Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 			PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );

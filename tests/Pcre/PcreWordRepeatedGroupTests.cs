@@ -141,7 +141,7 @@ public sealed class PcreWordRepeatedGroupTests {
 	[InlineData( "(?:)*", 6 )]
 	[InlineData( "(?:)*?", 3 )]
 	[InlineData( "(?:)+", 6 )]
-	[InlineData( "(?:){1,}", 9 )]
+	[InlineData( "(?:){1,}", 6 )]
 	[InlineData( "(?:){2}", 9 )]
 	[InlineData( "(?:){0}", 3 )]
 	[InlineData( "(?:){0,3}", 12 )]
@@ -206,7 +206,7 @@ public sealed class PcreWordRepeatedGroupTests {
 			"(?:a?b?c?d?e?f?g?)*", "(?:a){65}", "(?:a){65,}", "(?:a){0,65}", NestedRepeat( "a", 65 ),
 			String.Concat( "(?:", Repeated( "a*", 64 ), ")*" ),
 			String.Concat( "(?:", Repeated( "a{64}", 64 ), ")*" ),
-			"(?:a)*+", "(?>a)*", "(?=a){65}", "(?:a(*ACCEPT))*" } ) {
+			"(?:a){65,}+", "(?>(*ACCEPT)a)*", "(?=a){65}", "(?:a(*ACCEPT))*" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

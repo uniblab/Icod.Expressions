@@ -246,7 +246,7 @@ public sealed class PcreWordBackreferenceTests {
 			Assert.True( PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).IsSuccess );
 		}
 		foreach ( var source in new[] { @"(a)\1{0,65}", @"(a)\1{65,}", String.Concat( "(a)", String.Concat( Enumerable.Repeat( @"\1*", 65 ) ) ),
-			@"(a)\1*+", @"(a)\g<1>", @"(?<x>a)\g'x'", @"(?*(a)){65}\1" } ) {
+			@"(a)\1{65,}+", @"(a)\g<1>", @"(?<x>a)\g'x'", @"(?*(a)){65}\1" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

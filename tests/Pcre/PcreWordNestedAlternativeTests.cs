@@ -182,7 +182,7 @@ public sealed class PcreWordNestedAlternativeTests {
 		foreach ( var source in new[] { Nested( "a", 65 ), String.Concat( choices, "(?:a|b)" ),
 			String.Concat( choices, "|x" ), String.Concat( choices, "a?" ), String.Concat( repeats, "a*" ),
 			String.Concat( "a", expanded ),
-			"(?>a|b)", "(?*a){65}b", "(?<*a){65}b", "a*+", "(?:a(*ACCEPT)|b)" } ) {
+			"(?>(*ACCEPT)a|b)", "(?*a){65}b", "(?<*a){65}b", "a{65,}+", "(?:a(*ACCEPT)|b)" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

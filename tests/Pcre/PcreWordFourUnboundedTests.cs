@@ -102,7 +102,7 @@ public sealed class PcreWordFourUnboundedTests {
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( "q?a*b?c*d?e*f?g*h?".AsMemory() ).IsSuccess );
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( "x?a{64,}bc{64,}de{64,}fg{64,}h".AsMemory() ).IsSuccess );
 		foreach ( var source in new[] { "a*b{0,64}c*d*e*", "q{0,3}a*b?c*d?e*f?g*h?|x",
-			"a{65,}b*c*d*", "(?>a*)b*c*d*", "a*+b*c*d*" } ) {
+			"a{65,}b*c*d*", "(?>(*ACCEPT)a*)b*c*d*", "a{65,}+b*c*d*" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}
