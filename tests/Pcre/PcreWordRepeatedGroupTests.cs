@@ -206,7 +206,7 @@ public sealed class PcreWordRepeatedGroupTests {
 			"(?:a?b?c?d?e?f?g?)*", "(?:a){65}", "(?:a){65,}", "(?:a){0,65}", NestedRepeat( "a", 65 ),
 			String.Concat( "(?:", Repeated( "a*", 64 ), ")*" ),
 			String.Concat( "(?:", Repeated( "a{64}", 64 ), ")*" ),
-			"(?:a)*+", "(?>a)*", "(?=a)*", "(?:a(*ACCEPT))*" } ) {
+			"(?:a)*+", "(?>a)*", "(?=a){65}", "(?:a(*ACCEPT))*" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}
