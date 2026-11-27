@@ -306,7 +306,8 @@ internal sealed class PcreCompiledWordPattern {
 						assertion.IsPositive ? FrameKind.PositiveAssertion : FrameKind.NegativeAssertion ) ) ) { return -2; }
 					continuation = new( nodes, index + 1, continuation, Start: position, GuardBoundary: boundary,
 						AssertionEnd: assertion.IsBehind ? position : -1, NonAtomicAssertion: assertion.NonAtomic,
-						SavedEnd: visibleEnd, CheckAssertionEnd: false );
+						SavedEnd: visibleEnd, CheckAssertionEnd: assertion.IsBehind && assertion.NonAtomic
+							&& !policy.Anchored && !policy.EndAnchored );
 					// Native JIT caps nested reads at a variable lookbehind's endpoint.
 					if ( assertion.VariableBehind && !policy.Anchored && !policy.EndAnchored ) { visibleEnd = position; }
 					nodes = assertion.Body;

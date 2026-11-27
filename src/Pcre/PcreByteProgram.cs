@@ -2697,7 +2697,8 @@ internal sealed class PcreByteProgramCompiler {
 		assertionAccepts = new();
 		assertionCaptureStart = openCaptures.Count;
 		compileWork.Push( () => {
-			var exit = Emit( PcreByteOpcode.AssertionExit, second: nonAtomic ? 4 : 0 );
+			var exit = Emit( PcreByteOpcode.AssertionExit,
+				second: ( nonAtomic ? 4 : 0 ) | ( nonAtomic && !reverseLengths.IsEmpty ? 32 : 0 ) );
 			FinishAssertionAccepts( exit, priorAccepts, priorCaptureStart );
 			thenTarget = priorThenTarget;
 			Patch( enter, instructions.Count, flags );

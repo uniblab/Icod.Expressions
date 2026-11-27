@@ -40,26 +40,29 @@ capacity. Explicit capture-growth witnesses distinguish this from a separate
 empty optional iteration. Finite and possessive conditional counts retain the
 existing group and atomic execution paths.
 
-Lookbehind endpoint checks now belong to the expanded branches that actually use
-a ranged rewind. Fixed branches trust the native declared width. This matters
+Lookbehind branch endpoint checks now belong to expanded branches that actually
+use a ranged rewind. Fixed atomic branches trust the native declared width. This matters
 when a false condition omits its else arm: an omitted arm and an explicit empty
 arm have different native width calculations and can produce different matches.
-Mixed fixed/ranged branches, positive/negative tests and non-atomic lookbehind
-retain their original endpoint visibility. Inactive arms and assertion-test
+Native JIT additionally checks the overall endpoint of a non-atomic lookbehind,
+including its fixed branches; call-time anchoring selects the interpreter, which
+retains only the ranged checks. Both managed widths now preserve that difference.
+Mixed fixed/ranged branches and positive/negative tests retain their original
+endpoint visibility. Inactive arms and assertion-test
 bodies still contribute UTF validation metadata.
 
 ## Evidence and limits
 
-356 fixtures across eight compiled defaults and all 64 call masks add 182,272
+372 fixtures across eight compiled defaults and all 64 call masks add 190,464
 full-vector PCRE2-16 comparisons. They cover all four condition families, native
 header aliases and name priority, committed arm selection, finite alternatives,
 capture rollback, call return/retry, recursive calls, assertion captures, repeats,
 lookbehind widths, original start offsets, Unicode names/casing/classes, raw
 surrogate units and LF/CR/NUL line modes.
 
-The pinned native preflight produced 59,924 matches and 122,348 misses with no
+The pinned native preflight produced 66,836 matches and 123,628 misses with no
 native errors. LF output SHA-256:
-`03207e4b8793bd7a2b22e37e88527f5bf8694a617aa24a5fb8dc3332d90eada3`.
+`5c6f5282790720f40d0f701a1ee4059118dec6fc08fa4a4c10cf986705fda162`.
 Oracle provenance is in [word-sequence evidence](PCRE-WORD-SEQUENCES.md).
 
 Additional regressions pin explicit capture vectors, byte/word coordinates and

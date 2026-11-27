@@ -365,6 +365,22 @@ public sealed class PcreWordConditionalTests {
 				("(?(VERSION=10.48)\\x{0}|a)", "\u0000", 0, false, false),
 				("(?<x>\ud800)(?(x)\\k<x>|a)", "\ud800\ud800", 0, false, false),
 				("(?(?=\udc00)\udc00|a)", "\udc00", 0, false, false),
+				("(?<*(?(R)a))x", "ax", 1, false, false),
+				("(?<*(?(R)a))x", "ax", 1, true, false),
+				("(?<*(?(R)a)|b{1,2})x", "ax", 1, false, false),
+				("(?<*(?(R)a)|b{1,2})x", "ax", 1, true, false),
+				("(?<*(?(VERSION=0)a))x", "ax", 1, false, false),
+				("(?<*(?(VERSION=0)a))x", "ax", 1, true, false),
+				("(?<*(?(?=z)a))x", "ax", 1, false, false),
+				("(?<*(?(?=z)a))x", "ax", 1, true, false),
+				("(?<*(?(R)a|))x", "ax", 1, false, false),
+				("(?<*(?(R)a|))x", "ax", 1, true, false),
+				("(a)?(?<*(?(1)b))x", "ax", 1, false, false),
+				("(a)?(?<*(?(1)b))x", "ax", 1, true, false),
+				("(?<*(?(R)(a)|))x", "ax", 1, false, false),
+				("(?<*(?(R)(a)|))x", "ax", 1, true, false),
+				("(?<*(?(R)a)|(?=(x)))\\1", "ax", 1, false, false),
+				("(?<*(?(R)a)|(?=(x)))\\1", "ax", 1, true, false),
 			};
 			for ( var id = 0; id < cases.Length; id++ ) {
 				var (source, subject, start, utf, ucp) = cases[id];
@@ -423,6 +439,9 @@ public sealed class PcreWordConditionalTests {
 	[InlineData( @"(?(?!(a))X|\1)", "a" )]
 	[InlineData( @"(?<=(?(R)a)|b{1,2})x", "ax" )]
 	[InlineData( @"(?<=(?(R)a|))x", "x" )]
+	[InlineData( @"(?<*(?(R)a))x", "ax" )]
+	[InlineData( @"(?<*(?(R)a)|b{1,2})x", "ax" )]
+	[InlineData( @"(?<*(?(VERSION=0)a))x", "ax" )]
 	[InlineData( @"(?(DEFINE)(?<g>(?(R1)(a|ab)|X)))(?&g(2))(?(R)X|c)", "abc" )]
 	[InlineData( @"(?(DEFINE)(?<g>(?(R1)a(?&g)?b|X)))(?&g)", "aaabbb" )]
 	[InlineData( @"(?(DEFINE)(?<g>a)){2}(?&g)", "a" )]

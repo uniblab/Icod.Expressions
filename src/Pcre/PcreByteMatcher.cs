@@ -976,6 +976,12 @@ internal static partial class PcreByteMatcher {
 						case PcreByteOpcode.AssertionExit:
 							// Copy before pruning: PopFrame releases the guard-owned scope node.
 							var scope = assertionScopes![activeScope];
+							// Native JIT also checks fixed non-atomic lookbehind endpoints.
+							// The interpreter checks only the ranged branches' ReverseEnd.
+							if ( ( instruction.Second & 32 ) != 0 && !interpreted && position != scope.Position ) {
+								failed = true;
+								break;
+							}
 							activeScope = scope.Parent;
 							if ( ( instruction.Second & 4 ) != 0 ) {
 								position = scope.Position;

@@ -6,10 +6,10 @@ The [conditional record](PCRE-WORD-CONDITIONS.md) adds capture, innermost-call,
 VERSION and atomic assertion conditions, repeated conditions and quantified
 DEFINE blocks. Original arm boundaries survive finite expansion; selection never
 offers the sibling arm as a retry. Call identity follows return and backtracking,
-and both signs of a matching assertion test keep their captures. 356 fixtures
-add 182,272 full-vector PCRE2-16 comparisons. Counted conditional empty progress
-is corrected in both widths; word lookbehind checks endpoints only for ranged
-branches. Control verbs are next.
+and both signs of a matching assertion test keep their captures. 372 fixtures
+add 190,464 full-vector PCRE2-16 comparisons. Counted conditional empty progress
+is corrected in both widths; lookbehind separates ranged endpoint checks from
+native JIT's additional non-atomic endpoint check. Control verbs are next.
 
 ## Native 16-bit subroutine calls and recursion
 
