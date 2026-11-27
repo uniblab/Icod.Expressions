@@ -106,6 +106,7 @@ internal sealed class PcreCompiledWordPattern {
 			return ( beforeWord != afterWord ) == boundary.IsBoundary ? 1 : 0;
 		}
 		Stack<BacktrackFrame>? frames = null;
+		var activeCall = -1;
 		var captures = new PcreWordCapture?[CaptureInfo.CaptureCount + 1];
 		int MatchReference( PcreByteBackreference reference, ReadOnlySpan<char> source, int position, out int end ) {
 			end = position;
@@ -157,7 +158,7 @@ internal sealed class PcreCompiledWordPattern {
 		bool PushFrame( BacktrackFrame frame ) {
 			frames ??= new();
 			if ( frames.Count >= MaximumBacktrackFrames ) { return false; }
-			frames.Push( frame with { ChangeCount = changes?.Count ?? 0, VisibleEnd = visibleEnd } );
+			frames.Push( frame with { ChangeCount = changes?.Count ?? 0, VisibleEnd = visibleEnd, ActiveCall = activeCall } );
 			return true;
 		}
 		bool ReturnCaptures( int checkpoint, ReadOnlyMemory<int> selected ) {
@@ -184,10 +185,16 @@ internal sealed class PcreCompiledWordPattern {
 			changes?.Clear();
 			Array.Clear( captures );
 			visibleEnd = source.Length;
+			activeCall = -1;
 			Continuation? continuation = null;
 			var index = 0;
 			var position = candidate;
 			end = candidate;
+			void EnterConditionalArm( PcreWordConditional conditional, bool value ) {
+				continuation = new( nodes, index + 1, continuation );
+				nodes = value ? conditional.WhenTrue : conditional.WhenFalse;
+				index = 0;
+			}
 			bool ContinueGroupRepeat( PcreWordGroupRepeat repeat, int count ) {
 				if ( count == repeat.Maximum ) { index++; return true; }
 				if ( count >= repeat.Minimum ) {
@@ -209,10 +216,11 @@ internal sealed class PcreCompiledWordPattern {
 						index = parent.Index;
 						continuation = parent.Parent;
 						if ( parent.GuardBoundary >= 0 || parent.CallCheckpoint >= 0 ) { visibleEnd = parent.SavedEnd; }
-						if ( parent.AssertionEnd >= 0 && position != parent.AssertionEnd ) {
+						if ( parent.CheckAssertionEnd && parent.AssertionEnd >= 0 && position != parent.AssertionEnd ) {
 							// A shorter/longer body must retry before the assertion can commit.
 						} else if ( parent.CallCheckpoint >= 0 ) {
 							if ( !ReturnCaptures( parent.CallCheckpoint, parent.ReturnedCaptures ) ) { return -1; }
+							activeCall = parent.Caller;
 							continue; // Keep consumption, the call guard and all callee choices.
 						} else if ( parent.GuardBoundary >= 0 ) {
 							if ( parent.NonAtomicAssertion ) {
@@ -229,6 +237,14 @@ internal sealed class PcreCompiledWordPattern {
 							}
 							var guard = guardFrames.Pop();
 							if ( guard.Kind != FrameKind.AtomicGroup ) { position = guard.Position; }
+							if ( guard.Kind is FrameKind.PositiveCondition or FrameKind.NegativeCondition ) {
+								// Both signs keep captures when the condition body matches.
+								// Its sign chooses the arm after committing the body's choices.
+								if ( guardFrames.Count == 0 ) { changes?.Clear(); }
+								activeCall = guard.ActiveCall;
+								EnterConditionalArm( (PcreWordConditional)nodes[index], guard.Kind == FrameKind.PositiveCondition );
+								continue;
+							}
 							if ( guard.Kind is FrameKind.PositiveAssertion or FrameKind.AtomicGroup ) {
 								if ( guardFrames.Count == 0 ) { changes?.Clear(); }
 								continue; // Keep successful captures, even beyond the outer match.
@@ -256,13 +272,41 @@ internal sealed class PcreCompiledWordPattern {
 							end = position; return 1;
 						}
 					}
+				} else if ( nodes[index] is PcreWordConditional conditional ) {
+					if ( !Step() ) { return -1; } // Condition selection or assertion-test guard.
+					if ( conditional.Assertion is { } test ) {
+						var boundary = frames?.Count ?? 0;
+						if ( !PushFrame( new( nodes, index, position, position, 0, continuation,
+							test.IsPositive ? FrameKind.PositiveCondition : FrameKind.NegativeCondition ) ) ) { return -2; }
+						continuation = new( nodes, index, continuation, Start: position, GuardBoundary: boundary,
+							AssertionEnd: test.IsBehind ? position : -1, SavedEnd: visibleEnd, CheckAssertionEnd: false );
+						if ( test.VariableBehind && !policy.Anchored && !policy.EndAnchored ) { visibleEnd = position; }
+						nodes = test.Body;
+						index = 0;
+						continue;
+					}
+					var value = conditional.Value;
+					if ( conditional.Kind == PcreWordConditionKind.Capture
+						|| conditional.Kind == PcreWordConditionKind.Recursion && activeCall >= 0 ) {
+						value = conditional.Kind == PcreWordConditionKind.Recursion && conditional.Numbers.IsEmpty;
+						foreach ( var number in conditional.Numbers.Span ) {
+							if ( !Step() ) { return -1; } // Ordered duplicate-name participation lookup.
+							if ( conditional.Kind == PcreWordConditionKind.Capture ? captures[number].HasValue : activeCall == number ) {
+								value = true;
+								break;
+							}
+						}
+					}
+					EnterConditionalArm( conditional, value );
+					continue;
 				} else if ( nodes[index] is PcreWordAssertion assertion ) {
 					if ( !Step() ) { return -1; } // Assertion entry and capture rollback guard.
 					var boundary = frames?.Count ?? 0;
 					if ( !PushFrame( new( nodes, index + 1, position, position, 0, continuation,
 						assertion.IsPositive ? FrameKind.PositiveAssertion : FrameKind.NegativeAssertion ) ) ) { return -2; }
 					continuation = new( nodes, index + 1, continuation, Start: position, GuardBoundary: boundary,
-						AssertionEnd: assertion.IsBehind ? position : -1, NonAtomicAssertion: assertion.NonAtomic, SavedEnd: visibleEnd );
+						AssertionEnd: assertion.IsBehind ? position : -1, NonAtomicAssertion: assertion.NonAtomic,
+						SavedEnd: visibleEnd, CheckAssertionEnd: false );
 					// Native JIT caps nested reads at a variable lookbehind's endpoint.
 					if ( assertion.VariableBehind && !policy.Anchored && !policy.EndAnchored ) { visibleEnd = position; }
 					nodes = assertion.Body;
@@ -281,7 +325,8 @@ internal sealed class PcreCompiledWordPattern {
 					var checkpoint = changes?.Count ?? 0;
 					if ( !PushFrame( new( nodes, index + 1, position, position, 0, continuation, FrameKind.Subroutine ) ) ) { return -2; }
 					continuation = new( nodes, index + 1, continuation, SavedEnd: visibleEnd,
-						CallCheckpoint: checkpoint, ReturnedCaptures: call.ReturnedCaptures );
+						CallCheckpoint: checkpoint, ReturnedCaptures: call.ReturnedCaptures, Caller: activeCall );
+					activeCall = call.Number;
 					nodes = callTargets![call.Number];
 					index = 0;
 					continue;
@@ -297,7 +342,8 @@ internal sealed class PcreCompiledWordPattern {
 						if ( !Step() ) { return -1; } // Ordered group branch admission.
 						if ( !PushFrame( new( nodes, index, position, position, 1, continuation ) ) ) { return -2; }
 					}
-					continuation = new( nodes, index + 1, continuation, Start: position, CaptureNumber: firstGroup.CaptureNumber );
+					continuation = new( nodes, index + 1, continuation, Start: position, CaptureNumber: firstGroup.CaptureNumber,
+						AssertionEnd: firstGroup.CheckAssertionEnds?[0] == true ? continuation!.AssertionEnd : -1 );
 					nodes = firstGroup.Alternatives[0];
 					index = 0;
 					continue;
@@ -374,7 +420,11 @@ internal sealed class PcreCompiledWordPattern {
 					position = frame.Position;
 					continuation = frame.Continuation;
 					visibleEnd = frame.VisibleEnd;
-					if ( frame.Kind is FrameKind.PositiveAssertion or FrameKind.NegativeAssertion or FrameKind.AtomicGroup or FrameKind.Subroutine ) {
+					activeCall = frame.ActiveCall;
+					if ( frame.Kind is FrameKind.PositiveCondition or FrameKind.NegativeCondition ) {
+						if ( !Step() ) { return -1; } // Exhausted test rolls back before selecting the other arm.
+						EnterConditionalArm( (PcreWordConditional)nodes[index], frame.Kind == FrameKind.NegativeCondition );
+					} else if ( frame.Kind is FrameKind.PositiveAssertion or FrameKind.NegativeAssertion or FrameKind.AtomicGroup or FrameKind.Subroutine ) {
 						if ( !Step() ) { return -1; } // Resolve an exhausted guarded body.
 						if ( frame.Kind != FrameKind.NegativeAssertion ) { continue; }
 					} else if ( frame.Kind == FrameKind.ReverseRetry ) {
@@ -405,7 +455,8 @@ internal sealed class PcreCompiledWordPattern {
 						if ( frame.Count + 1 < group.Alternatives.Length ) {
 							if ( !PushFrame( frame with { Count = frame.Count + 1 } ) ) { return -2; }
 						}
-						continuation = new( nodes, index + 1, continuation, Start: position, CaptureNumber: group.CaptureNumber );
+						continuation = new( nodes, index + 1, continuation, Start: position, CaptureNumber: group.CaptureNumber,
+							AssertionEnd: group.CheckAssertionEnds?[frame.Count] == true ? continuation!.AssertionEnd : -1 );
 						nodes = group.Alternatives[frame.Count];
 						index = 0;
 					} else {
@@ -455,16 +506,16 @@ internal sealed class PcreCompiledWordPattern {
 
 	private readonly record struct BacktrackFrame(
 		PcreByteNode[] Nodes, int Index, int Position, int RepeatStart, int Count, Continuation? Continuation,
-		FrameKind Kind = FrameKind.Retry, int ChangeCount = 0, int VisibleEnd = 0
+		FrameKind Kind = FrameKind.Retry, int ChangeCount = 0, int VisibleEnd = 0, int ActiveCall = -1
 	);
 
-	private enum FrameKind { Retry, RepeatExit, RepeatGrow, PositiveAssertion, NegativeAssertion, AtomicGroup, Subroutine, ReverseRetry }
+	private enum FrameKind { Retry, RepeatExit, RepeatGrow, PositiveAssertion, NegativeAssertion, PositiveCondition, NegativeCondition, AtomicGroup, Subroutine, ReverseRetry }
 	private readonly record struct CaptureChange( int Number, PcreWordCapture? Previous );
 
 	private sealed record Continuation( PcreByteNode[] Nodes, int Index, Continuation? Parent,
 		PcreWordGroupRepeat? Repeat = null, int Count = 0, int Start = 0, int CaptureNumber = 0,
 		int GuardBoundary = -1, int AssertionEnd = -1, bool NonAtomicAssertion = false, int SavedEnd = -1,
-		int CallCheckpoint = -1, ReadOnlyMemory<int> ReturnedCaptures = default );
+		int CallCheckpoint = -1, ReadOnlyMemory<int> ReturnedCaptures = default, int Caller = -1, bool CheckAssertionEnd = true );
 
 	private bool TryConsumeAtom( PcreByteNode node, ReadOnlySpan<char> input, int position, out int width ) {
 		if ( !PcreUtf16.TryRead( input, position, options.Utf16, out var value, out width ) ) { return false; }

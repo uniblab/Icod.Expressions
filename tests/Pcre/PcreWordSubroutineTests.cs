@@ -443,12 +443,12 @@ public sealed class PcreWordSubroutineTests {
 		var compiled = PcreWordSequenceCompiler.CompileSequence( declarations.AsMemory() );
 		Assert.True( compiled.IsSuccess ); Assert.Equal( 257, compiled.Pattern!.Match( ReadOnlyMemory<char>.Empty ).Match!.Captures.Count );
 		foreach ( var source in new[] { "(?(DEFINE)(?<g>a))(?&g){64}", "(?(DEFINE)(?<g>a?b?c?d?e?f?))(?&g)",
-			"(?(DEFINE)(?<g>(?&g)))a", "(?R){0}a", "(?(DEFINE)(?R))" } ) {
+			"(?(DEFINE)(?<g>(?&g)))a", "(?R){0}a", "(?(DEFINE)(?R))",
+			"(?(DEFINE)(?<g>a))(?(1)b|c)", "(?(R)a|b)", "(?(DEFINE)(?<g>a)){2}(?&g)" } ) {
 			Assert.True( PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).IsSuccess, source );
 		}
 		foreach ( var source in new[] { "(?(DEFINE)(?<g>a))(?&g){65}", "(?(DEFINE)(?<g>a?b?c?d?e?f?))(?&g)g?",
-			"(?(DEFINE)(?<g>a(*ACCEPT)))(?&g){0}", "(?(DEFINE)(?<g>a))(?(1)b|c)", "(?(R)a|b)",
-			"(?(DEFINE)(?<g>a)){2}(?&g)", "(*ANY)(?(DEFINE)(?<g>.))(?&g)" } ) {
+			"(?(DEFINE)(?<g>a(*ACCEPT)))(?&g){0}", "(*ANY)(?(DEFINE)(?<g>.))(?&g)" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

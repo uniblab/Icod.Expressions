@@ -2837,6 +2837,7 @@ internal sealed class PcreByteProgramCompiler {
 		if ( index < repeat.Minimum ) {
 			if ( index == repeat.Minimum - 1 && repeat.Maximum == int.MaxValue
 				&& ( repeat.Child is PcreByteGroup or PcreByteNoncapturingGroup
+					or PcreByteCaptureConditional or PcreByteRecursionConditional or PcreByteStaticConditional or PcreByteAssertionConditional
 					or PcreByteAtomic { Child: PcreByteNoncapturingGroup }
 					|| repeat.Child is PcreByteSubroutineCall && repeat.Minimum == 1 ) ) {
 				// Native puts the repeating ket on the final required group copy,
