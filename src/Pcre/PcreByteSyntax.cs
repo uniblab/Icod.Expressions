@@ -15,7 +15,7 @@ internal sealed record PcreByteNewlineSequence : PcreByteNode;
 
 internal sealed record PcreByteGrapheme : PcreByteNode;
 
-internal sealed record PcreByteFailure( ReadOnlyMemory<byte> Name = default ) : PcreByteNode;
+internal sealed record PcreByteFailure( ReadOnlyMemory<byte> Name = default, string? WordName = null ) : PcreByteNode;
 
 internal sealed record PcreByteAccept( ReadOnlyMemory<byte> Name = default ) : PcreByteNode;
 
@@ -29,7 +29,7 @@ internal sealed record PcreByteCommit( ReadOnlyMemory<byte> Name = default ) : P
 
 internal sealed record PcreByteThen( ReadOnlyMemory<byte> Name = default ) : PcreByteNode;
 
-internal sealed record PcreBytePathMark( ReadOnlyMemory<byte> Name ) : PcreByteNode;
+internal sealed record PcreBytePathMark( ReadOnlyMemory<byte> Name, string? WordName = null ) : PcreByteNode;
 
 internal enum PcreByteScalarClassKind {
 	Letter, DecimalDigit, AsciiDigit, AsciiWord, UnicodeWord, AsciiSpace, UnicodeSpace,

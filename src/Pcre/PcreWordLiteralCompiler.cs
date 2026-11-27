@@ -26,6 +26,7 @@ internal sealed record PcreWordDiagnostic( PcreWordDiagnosticCode Code, int Code
 internal readonly record struct PcreWordCapture( int CodeUnitIndex, int CodeUnitLength );
 internal sealed record PcreWordMatch( int CodeUnitIndex, int CodeUnitLength,
 	IReadOnlyList<PcreWordCapture?> Captures, PcreCaptureInfo CaptureInfo ) {
+	internal string MarkName { get; init; } = String.Empty;
 	public PcreWordCapture? GetCapture( string name ) {
 		var numbers = CaptureInfo.GetLookupGroupNumbers( name );
 		for ( var index = 0; index < numbers.Count; index++ ) {
