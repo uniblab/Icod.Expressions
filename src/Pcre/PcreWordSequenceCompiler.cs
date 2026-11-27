@@ -91,6 +91,7 @@ internal static class PcreWordSequenceCompiler {
 			var pending = new Stack<(PcreByteAlternatives Body, int Depth, bool Complete, PcreByteLookbehind? Behind)>();
 			var validationLookbehind = 0;
 			var hasAccept = false;
+			var hasCommit = false;
 			var hasSelectedReturns = false;
 			pending.Push( (root, 0, false, null) );
 			while ( pending.TryPop( out var item ) ) {
@@ -108,6 +109,7 @@ internal static class PcreWordSequenceCompiler {
 								nested = nested is PcreByteRepeat repeat ? repeat.Child : ( (PcreByteAtomic)nested ).Child;
 							}
 							hasAccept |= nested is PcreByteAccept;
+							hasCommit |= nested is PcreByteCommit;
 							hasSelectedReturns |= nested is PcreByteSubroutineCall selected && !selected.ReturnedCaptures.IsEmpty;
 							var nestedBody = nested switch {
 								PcreByteGroup direct => direct.Body,
@@ -153,7 +155,7 @@ internal static class PcreWordSequenceCompiler {
 			}
 			return new( new( compiled[root].Alternatives, options, validationLookbehind, settings.Newline,
 				settings.BsrAnyCrLf, parser.CreateCaptureInfo(), targets, parser.HasNonAtomicAccept,
-				cutTargets, FindCommitStart( root, options, cancellationToken ) ), null );
+				cutTargets, hasCommit ? FindCommitStart( root, options, cancellationToken ) : null ), null );
 		} catch ( PcreByteParseException error ) {
 			return Error( error.Diagnostic.Code == PcreByteDiagnosticCode.UnsupportedSyntax
 				? PcreWordDiagnosticCode.UnsupportedSyntax : PcreWordDiagnosticCode.InvalidSyntax, error.Diagnostic.ByteOffset );
@@ -408,7 +410,7 @@ internal static class PcreWordSequenceCompiler {
 				case PcreByteAtomic atomic: pending.Push( atomic.Child ); break;
 				case PcreByteRepeat repeat: pending.Push( repeat.Child ); break;
 				default:
-					if ( ConditionalBody( node ) is { } conditional ) { AddBody( conditional ); }
+					if ( ConditionalBody( node ) is { } conditionalBody ) { AddBody( conditionalBody ); }
 					break;
 			}
 		}
