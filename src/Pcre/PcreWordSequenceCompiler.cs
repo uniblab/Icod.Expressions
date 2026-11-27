@@ -5,7 +5,8 @@ internal sealed record PcreWordSuffixChoices( PcreByteNode[][] Alternatives ) : 
 internal sealed record PcreWordPathMark( string Name ) : PcreByteNode;
 internal sealed record PcreWordFailure( string? Mark = null ) : PcreByteNode;
 internal sealed record PcreWordAccept( string? Mark = null ) : PcreByteNode;
-internal sealed record PcreWordCut( bool Commit, string? Mark = null, bool Then = false ) : PcreByteNode;
+internal enum PcreWordCutKind { Prune, Commit, Then, Skip }
+internal sealed record PcreWordCut( PcreWordCutKind Kind, string? Mark = null ) : PcreByteNode;
 internal sealed record PcreWordPruneScan( bool Start ) : PcreByteNode;
 
 internal sealed record PcreWordGroup(
@@ -214,9 +215,10 @@ internal static class PcreWordSequenceCompiler {
 					continue;
 				}
 				nodes[original] = node switch {
-					PcreBytePrune prune => new PcreWordCut( false, CutMark( prune.WordName ) ),
-					PcreByteCommit commit => new PcreWordCut( true, CutMark( commit.WordName ) ),
-					PcreByteThen then => new PcreWordCut( false, CutMark( then.WordName ), true ),
+					PcreBytePrune prune => new PcreWordCut( PcreWordCutKind.Prune, CutMark( prune.WordName ) ),
+					PcreByteCommit commit => new PcreWordCut( PcreWordCutKind.Commit, CutMark( commit.WordName ) ),
+					PcreByteThen then => new PcreWordCut( PcreWordCutKind.Then, CutMark( then.WordName ) ),
+					PcreByteSkip => new PcreWordCut( PcreWordCutKind.Skip ),
 					PcreByteAccept accept => BuildAccept( accept ),
 					PcreByteRepeat { Child: PcreByteAccept accept } repeat => new PcreWordGroupRepeat(
 						new( [[BuildAccept( accept )]], 1, 1, 0 ), repeat.Minimum, repeat.Maximum, repeat.Greedy, true ),
@@ -405,7 +407,7 @@ internal static class PcreWordSequenceCompiler {
 		if ( root.Branches.Count != 2 || root.Branches[0].Count is not ( 3 or 4 )
 			|| root.Branches[0][0] is not PcreByteRepeat { Minimum: 1, Maximum: int.MaxValue,
 				Greedy: true, Offset: -1, Child: PcreByteLiteral { Caseless: false } literal }
-			|| root.Branches[0].Count == 4 && root.Branches[0][1] is not ( PcreByteCommit or PcreByteThen )
+			|| root.Branches[0].Count == 4 && root.Branches[0][1] is not ( PcreByteCommit or PcreByteThen or PcreByteSkip )
 			|| root.Branches[0][^2] is not PcreBytePrune
 			|| root.Branches[0][^1] is not ( PcreByteFailure or PcreByteLiteral { Caseless: false } )
 			|| root.Branches[1].Count != 1 ) { return false; }
@@ -422,7 +424,7 @@ internal static class PcreWordSequenceCompiler {
 		while ( pending.TryPop( out var node ) ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			switch ( node ) {
-				case PcreBytePrune or PcreByteCommit or PcreByteThen: return true;
+				case PcreBytePrune or PcreByteCommit or PcreByteThen or PcreByteSkip: return true;
 				case PcreByteGroup group: AddBody( group.Body ); break;
 				case PcreByteNoncapturingGroup group: AddBody( group.Body ); break;
 				case PcreByteLookahead assertion: AddBody( assertion.Body ); break;
@@ -534,7 +536,7 @@ internal static class PcreWordSequenceCompiler {
 				case PcreByteLiteral literal: result = (UnitLiteral( literal ), false); break;
 				case PcreByteGroup group: result = firstUnits[group.Body]; break;
 				case PcreByteNoncapturingGroup group: result = firstUnits[group.Body]; break;
-				case PcreBytePathMark or PcreBytePrune or PcreByteCommit or PcreByteThen or PcreByteFailure
+				case PcreBytePathMark or PcreBytePrune or PcreByteCommit or PcreByteThen or PcreByteSkip or PcreByteFailure
 					or PcreByteLookahead or PcreByteLookbehind or PcreByteAnchor or PcreByteSearchStart
 					or PcreByteEndBeforeFinalLf or PcreByteWordBoundary or PcreByteStaticConditional { IsDefinition: true }:
 					result = (null, true); break;

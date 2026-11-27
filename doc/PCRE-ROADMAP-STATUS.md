@@ -1,12 +1,23 @@
 # PCRE roadmap status
 
+## Native 16-bit bare SKIP
+
+The [SKIP record](PCRE-WORD-SKIP.md) adds bare and empty-argument cuts with
+forward restarts in original 16-bit units. Assertion and call boundaries, selected
+returns, accepted-call labels and compiled versus call-time anchors follow native
+dispatch. 852 fixtures add 436,224 full-vector and label policy comparisons, with
+budget, cancellation, frame-limit, ownership and concurrent-reuse checks. The
+bounded PRUNE scan proof also handles a preceding SKIP in both widths.
+Named-SKIP history and interpreter replay are next. Existing ACCEPT/COMMIT
+qualification gates and public word API integration remain open.
+
 ## Native 16-bit THEN
 
 The [THEN record](PCRE-WORD-THEN.md) adds lexical alternative cuts and named
 labels. Original source alternatives own retries across finite lowering; calls,
 assertions, selected returns and accepted-call labels follow native dispatch.
-1,114 fixtures add 570,368 full-vector and label policy comparisons. SKIP and
-named-SKIP history/replay are next; existing ACCEPT/COMMIT qualification gates
+1,114 fixtures add 570,368 full-vector and label policy comparisons. Bare SKIP
+is covered above; named-SKIP history/replay is next; existing ACCEPT/COMMIT qualification gates
 and public word integration remain open. The bounded literal/PRUNE scan proof
 also covers a preceding THEN and up to four sole root group wrappers in both
 widths; interpreter dispatch does not reuse the JIT scan.
@@ -17,7 +28,7 @@ The [cut record](PCRE-WORD-CUTS.md) adds candidate abandonment, committed search
 failure, scope catches and named cut labels. Selected-capture rollback and accepted
 call labels follow native JIT/interpreter dispatch. Original-unit candidate proofs
 cover leading COMMIT and the bounded PRUNE literal scan cache. 1,070 fixtures add
-547,840 full-vector and label policy comparisons. THEN is covered above; SKIP is next. Public
+547,840 full-vector and label policy comparisons. THEN and bare SKIP are covered above. Public
 word entry points and the remaining broader profile gates still follow.
 Native policy batches compile once per defaults row while retaining every mask
 and comparison, reducing repeated native setup during CI.
@@ -33,7 +44,7 @@ erased bodies; policy rejection and accepted-call label rollback follow their
 respective native paths. 637 fixtures add 326,144 capture/label comparisons.
 ACCEPT with selected-capture returns remains explicitly unqualified because the
 pinned interpreter reports INTERNAL. PRUNE and COMMIT are covered by the next
-record above; THEN and SKIP remain open.
+records above; THEN and bare SKIP are covered above, and named SKIP remains open.
 
 ## Native 16-bit failure verbs and path labels
 
