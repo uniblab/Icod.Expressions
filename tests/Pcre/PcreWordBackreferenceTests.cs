@@ -242,11 +242,12 @@ public sealed class PcreWordBackreferenceTests {
 		Assert.Equal( "0:2,0:1", Spans( pattern.Match( "aa".AsMemory() ).Match ) );
 		var lazy = PcreWordSequenceCompiler.CompileSequence( @"\A(a)\1*?\z".AsMemory() ).Pattern!;
 		Assert.Equal( "0:2048,0:1", Spans( lazy.Match( new string( 'a', 2048 ).AsMemory() ).Match ) );
-		foreach ( var source in new[] { @"(a)\1{0,64}", @"(a)\1{64,}", String.Concat( "(a)", String.Concat( Enumerable.Repeat( @"\1*", 64 ) ) ) } ) {
+		foreach ( var source in new[] { @"(a)\1{0,64}", @"(a)\1{64,}", @"(a)\g<1>", @"(?<x>a)\g'x'",
+			String.Concat( "(a)", String.Concat( Enumerable.Repeat( @"\1*", 64 ) ) ) } ) {
 			Assert.True( PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).IsSuccess );
 		}
 		foreach ( var source in new[] { @"(a)\1{0,65}", @"(a)\1{65,}", String.Concat( "(a)", String.Concat( Enumerable.Repeat( @"\1*", 65 ) ) ),
-			@"(a)\1{65,}+", @"(a)\g<1>", @"(?<x>a)\g'x'", @"(?*(a)){65}\1" } ) {
+			@"(a)\1{65,}+", @"(?*(a)){65}\1" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

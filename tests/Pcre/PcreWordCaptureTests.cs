@@ -324,7 +324,7 @@ public sealed class PcreWordCaptureTests {
 	}
 
 	[Theory]
-	[InlineData( "(a)(?1)" )]
+	[InlineData( "(a)(?1)(*ACCEPT)" )]
 	[InlineData( "(?<*(a)){65}b" )]
 	[InlineData( "(?>(*ACCEPT)a)" )]
 	[InlineData( "(a){65,}+" )]

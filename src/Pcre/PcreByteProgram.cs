@@ -2836,9 +2836,11 @@ internal sealed class PcreByteProgramCompiler {
 	private void CompileCountedRepeat( PcreByteRepeat repeat, int index ) {
 		if ( index < repeat.Minimum ) {
 			if ( index == repeat.Minimum - 1 && repeat.Maximum == int.MaxValue
-				&& repeat.Child is PcreByteGroup or PcreByteNoncapturingGroup
-					or PcreByteAtomic { Child: PcreByteNoncapturingGroup } ) {
-				// Native places the repeating ket on the final required group copy.
+				&& ( repeat.Child is PcreByteGroup or PcreByteNoncapturingGroup
+					or PcreByteAtomic { Child: PcreByteNoncapturingGroup }
+					|| repeat.Child is PcreByteSubroutineCall && repeat.Minimum == 1 ) ) {
+				// Native puts the repeating ket on the final required group copy,
+				// or around a call only when its minimum is one.
 				// Stop there when it is empty, retaining earlier required copies.
 				var initialMark = AllocateMark();
 				Emit( PcreByteOpcode.Mark, initialMark );
