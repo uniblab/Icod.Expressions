@@ -326,8 +326,8 @@ public sealed class PcreWordCaptureTests {
 	[Theory]
 	[InlineData( "(a)(?1)" )]
 	[InlineData( "(?<*(a)){65}b" )]
-	[InlineData( "(?>a)" )]
-	[InlineData( "(a)*+" )]
+	[InlineData( "(?>(*ACCEPT)a)" )]
+	[InlineData( "(a){65,}+" )]
 	[InlineData( "(a)(*ACCEPT)" )]
 	public void CaptureDependentExecutionStillRequiresExplicitAdmission( string source ) {
 		Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,

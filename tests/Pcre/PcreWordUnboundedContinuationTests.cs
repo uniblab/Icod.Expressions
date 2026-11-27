@@ -130,7 +130,7 @@ public sealed class PcreWordUnboundedContinuationTests {
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( "a{64,}b".AsMemory() ).IsSuccess );
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( "a?b*c".AsMemory() ).IsSuccess );
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( "a*b{2}c".AsMemory() ).IsSuccess );
-		foreach ( var source in new[] { "a{65,}b", "a*+b" } ) {
+		foreach ( var source in new[] { "a{65,}b", "a{65,}+b" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}
