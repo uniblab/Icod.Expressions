@@ -43,8 +43,9 @@ public sealed class PcreWordLiteralTests {
 			Utf16 = utf, Policy = PcreMatchPolicyConsumer.Policy( defaults )
 		} );
 		Assert.True( compiled.IsSuccess, $"literal {id}: {compiled.Diagnostic}" );
+		var nativePolicies = PcreNative16Oracle.ExecuteLiteralPolicies( pattern, subject, utf, (uint)start, defaults );
 		for ( var mask = 0; mask < 64; mask++ ) {
-			var native = PcreNative16Oracle.ExecuteLiteral( pattern, subject, utf, (uint)start, defaults, mask );
+			var native = nativePolicies[mask];
 			Assert.True( native.Kind is "M" or "N", $"native {id}/{defaults}/{mask}: {native}" );
 			Assert.NotEqual( 0u, native.Options & 0x02000000u );
 			var result = compiled.Pattern!.Match( text.AsMemory(), PcreMatchPolicyConsumer.Policy( mask ), start );

@@ -10,11 +10,14 @@ internal sealed class PcreCompiledWordPattern {
 	private readonly bool bsrAnyCrLf;
 	private readonly IReadOnlyDictionary<int, PcreByteNode[]>? callTargets;
 	private readonly bool hasNonAtomicAccept;
+	private readonly IReadOnlySet<int>? cutTargets;
+	private readonly PcreByteLiteral? commitStart;
 	public PcreCaptureInfo CaptureInfo { get; }
 	internal PcreCompiledWordPattern( PcreByteNode[] nodes, PcreWordOptions options ) : this( [nodes], options ) { }
 	internal PcreCompiledWordPattern( PcreByteNode[][] branches, PcreWordOptions options, int validationLookbehind = 0,
 		PcreByteNewline newline = PcreByteNewline.Lf, bool bsrAnyCrLf = false, PcreCaptureInfo? captureInfo = null,
-		IReadOnlyDictionary<int, PcreByteNode[]>? callTargets = null, bool hasNonAtomicAccept = false ) {
+		IReadOnlyDictionary<int, PcreByteNode[]>? callTargets = null, bool hasNonAtomicAccept = false,
+		IReadOnlySet<int>? cutTargets = null, PcreByteLiteral? commitStart = null ) {
 		this.branches = branches;
 		this.options = options;
 		this.validationLookbehind = validationLookbehind;
@@ -22,6 +25,8 @@ internal sealed class PcreCompiledWordPattern {
 		this.bsrAnyCrLf = bsrAnyCrLf;
 		this.callTargets = callTargets;
 		this.hasNonAtomicAccept = hasNonAtomicAccept;
+		this.cutTargets = cutTargets;
+		this.commitStart = commitStart;
 		CaptureInfo = captureInfo ?? new( 0, new Dictionary<string, List<int>>(), default );
 	}
 
@@ -120,6 +125,8 @@ internal sealed class PcreCompiledWordPattern {
 			mark = acceptedMarks is not null && acceptedMarks.TryGetValue( version, out var committed ) ? committed : value;
 		}
 		var captures = new PcreWordCapture?[CaptureInfo.CaptureCount + 1];
+		Dictionary<int, PcreWordCapture?>? cutCaptures = null;
+		var pruneLiteralEnd = -1;
 		int MatchReference( PcreByteBackreference reference, ReadOnlySpan<char> source, int position, out int end ) {
 			end = position;
 			var capture = captures[reference.Number];
@@ -192,11 +199,17 @@ internal sealed class PcreCompiledWordPattern {
 			}
 			return true;
 		}
-		// -2: frame limit; -1: work exhausted; 0: failed; 1: match; 2: abandon candidate.
+		// -2: frame limit; -1: work exhausted; 0: failed; 1: match; 2: next candidate; 3: committed failure.
 		int TrySequence( PcreByteNode[] nodes, ReadOnlySpan<char> source, int candidate, out int end ) {
 			frames?.Clear();
 			changes?.Clear();
 			Array.Clear( captures );
+			if ( cutCaptures is not null ) {
+				foreach ( var (number, capture) in cutCaptures ) {
+					if ( !Step() ) { end = candidate; return -1; }
+					captures[number] = capture;
+				}
+			}
 			visibleEnd = source.Length;
 			activeCall = -1;
 			RestoreMark( 0, String.Empty );
@@ -294,7 +307,7 @@ internal sealed class PcreCompiledWordPattern {
 						if ( !PushFrame( new( nodes, index, position, position, 0, continuation,
 							test.IsPositive ? FrameKind.PositiveCondition : FrameKind.NegativeCondition ) ) ) { return -2; }
 						continuation = new( nodes, index, continuation, Start: position, GuardBoundary: boundary,
-							AssertionEnd: test.IsBehind ? position : -1, SavedEnd: visibleEnd, CheckAssertionEnd: false );
+							AssertionEnd: test.IsBehind ? position : -1, SavedEnd: visibleEnd, CheckAssertionEnd: false, CatchesCut: true );
 					if ( test.VariableBehind && !interpreted ) { visibleEnd = position; }
 						nodes = test.Body;
 						index = 0;
@@ -322,7 +335,7 @@ internal sealed class PcreCompiledWordPattern {
 					continuation = new( nodes, index + 1, continuation, Start: position, GuardBoundary: boundary,
 						AssertionEnd: assertion.IsBehind ? position : -1, NonAtomicAssertion: assertion.NonAtomic,
 						SavedEnd: visibleEnd, CheckAssertionEnd: assertion.IsBehind && assertion.NonAtomic
-							&& !interpreted );
+							&& !interpreted, CatchesCut: !assertion.IsPositive );
 					// Native JIT caps nested reads at a variable lookbehind's endpoint.
 					if ( assertion.VariableBehind && !interpreted ) { visibleEnd = position; }
 					nodes = assertion.Body;
@@ -373,6 +386,23 @@ internal sealed class PcreCompiledWordPattern {
 					if ( !Step() ) { return -1; } // Comparison, repeat admission or assertion.
 					var matched = true;
 					switch ( nodes[index] ) {
+						case PcreWordPruneScan scan:
+							if ( scan.Start ) { matched = interpreted || position >= pruneLiteralEnd; }
+							else if ( !interpreted ) { pruneLiteralEnd = Math.Max( pruneLiteralEnd, position ); }
+							break;
+						case PcreWordCut cut:
+							var cutScope = continuation;
+							while ( cutScope is not null ) {
+								if ( !Step() ) { return -1; } // Only active scopes catch a cut.
+								if ( cutScope.CallCheckpoint >= 0 || cutScope.CatchesCut ) { break; }
+								cutScope = cutScope.Parent;
+							}
+							var cutBoundary = cutScope is null ? 0
+								: ( cutScope.CallCheckpoint >= 0 ? cutScope.CallBoundary : cutScope.GuardBoundary ) + 1;
+							if ( !PushFrame( new( nodes, index, position, cutBoundary, 0, continuation,
+								cut.Commit ? FrameKind.Commit : FrameKind.Prune, CutScope: cutScope ) ) ) { return -2; }
+							if ( cut.Mark is { } cutMark ) { SetMark( cutMark ); }
+							break;
 						case PcreWordPathMark pathMark:
 							SetMark( pathMark.Name );
 							break;
@@ -409,8 +439,15 @@ internal sealed class PcreCompiledWordPattern {
 									// checkpoints that share its entry write. Distinct earlier
 									// writes still roll back. No new retry frames are introduced.
 									acceptedMarks ??= new();
-									acceptedMarks[guard.MarkVersion] = mark;
-									markVersion = guard.MarkVersion;
+									if ( cutTargets?.Contains( activeCall ) == true ) {
+										// Lexical local-quit verbs save the call's entry label,
+										// including erased bodies and nested accepted callees.
+										acceptedMarks[guard.MarkVersion] = guard.Mark!;
+										SetMark( mark );
+									} else {
+										acceptedMarks[guard.MarkVersion] = mark;
+										markVersion = guard.MarkVersion;
+									}
 								} else if ( interpreted && guard.Kind is FrameKind.PositiveCondition or FrameKind.NegativeCondition ) {
 									RestoreMark( guard.MarkVersion, guard.Mark! );
 								}
@@ -493,7 +530,30 @@ internal sealed class PcreCompiledWordPattern {
 					visibleEnd = frame.VisibleEnd;
 					activeCall = frame.ActiveCall;
 					RestoreMark( frame.MarkVersion, frame.Mark! );
-					if ( frame.Kind is FrameKind.PositiveCondition or FrameKind.NegativeCondition ) {
+					if ( frame.Kind is FrameKind.Prune or FrameKind.Commit ) {
+						if ( !Step() ) { return -1; } // Reaching a cut, rather than executing it, discards choices.
+						if ( !interpreted && frame.CutScope is { CallCheckpoint: >= 0 } callScope
+							&& !callScope.ReturnedCaptures.IsEmpty && changes is not null ) {
+							var kept = callScope.CallCheckpoint;
+							for ( var entry = kept; entry < changes.Count; entry++ ) {
+								if ( !Step() ) { return -1; }
+								var change = changes[entry];
+								if ( callScope.ReturnedCaptures.Span.BinarySearch( change.Number ) >= 0 ) {
+									cutCaptures ??= new();
+									cutCaptures[change.Number] = captures[change.Number];
+									continue;
+								}
+								changes[kept++] = change;
+							}
+							changes.RemoveRange( kept, changes.Count - kept );
+						}
+						while ( frames.Count > frame.RepeatStart ) {
+							if ( !Step() ) { return -1; }
+							frames.Pop();
+						}
+						if ( frame.RepeatStart == 0 ) { return frame.Kind == FrameKind.Commit ? 3 : 2; }
+						continue; // The retained guard resolves the failed call/assertion.
+					} else if ( frame.Kind is FrameKind.PositiveCondition or FrameKind.NegativeCondition ) {
 						if ( !Step() ) { return -1; } // Exhausted test rolls back before selecting the other arm.
 						EnterConditionalArm( (PcreWordConditional)nodes[index], frame.Kind == FrameKind.NegativeCondition );
 					} else if ( frame.Kind is FrameKind.PositiveAssertion or FrameKind.NegativeAssertion or FrameKind.AtomicGroup or FrameKind.Subroutine ) {
@@ -556,13 +616,20 @@ internal sealed class PcreCompiledWordPattern {
 		}
 		for ( var candidate = startOffset; ; ) {
 			acceptedMarks?.Clear();
+			cutCaptures?.Clear();
 			if ( !Step() ) { return Exhausted(); } // Candidate admission.
-			for ( var branch = 0; branch < branches.Length; branch++ ) {
+			var eligible = true;
+			if ( !anchored && commitStart is { } first ) {
+				if ( !Step() ) { return Exhausted(); } // Native first-unit candidate proof.
+				eligible = candidate < input.Length && LiteralEquals( input[candidate], first );
+			}
+			for ( var branch = 0; eligible && branch < branches.Length; branch++ ) {
 				if ( branches.Length > 1 && !Step() ) { return Exhausted(); } // Ordered branch admission.
 				var outcome = TrySequence( branches[branch], input, candidate, out var end );
 				if ( outcome == -2 ) { return new( null, new( PcreWordDiagnosticCode.MatchDepthLimitExceeded, 0 ) ); }
 				if ( outcome < 0 ) { return Exhausted(); }
 				if ( outcome == 2 ) { break; }
+				if ( outcome == 3 ) { return new( null, null ); }
 				if ( outcome > 0 ) {
 					captures[0] = new( candidate, end - candidate );
 					// Transfer this call's capture array; no runner or subject memory escapes.
@@ -581,17 +648,17 @@ internal sealed class PcreCompiledWordPattern {
 	private readonly record struct BacktrackFrame(
 		PcreByteNode[] Nodes, int Index, int Position, int RepeatStart, int Count, Continuation? Continuation,
 		FrameKind Kind = FrameKind.Retry, int ChangeCount = 0, int VisibleEnd = 0, int ActiveCall = -1,
-		string? Mark = null, int MarkVersion = 0
+		string? Mark = null, int MarkVersion = 0, Continuation? CutScope = null
 	);
 
-	private enum FrameKind { Retry, RepeatExit, RepeatGrow, PositiveAssertion, NegativeAssertion, PositiveCondition, NegativeCondition, AtomicGroup, Subroutine, ReverseRetry }
+	private enum FrameKind { Retry, RepeatExit, RepeatGrow, PositiveAssertion, NegativeAssertion, PositiveCondition, NegativeCondition, AtomicGroup, Subroutine, ReverseRetry, Prune, Commit }
 	private readonly record struct CaptureChange( int Number, PcreWordCapture? Previous );
 
 	private sealed record Continuation( PcreByteNode[] Nodes, int Index, Continuation? Parent,
 		PcreWordGroupRepeat? Repeat = null, int Count = 0, int Start = 0, int CaptureNumber = 0,
 		int GuardBoundary = -1, int AssertionEnd = -1, bool NonAtomicAssertion = false, int SavedEnd = -1,
 		int CallCheckpoint = -1, ReadOnlyMemory<int> ReturnedCaptures = default, int Caller = -1, bool CheckAssertionEnd = true,
-		bool AtomicGroup = false, int CallBoundary = -1 );
+		bool AtomicGroup = false, int CallBoundary = -1, bool CatchesCut = false );
 
 	private bool TryConsumeAtom( PcreByteNode node, ReadOnlySpan<char> input, int position, out int width ) {
 		if ( !PcreUtf16.TryRead( input, position, options.Utf16, out var value, out width ) ) { return false; }

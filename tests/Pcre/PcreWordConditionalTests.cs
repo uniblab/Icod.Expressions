@@ -398,8 +398,9 @@ public sealed class PcreWordConditionalTests {
 			Utf16 = utf, Ucp = ucp, Policy = PcreMatchPolicyConsumer.Policy( defaults )
 		} );
 		Assert.True( compiled.IsSuccess, $"condition {id}: {compiled.Diagnostic}" );
+		var nativePolicies = PcreNative16Oracle.ExecuteSequencePolicies( Words( source ), Words( subject ), utf, (uint)start, defaults, ucp );
 		for ( var mask = 0; mask < 64; mask++ ) {
-			var native = PcreNative16Oracle.ExecuteSequence( Words( source ), Words( subject ), utf, (uint)start, defaults, mask, ucp );
+			var native = nativePolicies[mask];
 			Assert.True( native.Kind is "M" or "N", $"native {id}/{defaults}/{mask}: {native}" );
 			var result = compiled.Pattern!.Match( subject.AsMemory(), PcreMatchPolicyConsumer.Policy( mask ), start );
 			Assert.True( result.IsSuccess, $"managed {id}/{defaults}/{mask}: {result.Diagnostic}" );
@@ -559,7 +560,7 @@ public sealed class PcreWordConditionalTests {
 		}
 		foreach ( var source in new[] { String.Concat( "(?(VERSION=10.48)", atDepth, ")" ),
 			"(?(R)a?b?c?d?e?f?|x)", "(?(R)a?b?c?d?e?|f?g?h?i?j?)k?",
-			"(?(?=a|b)a?b?c?d?e?|x)", "(?(VERSION=10.48)a|(*COMMIT))",
+			"(?(?=a|b)a?b?c?d?e?|x)", "(?(VERSION=10.48)a|(*THEN))",
 			"(?(DEFINE)(a)){65}", "(?(?=a)b|c){65}", "(*ANY)(?(R)a|b)" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax, PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

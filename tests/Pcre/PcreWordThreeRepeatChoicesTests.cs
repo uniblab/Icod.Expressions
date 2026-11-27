@@ -77,8 +77,9 @@ public sealed class PcreWordThreeRepeatChoicesTests {
 			Utf16 = utf, Ucp = ucp, Policy = PcreMatchPolicyConsumer.Policy( defaults )
 		} );
 		Assert.True( compiled.IsSuccess, $"three-repeat choices {id}: {compiled.Diagnostic}" );
+		var nativePolicies = PcreNative16Oracle.ExecuteSequencePolicies( Words( source ), Words( subject ), utf, (uint)start, defaults, ucp );
 		for ( var mask = 0; mask < 64; mask++ ) {
-			var native = PcreNative16Oracle.ExecuteSequence( Words( source ), Words( subject ), utf, (uint)start, defaults, mask, ucp );
+			var native = nativePolicies[mask];
 			Assert.True( native.Kind is "M" or "N", $"native {id}/{defaults}/{mask}: {native}" );
 			var match = compiled.Pattern!.Match( subject.AsMemory(), PcreMatchPolicyConsumer.Policy( mask ), start );
 			Assert.True( match.IsSuccess, $"managed {id}/{defaults}/{mask}: {match.Diagnostic}" );
@@ -108,7 +109,7 @@ public sealed class PcreWordThreeRepeatChoicesTests {
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( "a*b{0,63}c*d*".AsMemory() ).IsSuccess );
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( "a?b*c{0,3}d*e{0,3}f*g?".AsMemory() ).IsSuccess );
 		foreach ( var source in new[] { "a*b{0,64}c*d*", "a?b*c{0,3}d*e{0,3}f*g?|x",
-			"a*b?c?d?e*f?g?h?i*j?", "(?>(*COMMIT)a*)b?c*d*" } ) {
+			"a*b?c?d?e*f?g?h?i*j?", "(?>(*THEN)a*)b?c*d*" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

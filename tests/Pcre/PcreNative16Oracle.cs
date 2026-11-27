@@ -25,8 +25,22 @@ internal static class PcreNative16Oracle {
 		int defaults = 0, int mask = 0, bool ucp = false ) => ExecuteCore( pattern, subject,
 		( utf ? 1 : 0 ) | ( ucp ? 2 : 0 ), offset, false, defaults, mask );
 
+	internal static PcreNative16Protocol[] ExecuteSequencePolicies( ushort[] pattern, ushort[] subject, bool utf,
+		uint offset, int defaults = 0, bool ucp = false ) {
+		var results = new PcreNative16Protocol[64];
+		ExecuteCore( pattern, subject, ( utf ? 1 : 0 ) | ( ucp ? 2 : 0 ), offset, false, defaults, 0, results );
+		return results;
+	}
+
+	internal static PcreNative16Protocol[] ExecuteLiteralPolicies( ushort[] pattern, ushort[] subject, bool utf,
+		uint offset, int defaults = 0 ) {
+		var results = new PcreNative16Protocol[64];
+		ExecuteCore( pattern, subject, utf ? 1 : 0, offset, true, defaults, 0, results );
+		return results;
+	}
+
 	private static PcreNative16Protocol ExecuteCore( ushort[] pattern, ushort[] subject, int mode, uint offset,
-		bool literal, int defaults, int mask ) {
+		bool literal, int defaults, int mask, PcreNative16Protocol[]? policies = null ) {
 		ArgumentNullException.ThrowIfNull( pattern );
 		ArgumentNullException.ThrowIfNull( subject );
 		if ( mode < 0 || ( mode & ~7 ) != 0 ) { throw new ArgumentOutOfRangeException( nameof( mode ) ); }
@@ -53,7 +67,9 @@ internal static class PcreNative16Oracle {
 		try {
 			module.Compile( ref input, ref compiled );
 			if ( compiled.Code == 0 ) {
-				return new( "E", compiled.Error, compiled.ErrorOffset, "", "", "", 0, 0 );
+				var error = new PcreNative16Protocol( "E", compiled.Error, compiled.ErrorOffset, "", "", "", 0, 0 );
+				if ( policies is not null ) { Array.Fill( policies, error ); }
+				return error;
 			}
 			if ( compiled.Error != 0 || compiled.Captures > 256 || compiled.Names > 256 ) {
 				throw new InvalidOperationException( "Unexpected native compile metadata." );
@@ -64,32 +80,41 @@ internal static class PcreNative16Oracle {
 			CheckInfo( module, compiled.Code, 10, info.Pointer );
 			var jitSize = checked( (nuint)unchecked( (ulong)Marshal.ReadInt64( info.Pointer ) ) );
 			using var vector = new NativeMemory( checked( ( (int)compiled.Captures + 1 ) * 2 * IntPtr.Size ) );
-			var matchInput = new MatchInput {
-				Code = compiled.Code, Subject = subjectMemory.Pointer, Length = (uint)subject.Length,
-				Start = offset, Options = (uint)PcreNativeMatchPolicy.Options( defaults, mask ),
-				Settings = new MatchSettings { Limit = 1_000_000, Depth = 1024, Heap = 65536, OffsetLimit = 0, JitStack = 0 },
-				Vector = vector.Pointer, Callout = 0, CalloutData = 0
-			};
-			var matched = new MatchResult { Code = 0, Mark = 0 };
-			module.Match( ref matchInput, ref matched );
-			if ( matched.Code < 0 && matched.Code != -1 ) {
-				return new( "X", matched.Code, 0, "", "", "", jitSize, options );
-			}
-			if ( matched.Code == 0 ) { throw new InvalidOperationException( "Native capture vector is unexpectedly too small." ); }
-			var names = ReadNames( compiled, pattern.Length );
-			if ( matched.Code == -1 ) { return new( "N", 0, 0, "", "", names, jitSize, options ); }
-			var captures = new List<string>();
-			for ( var i = 0; i <= compiled.Captures; i++ ) {
-				var start = unchecked( (ulong)Marshal.ReadInt64( vector.Pointer, checked( i * 16 ) ) );
-				if ( start == UInt64.MaxValue ) { captures.Add( "-" ); continue; }
-				var end = unchecked( (ulong)Marshal.ReadInt64( vector.Pointer, checked( i * 16 + 8 ) ) );
-				if ( start > (ulong)subject.Length || end > (ulong)subject.Length ) {
-					throw new InvalidOperationException( "Native capture endpoint exceeds the original subject." );
+			// Keep one native code/module/subject lifetime for the complete policy row.
+			// Each call still owns its match state and materializes captures and labels
+			// before the next call; no cross-test cache or shared native session exists.
+			if ( policies is null ) { return Match( mask ); }
+			for ( var current = 0; current < policies.Length; current++ ) { policies[current] = Match( current ); }
+			return policies[mask];
+
+			PcreNative16Protocol Match( int currentMask ) {
+				var matchInput = new MatchInput {
+					Code = compiled.Code, Subject = subjectMemory.Pointer, Length = (uint)subject.Length,
+					Start = offset, Options = (uint)PcreNativeMatchPolicy.Options( defaults, currentMask ),
+					Settings = new MatchSettings { Limit = 1_000_000, Depth = 1024, Heap = 65536, OffsetLimit = 0, JitStack = 0 },
+					Vector = vector.Pointer, Callout = 0, CalloutData = 0
+				};
+				var matched = new MatchResult { Code = 0, Mark = 0 };
+				module.Match( ref matchInput, ref matched );
+				if ( matched.Code < 0 && matched.Code != -1 ) {
+					return new( "X", matched.Code, 0, "", "", "", jitSize, options );
 				}
-				captures.Add( String.Concat( start.ToString( CultureInfo.InvariantCulture ), ":",
-					( (long)end - (long)start ).ToString( CultureInfo.InvariantCulture ) ) );
+				if ( matched.Code == 0 ) { throw new InvalidOperationException( "Native capture vector is unexpectedly too small." ); }
+				var names = ReadNames( compiled, pattern.Length );
+				if ( matched.Code == -1 ) { return new( "N", 0, 0, "", "", names, jitSize, options ); }
+				var captures = new List<string>();
+				for ( var i = 0; i <= compiled.Captures; i++ ) {
+					var start = unchecked( (ulong)Marshal.ReadInt64( vector.Pointer, checked( i * 16 ) ) );
+					if ( start == UInt64.MaxValue ) { captures.Add( "-" ); continue; }
+					var end = unchecked( (ulong)Marshal.ReadInt64( vector.Pointer, checked( i * 16 + 8 ) ) );
+					if ( start > (ulong)subject.Length || end > (ulong)subject.Length ) {
+						throw new InvalidOperationException( "Native capture endpoint exceeds the original subject." );
+					}
+					captures.Add( String.Concat( start.ToString( CultureInfo.InvariantCulture ), ":",
+						( (long)end - (long)start ).ToString( CultureInfo.InvariantCulture ) ) );
+				}
+				return new( "M", 0, 0, String.Join( ",", captures ), ReadWords( matched.Mark, pattern.Length + 1 ), names, jitSize, options );
 			}
-			return new( "M", 0, 0, String.Join( ",", captures ), ReadWords( matched.Mark, pattern.Length + 1 ), names, jitSize, options );
 		}
 		finally {
 			if ( compiled.Code != 0 ) { module.FreeCode( compiled.Code ); }

@@ -138,8 +138,9 @@ public sealed class PcreWordLookaheadTests {
 			Utf16 = utf, Ucp = ucp, Policy = PcreMatchPolicyConsumer.Policy( defaults )
 		} );
 		Assert.True( compiled.IsSuccess, $"assertion {id}: {compiled.Diagnostic}" );
+		var nativePolicies = PcreNative16Oracle.ExecuteSequencePolicies( Words( source ), Words( subject ), utf, (uint)start, defaults, ucp );
 		for ( var mask = 0; mask < 64; mask++ ) {
-			var native = PcreNative16Oracle.ExecuteSequence( Words( source ), Words( subject ), utf, (uint)start, defaults, mask, ucp );
+			var native = nativePolicies[mask];
 			Assert.True( native.Kind is "M" or "N", $"native {id}/{defaults}/{mask}: {native}" );
 			var result = compiled.Pattern!.Match( subject.AsMemory(), PcreMatchPolicyConsumer.Policy( mask ), start );
 			Assert.True( result.IsSuccess, $"managed {id}/{defaults}/{mask}: {result.Diagnostic}" );
@@ -263,7 +264,7 @@ public sealed class PcreWordLookaheadTests {
 		Assert.Equal( "0:0", Spans( deep.Match( "a".AsMemory() ).Match ) );
 		foreach ( var source in new[] { String.Concat( "(?=", nested, ")" ), "(?=a?b?c?d?e?f?)g?",
 			String.Concat( "(?=", String.Concat( Enumerable.Repeat( "a*", 65 ) ), ")" ),
-			"(?=a){65}", "(?=a){64,}", "(?=(?>(*COMMIT)a)){0}", "(?*a){65}", "(?<=a){65}", "(?<!a){65}", "(?>(*COMMIT)a)", "(?=a(*SKIP))" } ) {
+			"(?=a){65}", "(?=a){64,}", "(?=(?>(*THEN)a)){0}", "(?*a){65}", "(?<=a){65}", "(?<!a){65}", "(?>(*THEN)a)", "(?=a(*SKIP))" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

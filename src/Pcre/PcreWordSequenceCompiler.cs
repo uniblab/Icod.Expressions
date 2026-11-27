@@ -5,6 +5,8 @@ internal sealed record PcreWordSuffixChoices( PcreByteNode[][] Alternatives ) : 
 internal sealed record PcreWordPathMark( string Name ) : PcreByteNode;
 internal sealed record PcreWordFailure( string? Mark = null ) : PcreByteNode;
 internal sealed record PcreWordAccept( string? Mark = null ) : PcreByteNode;
+internal sealed record PcreWordCut( bool Commit, string? Mark = null ) : PcreByteNode;
+internal sealed record PcreWordPruneScan( bool Start ) : PcreByteNode;
 
 internal sealed record PcreWordGroup(
 	PcreByteNode[][] Alternatives, int PathCount, int ExpandedNodes, int UnboundedRepeats, int CaptureNumber = 0,
@@ -89,6 +91,7 @@ internal static class PcreWordSequenceCompiler {
 			var pending = new Stack<(PcreByteAlternatives Body, int Depth, bool Complete, PcreByteLookbehind? Behind)>();
 			var validationLookbehind = 0;
 			var hasAccept = false;
+			var hasCommit = false;
 			var hasSelectedReturns = false;
 			pending.Push( (root, 0, false, null) );
 			while ( pending.TryPop( out var item ) ) {
@@ -106,6 +109,7 @@ internal static class PcreWordSequenceCompiler {
 								nested = nested is PcreByteRepeat repeat ? repeat.Child : ( (PcreByteAtomic)nested ).Child;
 							}
 							hasAccept |= nested is PcreByteAccept;
+							hasCommit |= nested is PcreByteCommit;
 							hasSelectedReturns |= nested is PcreByteSubroutineCall selected && !selected.ReturnedCaptures.IsEmpty;
 							var nestedBody = nested switch {
 								PcreByteGroup direct => direct.Body,
@@ -130,11 +134,13 @@ internal static class PcreWordSequenceCompiler {
 					}
 					continue;
 				}
-				var body = BuildBody( item.Body, compiled, ref validationLookbehind, cancellationToken, item.Behind );
+				var body = BuildBody( item.Body, compiled, ref validationLookbehind, cancellationToken, item.Behind,
+					ReferenceEquals( item.Body, root ) && HasPruneLiteralCache( root ) );
 				if ( body is null ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
 				compiled.Add( item.Body, body );
 			}
 			var targets = new Dictionary<int, PcreByteNode[]>();
+			var cutTargets = new HashSet<int>();
 			// The pinned interpreter reports INTERNAL (-44) when ACCEPT returns
 			// selected captures. Keep this combination outside the bounded profile
 			// until its cross-dispatch contract is qualified, including erased bodies.
@@ -145,9 +151,14 @@ internal static class PcreWordSequenceCompiler {
 				// Source bodies were compiled once; do not expand or traverse call edges.
 				// A call executes the definition's body, not its enclosing capture close.
 				targets.Add( number, [compiled[target.Body]] );
+				if ( HasLexicalCut( target.Body, cancellationToken ) ) { cutTargets.Add( number ); }
 			}
+			var assertedOnly = false;
+			var startLiteral = hasCommit ? FindCommitStart( root, compiled.Keys, options, cancellationToken, out assertedOnly ) : null;
+			if ( hasCommit && assertedOnly ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
 			return new( new( compiled[root].Alternatives, options, validationLookbehind, settings.Newline,
-				settings.BsrAnyCrLf, parser.CreateCaptureInfo(), targets, parser.HasNonAtomicAccept ), null );
+				settings.BsrAnyCrLf, parser.CreateCaptureInfo(), targets, parser.HasNonAtomicAccept,
+				cutTargets, startLiteral ), null );
 		} catch ( PcreByteParseException error ) {
 			return Error( error.Diagnostic.Code == PcreByteDiagnosticCode.UnsupportedSyntax
 				? PcreWordDiagnosticCode.UnsupportedSyntax : PcreWordDiagnosticCode.InvalidSyntax, error.Diagnostic.ByteOffset );
@@ -156,7 +167,7 @@ internal static class PcreWordSequenceCompiler {
 
 	private static PcreWordGroup? BuildBody( PcreByteAlternatives root,
 		Dictionary<PcreByteAlternatives, PcreWordGroup> compiled, ref int validationLookbehind,
-		CancellationToken cancellationToken, PcreByteLookbehind? behind = null ) {
+		CancellationToken cancellationToken, PcreByteLookbehind? behind = null, bool cachePrune = false ) {
 		var branches = new List<PcreByteNode[]>();
 		var maximumNodes = 0;
 		var maximumRepeats = 0;
@@ -200,6 +211,8 @@ internal static class PcreWordSequenceCompiler {
 					continue;
 				}
 				nodes[original] = node switch {
+					PcreBytePrune prune => new PcreWordCut( false, CutMark( prune.WordName ) ),
+					PcreByteCommit commit => new PcreWordCut( true, CutMark( commit.WordName ) ),
 					PcreByteAccept accept => BuildAccept( accept ),
 					PcreByteRepeat { Child: PcreByteAccept accept } repeat => new PcreWordGroupRepeat(
 						new( [[BuildAccept( accept )]], 1, 1, 0 ), repeat.Minimum, repeat.Maximum, repeat.Greedy, true ),
@@ -229,6 +242,9 @@ internal static class PcreWordSequenceCompiler {
 						new( [[call]], 1, 1, 0 ), repeat.Minimum, repeat.Maximum, repeat.Greedy, repeat.Minimum == 1 ),
 					_ => node
 				};
+			}
+			if ( cachePrune && branch == 0 ) {
+				nodes = [new PcreWordPruneScan( true ), nodes[0], new PcreWordPruneScan( false ), .. nodes[1..]];
 			}
 			if ( behind is not null ) {
 				if ( behind.BranchLengths.Length != root.Branches.Count ) { return null; }
@@ -354,12 +370,179 @@ internal static class PcreWordSequenceCompiler {
 
 	// A label write must execute once before finite suffix choices. Replaying it
 	// on every expanded branch would erase a later accepted callee's committed label.
-	private static bool IsContinuationBoundary( PcreByteNode node ) => node is PcreWordPathMark or PcreWordGroup or PcreWordGroupRepeat
+	private static bool IsContinuationBoundary( PcreByteNode node ) => node is PcreWordPruneScan or PcreWordCut or PcreWordPathMark or PcreWordGroup or PcreWordGroupRepeat
 		or PcreWordAssertion or PcreWordAtomic or PcreWordReverse or PcreByteSubroutineCall or PcreWordConditional;
 
 	private static string VisibleMark( string name ) {
 		var nul = name.IndexOf( '\0' );
 		return nul < 0 ? name : name[..nul];
+	}
+
+	private static string? CutMark( string? name ) => name is { Length: > 0 } ? VisibleMark( name ) : null;
+
+	private static bool HasPruneLiteralCache( PcreByteAlternatives root ) {
+		// Native detect_early_fail reuses this leading literal-PLUS scan after PRUNE.
+		// Keep the proof confined to the same two-branch shape as the byte runner.
+		if ( root.Branches.Count != 2 || root.Branches[0].Count is not ( 3 or 4 )
+			|| root.Branches[0][0] is not PcreByteRepeat { Minimum: 1, Maximum: int.MaxValue,
+				Greedy: true, Offset: -1, Child: PcreByteLiteral { Caseless: false } literal }
+			|| root.Branches[0].Count == 4 && root.Branches[0][1] is not PcreByteCommit
+			|| root.Branches[0][^2] is not PcreBytePrune
+			|| root.Branches[0][^1] is not ( PcreByteFailure or PcreByteLiteral { Caseless: false } )
+			|| root.Branches[1].Count != 1 ) { return false; }
+		var fallback = root.Branches[1][0];
+		if ( fallback is PcreByteGroup { Body.Branches.Count: 1 } group && group.Body.Branches[0].Count == 1 ) {
+			fallback = group.Body.Branches[0][0];
+		}
+		return fallback is PcreByteLiteral { Caseless: false } other && other.Value == literal.Value;
+	}
+
+	private static bool HasLexicalCut( PcreByteAlternatives body, CancellationToken cancellationToken ) {
+		var pending = new Stack<PcreByteNode>();
+		AddBody( body );
+		while ( pending.TryPop( out var node ) ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			switch ( node ) {
+				case PcreBytePrune or PcreByteCommit: return true;
+				case PcreByteGroup group: AddBody( group.Body ); break;
+				case PcreByteNoncapturingGroup group: AddBody( group.Body ); break;
+				case PcreByteLookahead assertion: AddBody( assertion.Body ); break;
+				case PcreByteLookbehind assertion: AddBody( assertion.Body ); break;
+				case PcreByteAssertionConditional conditional:
+					AddBody( conditional.Body ); pending.Push( conditional.Assertion ); break;
+				case PcreByteAtomic atomic: pending.Push( atomic.Child ); break;
+				case PcreByteRepeat repeat: pending.Push( repeat.Child ); break;
+				default:
+					if ( ConditionalBody( node ) is { } conditionalBody ) { AddBody( conditionalBody ); }
+					break;
+			}
+		}
+		return false;
+		void AddBody( PcreByteAlternatives alternatives ) {
+			foreach ( var branch in alternatives.Branches ) {
+				foreach ( var node in branch ) { cancellationToken.ThrowIfCancellationRequested(); pending.Push( node ); }
+			}
+		}
+	}
+
+	private static PcreByteLiteral? FindCommitStart( PcreByteAlternatives root, IEnumerable<PcreByteAlternatives> sourceBodies,
+		PcreWordOptions options,
+		CancellationToken cancellationToken, out bool assertedOnly ) {
+		assertedOnly = false;
+		// Source bodies arrive in postorder. Distinguish an empty prefix from a
+		// consuming/nullable prefix whose first unit is unknown. Source alternatives
+		// must agree before their first literal can skip a candidate ahead of COMMIT.
+		var firstUnits = new Dictionary<PcreByteAlternatives, (PcreByteLiteral? Literal, bool Empty)>( ReferenceEqualityComparer.Instance );
+		foreach ( var body in sourceBodies ) {
+			(PcreByteLiteral? Literal, bool Empty)? common = null;
+			foreach ( var branch in body.Branches ) {
+				(PcreByteLiteral? Literal, bool Empty) first = (null, true);
+				foreach ( var node in branch ) {
+					cancellationToken.ThrowIfCancellationRequested();
+					first = FirstNode( node );
+					if ( !first.Empty ) { break; }
+				}
+				if ( common.HasValue && ( common.Value.Empty != first.Empty
+					|| !SameFirstUnit( common.Value.Literal, first.Literal ) ) ) { common = (null, false); break; }
+				common = first;
+			}
+			firstUnits.Add( body, common ?? (null, true) );
+		}
+		if ( firstUnits[root].Literal is { } consumingFirst ) { return consumingFirst; }
+		// Asserted-only study also depends on native required-unit and start-bitmap
+		// optimizations. Keep that separate qualification gate explicit rather than
+		// choosing a candidate at which COMMIT would not actually run natively.
+		var assertedUnits = new Dictionary<PcreByteAlternatives, (PcreByteLiteral? Outside, PcreByteLiteral? Inside)>( ReferenceEqualityComparer.Instance );
+		foreach ( var body in sourceBodies ) {
+			assertedUnits.Add( body, (AssertedBody( body, false ), AssertedBody( body, true )) );
+		}
+		assertedOnly = assertedUnits[root].Outside is not null;
+		return null;
+
+		PcreByteLiteral? AssertedBody( PcreByteAlternatives body, bool inside ) {
+			PcreByteLiteral? common = null;
+			foreach ( var branch in body.Branches ) {
+				PcreByteLiteral? first = null;
+				foreach ( var source in branch ) {
+					cancellationToken.ThrowIfCancellationRequested();
+					var node = source;
+					if ( node is PcreBytePathMark or PcreByteWordBoundary or PcreByteLookbehind
+						or PcreByteLookahead { IsPositive: false } or PcreByteStaticConditional { IsDefinition: true }
+						or PcreByteRepeat { Maximum: 0 } or PcreByteCommit { WordName.Length: > 0 }
+						or PcreBytePrune { WordName.Length: > 0 } ) { continue; }
+					while ( node is PcreByteAtomic or PcreByteRepeat { Minimum: > 0 } ) {
+						cancellationToken.ThrowIfCancellationRequested();
+						node = node is PcreByteAtomic atomic ? atomic.Child : ( (PcreByteRepeat)node ).Child;
+					}
+					var nested = node switch {
+						PcreByteGroup group => group.Body,
+						PcreByteNoncapturingGroup group => group.Body,
+						PcreByteLookahead { IsPositive: true } assertion => assertion.Body,
+						_ => null
+					};
+					if ( nested is not null ) {
+						var entry = assertedUnits[nested];
+						first = inside || node is PcreByteLookahead ? entry.Inside : entry.Outside;
+					} else if ( inside ) { first = FirstNode( node ).Literal; }
+					break;
+				}
+				if ( first is null || common is not null && !SameFirstUnit( common, first ) ) { return null; }
+				common = first;
+			}
+			return common;
+		}
+
+		// Native first-unit flags carry caselessness, not lexical r. Both literals
+		// have already passed the multi-case-set gate, so r cannot change this pair.
+		static bool SameFirstUnit( PcreByteLiteral? left, PcreByteLiteral? right ) => left is null ? right is null
+			: right is not null && left.Value == right.Value && left.Caseless == right.Caseless;
+
+		PcreByteLiteral? UnitLiteral( PcreByteLiteral literal ) {
+			if ( literal.Caseless && ( options.Utf16 || options.Ucp )
+				&& ( options.Utf16 && literal.Value > 0xffff
+					|| PcreUtf8CaseFold.HasMultipleOtherCases( literal.Value, literal.CaselessRestricted, cancellationToken ) ) ) { return null; }
+			return literal with { Value = literal.Value > 0xffff ? 0xd800 + ( ( literal.Value - 0x10000 ) >> 10 ) : literal.Value };
+		}
+		(PcreByteLiteral? Literal, bool Empty) FirstNode( PcreByteNode node ) {
+			var optional = false;
+			while ( node is PcreByteRepeat or PcreByteAtomic ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				if ( node is PcreByteRepeat repeat ) { optional |= repeat.Minimum == 0; node = repeat.Child; }
+				else { node = ( (PcreByteAtomic)node ).Child; }
+			}
+			(PcreByteLiteral? Literal, bool Empty) result;
+			switch ( node ) {
+				case PcreByteLiteral literal: result = (UnitLiteral( literal ), false); break;
+				case PcreByteGroup group: result = firstUnits[group.Body]; break;
+				case PcreByteNoncapturingGroup group: result = firstUnits[group.Body]; break;
+				case PcreBytePathMark or PcreBytePrune or PcreByteCommit or PcreByteFailure
+					or PcreByteLookahead or PcreByteLookbehind or PcreByteAnchor or PcreByteSearchStart
+					or PcreByteEndBeforeFinalLf or PcreByteWordBoundary or PcreByteStaticConditional { IsDefinition: true }:
+					result = (null, true); break;
+				case PcreByteScalarSet { Negated: false, Predicates.IsEmpty: true } set:
+					var value = set.SourceLiteral;
+					var caseless = set.Caseless;
+					if ( value < 0 && set.Ranges.Length is 1 or 2 && set.Ranges.Span[0] is var range && range.Start == range.End ) {
+						value = range.Start;
+						if ( set.Ranges.Length == 2 ) {
+							var second = set.Ranges.Span[1];
+							var partners = options.Utf16 || options.Ucp
+								? PcreUtf8CaseFold.Equals( value, second.Start, set.CaselessRestricted )
+								: value is >= 'A' and <= 'Z' && second.Start == value + 32;
+							if ( second.Start != second.End || !partners ) { value = -1; }
+							else { caseless = true; }
+						}
+					}
+					result = (value < 0 ? null : UnitLiteral( new( value ) { Caseless = caseless, CaselessRestricted = set.CaselessRestricted } ), false);
+					break;
+				default:
+					var conditional = ConditionalBody( node );
+					result = conditional is { Branches.Count: 2 } ? firstUnits[conditional] : (null, false);
+					break;
+			}
+			return optional && !result.Empty ? (null, false) : result;
+		}
+
 	}
 
 	private static PcreByteAlternatives? ConditionalBody( PcreByteNode node ) => node switch {
@@ -517,7 +700,7 @@ internal static class PcreWordSequenceCompiler {
 	}
 
 	private static bool IsSupportedNode( PcreByteNode node ) => IsSupportedAtom( node )
-		|| node is PcreWordPathMark or PcreWordFailure or PcreWordAccept
+		|| node is PcreWordPathMark or PcreWordFailure or PcreWordAccept or PcreWordCut or PcreWordPruneScan
 		|| node is PcreByteAnchor or PcreByteLineAnchor or PcreByteEndBeforeFinalLf
 			or PcreByteSearchStart or PcreByteWordBoundary or PcreByteBackreference
 			or PcreWordGroup or PcreWordGroupRepeat or PcreWordAssertion or PcreWordAtomic or PcreWordReverse or PcreByteSubroutineCall or PcreWordConditional;

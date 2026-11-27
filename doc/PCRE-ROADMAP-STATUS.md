@@ -1,5 +1,18 @@
 # PCRE roadmap status
 
+## Native 16-bit PRUNE and COMMIT
+
+The [cut record](PCRE-WORD-CUTS.md) adds candidate abandonment, committed search
+failure, scope catches and named cut labels. Selected-capture rollback and accepted
+call labels follow native JIT/interpreter dispatch. Original-unit candidate proofs
+cover leading COMMIT and the bounded PRUNE literal scan cache. 1,070 fixtures add
+547,840 full-vector and label policy comparisons. THEN and SKIP are next; public
+word entry points and the remaining broader profile gates still follow.
+Native policy batches compile once per defaults row while retaining every mask
+and comparison, reducing repeated native setup during CI.
+Asserted-only COMMIT start proofs remain explicitly unqualified pending their
+required-unit/start-bitmap interactions.
+
 ## Native 16-bit scoped ACCEPT
 
 The [ACCEPT record](PCRE-WORD-ACCEPT.md) adds immediate root, assertion and
@@ -8,7 +21,8 @@ labels. Lexical non-atomic ACCEPT retains native interpreter dispatch even in
 erased bodies; policy rejection and accepted-call label rollback follow their
 respective native paths. 637 fixtures add 326,144 capture/label comparisons.
 ACCEPT with selected-capture returns remains explicitly unqualified because the
-pinned interpreter reports INTERNAL. PRUNE, COMMIT, THEN and SKIP are next.
+pinned interpreter reports INTERNAL. PRUNE and COMMIT are covered by the next
+record above; THEN and SKIP remain open.
 
 ## Native 16-bit failure verbs and path labels
 

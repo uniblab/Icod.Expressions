@@ -19,13 +19,13 @@ internal sealed record PcreByteFailure( ReadOnlyMemory<byte> Name = default, str
 
 internal sealed record PcreByteAccept( ReadOnlyMemory<byte> Name = default, string? WordName = null ) : PcreByteNode;
 
-internal sealed record PcreBytePrune( ReadOnlyMemory<byte> Name = default ) : PcreByteNode;
+internal sealed record PcreBytePrune( ReadOnlyMemory<byte> Name = default, string? WordName = null ) : PcreByteNode;
 
 internal sealed record PcreByteSkip : PcreByteNode;
 
 internal sealed record PcreByteNamedSkip( ReadOnlyMemory<byte> Name ) : PcreByteNode;
 
-internal sealed record PcreByteCommit( ReadOnlyMemory<byte> Name = default ) : PcreByteNode;
+internal sealed record PcreByteCommit( ReadOnlyMemory<byte> Name = default, string? WordName = null ) : PcreByteNode;
 
 internal sealed record PcreByteThen( ReadOnlyMemory<byte> Name = default ) : PcreByteNode;
 

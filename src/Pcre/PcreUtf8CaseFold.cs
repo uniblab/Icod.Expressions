@@ -7,6 +7,21 @@ internal static partial class PcreUtf8CaseFold {
 	internal static bool Equals( int left, int right, bool restricted = false, bool turkish = false ) =>
 		left == right || Fold( left, restricted, turkish ) == Fold( right, restricted, turkish );
 
+	internal static bool HasMultipleOtherCases( int scalar, bool restricted, CancellationToken cancellationToken ) {
+		// Native compiles equivalence sets larger than a pair as a property test,
+		// which cannot supply a first-code-unit literal for COMMIT candidate study.
+		var key = Fold( scalar, restricted );
+		var count = key is >= 'a' and <= 'z' ? 2 : 1;
+		foreach ( var mapping in UnicodeMappings ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( (int)( mapping & 0x1FFFFFUL ) != key ) { continue; }
+			var source = (int)( mapping >> 21 );
+			if ( restricted && source >= 128 && key < 128 ) { continue; }
+			if ( ++count > 2 ) { return true; }
+		}
+		return false;
+	}
+
 	internal static PcreByteScalarRange[] CloseRanges(
 		IReadOnlyList<PcreByteScalarRange> ranges, CancellationToken cancellationToken, bool restricted = false,
 		bool turkish = false, bool includeSurrogates = false

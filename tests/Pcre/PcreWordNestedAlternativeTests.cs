@@ -87,8 +87,9 @@ public sealed class PcreWordNestedAlternativeTests {
 			Utf16 = utf, Ucp = ucp, Policy = PcreMatchPolicyConsumer.Policy( defaults )
 		} );
 		Assert.True( compiled.IsSuccess, $"nested alternatives {id}: {compiled.Diagnostic}" );
+		var nativePolicies = PcreNative16Oracle.ExecuteSequencePolicies( Words( source ), Words( subject ), utf, (uint)start, defaults, ucp );
 		for ( var mask = 0; mask < 64; mask++ ) {
-			var native = PcreNative16Oracle.ExecuteSequence( Words( source ), Words( subject ), utf, (uint)start, defaults, mask, ucp );
+			var native = nativePolicies[mask];
 			Assert.True( native.Kind is "M" or "N", $"native {id}/{defaults}/{mask}: {native}" );
 			var result = compiled.Pattern!.Match( subject.AsMemory(), PcreMatchPolicyConsumer.Policy( mask ), start );
 			Assert.True( result.IsSuccess, $"managed {id}/{defaults}/{mask}: {result.Diagnostic}" );
@@ -182,7 +183,7 @@ public sealed class PcreWordNestedAlternativeTests {
 		foreach ( var source in new[] { Nested( "a", 65 ), String.Concat( choices, "(?:a|b)" ),
 			String.Concat( choices, "|x" ), String.Concat( choices, "a?" ), String.Concat( repeats, "a*" ),
 			String.Concat( "a", expanded ),
-			"(?>(*COMMIT)a|b)", "(?*a){65}b", "(?<*a){65}b", "a{65,}+", "(?:a(*COMMIT)|b)" } ) {
+			"(?>(*THEN)a|b)", "(?*a){65}b", "(?<*a){65}b", "a{65,}+", "(?:a(*THEN)|b)" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

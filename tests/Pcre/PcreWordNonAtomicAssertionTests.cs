@@ -159,8 +159,9 @@ public sealed class PcreWordNonAtomicAssertionTests {
 			Utf16 = utf, Ucp = ucp, Policy = PcreMatchPolicyConsumer.Policy( defaults )
 		} );
 		Assert.True( compiled.IsSuccess, $"non-atomic {id}: {compiled.Diagnostic}" );
+		var nativePolicies = PcreNative16Oracle.ExecuteSequencePolicies( Words( source ), Words( subject ), utf, (uint)start, defaults, ucp );
 		for ( var mask = 0; mask < 64; mask++ ) {
-			var native = PcreNative16Oracle.ExecuteSequence( Words( source ), Words( subject ), utf, (uint)start, defaults, mask, ucp );
+			var native = nativePolicies[mask];
 			Assert.True( native.Kind is "M" or "N", $"native {id}/{defaults}/{mask}: {native}" );
 			var result = compiled.Pattern!.Match( subject.AsMemory(), PcreMatchPolicyConsumer.Policy( mask ), start );
 			Assert.True( result.IsSuccess, $"managed {id}/{defaults}/{mask}: {result.Diagnostic}" );
@@ -281,7 +282,7 @@ public sealed class PcreWordNonAtomicAssertionTests {
 		}
 		foreach ( var source in new[] { "(?*a?b?c?d?e?f?)g?", "(?<*a?b?c?d?e?f?)g?",
 			"(?<*a*)", "(?<*(?:a{64}){3}a{62}a{0,2})",
-			"(?*a){65}", "(?*a){64,}", "(?*(?>(*COMMIT)a)){0}", "(?<*a){65}", "(?*(?>(*COMMIT)a))", "(?*a(*COMMIT))" } ) {
+			"(?*a){65}", "(?*a){64,}", "(?*(?>(*THEN)a)){0}", "(?<*a){65}", "(?*(?>(*THEN)a))", "(?*a(*THEN))" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

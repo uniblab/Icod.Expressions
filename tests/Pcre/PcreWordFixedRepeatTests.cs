@@ -56,8 +56,9 @@ public sealed class PcreWordFixedRepeatTests {
 			Utf16 = utf, Ucp = ucp, Policy = PcreMatchPolicyConsumer.Policy( defaults )
 		} );
 		Assert.True( compiled.IsSuccess, $"repeat {id}: {compiled.Diagnostic}" );
+		var nativePolicies = PcreNative16Oracle.ExecuteSequencePolicies( Words( source ), Words( subject ), utf, (uint)start, defaults, ucp );
 		for ( var mask = 0; mask < 64; mask++ ) {
-			var native = PcreNative16Oracle.ExecuteSequence( Words( source ), Words( subject ), utf, (uint)start, defaults, mask, ucp );
+			var native = nativePolicies[mask];
 			Assert.True( native.Kind is "M" or "N", $"native {id}/{defaults}/{mask}: {native}" );
 			var match = compiled.Pattern!.Match( subject.AsMemory(), PcreMatchPolicyConsumer.Policy( mask ), start );
 			Assert.True( match.IsSuccess, $"managed {id}/{defaults}/{mask}: {match.Diagnostic}" );
@@ -106,7 +107,7 @@ public sealed class PcreWordFixedRepeatTests {
 		Assert.True( PcreWordSequenceCompiler.CompileSequence(
 			String.Concat( Enumerable.Repeat( "a{64}", 64 ) ).AsMemory() ).IsSuccess );
 		foreach ( var source in new[] { "a{65}", String.Concat( Enumerable.Repeat( "a{64}", 64 ).Append( "a" ) ),
-			"a{65}+", "(?>(*COMMIT)a){2}" } ) {
+			"a{65}+", "(?>(*THEN)a){2}" } ) {
 			var result = PcreWordSequenceCompiler.CompileSequence( source.AsMemory() );
 			Assert.True( result.Diagnostic?.Code == PcreWordDiagnosticCode.UnsupportedSyntax,
 				$"{source}: {result.Diagnostic}" );

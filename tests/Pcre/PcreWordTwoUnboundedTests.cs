@@ -69,8 +69,9 @@ public sealed class PcreWordTwoUnboundedTests {
 			Utf16 = utf, Ucp = ucp, Policy = PcreMatchPolicyConsumer.Policy( defaults )
 		} );
 		Assert.True( compiled.IsSuccess, $"two repeats {id}: {compiled.Diagnostic}" );
+		var nativePolicies = PcreNative16Oracle.ExecuteSequencePolicies( Words( source ), Words( subject ), utf, (uint)start, defaults, ucp );
 		for ( var mask = 0; mask < 64; mask++ ) {
-			var native = PcreNative16Oracle.ExecuteSequence( Words( source ), Words( subject ), utf, (uint)start, defaults, mask, ucp );
+			var native = nativePolicies[mask];
 			Assert.True( native.Kind is "M" or "N", $"native {id}/{defaults}/{mask}: {native}" );
 			var match = compiled.Pattern!.Match( subject.AsMemory(), PcreMatchPolicyConsumer.Policy( mask ), start );
 			Assert.True( match.IsSuccess, $"managed {id}/{defaults}/{mask}: {match.Diagnostic}" );
@@ -113,7 +114,7 @@ public sealed class PcreWordTwoUnboundedTests {
 	public void RepeatMinimumBoundsAndUnsupportedWrappersRemainOutsideAdmission() {
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( "a{64,}bc{64,}d".AsMemory() ).IsSuccess );
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( "x?a*b*c".AsMemory() ).IsSuccess );
-		foreach ( var source in new[] { "a{65,}b*c", "a*b{65,}c", "(?>(*COMMIT)a*)b*c", "a{65,}+b*c" } ) {
+		foreach ( var source in new[] { "a{65,}b*c", "a*b{65,}c", "(?>(*THEN)a*)b*c", "a{65,}+b*c" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

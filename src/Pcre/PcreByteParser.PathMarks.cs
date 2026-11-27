@@ -41,8 +41,14 @@ internal sealed partial class PcreByteParser {
 	}
 
 	private PcreByteNode? TryParseNamedCut() {
-		if ( TryConsumeGroupAlias( "*PRUNE:"u8 ) ) { return new PcreBytePrune( ReadControlVerbName( "PRUNE", requireName: false ) ); }
-		if ( TryConsumeGroupAlias( "*COMMIT:"u8 ) ) { return new PcreByteCommit( ReadControlVerbName( "COMMIT", requireName: false ) ); }
+		if ( TryConsumeGroupAlias( "*PRUNE:"u8 ) ) {
+			var name = ReadControlVerbName( "PRUNE", requireName: false, out var wordName );
+			return new PcreBytePrune( name, wordName );
+		}
+		if ( TryConsumeGroupAlias( "*COMMIT:"u8 ) ) {
+			var name = ReadControlVerbName( "COMMIT", requireName: false, out var wordName );
+			return new PcreByteCommit( name, wordName );
+		}
 		if ( TryConsumeGroupAlias( "*THEN:"u8 ) ) {
 			HasThen = true;
 			return new PcreByteThen( ReadControlVerbName( "THEN", requireName: false ) );

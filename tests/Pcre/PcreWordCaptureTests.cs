@@ -144,8 +144,9 @@ public sealed class PcreWordCaptureTests {
 			Utf16 = utf, Ucp = ucp, Policy = PcreMatchPolicyConsumer.Policy( defaults )
 		} );
 		Assert.True( compiled.IsSuccess, $"capture {id}: {compiled.Diagnostic}" );
+		var nativePolicies = PcreNative16Oracle.ExecuteSequencePolicies( Words( source ), Words( subject ), utf, (uint)start, defaults, ucp );
 		for ( var mask = 0; mask < 64; mask++ ) {
-			var native = PcreNative16Oracle.ExecuteSequence( Words( source ), Words( subject ), utf, (uint)start, defaults, mask, ucp );
+			var native = nativePolicies[mask];
 			Assert.True( native.Kind is "M" or "N", $"native {id}/{defaults}/{mask}: {native}" );
 			var result = compiled.Pattern!.Match( subject.AsMemory(), PcreMatchPolicyConsumer.Policy( mask ), start );
 			Assert.True( result.IsSuccess, $"managed {id}/{defaults}/{mask}: {result.Diagnostic}" );
@@ -324,11 +325,11 @@ public sealed class PcreWordCaptureTests {
 	}
 
 	[Theory]
-	[InlineData( "(a)(?1)(*COMMIT)" )]
+	[InlineData( "(a)(?1)(*THEN)" )]
 	[InlineData( "(?<*(a)){65}b" )]
-	[InlineData( "(?>(*COMMIT)a)" )]
+	[InlineData( "(?>(*THEN)a)" )]
 	[InlineData( "(a){65,}+" )]
-	[InlineData( "(a)(*COMMIT)" )]
+	[InlineData( "(a)(*THEN)" )]
 	public void CaptureDependentExecutionStillRequiresExplicitAdmission( string source ) {
 		Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 			PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
