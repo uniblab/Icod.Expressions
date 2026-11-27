@@ -178,7 +178,7 @@ internal static class PcreWordSequenceCompiler {
 						new( [[reference]], 1, 1, 0 ), repeat.Minimum, repeat.Maximum, repeat.Greedy,
 						repeat.Offset < 0 && repeat.Minimum == 1 ),
 					PcreByteRepeat { Child: PcreByteSubroutineCall call } repeat => new PcreWordGroupRepeat(
-						new( [[call]], 1, 1, 0 ), repeat.Minimum, repeat.Maximum, repeat.Greedy, true ),
+						new( [[call]], 1, 1, 0 ), repeat.Minimum, repeat.Maximum, repeat.Greedy, repeat.Minimum == 1 ),
 					_ => node
 				};
 			}

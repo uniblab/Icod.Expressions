@@ -31,10 +31,12 @@ of their internal choices. Non-atomic assertions can resume called bodies.
 Fixed and bounded-variable lookbehind retain their existing endpoint visibility
 and whole-unit/scalar rewind rules, including through a call.
 
-The final required copy of an unbounded call repeat checks empty progress,
-matching native PCRE2. The byte emitter now applies the same check to counted
-calls, reusing the existing journaled progress marker and repeat-state capacity.
-Directly quantified assertions retain their separate finite-bound rule.
+An unbounded call repeat with minimum one checks empty progress immediately
+after that required call. Higher minima run their required copies before the
+separate optional loop; an empty optional call can still update returned
+captures. The byte emitter now applies the minimum-one check to counted calls,
+reusing its journaled progress marker and repeat-state capacity. Directly
+quantified assertions retain their separate finite-bound rule.
 
 ## Resource and ownership behavior
 
@@ -57,14 +59,14 @@ fallback, subject copy or transcoding in managed execution.
 
 ## Evidence and remaining work
 
-237 fixtures across eight compiled defaults and all 64 call masks add 121,344
+243 fixtures across eight compiled defaults and all 64 call masks add 124,416
 full-vector PCRE2-16 comparisons. They cover call spellings, first definitions,
 forward and mutual references, recursive and whole-pattern calls, capture
 restoration and selection, repeats, nested assertions, atomic pruning,
 lookbehind, Unicode names/casing/classes, raw surrogate units and caller offsets.
-The pinned native preflight produced 64,184 matches and 57,160 misses with no
+The pinned native preflight produced 66,424 matches and 57,992 misses with no
 native errors. LF output SHA-256:
-`20cf4c53536095176b9f68bb285359ffb8297651636ed99874360f5f62a830f8`.
+`176a4371dbc6f5c37c279b3d3d92c19f5736c713289e6ce547c3d5a2313fa7b7`.
 Oracle provenance is in [word-sequence evidence](PCRE-WORD-SEQUENCES.md).
 
 Additional regressions pin explicit capture results, native and managed

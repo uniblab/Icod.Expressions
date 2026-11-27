@@ -6,9 +6,10 @@ The [subroutine record](PCRE-WORD-SUBROUTINES.md) adds numbered/relative/named
 calls, DEFINE blocks, forward and recursive targets, whole-pattern recursion
 and selected returned captures. Integer call edges reuse compiled source bodies;
 return guards restore caller captures while retaining callee retry choices.
-237 fixtures add 121,344 full-vector PCRE2-16 policy comparisons. Counted call
-repeats also receive the native final-required empty-progress check in both
-widths. Conditions and verbs are next; quantified DEFINE blocks remain open.
+243 fixtures add 124,416 full-vector PCRE2-16 policy comparisons. Counted call
+repeats also receive the native minimum-one empty-progress check in both widths;
+higher minima preserve the separate optional call. Conditions and verbs are
+next; quantified DEFINE blocks remain open.
 
 ## Native 16-bit atomic groups and possessive repeats
 

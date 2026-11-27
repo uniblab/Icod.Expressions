@@ -246,6 +246,12 @@ public sealed class PcreWordSubroutineTests {
 				("(?(DEFINE)(?<x>\\x{0}+))(?&x)", "\u0000\u0000", 0, false, false),
 				("(?<x>\ud800)(?&x)", "\ud800\ud800", 0, false, false),
 				("(?(DEFINE)(?<x>\udc00))(?&x)", "\udc00", 0, false, false),
+				("(?(DEFINE)(?<x>(?=(\\2a|a))))(?&x(2)){1,}?\\2", "aaaa", 0, true, false),
+				("(?(DEFINE)(?<x>(?=(\\2a|a))))(?&x(2)){1,}+\\2", "aaaa", 0, true, false),
+				("(?(DEFINE)(?<x>(?=(\\2a|a))))(?&x(2)){2,}?\\2", "aaaa", 0, true, false),
+				("(?(DEFINE)(?<x>(?=(\\2a|a))))(?&x(2)){2,}+\\2", "aaaa", 0, true, false),
+				("(?(DEFINE)(?<x>(?=(\\2a|a))))(?&x(2)){3,}\\2", "aaaa", 0, true, false),
+				("(?(DEFINE)(?<x>(?=(\\2a|a))))(?&x(2)){3,}?\\2", "aaaa", 0, true, false),
 			};
 			for ( var id = 0; id < cases.Length; id++ ) {
 				var (source, subject, start, utf, ucp) = cases[id];
@@ -287,7 +293,7 @@ public sealed class PcreWordSubroutineTests {
 	[InlineData( @"\A(?<g>a(?&g)?b)\z", "aabb", "0:4,0:4" )]
 	[InlineData( @"<(?:(?<x>[a-z])|(?R))*>", "<a<b>>", "0:6,1:1" )]
 	[InlineData( @"<(?:(?<x>[a-z])|(?R(<x>)))*>", "<a<b>>", "0:6,3:1" )]
-	[InlineData( @"(?(DEFINE)(?<g>(?=(\2a|a))))(?&g(2)){2,}\2", "aaaa", "0:2,-,0:2" )]
+	[InlineData( @"(?(DEFINE)(?<g>(?=(\2a|a))))(?&g(2)){2,}\2", "aaaa", "0:3,-,0:3" )]
 	public void CaptureRestorationSelectionsAndCalleeRetryHaveExplicitOutcomes( string source, string subject, string expected ) {
 		Assert.Equal( expected, PcreNative16Oracle.ExecuteSequence( Words( source ), Words( subject ), true, 0 ).Captures );
 		var compiled = PcreWordSequenceCompiler.CompileSequence( source.AsMemory(), new() { Utf16 = true } );
@@ -301,7 +307,11 @@ public sealed class PcreWordSubroutineTests {
 	[InlineData( "(?(DEFINE)(?<g>(a|ab)))(?&g(2))c", "abc" )]
 	[InlineData( "(?<g>(a|b))(?&g(1,2))", "ab" )]
 	[InlineData( @"(?(DEFINE)(?<g>(?=(\2a|a))))(?&g(2)){1,}\2", "aaaa" )]
+	[InlineData( @"(?(DEFINE)(?<g>(?=(\2a|a))))(?&g(2)){1,}?\2", "aaaa" )]
+	[InlineData( @"(?(DEFINE)(?<g>(?=(\2a|a))))(?&g(2)){1,}+\2", "aaaa" )]
 	[InlineData( @"(?(DEFINE)(?<g>(?=(\2a|a))))(?&g(2)){2,}\2", "aaaa" )]
+	[InlineData( @"(?(DEFINE)(?<g>(?=(\2a|a))))(?&g(2)){2,}?\2", "aaaa" )]
+	[InlineData( @"(?(DEFINE)(?<g>(?=(\2a|a))))(?&g(2)){2,}+\2", "aaaa" )]
 	[InlineData( @"(?(DEFINE)(?<g>(?=(\2a|a))))(?&g(2)){3,}+\2", "aaaa" )]
 	[InlineData( @"\A(?<g>a(?&g)?b)\z", "aaabbb" )]
 	[InlineData( @"<(?:(?<x>[a-z])|(?R(<x>)))*>", "<a<b>>" )]
