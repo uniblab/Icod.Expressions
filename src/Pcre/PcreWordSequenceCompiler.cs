@@ -87,6 +87,7 @@ internal static class PcreWordSequenceCompiler {
 			if ( root.Branches.Count is < 1 or > 64 ) {
 				return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
 			}
+			var pruneCacheBody = FindPruneLiteralCacheBody( root );
 			var compiled = new Dictionary<PcreByteAlternatives, PcreWordGroup>( ReferenceEqualityComparer.Instance );
 			var pending = new Stack<(PcreByteAlternatives Body, int Depth, bool Complete, PcreByteLookbehind? Behind)>();
 			var validationLookbehind = 0;
@@ -135,7 +136,7 @@ internal static class PcreWordSequenceCompiler {
 					continue;
 				}
 				var body = BuildBody( item.Body, compiled, ref validationLookbehind, cancellationToken, item.Behind,
-					ReferenceEquals( item.Body, root ) && HasPruneLiteralCache( root ) );
+					ReferenceEquals( item.Body, pruneCacheBody ) );
 				if ( body is null ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
 				compiled.Add( item.Body, body );
 			}
@@ -383,13 +384,28 @@ internal static class PcreWordSequenceCompiler {
 
 	private static string? CutMark( string? name ) => name is { Length: > 0 } ? VisibleMark( name ) : null;
 
+	private static PcreByteAlternatives? FindPruneLiteralCacheBody( PcreByteAlternatives root ) {
+		// Native early-failure study descends at most four ordinary group levels.
+		// A sole root wrapper cannot have calls or references to its own capture.
+		for ( var depth = 0; depth < 4 && root.Branches.Count == 1 && root.Branches[0].Count == 1; depth++ ) {
+			var nested = root.Branches[0][0] switch {
+				PcreByteGroup group => group.Body,
+				PcreByteNoncapturingGroup group => group.Body,
+				_ => null
+			};
+			if ( nested is null ) { break; }
+			root = nested;
+		}
+		return HasPruneLiteralCache( root ) ? root : null;
+	}
+
 	private static bool HasPruneLiteralCache( PcreByteAlternatives root ) {
 		// Native detect_early_fail reuses this leading literal-PLUS scan after PRUNE.
 		// Keep the proof confined to the same two-branch shape as the byte runner.
 		if ( root.Branches.Count != 2 || root.Branches[0].Count is not ( 3 or 4 )
 			|| root.Branches[0][0] is not PcreByteRepeat { Minimum: 1, Maximum: int.MaxValue,
 				Greedy: true, Offset: -1, Child: PcreByteLiteral { Caseless: false } literal }
-			|| root.Branches[0].Count == 4 && root.Branches[0][1] is not PcreByteCommit
+			|| root.Branches[0].Count == 4 && root.Branches[0][1] is not ( PcreByteCommit or PcreByteThen )
 			|| root.Branches[0][^2] is not PcreBytePrune
 			|| root.Branches[0][^1] is not ( PcreByteFailure or PcreByteLiteral { Caseless: false } )
 			|| root.Branches[1].Count != 1 ) { return false; }

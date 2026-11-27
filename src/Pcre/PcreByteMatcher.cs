@@ -286,11 +286,11 @@ internal static partial class PcreByteMatcher {
 						var failed = false;
 						switch ( instruction.Opcode ) {
 						case PcreByteOpcode.PruneRepeatStart:
-							if ( position < pruneLiteralEnd ) { failed = true; }
+							if ( !interpreted && position < pruneLiteralEnd ) { failed = true; }
 							else { pc++; }
 							break;
 						case PcreByteOpcode.PruneRepeatEnd:
-							pruneLiteralEnd = Math.Max( pruneLiteralEnd, position );
+							if ( !interpreted ) { pruneLiteralEnd = Math.Max( pruneLiteralEnd, position ); }
 							pc++;
 							break;
 						case PcreByteOpcode.Then:

@@ -31,10 +31,17 @@ named-cut contract. Direct THEN quantifiers remain invalid. Whole-source admissi
 strict UTF validation, original-unit capture coordinates, cancellation, work quotas
 and the 1,024-frame ceiling remain in force.
 
+A following PRUNE can discard THEN before it fires. The bounded leading literal
+scan cache recognizes this pair, including up to four sole ordinary root group
+wrappers, matching native early-failure study. Both word and byte matching apply
+this cache only under JIT dispatch; call-time anchors and NO_JIT retain interpreter
+behavior. Separate byte comparisons cover these wrappers, labels and dispatch
+options without changing the native reference.
+
 ## Evidence and remaining scope
 
-The corpus has 1,018 raw16/UTF16 fixtures across eight compiled defaults and all
-64 call masks: 521,216 native PCRE2-16 comparisons of full capture vectors and
+The corpus has 1,114 raw16/UTF16 fixtures across eight compiled defaults and all
+64 call masks: 570,368 native PCRE2-16 comparisons of full capture vectors and
 successful labels. Native preflight reports no compile/match errors. Supplemental
 tests cover exact budgets, cancellation at every observed transition, frame
 exhaustion, unsupported erased source, ownership and concurrent reuse.
@@ -43,7 +50,7 @@ Native reference: PCRE2 10.48, commit
 `7978954dbd2efc6f2196869290553cf1871b4ce6`, with SLJIT
 `de0259c7aaf36aa40cba8014f3fad3edde9307f9`.
 Protocol SHA-256:
-`5e7742e4fb6ac2180825938475cc0c11224b98d63d46252352db338ad15af4c1`.
+`037a09a197b7d8e64368a5ed50a7f14bd9db12ee110e0ec60efb0a638a01c1ea`.
 Managed build, test and package qualification is tracked by this increment's PR.
 
 SKIP and named-SKIP history/replay are next. ACCEPT with selected returns and

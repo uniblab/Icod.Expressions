@@ -5,9 +5,11 @@
 The [THEN record](PCRE-WORD-THEN.md) adds lexical alternative cuts and named
 labels. Original source alternatives own retries across finite lowering; calls,
 assertions, selected returns and accepted-call labels follow native dispatch.
-1,018 fixtures add 521,216 full-vector and label policy comparisons. SKIP and
+1,114 fixtures add 570,368 full-vector and label policy comparisons. SKIP and
 named-SKIP history/replay are next; existing ACCEPT/COMMIT qualification gates
-and public word integration remain open.
+and public word integration remain open. The bounded literal/PRUNE scan proof
+also covers a preceding THEN and up to four sole root group wrappers in both
+widths; interpreter dispatch does not reuse the JIT scan.
 
 ## Native 16-bit PRUNE and COMMIT
 
