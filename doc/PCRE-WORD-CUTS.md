@@ -30,8 +30,9 @@ label behavior.
 The native first-code-unit proof skips eligible candidates before entering a
 leading COMMIT. It uses original raw/UTF16 units, including the first surrogate,
 and simple Unicode case pairs; larger case equivalence sets do not supply that
-proof. A bounded leading literal-plus/PRUNE/fallback shape also retains native
-scan reuse across candidates. These are semantic candidate proofs, not a general
+proof. Source alternatives must agree on the first unit; singleton/case-pair
+classes and nested groups preserve the proof. A bounded leading literal-plus/PRUNE/fallback shape also retains native
+JIT scan reuse across candidates; interpreter matching does not reuse it. These are semantic candidate proofs, not a general
 new optimizer.
 
 ## Bounds and evidence
@@ -40,10 +41,13 @@ Scope traversal, checkpoint pruning, selected-capture journal edits and candidat
 proofs share work quotas and cancellation. The 1,024-frame ceiling, whole-source
 admission, strict UTF validation and original-unit capture coordinates remain in
 force. THEN, SKIP, match-start reset and other unqualified word features remain
-outside this profile. ACCEPT with selected returns remains explicitly rejected.
+outside this profile. ACCEPT with selected returns remains explicitly rejected. COMMIT patterns whose
+first-unit proof is supplied only by a positive assertion are also explicitly
+rejected: qualifying their required-unit and start-bitmap interactions is a
+separate follow-up. Ordinary consuming first-unit proofs remain supported.
 
-The corpus has 1,002 raw16/UTF16 fixtures, eight compiled defaults and all 64
-call masks: 513,024 native PCRE2-16 comparisons of full capture vectors and
+The corpus has 1,054 raw16/UTF16 fixtures, eight compiled defaults and all 64
+call masks: 539,648 native PCRE2-16 comparisons of full capture vectors and
 successful labels. Local native preflight reports no compile/match errors.
 Additional tests cover exact work budgets, cancellation at every observed
 transition, frame exhaustion, admission and concurrent reuse of owned labels.
@@ -52,7 +56,7 @@ Native reference: PCRE2 10.48, commit
 `7978954dbd2efc6f2196869290553cf1871b4ce6`, with SLJIT
 `de0259c7aaf36aa40cba8014f3fad3edde9307f9`.
 Protocol SHA-256:
-`169d8ba37eb9b91e8100fd332e6e9877ec4ddceda953dec1bf34969a91f0849d`.
+`00151f14ddfe815199ad423ec533c8b0fe97a3aa7742d67dff42db2d91156805`.
 
 Managed build, test and package qualification is tracked by this increment's PR.
 The next word-control slice is THEN and SKIP; public width-16 API integration and

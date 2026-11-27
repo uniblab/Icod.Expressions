@@ -387,8 +387,8 @@ internal sealed class PcreCompiledWordPattern {
 					var matched = true;
 					switch ( nodes[index] ) {
 						case PcreWordPruneScan scan:
-							if ( scan.Start ) { matched = position >= pruneLiteralEnd; }
-							else { pruneLiteralEnd = Math.Max( pruneLiteralEnd, position ); }
+							if ( scan.Start ) { matched = interpreted || position >= pruneLiteralEnd; }
+							else if ( !interpreted ) { pruneLiteralEnd = Math.Max( pruneLiteralEnd, position ); }
 							break;
 						case PcreWordCut cut:
 							var cutScope = continuation;

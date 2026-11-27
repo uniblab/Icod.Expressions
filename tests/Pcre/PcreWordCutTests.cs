@@ -1011,6 +1011,58 @@ public sealed class PcreWordCutTests {
 				("(*MARK:M)(?:\\A(?&x)c|abc)(?(DEFINE)(?<x>a(*COMMIT:P)(*ACCEPT:N)))(?*(*ACCEPT)){0}", "abc", 0, true, true),
 				("a(*PRUNE:\ud800)b", "ab", 0, false, false),
 				("a(*COMMIT:\ud800)b", "ab", 0, false, false),
+				("(*COMMIT)a|ab", "xaab", 0, false, false),
+				("(*COMMIT)a|(*COMMIT)a", "xaab", 0, false, false),
+				("(*COMMIT)[a]", "xaab", 0, false, false),
+				("(*COMMIT)(a|ab)", "xaab", 0, false, false),
+				("(*COMMIT)(?:a){2}", "xaab", 0, false, false),
+				("(*COMMIT)(?:(?:a))", "xaab", 0, false, false),
+				("(*COMMIT)(?!b)a", "xaab", 0, false, false),
+				("(*COMMIT)(?<=x)a", "xaab", 0, false, false),
+				("(*COMMIT)(?(VERSION>=0)a|b)", "xaab", 0, false, false),
+				("(*COMMIT)(?i:[Aa])", "xaab", 0, false, false),
+				("(*COMMIT)[Aa]", "xaab", 0, false, false),
+				("(*COMMIT)(?:(?:(?:(?:(?:(?:a))))))", "xaab", 0, false, false),
+				("(*COMMIT)(?=(a|ab))a", "xaab", 0, false, false),
+				("(*COMMIT)(?*(a))a", "xaab", 0, false, false),
+				("(*COMMIT)(?=b)a", "xaab", 0, false, false),
+				("(*COMMIT)(?=a)b", "xaab", 0, false, false),
+				("(*COMMIT)(?=.)a", "xaab", 0, false, false),
+				("(*COMMIT)(?(DEFINE)(?<x>a))(?&x)", "xaab", 0, false, false),
+				("(*COMMIT)a{0}b", "xaab", 0, false, false),
+				("(*COMMIT)(?:a){0}b", "xaab", 0, false, false),
+				("(*COMMIT)(?:){0}b", "xaab", 0, false, false),
+				("(*COMMIT)(?(VERSION>=0)a|a)", "xaab", 0, false, false),
+				("(*COMMIT)(?(DEFINE)(?<x>a))b", "xaab", 0, false, false),
+				("(*COMMIT)(?=a).", "xaab", 0, false, false),
+				("(*COMMIT:)(?=a).", "xaab", 0, false, false),
+				("(?i)(*COMMIT)𐐀", "xaab", 0, false, false),
+				("(*COMMIT)a|ab", "xaab", 0, true, true),
+				("(*COMMIT)a|(*COMMIT)a", "xaab", 0, true, true),
+				("(*COMMIT)[a]", "xaab", 0, true, true),
+				("(*COMMIT)(a|ab)", "xaab", 0, true, true),
+				("(*COMMIT)(?:a){2}", "xaab", 0, true, true),
+				("(*COMMIT)(?:(?:a))", "xaab", 0, true, true),
+				("(*COMMIT)(?!b)a", "xaab", 0, true, true),
+				("(*COMMIT)(?<=x)a", "xaab", 0, true, true),
+				("(*COMMIT)(?(VERSION>=0)a|b)", "xaab", 0, true, true),
+				("(*COMMIT)(?i:[Aa])", "xaab", 0, true, true),
+				("(*COMMIT)[Aa]", "xaab", 0, true, true),
+				("(*COMMIT)(?:(?:(?:(?:(?:(?:a))))))", "xaab", 0, true, true),
+				("(*COMMIT)(?=(a|ab))a", "xaab", 0, true, true),
+				("(*COMMIT)(?*(a))a", "xaab", 0, true, true),
+				("(*COMMIT)(?=b)a", "xaab", 0, true, true),
+				("(*COMMIT)(?=a)b", "xaab", 0, true, true),
+				("(*COMMIT)(?=.)a", "xaab", 0, true, true),
+				("(*COMMIT)(?(DEFINE)(?<x>a))(?&x)", "xaab", 0, true, true),
+				("(*COMMIT)a{0}b", "xaab", 0, true, true),
+				("(*COMMIT)(?:a){0}b", "xaab", 0, true, true),
+				("(*COMMIT)(?:){0}b", "xaab", 0, true, true),
+				("(*COMMIT)(?(VERSION>=0)a|a)", "xaab", 0, true, true),
+				("(*COMMIT)(?(DEFINE)(?<x>a))b", "xaab", 0, true, true),
+				("(*COMMIT)(?=a).", "xaab", 0, true, true),
+				("(*COMMIT:)(?=a).", "xaab", 0, true, true),
+				("(?i)(*COMMIT)𐐀", "xaab", 0, true, true),
 			};
 			for ( var id = 0; id < cases.Length; id++ ) {
 				var (source, subject, start, utf, ucp) = cases[id];
@@ -1111,6 +1163,18 @@ public sealed class PcreWordCutTests {
 			if ( results[index].Match is { } match ) { Assert.Equal( "é😀", match.MarkName ); }
 		}
 		Assert.Equal( "0:3,0:2", Spans( saved.Match ) ); Assert.Equal( "é😀", saved.Match.MarkName );
+	}
+
+	[Theory]
+	[InlineData( "(*COMMIT:N)(?=a)." )]
+	[InlineData( "(?=(*COMMIT:N)a)b*a" )]
+	[InlineData( "(?=(*COMMIT:N)a)b?a" )]
+	[InlineData( "(*COMMIT:N)(?=ab)." )]
+	public void AssertedOnlyCommitStartStudyRemainsAnExplicitQualificationGate( string source ) {
+		var native = PcreNative16Oracle.ExecuteSequence( Words( source ), Words( "xaaab" ), true, 0 );
+		Assert.True( native.Kind is "M" or "N" );
+		Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
+			PcreWordSequenceCompiler.CompileSequence( source.AsMemory(), new() { Utf16 = true } ).Diagnostic?.Code );
 	}
 
 	private static PcreCompiledWordPattern Compile( string source, PcreWordOptions options ) {

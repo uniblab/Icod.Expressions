@@ -153,9 +153,12 @@ internal static class PcreWordSequenceCompiler {
 				targets.Add( number, [compiled[target.Body]] );
 				if ( HasLexicalCut( target.Body, cancellationToken ) ) { cutTargets.Add( number ); }
 			}
+			var assertedOnly = false;
+			var startLiteral = hasCommit ? FindCommitStart( root, compiled.Keys, options, cancellationToken, out assertedOnly ) : null;
+			if ( hasCommit && assertedOnly ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
 			return new( new( compiled[root].Alternatives, options, validationLookbehind, settings.Newline,
 				settings.BsrAnyCrLf, parser.CreateCaptureInfo(), targets, parser.HasNonAtomicAccept,
-				cutTargets, hasCommit ? FindCommitStart( root, options, cancellationToken ) : null ), null );
+				cutTargets, startLiteral ), null );
 		} catch ( PcreByteParseException error ) {
 			return Error( error.Diagnostic.Code == PcreByteDiagnosticCode.UnsupportedSyntax
 				? PcreWordDiagnosticCode.UnsupportedSyntax : PcreWordDiagnosticCode.InvalidSyntax, error.Diagnostic.ByteOffset );
@@ -422,50 +425,118 @@ internal static class PcreWordSequenceCompiler {
 		}
 	}
 
-	private static PcreByteLiteral? FindCommitStart( PcreByteAlternatives root, PcreWordOptions options,
-		CancellationToken cancellationToken ) {
-		// Native first-unit study can skip candidates before entering COMMIT.
-		// Match the byte runner's bounded proof, using the original UTF-16 unit.
-		var pending = new Stack<(PcreByteNode Node, int Depth)>();
-		var visits = 0;
-		var needsFilter = false;
-		if ( !AddBody( root, 0 ) ) { return null; }
-		while ( pending.TryPop( out var item ) ) {
-			cancellationToken.ThrowIfCancellationRequested();
-			if ( ++visits > 4096 ) { return null; }
-			switch ( item.Node ) {
-				case PcreByteCommit: needsFilter = true; break;
-				case PcreBytePathMark or PcreBytePrune: break;
-				case PcreByteGroup group:
-					if ( !AddBody( group.Body, item.Depth + 1 ) ) { return null; }
-					break;
-				case PcreByteNoncapturingGroup group:
-					if ( !AddBody( group.Body, item.Depth + 1 ) ) { return null; }
-					break;
-				case PcreByteAtomic atomic: pending.Push( (atomic.Child, item.Depth) ); break;
-				case PcreByteRepeat { Minimum: > 0, Child: PcreByteLiteral literal }:
-					pending.Push( (literal, item.Depth) ); break;
-				case PcreByteLookahead { IsPositive: true, NonAtomic: false } assertion:
-					if ( !AddBody( assertion.Body, item.Depth + 1 ) ) { return null; }
-					break;
-				case PcreByteLookbehind { IsPositive: true, NonAtomic: false }:
-					needsFilter = true; break;
-				case PcreByteLiteral literal:
-					if ( !needsFilter ) { return null; }
-					if ( literal.Caseless && ( options.Utf16 || options.Ucp )
-						&& PcreUtf8CaseFold.HasMultipleOtherCases( literal.Value, literal.CaselessRestricted, cancellationToken ) ) { return null; }
-					return literal with { Value = literal.Value > 0xffff ? 0xd800 + ( ( literal.Value - 0x10000 ) >> 10 ) : literal.Value };
-				default: return null;
+	private static PcreByteLiteral? FindCommitStart( PcreByteAlternatives root, IEnumerable<PcreByteAlternatives> sourceBodies,
+		PcreWordOptions options,
+		CancellationToken cancellationToken, out bool assertedOnly ) {
+		assertedOnly = false;
+		// Source bodies arrive in postorder. Distinguish an empty prefix from a
+		// consuming/nullable prefix whose first unit is unknown. Source alternatives
+		// must agree before their first literal can skip a candidate ahead of COMMIT.
+		var firstUnits = new Dictionary<PcreByteAlternatives, (PcreByteLiteral? Literal, bool Empty)>( ReferenceEqualityComparer.Instance );
+		foreach ( var body in sourceBodies ) {
+			(PcreByteLiteral? Literal, bool Empty)? common = null;
+			foreach ( var branch in body.Branches ) {
+				(PcreByteLiteral? Literal, bool Empty) first = (null, true);
+				foreach ( var node in branch ) {
+					cancellationToken.ThrowIfCancellationRequested();
+					first = FirstNode( node );
+					if ( !first.Empty ) { break; }
+				}
+				if ( common.HasValue && common.Value != first ) { common = (null, false); break; }
+				common = first;
 			}
+			firstUnits.Add( body, common ?? (null, true) );
 		}
+		if ( firstUnits[root].Literal is { } consumingFirst ) { return consumingFirst; }
+		// Asserted-only study also depends on native required-unit and start-bitmap
+		// optimizations. Keep that separate qualification gate explicit rather than
+		// choosing a candidate at which COMMIT would not actually run natively.
+		var assertedUnits = new Dictionary<PcreByteAlternatives, (PcreByteLiteral? Outside, PcreByteLiteral? Inside)>( ReferenceEqualityComparer.Instance );
+		foreach ( var body in sourceBodies ) {
+			assertedUnits.Add( body, (AssertedBody( body, false ), AssertedBody( body, true )) );
+		}
+		assertedOnly = assertedUnits[root].Outside is not null;
 		return null;
-		bool AddBody( PcreByteAlternatives body, int depth ) {
-			if ( depth > 4 || body.Branches.Count != 1 || body.Branches[0].Count > 4096 - visits - pending.Count ) { return false; }
-			for ( var index = body.Branches[0].Count - 1; index >= 0; index-- ) {
-				cancellationToken.ThrowIfCancellationRequested(); pending.Push( (body.Branches[0][index], depth) );
+
+		PcreByteLiteral? AssertedBody( PcreByteAlternatives body, bool inside ) {
+			PcreByteLiteral? common = null;
+			foreach ( var branch in body.Branches ) {
+				PcreByteLiteral? first = null;
+				foreach ( var source in branch ) {
+					cancellationToken.ThrowIfCancellationRequested();
+					var node = source;
+					if ( node is PcreBytePathMark or PcreByteWordBoundary or PcreByteLookbehind
+						or PcreByteLookahead { IsPositive: false } or PcreByteStaticConditional { IsDefinition: true }
+						or PcreByteRepeat { Maximum: 0 } or PcreByteCommit { WordName.Length: > 0 }
+						or PcreBytePrune { WordName.Length: > 0 } ) { continue; }
+					while ( node is PcreByteAtomic or PcreByteRepeat { Minimum: > 0 } ) {
+						cancellationToken.ThrowIfCancellationRequested();
+						node = node is PcreByteAtomic atomic ? atomic.Child : ( (PcreByteRepeat)node ).Child;
+					}
+					var nested = node switch {
+						PcreByteGroup group => group.Body,
+						PcreByteNoncapturingGroup group => group.Body,
+						PcreByteLookahead { IsPositive: true } assertion => assertion.Body,
+						_ => null
+					};
+					if ( nested is not null ) {
+						var entry = assertedUnits[nested];
+						first = inside || node is PcreByteLookahead ? entry.Inside : entry.Outside;
+					} else if ( inside ) { first = FirstNode( node ).Literal; }
+					break;
+				}
+				if ( first is null || common is not null && common != first ) { return null; }
+				common = first;
 			}
-			return true;
+			return common;
 		}
+
+		PcreByteLiteral? UnitLiteral( PcreByteLiteral literal ) {
+			if ( literal.Caseless && ( options.Utf16 || options.Ucp )
+				&& ( options.Utf16 && literal.Value > 0xffff
+					|| PcreUtf8CaseFold.HasMultipleOtherCases( literal.Value, literal.CaselessRestricted, cancellationToken ) ) ) { return null; }
+			return literal with { Value = literal.Value > 0xffff ? 0xd800 + ( ( literal.Value - 0x10000 ) >> 10 ) : literal.Value };
+		}
+		(PcreByteLiteral? Literal, bool Empty) FirstNode( PcreByteNode node ) {
+			var optional = false;
+			while ( node is PcreByteRepeat or PcreByteAtomic ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				if ( node is PcreByteRepeat repeat ) { optional |= repeat.Minimum == 0; node = repeat.Child; }
+				else { node = ( (PcreByteAtomic)node ).Child; }
+			}
+			(PcreByteLiteral? Literal, bool Empty) result;
+			switch ( node ) {
+				case PcreByteLiteral literal: result = (UnitLiteral( literal ), false); break;
+				case PcreByteGroup group: result = firstUnits[group.Body]; break;
+				case PcreByteNoncapturingGroup group: result = firstUnits[group.Body]; break;
+				case PcreBytePathMark or PcreBytePrune or PcreByteCommit or PcreByteFailure
+					or PcreByteLookahead or PcreByteLookbehind or PcreByteAnchor or PcreByteSearchStart
+					or PcreByteEndBeforeFinalLf or PcreByteWordBoundary or PcreByteStaticConditional { IsDefinition: true }:
+					result = (null, true); break;
+				case PcreByteScalarSet { Negated: false, Predicates.IsEmpty: true } set:
+					var value = set.SourceLiteral;
+					var caseless = set.Caseless;
+					if ( value < 0 && set.Ranges.Length is 1 or 2 && set.Ranges.Span[0] is var range && range.Start == range.End ) {
+						value = range.Start;
+						if ( set.Ranges.Length == 2 ) {
+							var second = set.Ranges.Span[1];
+							var partners = options.Utf16 || options.Ucp
+								? PcreUtf8CaseFold.Equals( value, second.Start, set.CaselessRestricted )
+								: value is >= 'A' and <= 'Z' && second.Start == value + 32;
+							if ( second.Start != second.End || !partners ) { value = -1; }
+							else { caseless = true; }
+						}
+					}
+					result = (value < 0 ? null : UnitLiteral( new( value ) { Caseless = caseless, CaselessRestricted = set.CaselessRestricted } ), false);
+					break;
+				default:
+					var conditional = ConditionalBody( node );
+					result = conditional is { Branches.Count: 2 } ? firstUnits[conditional] : (null, false);
+					break;
+			}
+			return optional && !result.Empty ? (null, false) : result;
+		}
+
 	}
 
 	private static PcreByteAlternatives? ConditionalBody( PcreByteNode node ) => node switch {
