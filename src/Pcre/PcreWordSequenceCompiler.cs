@@ -96,6 +96,7 @@ internal static class PcreWordSequenceCompiler {
 								PcreByteNoncapturingGroup direct => direct.Body,
 								PcreByteLookahead assertion => assertion.Body,
 								PcreByteLookbehind assertion => assertion.Body,
+								PcreByteStaticConditional { IsDefinition: true } definition => definition.Body,
 								_ => null
 							};
 							if ( nestedBody is not null ) {
@@ -109,8 +110,16 @@ internal static class PcreWordSequenceCompiler {
 				if ( body is null ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
 				compiled.Add( item.Body, body );
 			}
+			var targets = new Dictionary<int, PcreByteNode[]>();
+			foreach ( var (number, target) in parser.SubroutineTargets ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				// Integer call edges can refer to the root or a recursive definition.
+				// Source bodies were compiled once; do not expand or traverse call edges.
+				// A call executes the definition's body, not its enclosing capture close.
+				targets.Add( number, [compiled[target.Body]] );
+			}
 			return new( new( compiled[root].Alternatives, options, validationLookbehind, settings.Newline,
-				settings.BsrAnyCrLf, parser.CreateCaptureInfo() ), null );
+				settings.BsrAnyCrLf, parser.CreateCaptureInfo(), targets ), null );
 		} catch ( PcreByteParseException error ) {
 			return Error( error.Diagnostic.Code == PcreByteDiagnosticCode.UnsupportedSyntax
 				? PcreWordDiagnosticCode.UnsupportedSyntax : PcreWordDiagnosticCode.InvalidSyntax, error.Diagnostic.ByteOffset );
@@ -151,6 +160,8 @@ internal static class PcreWordSequenceCompiler {
 						BuildAssertionRepeat( repeat, compiled, repeated is PcreByteAtomic ),
 					PcreByteGroup group => compiled[group.Body] with { CaptureNumber = group.Number },
 					PcreByteNoncapturingGroup group => compiled[group.Body],
+					PcreByteStaticConditional { IsDefinition: true } definition =>
+						new PcreWordGroupRepeat( compiled[definition.Body], 0, 0, true, false ),
 					PcreByteLookahead or PcreByteLookbehind => BuildAssertion( node, compiled ),
 					PcreByteRepeat { Child: PcreByteGroup group } repeat => new PcreWordGroupRepeat(
 						compiled[group.Body] with { CaptureNumber = group.Number }, repeat.Minimum, repeat.Maximum, repeat.Greedy,
@@ -166,6 +177,8 @@ internal static class PcreWordSequenceCompiler {
 					PcreByteRepeat { Child: PcreByteBackreference reference } repeat => new PcreWordGroupRepeat(
 						new( [[reference]], 1, 1, 0 ), repeat.Minimum, repeat.Maximum, repeat.Greedy,
 						repeat.Offset < 0 && repeat.Minimum == 1 ),
+					PcreByteRepeat { Child: PcreByteSubroutineCall call } repeat => new PcreWordGroupRepeat(
+						new( [[call]], 1, 1, 0 ), repeat.Minimum, repeat.Maximum, repeat.Greedy, true ),
 					_ => node
 				};
 			}
@@ -199,7 +212,7 @@ internal static class PcreWordSequenceCompiler {
 			maximumRepeats = Math.Max( maximumRepeats, unboundedCount + nestedRepeats );
 			// A group also separates finite choices: its alternatives must retry before
 			// a preceding choice, and a following choice must retry before the group.
-			var boundaryCount = unboundedCount + nodes.Count( node => node is PcreWordGroup or PcreWordGroupRepeat or PcreWordAssertion or PcreWordAtomic or PcreWordReverse );
+			var boundaryCount = unboundedCount + nodes.Count( node => node is PcreWordGroup or PcreWordGroupRepeat or PcreWordAssertion or PcreWordAtomic or PcreWordReverse or PcreByteSubroutineCall );
 			var variables = new List<(int Index, PcreByteRepeat Repeat)>[boundaryCount + 1];
 			var products = new int[variables.Length];
 			for ( var segment = 0; segment < variables.Length; segment++ ) {
@@ -212,7 +225,7 @@ internal static class PcreWordSequenceCompiler {
 				if ( nodes[index] is PcreByteWordBoundary or PcreByteAnchor { IsStart: true, IsLineBoundary: false } ) {
 					validationLookbehind = Math.Max( validationLookbehind, 1 );
 				}
-				if ( nodes[index] is PcreWordGroup or PcreWordGroupRepeat or PcreWordAssertion or PcreWordAtomic or PcreWordReverse ) { boundaries.Add( nodes[index] ); continue; }
+				if ( nodes[index] is PcreWordGroup or PcreWordGroupRepeat or PcreWordAssertion or PcreWordAtomic or PcreWordReverse or PcreByteSubroutineCall ) { boundaries.Add( nodes[index] ); continue; }
 				if ( nodes[index] is not PcreByteRepeat repeat || repeat.Minimum == repeat.Maximum ) { continue; }
 				if ( repeat.Maximum == int.MaxValue ) {
 					if ( repeat.Minimum is < 0 or > MaximumExactRepeat
@@ -394,7 +407,7 @@ internal static class PcreWordSequenceCompiler {
 	private static bool IsSupportedNode( PcreByteNode node ) => IsSupportedAtom( node )
 		|| node is PcreByteAnchor or PcreByteLineAnchor or PcreByteEndBeforeFinalLf
 			or PcreByteSearchStart or PcreByteWordBoundary or PcreByteBackreference
-			or PcreWordGroup or PcreWordGroupRepeat or PcreWordAssertion or PcreWordAtomic or PcreWordReverse;
+			or PcreWordGroup or PcreWordGroupRepeat or PcreWordAssertion or PcreWordAtomic or PcreWordReverse or PcreByteSubroutineCall;
 
 	private static bool IsSupportedAtom( PcreByteNode node ) => node is PcreByteLiteral or PcreByteAny or PcreByteNewlineSequence
 		|| node is PcreByteScalarClass property && IsWordClassPredicate( property.Kind )

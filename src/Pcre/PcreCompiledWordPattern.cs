@@ -8,15 +8,18 @@ internal sealed class PcreCompiledWordPattern {
 	private readonly int validationLookbehind;
 	private readonly char newlineCharacter;
 	private readonly bool bsrAnyCrLf;
+	private readonly IReadOnlyDictionary<int, PcreByteNode[]>? callTargets;
 	public PcreCaptureInfo CaptureInfo { get; }
 	internal PcreCompiledWordPattern( PcreByteNode[] nodes, PcreWordOptions options ) : this( [nodes], options ) { }
 	internal PcreCompiledWordPattern( PcreByteNode[][] branches, PcreWordOptions options, int validationLookbehind = 0,
-		PcreByteNewline newline = PcreByteNewline.Lf, bool bsrAnyCrLf = false, PcreCaptureInfo? captureInfo = null ) {
+		PcreByteNewline newline = PcreByteNewline.Lf, bool bsrAnyCrLf = false, PcreCaptureInfo? captureInfo = null,
+		IReadOnlyDictionary<int, PcreByteNode[]>? callTargets = null ) {
 		this.branches = branches;
 		this.options = options;
 		this.validationLookbehind = validationLookbehind;
 		newlineCharacter = (char)newline.Character();
 		this.bsrAnyCrLf = bsrAnyCrLf;
+		this.callTargets = callTargets;
 		CaptureInfo = captureInfo ?? new( 0, new Dictionary<string, List<int>>(), default );
 	}
 
@@ -132,6 +135,8 @@ internal sealed class PcreCompiledWordPattern {
 			return 1;
 		}
 		List<CaptureChange>? changes = null;
+		int[]? restoredCaptures = null;
+		var returnGeneration = 0;
 		void SaveCapture( int number, int start, int end ) {
 			if ( frames is { Count: > 0 } ) {
 				changes ??= new();
@@ -153,6 +158,24 @@ internal sealed class PcreCompiledWordPattern {
 			frames ??= new();
 			if ( frames.Count >= MaximumBacktrackFrames ) { return false; }
 			frames.Push( frame with { ChangeCount = changes?.Count ?? 0, VisibleEnd = visibleEnd } );
+			return true;
+		}
+		bool ReturnCaptures( int checkpoint, ReadOnlyMemory<int> selected ) {
+			if ( changes is null ) { return true; }
+			restoredCaptures ??= new int[captures.Length];
+			var generation = ++returnGeneration;
+			var originalEnd = changes.Count;
+			// Preserve the original history for callee retries. Restore each slot's
+			// oldest value once and journal the inverse write for later backtracking.
+			for ( var entry = checkpoint; entry < originalEnd; entry++ ) {
+				if ( !Step() ) { return false; }
+				var change = changes[entry];
+				if ( selected.Span.BinarySearch( change.Number ) >= 0
+					|| restoredCaptures[change.Number] == generation ) { continue; }
+				restoredCaptures[change.Number] = generation;
+				changes.Add( new( change.Number, captures[change.Number] ) );
+				captures[change.Number] = change.Previous;
+			}
 			return true;
 		}
 		// -2: frame limit; -1: work exhausted; 0: failed or policy-rejected; 1: match.
@@ -185,9 +208,12 @@ internal sealed class PcreCompiledWordPattern {
 						nodes = parent.Nodes;
 						index = parent.Index;
 						continuation = parent.Parent;
-						if ( parent.GuardBoundary >= 0 ) { visibleEnd = parent.SavedEnd; }
+						if ( parent.GuardBoundary >= 0 || parent.CallCheckpoint >= 0 ) { visibleEnd = parent.SavedEnd; }
 						if ( parent.AssertionEnd >= 0 && position != parent.AssertionEnd ) {
 							// A shorter/longer body must retry before the assertion can commit.
+						} else if ( parent.CallCheckpoint >= 0 ) {
+							if ( !ReturnCaptures( parent.CallCheckpoint, parent.ReturnedCaptures ) ) { return -1; }
+							continue; // Keep consumption, the call guard and all callee choices.
 						} else if ( parent.GuardBoundary >= 0 ) {
 							if ( parent.NonAtomicAssertion ) {
 								// Keep the body's choices and guard so a failing suffix can
@@ -248,6 +274,15 @@ internal sealed class PcreCompiledWordPattern {
 					if ( !PushFrame( new( nodes, index + 1, position, position, 0, continuation, FrameKind.AtomicGroup ) ) ) { return -2; }
 					continuation = new( nodes, index + 1, continuation, GuardBoundary: boundary, SavedEnd: visibleEnd );
 					nodes = atomic.Body;
+					index = 0;
+					continue;
+				} else if ( nodes[index] is PcreByteSubroutineCall call ) {
+					if ( !Step() ) { return -1; } // Call entry and caller capture checkpoint.
+					var checkpoint = changes?.Count ?? 0;
+					if ( !PushFrame( new( nodes, index + 1, position, position, 0, continuation, FrameKind.Subroutine ) ) ) { return -2; }
+					continuation = new( nodes, index + 1, continuation, SavedEnd: visibleEnd,
+						CallCheckpoint: checkpoint, ReturnedCaptures: call.ReturnedCaptures );
+					nodes = callTargets![call.Number];
 					index = 0;
 					continue;
 				} else if ( nodes[index] is PcreWordSuffixChoices firstChoices ) {
@@ -339,7 +374,7 @@ internal sealed class PcreCompiledWordPattern {
 					position = frame.Position;
 					continuation = frame.Continuation;
 					visibleEnd = frame.VisibleEnd;
-					if ( frame.Kind is FrameKind.PositiveAssertion or FrameKind.NegativeAssertion or FrameKind.AtomicGroup ) {
+					if ( frame.Kind is FrameKind.PositiveAssertion or FrameKind.NegativeAssertion or FrameKind.AtomicGroup or FrameKind.Subroutine ) {
 						if ( !Step() ) { return -1; } // Resolve an exhausted guarded body.
 						if ( frame.Kind != FrameKind.NegativeAssertion ) { continue; }
 					} else if ( frame.Kind == FrameKind.ReverseRetry ) {
@@ -423,12 +458,13 @@ internal sealed class PcreCompiledWordPattern {
 		FrameKind Kind = FrameKind.Retry, int ChangeCount = 0, int VisibleEnd = 0
 	);
 
-	private enum FrameKind { Retry, RepeatExit, RepeatGrow, PositiveAssertion, NegativeAssertion, AtomicGroup, ReverseRetry }
+	private enum FrameKind { Retry, RepeatExit, RepeatGrow, PositiveAssertion, NegativeAssertion, AtomicGroup, Subroutine, ReverseRetry }
 	private readonly record struct CaptureChange( int Number, PcreWordCapture? Previous );
 
 	private sealed record Continuation( PcreByteNode[] Nodes, int Index, Continuation? Parent,
 		PcreWordGroupRepeat? Repeat = null, int Count = 0, int Start = 0, int CaptureNumber = 0,
-		int GuardBoundary = -1, int AssertionEnd = -1, bool NonAtomicAssertion = false, int SavedEnd = -1 );
+		int GuardBoundary = -1, int AssertionEnd = -1, bool NonAtomicAssertion = false, int SavedEnd = -1,
+		int CallCheckpoint = -1, ReadOnlyMemory<int> ReturnedCaptures = default );
 
 	private bool TryConsumeAtom( PcreByteNode node, ReadOnlySpan<char> input, int position, out int width ) {
 		if ( !PcreUtf16.TryRead( input, position, options.Utf16, out var value, out width ) ) { return false; }
