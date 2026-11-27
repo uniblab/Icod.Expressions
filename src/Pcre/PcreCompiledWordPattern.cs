@@ -12,12 +12,13 @@ internal sealed class PcreCompiledWordPattern {
 	private readonly bool hasNonAtomicAccept;
 	private readonly IReadOnlySet<int>? cutTargets;
 	private readonly PcreByteLiteral? commitStart;
+	private readonly bool hasThen;
 	public PcreCaptureInfo CaptureInfo { get; }
 	internal PcreCompiledWordPattern( PcreByteNode[] nodes, PcreWordOptions options ) : this( [nodes], options ) { }
 	internal PcreCompiledWordPattern( PcreByteNode[][] branches, PcreWordOptions options, int validationLookbehind = 0,
 		PcreByteNewline newline = PcreByteNewline.Lf, bool bsrAnyCrLf = false, PcreCaptureInfo? captureInfo = null,
 		IReadOnlyDictionary<int, PcreByteNode[]>? callTargets = null, bool hasNonAtomicAccept = false,
-		IReadOnlySet<int>? cutTargets = null, PcreByteLiteral? commitStart = null ) {
+		IReadOnlySet<int>? cutTargets = null, PcreByteLiteral? commitStart = null, bool hasThen = false ) {
 		this.branches = branches;
 		this.options = options;
 		this.validationLookbehind = validationLookbehind;
@@ -27,6 +28,7 @@ internal sealed class PcreCompiledWordPattern {
 		this.hasNonAtomicAccept = hasNonAtomicAccept;
 		this.cutTargets = cutTargets;
 		this.commitStart = commitStart;
+		this.hasThen = hasThen;
 		CaptureInfo = captureInfo ?? new( 0, new Dictionary<string, List<int>>(), default );
 	}
 
@@ -369,12 +371,15 @@ internal sealed class PcreCompiledWordPattern {
 					continue;
 				} else if ( nodes[index] is PcreWordGroup firstGroup ) {
 					if ( !Step() ) { return -1; } // Group entry.
+					var thenBoundary = hasThen && firstGroup.SourceBranchStarts is { Length: > 2 } ? frames?.Count ?? 0 : -1;
 					if ( firstGroup.Alternatives.Length > 1 ) {
 						if ( !Step() ) { return -1; } // Ordered group branch admission.
 						if ( !PushFrame( new( nodes, index, position, position, 1, continuation ) ) ) { return -2; }
 					}
 					continuation = new( nodes, index + 1, continuation, Start: position, CaptureNumber: firstGroup.CaptureNumber,
-						AssertionEnd: firstGroup.CheckAssertionEnds?[0] == true ? continuation!.AssertionEnd : -1 );
+						AssertionEnd: firstGroup.CheckAssertionEnds?[0] == true ? continuation!.AssertionEnd : -1,
+						ThenBoundary: thenBoundary, ThenNext: thenBoundary >= 0 ? firstGroup.SourceBranchStarts![1] : -1,
+						ThenGroup: thenBoundary >= 0 ? firstGroup : null );
 					nodes = firstGroup.Alternatives[0];
 					index = 0;
 					continue;
@@ -391,16 +396,31 @@ internal sealed class PcreCompiledWordPattern {
 							else if ( !interpreted ) { pruneLiteralEnd = Math.Max( pruneLiteralEnd, position ); }
 							break;
 						case PcreWordCut cut:
+							Continuation? thenOwner = null;
+							if ( cut.Then ) {
+								for ( var scope = continuation; scope is not null; scope = scope.Parent ) {
+									if ( !Step() ) { return -1; } // Only source alternatives own THEN.
+									if ( scope.ThenBoundary >= 0 ) { thenOwner = scope; break; }
+									if ( scope.CallCheckpoint >= 0 || scope.GuardBoundary >= 0 && !scope.AtomicGroup ) { break; }
+								}
+							}
 							var cutScope = continuation;
 							while ( cutScope is not null ) {
 								if ( !Step() ) { return -1; } // Only active scopes catch a cut.
-								if ( cutScope.CallCheckpoint >= 0 || cutScope.CatchesCut ) { break; }
+								if ( cutScope.CallCheckpoint >= 0 || cutScope.CatchesCut
+									|| cut.Then && cutScope.GuardBoundary >= 0 && !cutScope.AtomicGroup
+										&& ( interpreted || thenOwner is not null || activeCall < 0 || cutScope.NonAtomicAssertion ) ) { break; }
 								cutScope = cutScope.Parent;
 							}
 							var cutBoundary = cutScope is null ? 0
 								: ( cutScope.CallCheckpoint >= 0 ? cutScope.CallBoundary : cutScope.GuardBoundary ) + 1;
+							if ( thenOwner is not null ) {
+								cutBoundary = thenOwner.ThenBoundary + ( thenOwner.ThenNext < thenOwner.ThenGroup!.Alternatives.Length ? 1 : 0 );
+								cutScope = thenOwner;
+							}
 							if ( !PushFrame( new( nodes, index, position, cutBoundary, 0, continuation,
-								cut.Commit ? FrameKind.Commit : FrameKind.Prune, CutScope: cutScope ) ) ) { return -2; }
+								thenOwner is not null ? FrameKind.ThenAlternative : cut.Commit ? FrameKind.Commit : FrameKind.Prune,
+								CutScope: cutScope ) ) ) { return -2; }
 							if ( cut.Mark is { } cutMark ) { SetMark( cutMark ); }
 							break;
 						case PcreWordPathMark pathMark:
@@ -530,7 +550,7 @@ internal sealed class PcreCompiledWordPattern {
 					visibleEnd = frame.VisibleEnd;
 					activeCall = frame.ActiveCall;
 					RestoreMark( frame.MarkVersion, frame.Mark! );
-					if ( frame.Kind is FrameKind.Prune or FrameKind.Commit ) {
+					if ( frame.Kind is FrameKind.Prune or FrameKind.Commit or FrameKind.ThenAlternative ) {
 						if ( !Step() ) { return -1; } // Reaching a cut, rather than executing it, discards choices.
 						if ( !interpreted && frame.CutScope is { CallCheckpoint: >= 0 } callScope
 							&& !callScope.ReturnedCaptures.IsEmpty && changes is not null ) {
@@ -550,6 +570,14 @@ internal sealed class PcreCompiledWordPattern {
 						while ( frames.Count > frame.RepeatStart ) {
 							if ( !Step() ) { return -1; }
 							frames.Pop();
+						}
+						if ( frame.Kind == FrameKind.ThenAlternative && frame.CutScope is { } owner
+							&& owner.ThenNext < owner.ThenGroup!.Alternatives.Length ) {
+							// The retained retry belongs to the group entry. Skip finite
+							// expansions of the failed source branch without replacing its state.
+							if ( !Step() ) { return -1; }
+							var nextBranch = frames.Pop();
+							frames.Push( nextBranch with { Count = owner.ThenNext } );
 						}
 						if ( frame.RepeatStart == 0 ) { return frame.Kind == FrameKind.Commit ? 3 : 2; }
 						continue; // The retained guard resolves the failed call/assertion.
@@ -584,11 +612,20 @@ internal sealed class PcreCompiledWordPattern {
 						index = 0;
 					} else if ( nodes[index] is PcreWordGroup group ) {
 						if ( !Step() ) { return -1; }
+						var thenBoundary = hasThen && group.SourceBranchStarts is { Length: > 2 } ? frames.Count : -1;
+						var thenNext = -1;
+						if ( thenBoundary >= 0 ) {
+							foreach ( var start in group.SourceBranchStarts! ) {
+								if ( !Step() ) { return -1; }
+								if ( start > frame.Count ) { thenNext = start; break; }
+							}
+						}
 						if ( frame.Count + 1 < group.Alternatives.Length ) {
 							if ( !PushFrame( frame with { Count = frame.Count + 1 } ) ) { return -2; }
 						}
 						continuation = new( nodes, index + 1, continuation, Start: position, CaptureNumber: group.CaptureNumber,
-							AssertionEnd: group.CheckAssertionEnds?[frame.Count] == true ? continuation!.AssertionEnd : -1 );
+							AssertionEnd: group.CheckAssertionEnds?[frame.Count] == true ? continuation!.AssertionEnd : -1,
+							ThenBoundary: thenBoundary, ThenNext: thenNext, ThenGroup: thenBoundary >= 0 ? group : null );
 						nodes = group.Alternatives[frame.Count];
 						index = 0;
 					} else {
@@ -651,14 +688,15 @@ internal sealed class PcreCompiledWordPattern {
 		string? Mark = null, int MarkVersion = 0, Continuation? CutScope = null
 	);
 
-	private enum FrameKind { Retry, RepeatExit, RepeatGrow, PositiveAssertion, NegativeAssertion, PositiveCondition, NegativeCondition, AtomicGroup, Subroutine, ReverseRetry, Prune, Commit }
+	private enum FrameKind { Retry, RepeatExit, RepeatGrow, PositiveAssertion, NegativeAssertion, PositiveCondition, NegativeCondition, AtomicGroup, Subroutine, ReverseRetry, Prune, Commit, ThenAlternative }
 	private readonly record struct CaptureChange( int Number, PcreWordCapture? Previous );
 
 	private sealed record Continuation( PcreByteNode[] Nodes, int Index, Continuation? Parent,
 		PcreWordGroupRepeat? Repeat = null, int Count = 0, int Start = 0, int CaptureNumber = 0,
 		int GuardBoundary = -1, int AssertionEnd = -1, bool NonAtomicAssertion = false, int SavedEnd = -1,
 		int CallCheckpoint = -1, ReadOnlyMemory<int> ReturnedCaptures = default, int Caller = -1, bool CheckAssertionEnd = true,
-		bool AtomicGroup = false, int CallBoundary = -1, bool CatchesCut = false );
+		bool AtomicGroup = false, int CallBoundary = -1, bool CatchesCut = false,
+		int ThenBoundary = -1, int ThenNext = -1, PcreWordGroup? ThenGroup = null );
 
 	private bool TryConsumeAtom( PcreByteNode node, ReadOnlySpan<char> input, int position, out int width ) {
 		if ( !PcreUtf16.TryRead( input, position, options.Utf16, out var value, out width ) ) { return false; }

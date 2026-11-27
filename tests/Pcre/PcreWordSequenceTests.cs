@@ -60,7 +60,7 @@ public sealed class PcreWordSequenceTests {
 	}
 
 	[Theory]
-	[InlineData( "(?>(*THEN)a+)b*c*d*e*" )]
+	[InlineData( "(?>(*SKIP:N)a+)b*c*d*e*" )]
 	[InlineData( "(*CRLF)^a$" )]
 	[InlineData( "(*UTF)a" )]
 	public void UnimplementedLoweringIsExplicit( string source ) {

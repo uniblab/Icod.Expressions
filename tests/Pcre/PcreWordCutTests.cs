@@ -1152,7 +1152,7 @@ public sealed class PcreWordCutTests {
 			Assert.Equal( PcreWordDiagnosticCode.InvalidSyntax,
 				PcreWordSequenceCompiler.CompileSequence( String.Concat( "(*", verb, ")", suffix ).AsMemory() ).Diagnostic?.Code );
 		}
-		foreach ( var suffix in new[] { "(*THEN)", "(*SKIP)", "\\X", "(?:a){65}" } ) {
+		foreach ( var suffix in new[] { "(*SKIP:N)", "(*SKIP)", "\\X", "(?:a){65}" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( String.Concat( "(*", verb, ")", suffix ).AsMemory() ).Diagnostic?.Code );
 		}

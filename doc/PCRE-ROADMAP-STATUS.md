@@ -1,12 +1,21 @@
 # PCRE roadmap status
 
+## Native 16-bit THEN
+
+The [THEN record](PCRE-WORD-THEN.md) adds lexical alternative cuts and named
+labels. Original source alternatives own retries across finite lowering; calls,
+assertions, selected returns and accepted-call labels follow native dispatch.
+1,018 fixtures add 521,216 full-vector and label policy comparisons. SKIP and
+named-SKIP history/replay are next; existing ACCEPT/COMMIT qualification gates
+and public word integration remain open.
+
 ## Native 16-bit PRUNE and COMMIT
 
 The [cut record](PCRE-WORD-CUTS.md) adds candidate abandonment, committed search
 failure, scope catches and named cut labels. Selected-capture rollback and accepted
 call labels follow native JIT/interpreter dispatch. Original-unit candidate proofs
 cover leading COMMIT and the bounded PRUNE literal scan cache. 1,070 fixtures add
-547,840 full-vector and label policy comparisons. THEN and SKIP are next; public
+547,840 full-vector and label policy comparisons. THEN is covered above; SKIP is next. Public
 word entry points and the remaining broader profile gates still follow.
 Native policy batches compile once per defaults row while retaining every mask
 and comparison, reducing repeated native setup during CI.

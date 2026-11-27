@@ -51,7 +51,8 @@ internal sealed partial class PcreByteParser {
 		}
 		if ( TryConsumeGroupAlias( "*THEN:"u8 ) ) {
 			HasThen = true;
-			return new PcreByteThen( ReadControlVerbName( "THEN", requireName: false ) );
+			var name = ReadControlVerbName( "THEN", requireName: false, out var wordName );
+			return new PcreByteThen( name, wordName );
 		}
 		var remainder = source.AsSpan( index );
 		if ( remainder.SequenceEqual( "*PRUNE"u8 ) || remainder.SequenceEqual( "*COMMIT"u8 ) || remainder.SequenceEqual( "*THEN"u8 ) ) {
