@@ -2567,8 +2567,8 @@ internal sealed class PcreByteProgramCompiler {
 		// discarded by that PRUNE. Only sole ordinary root wrappers are traversed.
 		for ( var depth = 0; depth < 4 && root.Branches.Count == 1 && root.Branches[0].Count == 1; depth++ ) {
 			var nested = root.Branches[0][0] switch {
-				PcreByteGroup group => group.Body,
-				PcreByteNoncapturingGroup group => group.Body,
+				PcreByteGroup wrapper => wrapper.Body,
+				PcreByteNoncapturingGroup wrapper => wrapper.Body,
 				_ => null
 			};
 			if ( nested is null ) { break; }
