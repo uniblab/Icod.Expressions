@@ -2563,12 +2563,21 @@ internal sealed class PcreByteProgramCompiler {
 		cancellationToken.ThrowIfCancellationRequested();
 		// Native detect_early_fail reuses this leading literal-PLUS scan after
 		// a PRUNE cut. Bound the proof to two root branches and a single suffix
-		// and same-literal fallback; an immediately preceding COMMIT is discarded
-		// by that PRUNE. No calls, options, nested choices or classes.
+		// and same-literal fallback; an immediately preceding COMMIT or THEN is
+		// discarded by that PRUNE. Only sole ordinary root wrappers are traversed.
+		for ( var depth = 0; depth < 4 && root.Branches.Count == 1 && root.Branches[0].Count == 1; depth++ ) {
+			var nested = root.Branches[0][0] switch {
+				PcreByteGroup wrapper => wrapper.Body,
+				PcreByteNoncapturingGroup wrapper => wrapper.Body,
+				_ => null
+			};
+			if ( nested is null ) { break; }
+			root = nested;
+		}
 		if ( root.Branches.Count != 2 || root.Branches[0].Count is not ( 3 or 4 )
 			|| root.Branches[0][0] is not PcreByteRepeat { Minimum: 1, Maximum: int.MaxValue,
 				Greedy: true, Offset: -1, Child: PcreByteLiteral { Caseless: false } literal } repeat
-			|| root.Branches[0].Count == 4 && root.Branches[0][1] is not PcreByteCommit
+			|| root.Branches[0].Count == 4 && root.Branches[0][1] is not ( PcreByteCommit or PcreByteThen )
 			|| root.Branches[0][root.Branches[0].Count - 2] is not PcreBytePrune
 			|| root.Branches[0][root.Branches[0].Count - 1] is not ( PcreByteFailure or PcreByteLiteral { Caseless: false } )
 			|| root.Branches[1].Count != 1 ) { return null; }

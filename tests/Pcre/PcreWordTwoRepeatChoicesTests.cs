@@ -110,7 +110,7 @@ public sealed class PcreWordTwoRepeatChoicesTests {
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( "a?b*c{0,15}d*e?".AsMemory() ).IsSuccess );
 		foreach ( var source in new[] { "a*b{0,64}c*", "a*b{0,63}c*d?",
 			"a*b{0,31}c*d?|x", "a?b*c{0,15}d*e?|x", "a*b?c*d?e?f?g?h?i?",
-			"(?>(*THEN)a*)b?c*" } ) {
+			"(?>(*SKIP:N)a*)b?c*" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

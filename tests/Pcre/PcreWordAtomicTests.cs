@@ -539,7 +539,7 @@ public sealed class PcreWordAtomicTests {
 		}
 		foreach ( var source in new[] { "(?>a?b?c?d?e?f?)g?", "a{65}+", "a{0,64}+", "a{65,}+",
 			"(a){65}+", "(?>a){65,}", String.Concat( Enumerable.Repeat( "a*+", 65 ) ),
-			String.Concat( "(?>", expanded, "a)" ), "(?>a(*THEN)){0}", "(a)(?>(?1)(*THEN))", "(a)(?(1)b(*THEN)|c)" } ) {
+			String.Concat( "(?>", expanded, "a)" ), "(?>a(*SKIP:N)){0}", "(a)(?>(?1)(*SKIP:N))", "(a)(?(1)b(*SKIP:N)|c)" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

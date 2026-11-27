@@ -325,11 +325,11 @@ public sealed class PcreWordCaptureTests {
 	}
 
 	[Theory]
-	[InlineData( "(a)(?1)(*THEN)" )]
+	[InlineData( "(a)(?1)(*SKIP:N)" )]
 	[InlineData( "(?<*(a)){65}b" )]
-	[InlineData( "(?>(*THEN)a)" )]
+	[InlineData( "(?>(*SKIP:N)a)" )]
 	[InlineData( "(a){65,}+" )]
-	[InlineData( "(a)(*THEN)" )]
+	[InlineData( "(a)(*SKIP:N)" )]
 	public void CaptureDependentExecutionStillRequiresExplicitAdmission( string source ) {
 		Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 			PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );

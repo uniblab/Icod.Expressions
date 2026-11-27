@@ -5,7 +5,7 @@ internal sealed record PcreWordSuffixChoices( PcreByteNode[][] Alternatives ) : 
 internal sealed record PcreWordPathMark( string Name ) : PcreByteNode;
 internal sealed record PcreWordFailure( string? Mark = null ) : PcreByteNode;
 internal sealed record PcreWordAccept( string? Mark = null ) : PcreByteNode;
-internal sealed record PcreWordCut( bool Commit, string? Mark = null ) : PcreByteNode;
+internal sealed record PcreWordCut( bool Commit, string? Mark = null, bool Then = false ) : PcreByteNode;
 internal sealed record PcreWordPruneScan( bool Start ) : PcreByteNode;
 
 internal sealed record PcreWordGroup(
@@ -87,6 +87,7 @@ internal static class PcreWordSequenceCompiler {
 			if ( root.Branches.Count is < 1 or > 64 ) {
 				return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
 			}
+			var pruneCacheBody = FindPruneLiteralCacheBody( root );
 			var compiled = new Dictionary<PcreByteAlternatives, PcreWordGroup>( ReferenceEqualityComparer.Instance );
 			var pending = new Stack<(PcreByteAlternatives Body, int Depth, bool Complete, PcreByteLookbehind? Behind)>();
 			var validationLookbehind = 0;
@@ -135,7 +136,7 @@ internal static class PcreWordSequenceCompiler {
 					continue;
 				}
 				var body = BuildBody( item.Body, compiled, ref validationLookbehind, cancellationToken, item.Behind,
-					ReferenceEquals( item.Body, root ) && HasPruneLiteralCache( root ) );
+					ReferenceEquals( item.Body, pruneCacheBody ) );
 				if ( body is null ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
 				compiled.Add( item.Body, body );
 			}
@@ -156,9 +157,11 @@ internal static class PcreWordSequenceCompiler {
 			var assertedOnly = false;
 			var startLiteral = hasCommit ? FindCommitStart( root, compiled.Keys, options, cancellationToken, out assertedOnly ) : null;
 			if ( hasCommit && assertedOnly ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
-			return new( new( compiled[root].Alternatives, options, validationLookbehind, settings.Newline,
+			// THEN needs the original root alternative owner inside the retry stack.
+			var branches = parser.HasThen ? new PcreByteNode[][] { [compiled[root]] } : compiled[root].Alternatives;
+			return new( new( branches, options, validationLookbehind, settings.Newline,
 				settings.BsrAnyCrLf, parser.CreateCaptureInfo(), targets, parser.HasNonAtomicAccept,
-				cutTargets, startLiteral ), null );
+				cutTargets, startLiteral, parser.HasThen ), null );
 		} catch ( PcreByteParseException error ) {
 			return Error( error.Diagnostic.Code == PcreByteDiagnosticCode.UnsupportedSyntax
 				? PcreWordDiagnosticCode.UnsupportedSyntax : PcreWordDiagnosticCode.InvalidSyntax, error.Diagnostic.ByteOffset );
@@ -213,6 +216,7 @@ internal static class PcreWordSequenceCompiler {
 				nodes[original] = node switch {
 					PcreBytePrune prune => new PcreWordCut( false, CutMark( prune.WordName ) ),
 					PcreByteCommit commit => new PcreWordCut( true, CutMark( commit.WordName ) ),
+					PcreByteThen then => new PcreWordCut( false, CutMark( then.WordName ), true ),
 					PcreByteAccept accept => BuildAccept( accept ),
 					PcreByteRepeat { Child: PcreByteAccept accept } repeat => new PcreWordGroupRepeat(
 						new( [[BuildAccept( accept )]], 1, 1, 0 ), repeat.Minimum, repeat.Maximum, repeat.Greedy, true ),
@@ -380,13 +384,28 @@ internal static class PcreWordSequenceCompiler {
 
 	private static string? CutMark( string? name ) => name is { Length: > 0 } ? VisibleMark( name ) : null;
 
+	private static PcreByteAlternatives? FindPruneLiteralCacheBody( PcreByteAlternatives root ) {
+		// Native early-failure study descends at most four ordinary group levels.
+		// A sole root wrapper cannot have calls or references to its own capture.
+		for ( var depth = 0; depth < 4 && root.Branches.Count == 1 && root.Branches[0].Count == 1; depth++ ) {
+			var nested = root.Branches[0][0] switch {
+				PcreByteGroup group => group.Body,
+				PcreByteNoncapturingGroup group => group.Body,
+				_ => null
+			};
+			if ( nested is null ) { break; }
+			root = nested;
+		}
+		return HasPruneLiteralCache( root ) ? root : null;
+	}
+
 	private static bool HasPruneLiteralCache( PcreByteAlternatives root ) {
 		// Native detect_early_fail reuses this leading literal-PLUS scan after PRUNE.
 		// Keep the proof confined to the same two-branch shape as the byte runner.
 		if ( root.Branches.Count != 2 || root.Branches[0].Count is not ( 3 or 4 )
 			|| root.Branches[0][0] is not PcreByteRepeat { Minimum: 1, Maximum: int.MaxValue,
 				Greedy: true, Offset: -1, Child: PcreByteLiteral { Caseless: false } literal }
-			|| root.Branches[0].Count == 4 && root.Branches[0][1] is not PcreByteCommit
+			|| root.Branches[0].Count == 4 && root.Branches[0][1] is not ( PcreByteCommit or PcreByteThen )
 			|| root.Branches[0][^2] is not PcreBytePrune
 			|| root.Branches[0][^1] is not ( PcreByteFailure or PcreByteLiteral { Caseless: false } )
 			|| root.Branches[1].Count != 1 ) { return false; }
@@ -403,7 +422,7 @@ internal static class PcreWordSequenceCompiler {
 		while ( pending.TryPop( out var node ) ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			switch ( node ) {
-				case PcreBytePrune or PcreByteCommit: return true;
+				case PcreBytePrune or PcreByteCommit or PcreByteThen: return true;
 				case PcreByteGroup group: AddBody( group.Body ); break;
 				case PcreByteNoncapturingGroup group: AddBody( group.Body ); break;
 				case PcreByteLookahead assertion: AddBody( assertion.Body ); break;
@@ -469,7 +488,7 @@ internal static class PcreWordSequenceCompiler {
 					if ( node is PcreBytePathMark or PcreByteWordBoundary or PcreByteLookbehind
 						or PcreByteLookahead { IsPositive: false } or PcreByteStaticConditional { IsDefinition: true }
 						or PcreByteRepeat { Maximum: 0 } or PcreByteCommit { WordName.Length: > 0 }
-						or PcreBytePrune { WordName.Length: > 0 } ) { continue; }
+						or PcreBytePrune { WordName.Length: > 0 } or PcreByteThen { WordName.Length: > 0 } ) { continue; }
 					while ( node is PcreByteAtomic or PcreByteRepeat { Minimum: > 0 } ) {
 						cancellationToken.ThrowIfCancellationRequested();
 						node = node is PcreByteAtomic atomic ? atomic.Child : ( (PcreByteRepeat)node ).Child;
@@ -515,7 +534,7 @@ internal static class PcreWordSequenceCompiler {
 				case PcreByteLiteral literal: result = (UnitLiteral( literal ), false); break;
 				case PcreByteGroup group: result = firstUnits[group.Body]; break;
 				case PcreByteNoncapturingGroup group: result = firstUnits[group.Body]; break;
-				case PcreBytePathMark or PcreBytePrune or PcreByteCommit or PcreByteFailure
+				case PcreBytePathMark or PcreBytePrune or PcreByteCommit or PcreByteThen or PcreByteFailure
 					or PcreByteLookahead or PcreByteLookbehind or PcreByteAnchor or PcreByteSearchStart
 					or PcreByteEndBeforeFinalLf or PcreByteWordBoundary or PcreByteStaticConditional { IsDefinition: true }:
 					result = (null, true); break;

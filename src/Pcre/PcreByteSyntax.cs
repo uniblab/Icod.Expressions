@@ -27,7 +27,7 @@ internal sealed record PcreByteNamedSkip( ReadOnlyMemory<byte> Name ) : PcreByte
 
 internal sealed record PcreByteCommit( ReadOnlyMemory<byte> Name = default, string? WordName = null ) : PcreByteNode;
 
-internal sealed record PcreByteThen( ReadOnlyMemory<byte> Name = default ) : PcreByteNode;
+internal sealed record PcreByteThen( ReadOnlyMemory<byte> Name = default, string? WordName = null ) : PcreByteNode;
 
 internal sealed record PcreBytePathMark( ReadOnlyMemory<byte> Name, string? WordName = null ) : PcreByteNode;
 
