@@ -219,6 +219,132 @@ public sealed class PcreWordAtomicTests {
 				("(?>(😀)+)x", "x😀😀x", 1, false, false),
 				("(?i)é++x", "Ééx", 0, false, true),
 				("(?i)é++x", "Ééx", 0, false, false),
+				("(?:(?=(\\1a|a)))*\\1", "aaaa", 0, false, false),
+				("(?:(?=(\\1a|a)))*\\1", "aaaa", 0, true, false),
+				("(?:(?=(\\1a|a)))*?\\1", "aaaa", 0, false, false),
+				("(?:(?=(\\1a|a)))*?\\1", "aaaa", 0, true, false),
+				("(?:(?=(\\1a|a)))*+\\1", "aaaa", 0, false, false),
+				("(?:(?=(\\1a|a)))*+\\1", "aaaa", 0, true, false),
+				("(?:(?=(\\1a|a)))+\\1", "aaaa", 0, false, false),
+				("(?:(?=(\\1a|a)))+\\1", "aaaa", 0, true, false),
+				("(?:(?=(\\1a|a)))+?\\1", "aaaa", 0, false, false),
+				("(?:(?=(\\1a|a)))+?\\1", "aaaa", 0, true, false),
+				("(?:(?=(\\1a|a)))++\\1", "aaaa", 0, false, false),
+				("(?:(?=(\\1a|a)))++\\1", "aaaa", 0, true, false),
+				("(?:(?=(\\1a|a))){1,}\\1", "aaaa", 0, false, false),
+				("(?:(?=(\\1a|a))){1,}\\1", "aaaa", 0, true, false),
+				("(?:(?=(\\1a|a))){1,}?\\1", "aaaa", 0, false, false),
+				("(?:(?=(\\1a|a))){1,}?\\1", "aaaa", 0, true, false),
+				("(?:(?=(\\1a|a))){1,}+\\1", "aaaa", 0, false, false),
+				("(?:(?=(\\1a|a))){1,}+\\1", "aaaa", 0, true, false),
+				("(?:(?=(\\1a|a))){2,}\\1", "aaaa", 0, false, false),
+				("(?:(?=(\\1a|a))){2,}\\1", "aaaa", 0, true, false),
+				("(?:(?=(\\1a|a))){2,}?\\1", "aaaa", 0, false, false),
+				("(?:(?=(\\1a|a))){2,}?\\1", "aaaa", 0, true, false),
+				("(?:(?=(\\1a|a))){2,}+\\1", "aaaa", 0, false, false),
+				("(?:(?=(\\1a|a))){2,}+\\1", "aaaa", 0, true, false),
+				("(?:(?=(\\1a|a))){3,}\\1", "aaaa", 0, false, false),
+				("(?:(?=(\\1a|a))){3,}\\1", "aaaa", 0, true, false),
+				("(?:(?=(\\1a|a))){3,}?\\1", "aaaa", 0, false, false),
+				("(?:(?=(\\1a|a))){3,}?\\1", "aaaa", 0, true, false),
+				("(?:(?=(\\1a|a))){3,}+\\1", "aaaa", 0, false, false),
+				("(?:(?=(\\1a|a))){3,}+\\1", "aaaa", 0, true, false),
+				("(?:(?=(\\1a|a))){0,3}\\1", "aaaa", 0, false, false),
+				("(?:(?=(\\1a|a))){0,3}\\1", "aaaa", 0, true, false),
+				("(?:(?=(\\1a|a))){0,3}?\\1", "aaaa", 0, false, false),
+				("(?:(?=(\\1a|a))){0,3}?\\1", "aaaa", 0, true, false),
+				("(?:(?=(\\1a|a))){0,3}+\\1", "aaaa", 0, false, false),
+				("(?:(?=(\\1a|a))){0,3}+\\1", "aaaa", 0, true, false),
+				("(?:(?=(\\1a|a))){2,3}\\1", "aaaa", 0, false, false),
+				("(?:(?=(\\1a|a))){2,3}\\1", "aaaa", 0, true, false),
+				("(?:(?=(\\1a|a))){2,3}?\\1", "aaaa", 0, false, false),
+				("(?:(?=(\\1a|a))){2,3}?\\1", "aaaa", 0, true, false),
+				("(?:(?=(\\1a|a))){2,3}+\\1", "aaaa", 0, false, false),
+				("(?:(?=(\\1a|a))){2,3}+\\1", "aaaa", 0, true, false),
+				("(?>(?=(\\1a|a)))*\\1", "aaaa", 0, false, false),
+				("(?>(?=(\\1a|a)))*\\1", "aaaa", 0, true, false),
+				("(?>(?=(\\1a|a)))*?\\1", "aaaa", 0, false, false),
+				("(?>(?=(\\1a|a)))*?\\1", "aaaa", 0, true, false),
+				("(?>(?=(\\1a|a)))*+\\1", "aaaa", 0, false, false),
+				("(?>(?=(\\1a|a)))*+\\1", "aaaa", 0, true, false),
+				("(?>(?=(\\1a|a)))+\\1", "aaaa", 0, false, false),
+				("(?>(?=(\\1a|a)))+\\1", "aaaa", 0, true, false),
+				("(?>(?=(\\1a|a)))+?\\1", "aaaa", 0, false, false),
+				("(?>(?=(\\1a|a)))+?\\1", "aaaa", 0, true, false),
+				("(?>(?=(\\1a|a)))++\\1", "aaaa", 0, false, false),
+				("(?>(?=(\\1a|a)))++\\1", "aaaa", 0, true, false),
+				("(?>(?=(\\1a|a))){1,}\\1", "aaaa", 0, false, false),
+				("(?>(?=(\\1a|a))){1,}\\1", "aaaa", 0, true, false),
+				("(?>(?=(\\1a|a))){1,}?\\1", "aaaa", 0, false, false),
+				("(?>(?=(\\1a|a))){1,}?\\1", "aaaa", 0, true, false),
+				("(?>(?=(\\1a|a))){1,}+\\1", "aaaa", 0, false, false),
+				("(?>(?=(\\1a|a))){1,}+\\1", "aaaa", 0, true, false),
+				("(?>(?=(\\1a|a))){2,}\\1", "aaaa", 0, false, false),
+				("(?>(?=(\\1a|a))){2,}\\1", "aaaa", 0, true, false),
+				("(?>(?=(\\1a|a))){2,}?\\1", "aaaa", 0, false, false),
+				("(?>(?=(\\1a|a))){2,}?\\1", "aaaa", 0, true, false),
+				("(?>(?=(\\1a|a))){2,}+\\1", "aaaa", 0, false, false),
+				("(?>(?=(\\1a|a))){2,}+\\1", "aaaa", 0, true, false),
+				("(?>(?=(\\1a|a))){3,}\\1", "aaaa", 0, false, false),
+				("(?>(?=(\\1a|a))){3,}\\1", "aaaa", 0, true, false),
+				("(?>(?=(\\1a|a))){3,}?\\1", "aaaa", 0, false, false),
+				("(?>(?=(\\1a|a))){3,}?\\1", "aaaa", 0, true, false),
+				("(?>(?=(\\1a|a))){3,}+\\1", "aaaa", 0, false, false),
+				("(?>(?=(\\1a|a))){3,}+\\1", "aaaa", 0, true, false),
+				("(?>(?=(\\1a|a))){0,3}\\1", "aaaa", 0, false, false),
+				("(?>(?=(\\1a|a))){0,3}\\1", "aaaa", 0, true, false),
+				("(?>(?=(\\1a|a))){0,3}?\\1", "aaaa", 0, false, false),
+				("(?>(?=(\\1a|a))){0,3}?\\1", "aaaa", 0, true, false),
+				("(?>(?=(\\1a|a))){0,3}+\\1", "aaaa", 0, false, false),
+				("(?>(?=(\\1a|a))){0,3}+\\1", "aaaa", 0, true, false),
+				("(?>(?=(\\1a|a))){2,3}\\1", "aaaa", 0, false, false),
+				("(?>(?=(\\1a|a))){2,3}\\1", "aaaa", 0, true, false),
+				("(?>(?=(\\1a|a))){2,3}?\\1", "aaaa", 0, false, false),
+				("(?>(?=(\\1a|a))){2,3}?\\1", "aaaa", 0, true, false),
+				("(?>(?=(\\1a|a))){2,3}+\\1", "aaaa", 0, false, false),
+				("(?>(?=(\\1a|a))){2,3}+\\1", "aaaa", 0, true, false),
+				("((?=(\\2a|a)))*\\2", "aaaa", 0, false, false),
+				("((?=(\\2a|a)))*\\2", "aaaa", 0, true, false),
+				("((?=(\\2a|a)))*?\\2", "aaaa", 0, false, false),
+				("((?=(\\2a|a)))*?\\2", "aaaa", 0, true, false),
+				("((?=(\\2a|a)))*+\\2", "aaaa", 0, false, false),
+				("((?=(\\2a|a)))*+\\2", "aaaa", 0, true, false),
+				("((?=(\\2a|a)))+\\2", "aaaa", 0, false, false),
+				("((?=(\\2a|a)))+\\2", "aaaa", 0, true, false),
+				("((?=(\\2a|a)))+?\\2", "aaaa", 0, false, false),
+				("((?=(\\2a|a)))+?\\2", "aaaa", 0, true, false),
+				("((?=(\\2a|a)))++\\2", "aaaa", 0, false, false),
+				("((?=(\\2a|a)))++\\2", "aaaa", 0, true, false),
+				("((?=(\\2a|a))){1,}\\2", "aaaa", 0, false, false),
+				("((?=(\\2a|a))){1,}\\2", "aaaa", 0, true, false),
+				("((?=(\\2a|a))){1,}?\\2", "aaaa", 0, false, false),
+				("((?=(\\2a|a))){1,}?\\2", "aaaa", 0, true, false),
+				("((?=(\\2a|a))){1,}+\\2", "aaaa", 0, false, false),
+				("((?=(\\2a|a))){1,}+\\2", "aaaa", 0, true, false),
+				("((?=(\\2a|a))){2,}\\2", "aaaa", 0, false, false),
+				("((?=(\\2a|a))){2,}\\2", "aaaa", 0, true, false),
+				("((?=(\\2a|a))){2,}?\\2", "aaaa", 0, false, false),
+				("((?=(\\2a|a))){2,}?\\2", "aaaa", 0, true, false),
+				("((?=(\\2a|a))){2,}+\\2", "aaaa", 0, false, false),
+				("((?=(\\2a|a))){2,}+\\2", "aaaa", 0, true, false),
+				("((?=(\\2a|a))){3,}\\2", "aaaa", 0, false, false),
+				("((?=(\\2a|a))){3,}\\2", "aaaa", 0, true, false),
+				("((?=(\\2a|a))){3,}?\\2", "aaaa", 0, false, false),
+				("((?=(\\2a|a))){3,}?\\2", "aaaa", 0, true, false),
+				("((?=(\\2a|a))){3,}+\\2", "aaaa", 0, false, false),
+				("((?=(\\2a|a))){3,}+\\2", "aaaa", 0, true, false),
+				("((?=(\\2a|a))){0,3}\\2", "aaaa", 0, false, false),
+				("((?=(\\2a|a))){0,3}\\2", "aaaa", 0, true, false),
+				("((?=(\\2a|a))){0,3}?\\2", "aaaa", 0, false, false),
+				("((?=(\\2a|a))){0,3}?\\2", "aaaa", 0, true, false),
+				("((?=(\\2a|a))){0,3}+\\2", "aaaa", 0, false, false),
+				("((?=(\\2a|a))){0,3}+\\2", "aaaa", 0, true, false),
+				("((?=(\\2a|a))){2,3}\\2", "aaaa", 0, false, false),
+				("((?=(\\2a|a))){2,3}\\2", "aaaa", 0, true, false),
+				("((?=(\\2a|a))){2,3}?\\2", "aaaa", 0, false, false),
+				("((?=(\\2a|a))){2,3}?\\2", "aaaa", 0, true, false),
+				("((?=(\\2a|a))){2,3}+\\2", "aaaa", 0, false, false),
+				("((?=(\\2a|a))){2,3}+\\2", "aaaa", 0, true, false),
 				("(?>\\x{0}+)x", "\u0000\u0000x", 0, false, false),
 				("(?>(\ud800)+)x", "\ud800\ud800x", 0, false, false),
 				("\udc00++x", "\udc00\udc00x", 0, false, false),
@@ -296,6 +422,38 @@ public sealed class PcreWordAtomicTests {
 			var wc = Assert.IsType<PcreWordCapture>( w.Captures[number] );
 			Assert.Equal( Encoding.UTF8.GetString( bytes.AsSpan( bc.ByteIndex, bc.ByteLength ) ),
 				subject.Substring( wc.CodeUnitIndex, wc.CodeUnitLength ) );
+		}
+	}
+
+	[Theory]
+	[InlineData( "(?:", "1" )]
+	[InlineData( "(?>", "1" )]
+	[InlineData( "(", "2" )]
+	public void FinalRequiredEmptyGroupsKeepNativeCapturesAcrossWidths( string opener, string reference ) {
+		const string subject = "aaaa";
+		var bytes = Encoding.UTF8.GetBytes( subject );
+		var coordinates = new PcreDualWidthCoordinates( bytes, subject );
+		foreach ( var count in new[] { "1", "2", "3" } ) {
+			foreach ( var suffix in new[] { "", "?", "+" } ) {
+				var source = String.Concat( opener, "(?=(\\", reference, "a|a))){", count, ",}", suffix, "\\", reference );
+				foreach ( var utf in new[] { false, true } ) {
+					var b = PcreByteCompiler.Compile( Encoding.UTF8.GetBytes( source ), new() { Utf8 = utf } );
+					var w = PcreWordSequenceCompiler.CompileSequence( source.AsMemory(), new() { Utf16 = utf } );
+					Assert.True( b.IsSuccess ); Assert.True( w.IsSuccess );
+					for ( var mask = 0; mask < 64; mask++ ) {
+						var policy = PcreMatchPolicyConsumer.Policy( mask );
+						var br = b.Pattern!.Match( bytes, policy );
+						var wr = w.Pattern!.Match( subject.AsMemory(), policy );
+						var native = PcreNative16Oracle.ExecuteSequence( Words( source ), Words( subject ), utf, 0, mask: mask );
+						Assert.True( br.IsSuccess ); Assert.True( wr.IsSuccess );
+						Assert.True( native.Kind is "M" or "N" );
+						Assert.Equal( native.Captures, Spans( wr.Match ) );
+						var spans = br.Match is null ? "" : String.Join( ",", br.Match.Captures.Select( c => c is { } span
+							? $"{span.ByteIndex}:{span.ByteLength}" : "-" ) );
+						Assert.Equal( coordinates.WordCaptures( native.Captures ), coordinates.ByteCaptures( spans ) );
+					}
+				}
+			}
 		}
 	}
 

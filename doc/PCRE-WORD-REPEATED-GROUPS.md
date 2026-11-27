@@ -20,8 +20,10 @@ iterative and reads the original word subject.
 An optional unbounded iteration that consumes nothing exits the loop while
 retaining the body's alternative retries. Required counted copies still run
 even when empty, and finite repeats can finish their admitted counts. The
-shorthand `+` also checks its first mandatory copy for progress, matching the
-existing byte emitter's distinction from a counted `{1,}` spelling. Root
+final required copy of an unbounded group repeat also checks progress, for both
+shorthand `+` and counted `{n,}` spellings. This was corrected in the
+[atomic-group increment](PCRE-WORD-ATOMIC-GROUPS.md) after capture side effects
+exposed an extra empty iteration in the original byte and word lowering. Root
 empty-match or end-anchored rejection can retry a consuming body alternative.
 
 The word matcher now has a 1,024-backtrack-frame ceiling, matching the byte

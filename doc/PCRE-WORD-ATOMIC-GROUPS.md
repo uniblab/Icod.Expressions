@@ -36,8 +36,12 @@ including when an outer choice resumes after an atomic attempt.
 Source group bodies remain compiled in postorder. A possessive repeat passes
 through one synthetic branch using the existing atom/group/reference repeat
 lowering. That branch does not recursively compile nested source group bodies.
-The word runner adds a consuming atomic guard to its existing iterative loop;
-the shared parser and byte executor are unchanged. No native fallback, subject
+The word runner adds a consuming atomic guard to its existing iterative loop.
+Native differential tests also exposed an extra empty iteration in existing
+counted group repeats: both the byte emitter and word loop now check progress
+on the final required group copy, preserving all earlier required copies.
+This matters when a zero-width body updates captures. Directly quantified
+assertions keep their separate finite-bound rule. No native fallback, subject
 copy, transcoding or retained subject memory is introduced.
 
 The existing 64-level source nesting, 64-static-path, 64-retained-unbounded-repeat,
@@ -54,23 +58,26 @@ later calls, including calls that exhaust the shared frame limit.
 
 ## Evidence and remaining scope
 
-213 fixtures across eight compiled defaults and all 64 call masks add 109,056
+339 fixtures across eight compiled defaults and all 64 call masks add 173,568
 PCRE2-16 comparisons of status and every capture slot. They cover atomic aliases,
 finite/unbounded possessive counts, repeated atomic groups, nested assertions,
 captures and references, empty iterations, outer rollback, fixed/variable
 lookbehind, Unicode casing/classes, supplementary characters, raw surrogate
 units, newline selectors and original caller offsets.
 
-Standalone pinned native preflight produced 62,408 matches and 46,648 misses
+Standalone pinned native preflight produced 100,712 matches and 72,856 misses
 with no native errors. Its LF-terminated output SHA-256 is
-`4b9289c580b98067885c9b7e595659d4ecded104603c493482057f5b8e841f34`.
+`d28fdbb822d3dab82ae465f2614faa3b83d43cf1759c5abd23de84ed110f9409`.
 Build/provenance is retained in [word-sequence evidence](PCRE-WORD-SEQUENCES.md).
 
 Additional tests pin explicit commitment/capture results, cross-width spans and
 values, exact work quotas, cancellation during pruning and undo, frame exhaustion,
 source ownership, durable results, compile-time bounds and original diagnostic/UTF
 validation offsets. Full six-host build, test and package evidence is recorded
-on the pull request.
+on the pull request. The counted-group correction additionally compares byte
+and word capture vectors against native PCRE2-16 for capturing, noncapturing
+and atomic groups, required counts one through three, greedy/lazy/possessive
+preference, raw/UTF modes and all 64 call policies.
 
 Calls, conditions and verbs are next. Broader newline search, graphemes,
 word package consumers and public API/resource qualification remain open.

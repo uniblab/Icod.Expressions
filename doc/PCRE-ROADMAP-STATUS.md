@@ -6,7 +6,9 @@ The [atomic-group record](PCRE-WORD-ATOMIC-GROUPS.md) adds consuming atomic
 groups and aliases, repeated atomic groups, and possessive atom/group/reference
 counts. Commit guards keep consumption and successful captures, prune inner
 choices and preserve outer rollback through the existing iterative runner.
-213 fixtures add 109,056 full-vector PCRE2-16 policy comparisons. Calls,
+339 fixtures add 173,568 full-vector PCRE2-16 policy comparisons. Native capture
+checks also corrected final-required empty progress in counted group repeats
+in both byte and word execution. Calls,
 conditions and verbs are next.
 
 ## Native 16-bit direct assertion repeats

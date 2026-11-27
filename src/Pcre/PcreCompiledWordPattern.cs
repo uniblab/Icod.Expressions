@@ -211,10 +211,11 @@ internal sealed class PcreCompiledWordPattern {
 							if ( guardFrames.Count == 0 ) { changes?.Clear(); }
 							// A matching negative body fails into the enclosing retry stack.
 						} else if ( parent.Repeat is { } completedRepeat ) {
-							// Required counted copies may be empty. The optional unbounded
-							// loop stops on no progress; shorthand '+' also guards its first copy.
+							// Earlier required copies may be empty. Native group repeats
+							// check the final required copy before entering the optional loop.
 							if ( completedRepeat.Maximum == int.MaxValue && position == parent.Start
-								&& ( parent.Count >= completedRepeat.Minimum || completedRepeat.CheckMinimumProgress ) ) {
+								&& ( parent.Count >= completedRepeat.Minimum || completedRepeat.CheckFinalRequiredProgress
+									&& parent.Count + 1 >= completedRepeat.Minimum ) ) {
 								index++;
 							} else if ( !ContinueGroupRepeat( completedRepeat, parent.Count + 1 ) ) { return -2; }
 							continue;

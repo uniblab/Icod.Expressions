@@ -141,7 +141,7 @@ public sealed class PcreWordRepeatedGroupTests {
 	[InlineData( "(?:)*", 6 )]
 	[InlineData( "(?:)*?", 3 )]
 	[InlineData( "(?:)+", 6 )]
-	[InlineData( "(?:){1,}", 9 )]
+	[InlineData( "(?:){1,}", 6 )]
 	[InlineData( "(?:){2}", 9 )]
 	[InlineData( "(?:){0}", 3 )]
 	[InlineData( "(?:){0,3}", 12 )]

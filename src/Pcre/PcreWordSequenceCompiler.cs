@@ -7,7 +7,7 @@ internal sealed record PcreWordGroup(
 ) : PcreByteNode;
 
 internal sealed record PcreWordGroupRepeat(
-	PcreWordGroup Group, int Minimum, int Maximum, bool Greedy, bool CheckMinimumProgress
+	PcreWordGroup Group, int Minimum, int Maximum, bool Greedy, bool CheckFinalRequiredProgress
 ) : PcreByteNode {
 	internal PcreByteNode[] Body { get; } = [Group];
 }
@@ -154,13 +154,13 @@ internal static class PcreWordSequenceCompiler {
 					PcreByteLookahead or PcreByteLookbehind => BuildAssertion( node, compiled ),
 					PcreByteRepeat { Child: PcreByteGroup group } repeat => new PcreWordGroupRepeat(
 						compiled[group.Body] with { CaptureNumber = group.Number }, repeat.Minimum, repeat.Maximum, repeat.Greedy,
-						repeat.Offset < 0 && repeat.Minimum == 1 ),
+						true ),
 					PcreByteRepeat { Child: PcreByteNoncapturingGroup group } repeat => new PcreWordGroupRepeat(
 						compiled[group.Body], repeat.Minimum, repeat.Maximum, repeat.Greedy,
-						repeat.Offset < 0 && repeat.Minimum == 1 ),
+						true ),
 					PcreByteRepeat { Child: PcreByteAtomic { Child: PcreByteNoncapturingGroup group } } repeat =>
 						new PcreWordGroupRepeat( AtomicIteration( compiled[group.Body] ),
-							repeat.Minimum, repeat.Maximum, repeat.Greedy, repeat.Offset < 0 && repeat.Minimum == 1 ),
+							repeat.Minimum, repeat.Maximum, repeat.Greedy, true ),
 					// References consume whole captured strings, possibly empty. Reuse the
 					// variable-width group loop instead of scalar-atom expansion/rewinding.
 					PcreByteRepeat { Child: PcreByteBackreference reference } repeat => new PcreWordGroupRepeat(
