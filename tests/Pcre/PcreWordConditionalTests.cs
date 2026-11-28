@@ -555,13 +555,13 @@ public sealed class PcreWordConditionalTests {
 	[Fact]
 	public void InactiveArmsAndTestsRemainInSourceAdmissionAndUtfValidation() {
 		var atDepth = String.Concat( String.Concat( Enumerable.Repeat( "(?(VERSION=10.48)", 64 ) ), "a", new string( ')', 64 ) );
-		foreach ( var source in new[] { atDepth, "(?(R)a?b?c?d?e?|f?g?h?i?j?)", "(?(DEFINE)(a)){64}" } ) {
+		foreach ( var source in new[] { atDepth, "(?(R)a?b?c?d?e?|f?g?h?i?j?)", "(?(DEFINE)(a)){64}", "(*ANY)(?(R)a|b)" } ) {
 			Assert.True( PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).IsSuccess, source );
 		}
 		foreach ( var source in new[] { String.Concat( "(?(VERSION=10.48)", atDepth, ")" ),
 			"(?(R)a?b?c?d?e?f?|x)", "(?(R)a?b?c?d?e?|f?g?h?i?j?)k?",
 			"(?(?=a|b)a?b?c?d?e?|x)", "(?(VERSION=10.48)a|(*sr:a))",
-			"(?(DEFINE)(a)){65}", "(?(?=a)b|c){65}", "(*ANY)(?(R)a|b)" } ) {
+			"(?(DEFINE)(a)){65}", "(?(?=a)b|c){65}", "(*ANY)(*UTF)(?(R)a|b)" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax, PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}
 		foreach ( var source in new[] { "(?(VERSION=10.48)a|(?<=ab)b)", "(?(VERSION=0)(?<=ab)b|a)", "(?(?<=ab)b|a)" } ) {
