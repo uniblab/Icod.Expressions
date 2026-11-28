@@ -33,14 +33,14 @@ internal static class PcreWordStartStudy {
 
 		First FirstNode( PcreByteNode node ) {
 			var optional = false;
-			while ( node is PcreByteAtomic or PcreByteRepeat ) {
+			while ( node is PcreByteAtomic or PcreByteRepeat or PcreByteScriptRun ) {
 				cancellationToken.ThrowIfCancellationRequested();
 				if ( ++visits > MaximumVisits ) { return default; }
 				if ( node is PcreByteRepeat repeat ) {
 					if ( repeat.Maximum == 0 ) { return new( true, true, false, false ); }
 					optional |= repeat.Minimum == 0;
 					node = repeat.Child;
-				} else { node = ( (PcreByteAtomic)node ).Child; }
+				} else { node = node is PcreByteAtomic atomic ? atomic.Child : ( (PcreByteScriptRun)node ).Child; }
 			}
 			var first = node switch {
 				PcreByteLiteral value => new First( true, false, value.Value == '\r', value.Value == '\n' ),

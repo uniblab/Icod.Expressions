@@ -264,7 +264,7 @@ public sealed class PcreWordLookaheadTests {
 		Assert.Equal( "0:0", Spans( deep.Match( "a".AsMemory() ).Match ) );
 		foreach ( var source in new[] { String.Concat( "(?=", nested, ")" ), "(?=a?b?c?d?e?f?)g?",
 			String.Concat( "(?=", String.Concat( Enumerable.Repeat( "a*", 65 ) ), ")" ),
-			"(?=a){65}", "(?=a){64,}", "(?=(?>(*sr:a)a)){0}", "(?*a){65}", "(?<=a){65}", "(?<!a){65}", "(?>(*sr:a)a)", "(?=a(*asr:a))" } ) {
+			"(?=a){65}", "(?=a){64,}", "(?=(?>(*sr:(?:a){65}a)a)){0}", "(?*a){65}", "(?<=a){65}", "(?<!a){65}", "(?>(*sr:(?:a){65}a)a)", "(?=a(*asr:(?:a){65}a))" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

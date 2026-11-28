@@ -271,7 +271,11 @@ internal sealed partial class PcreCompiledWordPattern {
 						index = parent.Index;
 						continuation = parent.Parent;
 						if ( parent.GuardBoundary >= 0 || parent.CallCheckpoint >= 0 ) { visibleEnd = parent.SavedEnd; }
-						if ( parent.CheckAssertionEnd && parent.AssertionEnd >= 0 && position != parent.AssertionEnd ) {
+						var validRun = parent.CheckScriptRun ? CheckScriptRun( source, parent.Start, position, ref work, cancellationToken ) : 1;
+						if ( validRun < 0 ) { return -1; }
+						if ( validRun == 0 ) {
+							// Reject the consumed span through the body's surviving choices.
+						} else if ( parent.CheckAssertionEnd && parent.AssertionEnd >= 0 && position != parent.AssertionEnd ) {
 							// A shorter/longer body must retry before the assertion can commit.
 						} else if ( parent.CallCheckpoint >= 0 ) {
 							if ( !ReturnCaptures( parent.CallCheckpoint, parent.ReturnedCaptures ) ) { return -1; }
@@ -369,6 +373,12 @@ internal sealed partial class PcreCompiledWordPattern {
 					// Native JIT caps nested reads at a variable lookbehind's endpoint.
 					if ( assertion.VariableBehind && !interpreted ) { visibleEnd = position; }
 					nodes = assertion.Body;
+					index = 0;
+					continue;
+				} else if ( nodes[index] is PcreWordScriptRun run ) {
+					if ( !Step() ) { return -1; } // Save the consumed-span start independently of captures and \K.
+					continuation = new( nodes, index + 1, continuation, Start: position, CheckScriptRun: true );
+					nodes = run.Body;
 					index = 0;
 					continue;
 				} else if ( nodes[index] is PcreWordAtomic atomic ) {
@@ -868,7 +878,7 @@ internal sealed partial class PcreCompiledWordPattern {
 		int CallCheckpoint = -1, ReadOnlyMemory<int> ReturnedCaptures = default, int Caller = -1, bool CheckAssertionEnd = true,
 		bool AtomicGroup = false, int CallBoundary = -1, bool CatchesCut = false, bool IsolatePathMarks = false,
 		int ThenBoundary = -1, int ThenNext = -1, PcreWordGroup? ThenGroup = null,
-		string? ThenEntryMark = null, int ThenEntryMarkVersion = 0, PcreWordCapture? EntryMatchStart = null );
+		string? ThenEntryMark = null, int ThenEntryMarkVersion = 0, PcreWordCapture? EntryMatchStart = null, bool CheckScriptRun = false );
 
 	private bool TryConsumeAtom( PcreByteNode node, ReadOnlySpan<char> input, int position, out int width ) {
 		if ( !PcreUtf16.TryRead( input, position, options.Utf16, out var value, out width ) ) { return false; }

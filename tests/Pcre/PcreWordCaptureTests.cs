@@ -325,11 +325,11 @@ public sealed class PcreWordCaptureTests {
 	}
 
 	[Theory]
-	[InlineData( "(a)(?1)(*sr:a)" )]
+	[InlineData( "(a)(?1)(*sr:(?:a){65}a)" )]
 	[InlineData( "(?<*(a)){65}b" )]
-	[InlineData( "(?>(*sr:a)a)" )]
+	[InlineData( "(?>(*sr:(?:a){65}a)a)" )]
 	[InlineData( "(a){65,}+" )]
-	[InlineData( "(a)(*sr:a)" )]
+	[InlineData( "(a)(*sr:(?:a){65}a)" )]
 	public void CaptureDependentExecutionStillRequiresExplicitAdmission( string source ) {
 		Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 			PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
