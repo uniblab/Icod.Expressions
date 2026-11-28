@@ -6,12 +6,12 @@ internal sealed record PcreWordPathMark( string Name ) : PcreByteNode;
 internal sealed record PcreWordFailure( string? Mark = null ) : PcreByteNode;
 internal sealed record PcreWordAccept( string? Mark = null ) : PcreByteNode;
 internal enum PcreWordCutKind { Prune, Commit, Then, Skip }
-internal sealed record PcreWordCut( PcreWordCutKind Kind, string? Mark = null ) : PcreByteNode;
+internal sealed record PcreWordCut( PcreWordCutKind Kind, string? Mark = null, string? SkipName = null ) : PcreByteNode;
 internal sealed record PcreWordPruneScan( bool Start ) : PcreByteNode;
 
 internal sealed record PcreWordGroup(
 	PcreByteNode[][] Alternatives, int PathCount, int ExpandedNodes, int UnboundedRepeats, int CaptureNumber = 0,
-	int[]? SourceBranchStarts = null, bool[]? CheckAssertionEnds = null
+	int[]? SourceBranchStarts = null, bool[]? CheckAssertionEnds = null, bool IsolatesPathMarks = false
 ) : PcreByteNode;
 
 internal enum PcreWordConditionKind { Capture, Recursion, Constant, Assertion }
@@ -153,7 +153,7 @@ internal static class PcreWordSequenceCompiler {
 				// Source bodies were compiled once; do not expand or traverse call edges.
 				// A call executes the definition's body, not its enclosing capture close.
 				targets.Add( number, [compiled[target.Body]] );
-				if ( HasLexicalCut( target.Body, cancellationToken ) ) { cutTargets.Add( number ); }
+				if ( HasLexicalControl( target.Body, cancellationToken, localQuitOnly: true ) ) { cutTargets.Add( number ); }
 			}
 			var assertedOnly = false;
 			var startLiteral = hasCommit ? FindCommitStart( root, compiled.Keys, options, cancellationToken, out assertedOnly ) : null;
@@ -162,7 +162,8 @@ internal static class PcreWordSequenceCompiler {
 			var branches = parser.HasThen ? new PcreByteNode[][] { [compiled[root]] } : compiled[root].Alternatives;
 			return new( new( branches, options, validationLookbehind, settings.Newline,
 				settings.BsrAnyCrLf, parser.CreateCaptureInfo(), targets, parser.HasNonAtomicAccept,
-				cutTargets, startLiteral, parser.HasThen ), null );
+				cutTargets, startLiteral, parser.HasThen, parser.HasNamedSkip,
+				parser.HasNamedSkip && PcreSourceStartAnchor.HasAlternativeStartAnchor( root, cancellationToken ) ), null );
 		} catch ( PcreByteParseException error ) {
 			return Error( error.Diagnostic.Code == PcreByteDiagnosticCode.UnsupportedSyntax
 				? PcreWordDiagnosticCode.UnsupportedSyntax : PcreWordDiagnosticCode.InvalidSyntax, error.Diagnostic.ByteOffset );
@@ -219,6 +220,7 @@ internal static class PcreWordSequenceCompiler {
 					PcreByteCommit commit => new PcreWordCut( PcreWordCutKind.Commit, CutMark( commit.WordName ) ),
 					PcreByteThen then => new PcreWordCut( PcreWordCutKind.Then, CutMark( then.WordName ) ),
 					PcreByteSkip => new PcreWordCut( PcreWordCutKind.Skip ),
+					PcreByteNamedSkip skip => new PcreWordCut( PcreWordCutKind.Skip, SkipName: VisibleMark( skip.WordName! ) ),
 					PcreByteAccept accept => BuildAccept( accept ),
 					PcreByteRepeat { Child: PcreByteAccept accept } repeat => new PcreWordGroupRepeat(
 						new( [[BuildAccept( accept )]], 1, 1, 0 ), repeat.Minimum, repeat.Maximum, repeat.Greedy, true ),
@@ -371,7 +373,8 @@ internal static class PcreWordSequenceCompiler {
 			}
 		}
 		return new( branches.ToArray(), admittedPaths, maximumNodes, maximumRepeats,
-			SourceBranchStarts: sourceBranchStarts, CheckAssertionEnds: checkAssertionEnds );
+			SourceBranchStarts: sourceBranchStarts, CheckAssertionEnds: checkAssertionEnds,
+			IsolatesPathMarks: HasLexicalControl( root, cancellationToken, localQuitOnly: false ) );
 	}
 
 	// A label write must execute once before finite suffix choices. Replaying it
@@ -418,13 +421,19 @@ internal static class PcreWordSequenceCompiler {
 		return fallback is PcreByteLiteral { Caseless: false } other && other.Value == literal.Value;
 	}
 
-	private static bool HasLexicalCut( PcreByteAlternatives body, CancellationToken cancellationToken ) {
+	private static bool HasLexicalControl( PcreByteAlternatives body, CancellationToken cancellationToken, bool localQuitOnly ) {
 		var pending = new Stack<PcreByteNode>();
 		AddBody( body );
 		while ( pending.TryPop( out var node ) ) {
 			cancellationToken.ThrowIfCancellationRequested();
 			switch ( node ) {
-				case PcreBytePrune or PcreByteCommit or PcreByteThen or PcreByteSkip: return true;
+				case PcreByteThen: return true;
+				case PcreBytePathMark when !localQuitOnly: return true;
+				case PcreBytePrune prune when localQuitOnly || !prune.Name.IsEmpty: return true;
+				case PcreByteCommit commit when localQuitOnly || !commit.Name.IsEmpty: return true;
+				case PcreByteSkip or PcreByteNamedSkip when localQuitOnly: return true;
+				case PcreByteAccept accept when !localQuitOnly && !accept.Name.IsEmpty: return true;
+				case PcreByteFailure failure when !localQuitOnly && !failure.Name.IsEmpty: return true;
 				case PcreByteGroup group: AddBody( group.Body ); break;
 				case PcreByteNoncapturingGroup group: AddBody( group.Body ); break;
 				case PcreByteLookahead assertion: AddBody( assertion.Body ); break;
@@ -536,7 +545,7 @@ internal static class PcreWordSequenceCompiler {
 				case PcreByteLiteral literal: result = (UnitLiteral( literal ), false); break;
 				case PcreByteGroup group: result = firstUnits[group.Body]; break;
 				case PcreByteNoncapturingGroup group: result = firstUnits[group.Body]; break;
-				case PcreBytePathMark or PcreBytePrune or PcreByteCommit or PcreByteThen or PcreByteSkip or PcreByteFailure
+				case PcreBytePathMark or PcreBytePrune or PcreByteCommit or PcreByteThen or PcreByteSkip or PcreByteNamedSkip or PcreByteFailure
 					or PcreByteLookahead or PcreByteLookbehind or PcreByteAnchor or PcreByteSearchStart
 					or PcreByteEndBeforeFinalLf or PcreByteWordBoundary or PcreByteStaticConditional { IsDefinition: true }:
 					result = (null, true); break;

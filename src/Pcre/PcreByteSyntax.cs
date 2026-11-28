@@ -23,7 +23,7 @@ internal sealed record PcreBytePrune( ReadOnlyMemory<byte> Name = default, strin
 
 internal sealed record PcreByteSkip : PcreByteNode;
 
-internal sealed record PcreByteNamedSkip( ReadOnlyMemory<byte> Name ) : PcreByteNode;
+internal sealed record PcreByteNamedSkip( ReadOnlyMemory<byte> Name, string? WordName = null ) : PcreByteNode;
 
 internal sealed record PcreByteCommit( ReadOnlyMemory<byte> Name = default, string? WordName = null ) : PcreByteNode;
 

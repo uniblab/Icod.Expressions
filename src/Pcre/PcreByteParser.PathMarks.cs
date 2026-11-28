@@ -18,11 +18,11 @@ internal sealed partial class PcreByteParser {
 			throw Invalid( source.Length, "unterminated SKIP header" );
 		}
 		if ( !TryConsumeGroupAlias( "*SKIP:"u8 ) ) { return null; }
-		var name = ReadControlVerbName( "SKIP", requireName: false );
+		var name = ReadControlVerbName( "SKIP", requireName: false, out var wordName );
 		if ( name.IsEmpty ) { return new PcreByteSkip(); }
 		// A nonempty raw argument beginning with NUL is still named SKIP.
 		HasNamedSkip = true;
-		return new PcreByteNamedSkip( name );
+		return new PcreByteNamedSkip( name, wordName );
 	}
 
 	private PcreByteNode? TryParseNamedImmediateVerb() {

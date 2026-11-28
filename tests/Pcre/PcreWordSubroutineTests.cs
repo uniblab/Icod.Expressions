@@ -449,7 +449,7 @@ public sealed class PcreWordSubroutineTests {
 			Assert.True( PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).IsSuccess, source );
 		}
 		foreach ( var source in new[] { "(?(DEFINE)(?<g>a))(?&g){65}", "(?(DEFINE)(?<g>a?b?c?d?e?f?))(?&g)g?",
-			"(?(DEFINE)(?<g>a(*SKIP:N)))(?&g){0}", "(*ANY)(?(DEFINE)(?<g>.))(?&g)" } ) {
+			"(?(DEFINE)(?<g>a(*sr:a)))(?&g){0}", "(*ANY)(?(DEFINE)(?<g>.))(?&g)" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

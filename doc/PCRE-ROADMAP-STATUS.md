@@ -1,5 +1,16 @@
 # PCRE roadmap status
 
+## Native 16-bit named SKIP
+
+The [named-SKIP record](PCRE-WORD-NAMED-SKIP.md) adds original-word name lookup,
+bounded MARK history, assertion/call visibility and ordered interpreter replay.
+The byte and word engines share the source-anchor proof used to stop replay.
+1,022 fixtures add 523,264 full-vector and label policy comparisons, with exact
+budget, cancellation, frame-limit, ownership and concurrent-reuse checks.
+Next is match-start reset (`\K`). Graphemes, script runs, broader newline/options,
+public word API/package consumers and cross-width resource/performance work remain
+open, alongside the explicit ACCEPT/COMMIT qualification gates. Grep remains last.
+
 ## Native 16-bit bare SKIP
 
 The [SKIP record](PCRE-WORD-SKIP.md) adds bare and empty-argument cuts with
@@ -8,7 +19,7 @@ returns, accepted-call labels and compiled versus call-time anchors follow nativ
 dispatch. 852 fixtures add 436,224 full-vector and label policy comparisons, with
 budget, cancellation, frame-limit, ownership and concurrent-reuse checks. The
 bounded PRUNE scan proof also handles a preceding SKIP in both widths.
-Named-SKIP history and interpreter replay are next. Existing ACCEPT/COMMIT
+Named-SKIP history and interpreter replay are covered above. Existing ACCEPT/COMMIT
 qualification gates and public word API integration remain open.
 
 ## Native 16-bit THEN
@@ -17,7 +28,7 @@ The [THEN record](PCRE-WORD-THEN.md) adds lexical alternative cuts and named
 labels. Original source alternatives own retries across finite lowering; calls,
 assertions, selected returns and accepted-call labels follow native dispatch.
 1,114 fixtures add 570,368 full-vector and label policy comparisons. Bare SKIP
-is covered above; named-SKIP history/replay is next; existing ACCEPT/COMMIT qualification gates
+and named-SKIP history/replay are covered above; existing ACCEPT/COMMIT qualification gates
 and public word integration remain open. The bounded literal/PRUNE scan proof
 also covers a preceding THEN and up to four sole root group wrappers in both
 widths; interpreter dispatch does not reuse the JIT scan.
@@ -44,7 +55,7 @@ erased bodies; policy rejection and accepted-call label rollback follow their
 respective native paths. 637 fixtures add 326,144 capture/label comparisons.
 ACCEPT with selected-capture returns remains explicitly unqualified because the
 pinned interpreter reports INTERNAL. PRUNE and COMMIT are covered by the next
-records above; THEN and bare SKIP are covered above, and named SKIP remains open.
+records above; THEN and named/unnamed SKIP are also covered above.
 
 ## Native 16-bit failure verbs and path labels
 
