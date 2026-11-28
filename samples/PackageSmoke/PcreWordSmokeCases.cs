@@ -52,5 +52,11 @@ internal static class PcreWordSmokeCases {
 		new( 42, "a", "a", new() { MatchWorkLimit = 1 }, 0, new( "X", Diagnostic: "MatchWorkLimitExceeded" ) ),
 		new( 43, @"(?=a\K)", "a", new(), 0, new( "C", Diagnostic: "InvalidSyntax" ) ),
 		new( 44, @"\X", "a", new() { Utf16 = true }, 0, new( "C", Diagnostic: "UnsupportedSyntax" ) ),
+		new( 45, "(*CRLF)(?m)^(😀+)$", "x\r\n😀😀\r\n", new() { Utf16 = true }, 0, new( "M", "3:4,3:4" ) ),
+		new( 46, "(*ANYCRLF)(?s).X", "\r\nX", new(), 0, new( "M", "1:2" ) ),
+		new( 47, @"(*ANY)\R$", "😀\u2028", new() { Utf16 = true }, 0, new( "M", "2:1" ) ),
+		new( 48, @"(*CRLF)(?s)\N", "\r\nX", new(), 0, new( "M", "2:1" ) ),
+		new( 49, @"(*ANYCRLF)[\x09-\x0c]X", "\r\nX", new() { Utf16 = true }, 0, new( "M", "1:2" ) ),
+		new( 50, @"(*ANY)(?s:.{2})X", "\r\nbX", new(), 0, new( "M", "1:3" ) ),
 	};
 }

@@ -61,7 +61,7 @@ public sealed class PcreWordSequenceTests {
 
 	[Theory]
 	[InlineData( "(?>(*sr:a)a+)b*c*d*e*" )]
-	[InlineData( "(*CRLF)^a$" )]
+	[InlineData( "(*CRLF)(*UTF)^a$" )]
 	[InlineData( "(*UTF)a" )]
 	public void UnimplementedLoweringIsExplicit( string source ) {
 		Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,

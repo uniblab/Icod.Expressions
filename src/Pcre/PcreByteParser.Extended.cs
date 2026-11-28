@@ -27,10 +27,14 @@ internal sealed partial class PcreByteParser {
 						var value = source[index++];
 						if ( newline == PcreByteNewline.Any ) {
 							var characterOffset = index - 1;
-							var length = PcreByteNewlineExtensions.AnyLengthAt( source, characterOffset, source.Length, utf8 );
+							var length = wordSource is null
+								? PcreByteNewlineExtensions.AnyLengthAt( source, characterOffset, source.Length, utf8 )
+								: PcreWordNewline.LengthAt( newline, wordSource, characterOffset );
 							if ( length > 0 ) { index = characterOffset + length; break; }
 							if ( utf8 ) {
-								PcreUtf8.TryRead( source, characterOffset, out _, out var width ); // Whole source validated at entry.
+								var width = 1; // Whole source validated at entry.
+								if ( wordSource is null ) { PcreUtf8.TryRead( source, characterOffset, out _, out width ); }
+								else { PcreUtf16.TryRead( wordSource, characterOffset, true, out _, out width ); }
 								index = characterOffset + width;
 							}
 							continue;

@@ -2028,7 +2028,7 @@ internal sealed class PcreByteProgramCompiler {
 		_ => false
 	};
 
-	private static bool HasExplicitNewline( PcreByteAlternatives alternatives ) {
+	internal static bool HasExplicitNewline( PcreByteAlternatives alternatives ) {
 		foreach ( var branch in alternatives.Branches ) {
 			foreach ( var node in branch ) {
 				if ( HasExplicitNewline( node ) ) { return true; }
