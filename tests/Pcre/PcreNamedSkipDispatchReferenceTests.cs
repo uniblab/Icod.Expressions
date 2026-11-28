@@ -41,6 +41,16 @@ public sealed class PcreNamedSkipDispatchReferenceTests {
 			("(?(DEFINE)(?<x>a(*ACCEPT:X)))(?&x)b(*PRUNE)X|(.)", "abcabc"),
 			("(?=a(*ACCEPT:X))bX|(.)", "abc"),
 			("(?=a(*MARK:X))bX|(.)", "abc"),
+			("(?(DEFINE)(?<x>a(*ACCEPT:X)))(?&x)bX(*THEN)|(.)", "abc"),
+			("(?(DEFINE)(?<x>a(*ACCEPT:X)))(?&x)bX(?:q(*THEN)){0}|(.)", "abc"),
+			("(?(DEFINE)(?<x>a(*ACCEPT:X)))(?&x)(?:b(*THEN)X|bX)|(.)", "abc"),
+			("(?(DEFINE)(?<x>a(*ACCEPT:X)))(?&x)(?:bX(*THEN)|bX)|(.)", "abc"),
+			("(?(DEFINE)(?<x>a(*ACCEPT:X)))(?&x)bX|(.)|(*THEN)X", "abc"),
+			("(?(DEFINE)(?<x>a(*ACCEPT:X)))(?&x)bX|(*THEN)(.)", "abc"),
+			("(?(DEFINE)(?<x>a(*ACCEPT:X)))(*MARK:Z)(?:(?&x)b(*THEN)X|bX)|(.)", "abc"),
+			("(?(DEFINE)(?<x>a(*ACCEPT:X)))(?&x)(*MARK:Z)(?:b(*THEN)X|bX)|(.)", "abc"),
+			("(?(DEFINE)(?<x>a(*ACCEPT:X)))(?&x)bX|(*MARK:Y)(*THEN)(.)", "abc"),
+			("(?(DEFINE)(?<x>a(*ACCEPT:X)))(?&x)bX|(*THEN:Y)(.)", "abc"),
 		};
 		foreach ( var (pattern, subject) in cases ) {
 			var source = Encoding.UTF8.GetBytes( pattern ); var input = Encoding.UTF8.GetBytes( subject );

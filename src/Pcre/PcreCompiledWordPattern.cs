@@ -396,7 +396,7 @@ internal sealed class PcreCompiledWordPattern {
 					continuation = new( nodes, index + 1, continuation, Start: position, CaptureNumber: firstGroup.CaptureNumber,
 						AssertionEnd: firstGroup.CheckAssertionEnds?[0] == true ? continuation!.AssertionEnd : -1,
 						ThenBoundary: thenBoundary, ThenNext: thenBoundary >= 0 ? firstGroup.SourceBranchStarts![1] : -1,
-						ThenGroup: thenBoundary >= 0 ? firstGroup : null );
+						ThenGroup: thenBoundary >= 0 ? firstGroup : null, ThenEntryMark: mark, ThenEntryMarkVersion: markVersion );
 					nodes = firstGroup.Alternatives[0];
 					index = 0;
 					continue;
@@ -644,6 +644,13 @@ internal sealed class PcreCompiledWordPattern {
 							if ( !Step() ) { return -1; }
 							frames.Pop();
 						}
+						if ( !interpreted && frame.Kind == FrameKind.ThenAlternative && frame.CutScope is { } labelOwner ) {
+							// A reached owned THEN restores its branch entry, including labels
+							// overwritten by accepted calls. An unreached THEN changes nothing.
+							acceptedMarks ??= new();
+							acceptedMarks[labelOwner.ThenEntryMarkVersion] = labelOwner.ThenEntryMark!;
+							RestoreMark( labelOwner.ThenEntryMarkVersion, labelOwner.ThenEntryMark! );
+						}
 						if ( frame.Kind == FrameKind.ThenAlternative && frame.CutScope is { } owner
 							&& owner.ThenNext < owner.ThenGroup!.Alternatives.Length ) {
 							// The retained retry belongs to the group entry. Skip finite
@@ -655,7 +662,7 @@ internal sealed class PcreCompiledWordPattern {
 						if ( frame.Kind == FrameKind.SkipReplay ) { return 4; }
 						if ( frame.RepeatStart == 0 ) {
 							if ( frame.Kind == FrameKind.Skip && frame.Position > candidate ) { skipRestart = frame.Position; }
-							return frame.Kind == FrameKind.Commit ? 3 : 2;
+							return frame.Kind == FrameKind.Commit ? 3 : frame.Kind == FrameKind.ThenAlternative ? 0 : 2;
 						}
 						continue; // The retained guard resolves the failed call/assertion.
 					} else if ( frame.Kind is FrameKind.PositiveCondition or FrameKind.NegativeCondition ) {
@@ -702,7 +709,8 @@ internal sealed class PcreCompiledWordPattern {
 						}
 						continuation = new( nodes, index + 1, continuation, Start: position, CaptureNumber: group.CaptureNumber,
 							AssertionEnd: group.CheckAssertionEnds?[frame.Count] == true ? continuation!.AssertionEnd : -1,
-							ThenBoundary: thenBoundary, ThenNext: thenNext, ThenGroup: thenBoundary >= 0 ? group : null );
+							ThenBoundary: thenBoundary, ThenNext: thenNext, ThenGroup: thenBoundary >= 0 ? group : null,
+							ThenEntryMark: mark, ThenEntryMarkVersion: markVersion );
 						nodes = group.Alternatives[frame.Count];
 						index = 0;
 					} else {
@@ -799,7 +807,8 @@ internal sealed class PcreCompiledWordPattern {
 		int GuardBoundary = -1, int AssertionEnd = -1, bool NonAtomicAssertion = false, int SavedEnd = -1,
 		int CallCheckpoint = -1, ReadOnlyMemory<int> ReturnedCaptures = default, int Caller = -1, bool CheckAssertionEnd = true,
 		bool AtomicGroup = false, int CallBoundary = -1, bool CatchesCut = false, bool IsolatePathMarks = false,
-		int ThenBoundary = -1, int ThenNext = -1, PcreWordGroup? ThenGroup = null );
+		int ThenBoundary = -1, int ThenNext = -1, PcreWordGroup? ThenGroup = null,
+		string? ThenEntryMark = null, int ThenEntryMarkVersion = 0 );
 
 	private bool TryConsumeAtom( PcreByteNode node, ReadOnlySpan<char> input, int position, out int width ) {
 		if ( !PcreUtf16.TryRead( input, position, options.Utf16, out var value, out width ) ) { return false; }

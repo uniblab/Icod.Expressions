@@ -2107,7 +2107,6 @@ internal sealed class PcreByteProgramCompiler {
 		var thenMark = -1;
 		if ( hasThen && alternatives.Branches.Count > 1 ) {
 			thenMark = AllocateMark();
-			Emit( PcreByteOpcode.ThenMark, thenMark );
 			var priorTarget = thenTarget;
 			compileWork.Push( () => thenTarget = priorTarget );
 		}
@@ -2118,7 +2117,11 @@ internal sealed class PcreByteProgramCompiler {
 		ReadOnlyMemory<int> reverseLengths, int reverseMinimum, int thenMark ) {
 		// Only actual alternative branches own a target. Repeat Splits and
 		// conditional yes/no sequences keep their exterior lexical owner.
-		if ( thenMark >= 0 ) { thenTarget = new( thenMark, index + 1 < alternatives.Branches.Count ); }
+		if ( thenMark >= 0 ) {
+			thenTarget = new( thenMark, index + 1 < alternatives.Branches.Count );
+			// Each source branch has its own entry label after ordinary retries.
+			Emit( PcreByteOpcode.ThenMark, thenMark );
+		}
 		var split = index + 1 < alternatives.Branches.Count ? Emit( PcreByteOpcode.Split ) : -1;
 		var first = instructions.Count;
 		var ranged = !reverseLengths.IsEmpty && reverseMinimum >= 0 && reverseLengths.Span[index] > reverseMinimum;

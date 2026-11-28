@@ -28,8 +28,8 @@ newest visible MARK first; a missing name continues normally. Interpreted negati
 and conditional assertions resolve the name before deciding where failure is
 caught. The matched MARK's enclosing assertion can become that boundary, while
 an active call remains the outer limit. A mark retained by a returned callee
-still belongs to its enclosing assertion; the returned call is not a new boundary. Unmatched names can propagate past an
-assertion to the root driver.
+still belongs to its enclosing assertion; the returned call is not a new boundary.
+Unmatched names can propagate past an assertion to the root driver.
 
 ## Ordered replay and anchoring
 
@@ -43,6 +43,10 @@ suppression prefix, and ordinary bumpalong clears it.
 Compiled/call-time anchoring and native source-anchor evidence stop replay.
 Native JIT preserves an accepted callee's committed entry label across ordinary
 candidate advancement. Root cuts and rejected root ACCEPT reset that label.
+A reached owned THEN restores its source alternative's entry label, including
+labels overwritten by accepted calls. Unreached/erased THEN leaves ordinary
+rollback unchanged; an alternative entered after an accepted call saves the
+committed label as its own entry. Both widths retain this per-branch snapshot.
 The byte and word runners now preserve this distinction without retaining lookup
 history or captures between candidates.
 
@@ -50,14 +54,14 @@ The existing byte source-anchor proof is extracted into a shared helper used by
 both widths. It handles groups, alternatives, positive assertions, conditional
 prefixes, mandatory repeats, erased prefixes and named control prefixes without
 following call edges. This preserves the byte proof and its cancellation/visit
-bounds. Bare forward restart behavior remains as qualified in #370. The bounded PRUNE
-scan proof also accepts a preceding named SKIP in both widths, including NUL
+bounds. Bare forward restart behavior remains as qualified in #370. The bounded
+PRUNE scan proof also accepts a preceding named SKIP in both widths, including NUL
 names; a later PRUNE discards that earlier cut before it can take effect.
 
 ## Evidence and bounds
 
-`PcreWordNamedSkipTests` contains 1,108 fixtures across eight compiled defaults
-and all 64 call masks: 567,296 PCRE2-16 full capture-vector and successful-label
+`PcreWordNamedSkipTests` contains 1,128 fixtures across eight compiled defaults
+and all 64 call masks: 577,536 PCRE2-16 full capture-vector and successful-label
 comparisons. Native preflight reports no compile or match errors. The matrix
 includes recursive/selected calls, accepted-call labels, fixed/variable lookbehind,
 source anchors, repeated replay, original-unit starts, supplementary characters,
@@ -68,15 +72,15 @@ transition, reuse after cancellation/frame exhaustion, whole-source admission,
 strict UTF validation, the pattern-length boundary, owned source/results, subject
 slices and concurrent reuse. Existing unsupported-syntax sentinels move to script
 runs; native reference expectations are unchanged. All 35 A05 source blobs remain
-frozen. A byte dispatch matrix adds 29 fixtures in raw8/UTF8 over all policies
-(29,696 comparisons); four named-SKIP/PRUNE scan fixtures add another 4,096
+frozen. A byte dispatch matrix adds 39 fixtures in raw8/UTF8 over all policies
+(39,936 comparisons); four named-SKIP/PRUNE scan fixtures add another 4,096
 comparisons. Managed build, test and package qualification is recorded on the PR.
 
 Native reference: PCRE2 10.48, commit
 `7978954dbd2efc6f2196869290553cf1871b4ce6`, with SLJIT
 `de0259c7aaf36aa40cba8014f3fad3edde9307f9`.
 Protocol SHA-256:
-`783efbce4aa6dacb3c2b3a9cc1ab1766382106afd38a33f02152c65817456e7d`.
+`ccebb9e867b4414a17b73f866cd198ef7814b6e1ed8e930e441c9de0d3eadb42`.
 
 ## Remaining scope
 
