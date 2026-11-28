@@ -74,7 +74,8 @@ internal static class PcreWordSequenceCompiler {
 			Utf8 = options.Utf16, Ucp = options.Ucp, Caseless = options.Caseless,
 			CaselessRestricted = options.CaselessRestricted,
 			AsciiBsD = options.AsciiBsD, AsciiBsS = options.AsciiBsS, AsciiBsW = options.AsciiBsW,
-			AsciiPosix = options.AsciiPosix, AsciiDigit = options.AsciiDigit
+			AsciiPosix = options.AsciiPosix, AsciiDigit = options.AsciiDigit,
+			AllowLookaroundBackslashK = options.AllowLookaroundBackslashK
 		};
 		var settings = PcreByteStartSettings.Parse( grammarSource, grammarOptions, cancellationToken, newlineOnly: true );
 		// Pair-aware conventions also alter native bumpalong and prefix proofs.
@@ -88,7 +89,7 @@ internal static class PcreWordSequenceCompiler {
 			if ( root.Branches.Count is < 1 or > 64 ) {
 				return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
 			}
-			var pruneCacheBody = FindPruneLiteralCacheBody( root );
+			var pruneScan = PcrePruneLiteralScan.Find( root, cancellationToken );
 			var compiled = new Dictionary<PcreByteAlternatives, PcreWordGroup>( ReferenceEqualityComparer.Instance );
 			var pending = new Stack<(PcreByteAlternatives Body, int Depth, bool Complete, PcreByteLookbehind? Behind)>();
 			var validationLookbehind = 0;
@@ -137,7 +138,7 @@ internal static class PcreWordSequenceCompiler {
 					continue;
 				}
 				var body = BuildBody( item.Body, compiled, ref validationLookbehind, cancellationToken, item.Behind,
-					ReferenceEquals( item.Body, pruneCacheBody ) );
+					pruneScan is { } scan && ReferenceEquals( item.Body, scan.Body ) ? scan.Repeat : null );
 				if ( body is null ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 ); }
 				compiled.Add( item.Body, body );
 			}
@@ -172,7 +173,7 @@ internal static class PcreWordSequenceCompiler {
 
 	private static PcreWordGroup? BuildBody( PcreByteAlternatives root,
 		Dictionary<PcreByteAlternatives, PcreWordGroup> compiled, ref int validationLookbehind,
-		CancellationToken cancellationToken, PcreByteLookbehind? behind = null, bool cachePrune = false ) {
+		CancellationToken cancellationToken, PcreByteLookbehind? behind = null, PcreByteRepeat? scanRepeat = null ) {
 		var branches = new List<PcreByteNode[]>();
 		var maximumNodes = 0;
 		var maximumRepeats = 0;
@@ -251,8 +252,10 @@ internal static class PcreWordSequenceCompiler {
 					_ => node
 				};
 			}
-			if ( cachePrune && branch == 0 ) {
-				nodes = [new PcreWordPruneScan( true ), nodes[0], new PcreWordPruneScan( false ), .. nodes[1..]];
+			if ( scanRepeat is not null && branch == 0 ) {
+				var scanIndex = Array.IndexOf( nodes, scanRepeat );
+				nodes = [.. nodes[..scanIndex], new PcreWordPruneScan( true ), scanRepeat,
+					new PcreWordPruneScan( false ), .. nodes[( scanIndex + 1 )..]];
 			}
 			if ( behind is not null ) {
 				if ( behind.BranchLengths.Length != root.Branches.Count ) { return null; }
@@ -389,38 +392,6 @@ internal static class PcreWordSequenceCompiler {
 
 	private static string? CutMark( string? name ) => name is { Length: > 0 } ? VisibleMark( name ) : null;
 
-	private static PcreByteAlternatives? FindPruneLiteralCacheBody( PcreByteAlternatives root ) {
-		// Native early-failure study descends at most four ordinary group levels.
-		// A sole root wrapper cannot have calls or references to its own capture.
-		for ( var depth = 0; depth < 4 && root.Branches.Count == 1 && root.Branches[0].Count == 1; depth++ ) {
-			var nested = root.Branches[0][0] switch {
-				PcreByteGroup group => group.Body,
-				PcreByteNoncapturingGroup group => group.Body,
-				_ => null
-			};
-			if ( nested is null ) { break; }
-			root = nested;
-		}
-		return HasPruneLiteralCache( root ) ? root : null;
-	}
-
-	private static bool HasPruneLiteralCache( PcreByteAlternatives root ) {
-		// Native detect_early_fail reuses this leading literal-PLUS scan after PRUNE.
-		// Keep the proof confined to the same two-branch shape as the byte runner.
-		if ( root.Branches.Count != 2 || root.Branches[0].Count is not ( 3 or 4 )
-			|| root.Branches[0][0] is not PcreByteRepeat { Minimum: 1, Maximum: int.MaxValue,
-				Greedy: true, Offset: -1, Child: PcreByteLiteral { Caseless: false } literal }
-			|| root.Branches[0].Count == 4 && root.Branches[0][1] is not ( PcreByteCommit or PcreByteThen or PcreByteSkip or PcreByteNamedSkip )
-			|| root.Branches[0][^2] is not PcreBytePrune
-			|| root.Branches[0][^1] is not ( PcreByteFailure or PcreByteLiteral { Caseless: false } )
-			|| root.Branches[1].Count != 1 ) { return false; }
-		var fallback = root.Branches[1][0];
-		if ( fallback is PcreByteGroup { Body.Branches.Count: 1 } group && group.Body.Branches[0].Count == 1 ) {
-			fallback = group.Body.Branches[0][0];
-		}
-		return fallback is PcreByteLiteral { Caseless: false } other && other.Value == literal.Value;
-	}
-
 	private static bool HasLexicalControl( PcreByteAlternatives body, CancellationToken cancellationToken, bool localQuitOnly ) {
 		var pending = new Stack<PcreByteNode>();
 		AddBody( body );
@@ -546,7 +517,7 @@ internal static class PcreWordSequenceCompiler {
 				case PcreByteGroup group: result = firstUnits[group.Body]; break;
 				case PcreByteNoncapturingGroup group: result = firstUnits[group.Body]; break;
 				case PcreBytePathMark or PcreBytePrune or PcreByteCommit or PcreByteThen or PcreByteSkip or PcreByteNamedSkip or PcreByteFailure
-					or PcreByteLookahead or PcreByteLookbehind or PcreByteAnchor or PcreByteSearchStart
+					or PcreByteLookahead or PcreByteLookbehind or PcreByteAnchor or PcreByteSearchStart or PcreByteMatchStartReset
 					or PcreByteEndBeforeFinalLf or PcreByteWordBoundary or PcreByteStaticConditional { IsDefinition: true }:
 					result = (null, true); break;
 				case PcreByteScalarSet { Negated: false, Predicates.IsEmpty: true } set:
@@ -732,7 +703,7 @@ internal static class PcreWordSequenceCompiler {
 	private static bool IsSupportedNode( PcreByteNode node ) => IsSupportedAtom( node )
 		|| node is PcreWordPathMark or PcreWordFailure or PcreWordAccept or PcreWordCut or PcreWordPruneScan
 		|| node is PcreByteAnchor or PcreByteLineAnchor or PcreByteEndBeforeFinalLf
-			or PcreByteSearchStart or PcreByteWordBoundary or PcreByteBackreference
+			or PcreByteSearchStart or PcreByteMatchStartReset or PcreByteWordBoundary or PcreByteBackreference
 			or PcreWordGroup or PcreWordGroupRepeat or PcreWordAssertion or PcreWordAtomic or PcreWordReverse or PcreByteSubroutineCall or PcreWordConditional;
 
 	private static PcreWordAccept BuildAccept( PcreByteAccept accept ) =>
