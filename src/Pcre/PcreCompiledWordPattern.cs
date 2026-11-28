@@ -6,7 +6,10 @@ internal sealed class PcreCompiledWordPattern {
 	private readonly PcreByteNode[][] branches;
 	private readonly PcreWordOptions options;
 	private readonly int validationLookbehind;
-	private readonly char newlineCharacter;
+	private readonly PcreByteNewline newline;
+	private readonly bool explicitNewline;
+	private readonly bool allowsLfEntry;
+	private readonly PcreWordPrefix? fixedPrefix;
 	private readonly bool bsrAnyCrLf;
 	private readonly IReadOnlyDictionary<int, PcreByteNode[]>? callTargets;
 	private readonly bool hasNonAtomicAccept;
@@ -21,11 +24,14 @@ internal sealed class PcreCompiledWordPattern {
 		PcreByteNewline newline = PcreByteNewline.Lf, bool bsrAnyCrLf = false, PcreCaptureInfo? captureInfo = null,
 		IReadOnlyDictionary<int, PcreByteNode[]>? callTargets = null, bool hasNonAtomicAccept = false,
 		IReadOnlySet<int>? cutTargets = null, PcreByteLiteral? commitStart = null, bool hasThen = false,
-		bool hasNamedSkip = false, bool leadingStartAnchor = false ) {
+		bool hasNamedSkip = false, bool leadingStartAnchor = false, bool explicitNewline = false, bool allowsLfEntry = false, PcreWordPrefix? fixedPrefix = null ) {
 		this.branches = branches;
 		this.options = options;
 		this.validationLookbehind = validationLookbehind;
-		newlineCharacter = (char)newline.Character();
+		this.newline = newline;
+		this.explicitNewline = explicitNewline;
+		this.allowsLfEntry = allowsLfEntry;
+		this.fixedPrefix = fixedPrefix;
 		this.bsrAnyCrLf = bsrAnyCrLf;
 		this.callTargets = callTargets;
 		this.hasNonAtomicAccept = hasNonAtomicAccept;
@@ -90,18 +96,19 @@ internal sealed class PcreCompiledWordPattern {
 		var notEmptyAtStart = options.Policy.NotEmptyAtStart || policy.NotEmptyAtStart;
 		var notBol = options.Policy.NotBol || policy.NotBol;
 		var notEol = options.Policy.NotEol || policy.NotEol;
+		var skipCrLfTail = !explicitNewline && newline is PcreByteNewline.CrLf or PcreByteNewline.AnyCrLf or PcreByteNewline.Any;
 		bool MatchAnchor( PcreByteNode node, ReadOnlySpan<char> source, int at ) => node switch {
 			PcreByteAnchor anchor => !anchor.IsDisabled
 				&& ( !anchor.IsLineBoundary || !( anchor.IsStart ? notBol : notEol ) )
 				&& at == ( anchor.IsStart ? 0 : source.Length ),
 			PcreByteLineAnchor { IsStart: true } start =>
 				at == 0 && !start.SuppressSubjectBoundary && !notBol
-				|| at > 0 && ( at < source.Length || start.AllowSubjectEnd ) && source[at - 1] == newlineCharacter,
+				|| at > 0 && ( at < source.Length || start.AllowSubjectEnd ) && PcreWordNewline.IsBefore( newline, source, at ),
 			PcreByteLineAnchor end =>
 				at == source.Length && !end.SuppressSubjectBoundary && !notEol
-				|| at < source.Length && source[at] == newlineCharacter,
+				|| at < source.Length && PcreWordNewline.LengthAt( newline, source, at ) > 0,
 			PcreByteEndBeforeFinalLf end => !end.IsDisabled && ( !end.IsLineBoundary || !notEol )
-				&& ( at == source.Length || at == source.Length - 1 && source[at] == newlineCharacter ),
+				&& ( at == source.Length || PcreWordNewline.LengthAt( newline, source, at ) is var length && length > 0 && length == source.Length - at ),
 			_ => throw new InvalidOperationException( "Unsupported word anchor." )
 		};
 		int MatchBoundary( PcreByteWordBoundary boundary, ReadOnlySpan<char> source, int at ) {
@@ -785,6 +792,7 @@ internal sealed class PcreCompiledWordPattern {
 				// Suppress every named visit so far, including earlier resolved names.
 				ignoredNamedSkips = namedSkipCount;
 				if ( anchored || leadingStartAnchor ) { return new( null, null ); }
+				if ( skipCrLfTail && candidate > startOffset && PcreWordNewline.IsCrLf( input, candidate - 1 ) ) { candidate++; }
 				if ( !Step() ) { return Exhausted(); }
 				continue; // Reenter with clean candidate storage and the original budget.
 			}
@@ -794,6 +802,7 @@ internal sealed class PcreCompiledWordPattern {
 			if ( skipRestart > candidate && !( interpreted && anchored ) ) {
 				if ( !Step() ) { return Exhausted(); } // Enter an original-unit SKIP target.
 				candidate = skipRestart;
+				if ( interpreted && skipCrLfTail && PcreWordNewline.IsCrLf( input, candidate - 1 ) ) { candidate++; }
 				continue;
 			}
 			if ( anchored || candidate == input.Length ) { return new( null, null ); }
@@ -802,6 +811,26 @@ internal sealed class PcreCompiledWordPattern {
 				return new( null, new( PcreWordDiagnosticCode.InvalidUtf16Subject, candidate ) );
 			}
 			candidate += advance;
+			if ( skipCrLfTail && !allowsLfEntry && PcreWordNewline.IsCrLf( input, candidate - 1 ) ) {
+				var skipLf = true;
+				if ( !interpreted && fixedPrefix is { } prefix ) {
+					skipLf = false;
+					if ( prefix.RequiresComparison || endAnchored ) {
+						if ( !Step() ) { return Exhausted(); }
+						var offset = candidate - 1 + prefix.Width;
+						if ( offset < input.Length ) {
+							foreach ( var value in prefix.Literals.Span ) {
+								if ( !Step() ) { return Exhausted(); }
+								skipLf |= LiteralEquals( input[offset], value );
+							}
+						}
+					}
+				}
+				if ( skipLf ) {
+					if ( !Step() ) { return Exhausted(); }
+					candidate++;
+				}
+			}
 		}
 	}
 
@@ -831,7 +860,7 @@ internal sealed class PcreCompiledWordPattern {
 		}
 		return node switch {
 			PcreByteLiteral literal => LiteralEquals( value, literal ),
-			PcreByteAny any => any.DotAll || value != newlineCharacter,
+			PcreByteAny any => any.DotAll || PcreWordNewline.LengthAt( newline, input, position ) == 0,
 			PcreByteScalarClass property => PcreScalarClassMembership.Contains( property.Kind, value,
 				property.Category, property.Caseless, property.PropertyValue ) != property.Negated,
 			PcreByteScalarSet set => ContainsSet( set, value ),

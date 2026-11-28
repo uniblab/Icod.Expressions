@@ -108,7 +108,7 @@ public sealed class PcreWordAlternativeTests {
 		Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 			PcreWordSequenceCompiler.CompileSequence( rejected.AsMemory() ).Diagnostic?.Code );
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( "(?:a|b)".AsMemory() ).IsSuccess );
-		foreach ( var source in new[] { "(*CRLF)a|^b" } ) {
+		foreach ( var source in new[] { "(*CRLF)(*UTF)a|^b" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

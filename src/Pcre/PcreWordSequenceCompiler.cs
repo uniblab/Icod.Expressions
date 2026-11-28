@@ -78,14 +78,11 @@ internal static class PcreWordSequenceCompiler {
 			AllowLookaroundBackslashK = options.AllowLookaroundBackslashK
 		};
 		var settings = PcreByteStartSettings.Parse( grammarSource, grammarOptions, cancellationToken, newlineOnly: true );
-		// Pair-aware conventions also alter native bumpalong and prefix proofs.
-		if ( settings.Newline is not ( PcreByteNewline.Lf or PcreByteNewline.Cr or PcreByteNewline.Nul ) ) {
-			return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
-		}
 		try {
 			var parser = new PcreByteParser( grammarSource, grammarOptions, settings, cancellationToken,
 				codeUnitWidth: 16, wordSource: source );
 			var root = parser.Parse();
+			var pairNewline = settings.Newline is PcreByteNewline.CrLf or PcreByteNewline.AnyCrLf or PcreByteNewline.Any;
 			if ( root.Branches.Count is < 1 or > 64 ) {
 				return Error( PcreWordDiagnosticCode.UnsupportedSyntax, 0 );
 			}
@@ -164,7 +161,10 @@ internal static class PcreWordSequenceCompiler {
 			return new( new( branches, options, validationLookbehind, settings.Newline,
 				settings.BsrAnyCrLf, parser.CreateCaptureInfo(), targets, parser.HasNonAtomicAccept,
 				cutTargets, startLiteral, parser.HasThen, parser.HasNamedSkip,
-				parser.HasNamedSkip && PcreSourceStartAnchor.HasAlternativeStartAnchor( root, cancellationToken ) ), null );
+				parser.HasNamedSkip && PcreSourceStartAnchor.HasAlternativeStartAnchor( root, cancellationToken ),
+				pairNewline && PcreByteProgramCompiler.HasExplicitNewline( root ),
+				pairNewline && PcreWordStartStudy.HasLfStartClass( root, compiled.Keys, cancellationToken ),
+				pairNewline ? PcreWordStartStudy.FindFixedPrefix( root, options.Utf16, cancellationToken ) : null ), null );
 		} catch ( PcreByteParseException error ) {
 			return Error( error.Diagnostic.Code == PcreByteDiagnosticCode.UnsupportedSyntax
 				? PcreWordDiagnosticCode.UnsupportedSyntax : PcreWordDiagnosticCode.InvalidSyntax, error.Diagnostic.ByteOffset );
