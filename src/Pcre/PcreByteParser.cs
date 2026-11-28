@@ -294,7 +294,7 @@ internal sealed partial class PcreByteParser {
 			return CreateAnyCharacter( dotAll );
 		}
 		if ( value == (byte)'[' ) {
-			if ( wordSource is not null ) { return ParseUtf8Bracket( offset ); }
+			if ( wordSource is not null ) { return altExtendedClass ? ParseUtsClass( offset ) : ParseUtf8Bracket( offset ); }
 			if ( TryReadEmptyClass( out var negated ) ) {
 				return negated ? new PcreByteAny( true )
 					: new PcreByteClass( default, PrefixKind: PcreByteClassPrefix.Bitmap ) { IsEmptySource = true };

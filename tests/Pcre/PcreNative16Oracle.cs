@@ -22,14 +22,14 @@ internal static class PcreNative16Oracle {
 		int defaults = 0, int mask = 0 ) => ExecuteCore( pattern, subject, utf ? 1 : 0, offset, true, defaults, mask );
 
 	internal static PcreNative16Protocol ExecuteSequence( ushort[] pattern, ushort[] subject, bool utf, uint offset,
-		int defaults = 0, int mask = 0, bool ucp = false ) => ExecuteCore( pattern, subject,
-		( utf ? 1 : 0 ) | ( ucp ? 2 : 0 ), offset, false, defaults, mask );
+		int defaults = 0, int mask = 0, bool ucp = false, bool altExtendedClass = false ) => ExecuteCore( pattern, subject,
+		( utf ? 1 : 0 ) | ( ucp ? 2 : 0 ), offset, false, defaults, mask, altExtendedClass: altExtendedClass );
 
 	internal static PcreNative16Protocol[] ExecuteSequencePolicies( ushort[] pattern, ushort[] subject, bool utf,
-		uint offset, int defaults = 0, bool ucp = false, bool allowLookaroundBackslashK = false ) {
+		uint offset, int defaults = 0, bool ucp = false, bool allowLookaroundBackslashK = false, bool altExtendedClass = false ) {
 		var results = new PcreNative16Protocol[64];
 		ExecuteCore( pattern, subject, ( utf ? 1 : 0 ) | ( ucp ? 2 : 0 ) | ( allowLookaroundBackslashK ? 4 : 0 ),
-			offset, false, defaults, 0, results );
+			offset, false, defaults, 0, results, altExtendedClass );
 		return results;
 	}
 
@@ -41,7 +41,7 @@ internal static class PcreNative16Oracle {
 	}
 
 	private static PcreNative16Protocol ExecuteCore( ushort[] pattern, ushort[] subject, int mode, uint offset,
-		bool literal, int defaults, int mask, PcreNative16Protocol[]? policies = null ) {
+		bool literal, int defaults, int mask, PcreNative16Protocol[]? policies = null, bool altExtendedClass = false ) {
 		ArgumentNullException.ThrowIfNull( pattern );
 		ArgumentNullException.ThrowIfNull( subject );
 		if ( mode < 0 || ( mode & ~7 ) != 0 ) { throw new ArgumentOutOfRangeException( nameof( mode ) ); }
@@ -58,7 +58,7 @@ internal static class PcreNative16Oracle {
 		var input = new CompileInput {
 			Pattern = patternMemory.Pointer, Length = (uint)pattern.Length,
 			Flags = ( ( mode & 1 ) != 0 ? 0x80000u : 0u ) | ( ( mode & 2 ) != 0 ? 0x20000u : 0u )
-				| ( literal ? 0x02000000u : 0u ) | ( ( defaults & 1 ) != 0 ? 0x80000000u : 0u )
+				| ( altExtendedClass ? 0x08000000u : 0u ) | ( literal ? 0x02000000u : 0u ) | ( ( defaults & 1 ) != 0 ? 0x80000000u : 0u )
 				| ( ( defaults & 2 ) != 0 ? 0x20000000u : 0u ),
 			JitFlags = 1, Newline = 2, Bsr = 1, NestLimit = 512, MaxPatternLength = MaximumUnits,
 			ExtraOptions = ( mode & 4 ) != 0 ? 64u : 0u, MaxLookbehind = 255,

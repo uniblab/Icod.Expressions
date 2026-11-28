@@ -6,6 +6,7 @@ internal sealed partial class PcreCompiledWordPattern {
 	private readonly PcreByteNode[][] branches;
 	private readonly PcreWordOptions options;
 	private readonly int validationLookbehind;
+	private readonly int scalarExpressionStackDepth;
 	private readonly PcreByteNewline newline;
 	private readonly bool explicitNewline;
 	private readonly bool allowsLfEntry;
@@ -24,10 +25,11 @@ internal sealed partial class PcreCompiledWordPattern {
 		PcreByteNewline newline = PcreByteNewline.Lf, bool bsrAnyCrLf = false, PcreCaptureInfo? captureInfo = null,
 		IReadOnlyDictionary<int, PcreByteNode[]>? callTargets = null, bool hasNonAtomicAccept = false,
 		IReadOnlySet<int>? cutTargets = null, PcreByteLiteral? commitStart = null, bool hasThen = false,
-		bool hasNamedSkip = false, bool leadingStartAnchor = false, bool explicitNewline = false, bool allowsLfEntry = false, PcreWordPrefix? fixedPrefix = null ) {
+		bool hasNamedSkip = false, bool leadingStartAnchor = false, bool explicitNewline = false, bool allowsLfEntry = false, PcreWordPrefix? fixedPrefix = null, int scalarExpressionStackDepth = 0 ) {
 		this.branches = branches;
 		this.options = options;
 		this.validationLookbehind = validationLookbehind;
+		this.scalarExpressionStackDepth = scalarExpressionStackDepth;
 		this.newline = newline;
 		this.explicitNewline = explicitNewline;
 		this.allowsLfEntry = allowsLfEntry;
@@ -55,10 +57,17 @@ internal sealed partial class PcreCompiledWordPattern {
 		var work = 0;
 		bool Step() => ChargeWork( ref work, cancellationToken );
 		var regionalRun = new RegionalRun();
+		bool[]? expressionStack = null;
 		int ConsumeAtom( PcreByteNode node, ReadOnlySpan<char> source, int at, int reverseStart, out int width ) {
 			if ( node is PcreByteGrapheme ) {
 				width = ConsumeGrapheme( source, at, reverseStart, ref regionalRun, ref work, cancellationToken );
 				return width < 0 ? -1 : width > 0 ? 1 : 0;
+			}
+			if ( node is PcreByteScalarExpression expression ) {
+				if ( !PcreUtf16.TryRead( source, at, options.Utf16, out var scalar, out width ) ) { return 0; }
+				return PcreScalarClassExpression.Evaluate( expression.Terms, scalar,
+					expressionStack ??= new bool[scalarExpressionStackDepth], options.Utf16 || options.Ucp, false,
+					ref work, options.MatchWorkLimit, options.WorkObserver, cancellationToken );
 			}
 			return TryConsumeAtom( node, source, at, out width ) ? 1 : 0;
 		}
@@ -594,7 +603,7 @@ internal sealed partial class PcreCompiledWordPattern {
 									reversedCount - reverse.Minimum, continuation, FrameKind.ReverseRetry ) ) ) { return -2; }
 							}
 							break;
-						case PcreByteLiteral or PcreByteAny or PcreByteScalarSet or PcreByteScalarClass or PcreByteNewlineSequence or PcreByteGrapheme:
+						case PcreByteLiteral or PcreByteAny or PcreByteScalarSet or PcreByteScalarClass or PcreByteNewlineSequence or PcreByteGrapheme or PcreByteScalarExpression:
 							var atomResult = ConsumeAtom( nodes[index], source[..visibleEnd], position, reverseStart, out var width );
 							if ( atomResult < 0 ) { return -1; }
 							matched = atomResult == 1;

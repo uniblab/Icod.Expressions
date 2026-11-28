@@ -46,7 +46,7 @@ internal sealed partial class PcreByteParser {
 						else if ( term.Operation != PcreScalarSetOperation.Not ) { stackDepth--; }
 					}
 					var expression = new PcreByteScalarExpression( terms.ToArray(), maximumStack, explicitNewline, openingOffset );
-					return utf8 ? expression : expression with { ByteProjection = ProjectByteExpression( expression ) };
+					return utf8 || wordSource is not null ? expression : expression with { ByteProjection = ProjectByteExpression( expression ) };
 				}
 				if ( expectingOperand ) {
 					if ( token == (byte)'!' ) {
@@ -129,7 +129,7 @@ internal sealed partial class PcreByteParser {
 		}
 		var literal = (PcreByteLiteral)node;
 		PcreByteScalarRange[] ranges = [new( literal.Value, literal.Value )];
-		return new( caseless && utf8 ? PcreUtf8CaseFold.CloseRanges( ranges, cancellationToken, caselessRestricted, turkishCasing ) : ranges,
+		return new( caseless && ( utf8 || wordSource is not null && ucp ) ? PcreUtf8CaseFold.CloseRanges( ranges, cancellationToken, caselessRestricted, turkishCasing, wordSource is not null && !utf8 ) : ranges,
 			default, false, literal.Value is '\r' or '\n' );
 	}
 }

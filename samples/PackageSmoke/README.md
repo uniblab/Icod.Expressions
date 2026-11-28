@@ -153,7 +153,7 @@ contract; broader hostile-input/release conformance stays open.
 ## Raw 16-bit and UTF-16 package consumer
 
 The same executable compiles literal and regex patterns from original word
-memory and searches sliced subjects. The 66 word protocols include isolated
+memory and searches sliced subjects. The 74 word protocols include isolated
 surrogates in raw mode, supplementary UTF-16 captures, NUL and high units,
 unset groups, call and branch rollback, named marks, signed `\K` endpoints,
 successful empty matches, no-match results and controlled compile/match errors.
@@ -162,6 +162,8 @@ Eight grapheme cases check combining marks, emoji, raw surrogate units, regional
 context, atomic CRLF consumption and greedy bounded/unbounded retries.
 Eight script-run cases check supplementary scripts, ordinary/atomic retries,
 decimal-set identity, directional Han transitions, raw Unknown and early acceptance.
+Eight extended-class cases check Perl and opt-in UTS operators, high raw units,
+supplementary scalars, UCP folding, restricted casing and CRLF search entry.
 Invalid surrogate sentinels sit outside each visible pattern and subject view.
 
 The compiler's owned source survives overwriting the original pattern buffer.
@@ -173,10 +175,10 @@ and match calls and interruption during matching, followed by reuse.
 The word result is emitted once, after every check passes.
 
 ```json
-{"kind":"pcre-word-package-smoke","cases":66,"view":2,"cancellation":6,"reuse":2,"failed":0}
+{"kind":"pcre-word-package-smoke","cases":74,"view":2,"cancellation":6,"reuse":2,"failed":0}
 ```
 
-Tests link the same consumer code and compare all 54 matching/no-match
+Tests link the same consumer code and compare all 62 matching/no-match
 protocols with the pinned PCRE2-16 reference. The 12 diagnostic protocols pin
 the managed error codes and original-unit offsets. PR and main jobs require
 the complete word result on all six native hosts after an isolated package

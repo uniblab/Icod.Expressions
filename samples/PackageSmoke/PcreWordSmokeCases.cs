@@ -74,5 +74,13 @@ internal static class PcreWordSmokeCases {
 		new( 64, @"\A(*sr:(...))\z", "あ漢가", new() { Utf16 = true }, 0, new( "N" ) ),
 		new( 65, @"\A(*sr:([\s\S]*))\z", "\ud800", new(), 0, new( "M", "0:1,0:1" ) ),
 		new( 66, @"\A(*sr:(aβ)(*ACCEPT:done))\z", "aβ", new() { Utf16 = true }, 0, new( "M", "0:2,0:2", "0064006F006E0065" ) ),
+		new( 67, @"\A((?[[a-z] - [aeiou]])+)\1\z", "bcbc", new(), 0, new( "M", "0:4,0:2" ) ),
+		new( 68, @"\G((?[\p{L} | \p{Emoji}]))", "😀", new() { Utf16 = true }, 0, new( "M", "0:2,0:2" ) ),
+		new( 69, @"\A((?[\p{Cs} | [a]]))\z", "\ud800", new(), 0, new( "M", "0:1,0:1" ) ),
+		new( 70, @"\A(?ir:(?[[k] | [s]]))\z", "K", new() { Utf16 = true }, 0, new( "N" ) ),
+		new( 71, @"\A([a-z--[aeiou]]+)\z", "bc", new() { AltExtendedClass = true }, 0, new( "M", "0:2,0:2" ) ),
+		new( 72, @"\A([\p{Any}~~\p{L}])\z", "😀", new() { Utf16 = true, AltExtendedClass = true }, 0, new( "M", "0:2,0:2" ) ),
+		new( 73, @"(?i)\A[\x{100}-\x{2ff}&&[\x{100}]]\z", "ā", new() { Ucp = true, AltExtendedClass = true }, 0, new( "M", "0:1" ) ),
+		new( 74, @"(*ANYCRLF)[\x09-\x0c&&\s]X", "\r\nX", new() { Utf16 = true, AltExtendedClass = true }, 0, new( "M", "1:2" ) ),
 	};
 }
