@@ -817,8 +817,8 @@ internal sealed class PcreCompiledWordPattern {
 					skipLf = false;
 					if ( prefix.RequiresComparison || endAnchored ) {
 						if ( !Step() ) { return Exhausted(); }
-						var offset = candidate - 1 + prefix.Width;
-						if ( offset < input.Length ) {
+						if ( prefix.Width < input.Length - ( candidate - 1 ) ) {
+							var offset = candidate - 1 + prefix.Width;
 							foreach ( var value in prefix.Literals.Span ) {
 								if ( !Step() ) { return Exhausted(); }
 								skipLf |= LiteralEquals( input[offset], value );
