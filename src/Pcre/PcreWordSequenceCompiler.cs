@@ -288,7 +288,8 @@ internal static class PcreWordSequenceCompiler {
 			maximumRepeats = Math.Max( maximumRepeats, unboundedCount + nestedRepeats );
 			// A group also separates finite choices: its alternatives must retry before
 			// a preceding choice, and a following choice must retry before the group.
-			var boundaryCount = unboundedCount + nodes.Count( IsContinuationBoundary );
+			var boundaryCount = nodes.Count( node => node is PcreByteRepeat repeat && IsRuntimeRepeat( repeat ) )
+				+ nodes.Count( IsContinuationBoundary );
 			var variables = new List<(int Index, PcreByteRepeat Repeat)>[boundaryCount + 1];
 			var products = new int[variables.Length];
 			for ( var segment = 0; segment < variables.Length; segment++ ) {
@@ -303,8 +304,9 @@ internal static class PcreWordSequenceCompiler {
 				}
 				if ( IsContinuationBoundary( nodes[index] ) ) { boundaries.Add( nodes[index] ); continue; }
 				if ( nodes[index] is not PcreByteRepeat repeat || repeat.Minimum == repeat.Maximum ) { continue; }
-				if ( repeat.Maximum == int.MaxValue ) {
+				if ( IsRuntimeRepeat( repeat ) ) {
 					if ( repeat.Minimum is < 0 or > MaximumExactRepeat
+						|| repeat.Maximum < repeat.Minimum || repeat.Maximum != int.MaxValue && repeat.Maximum > MaximumExactRepeat
 						|| !IsSupportedAtom( repeat.Child ) ) {
 						return null;
 					}
@@ -379,6 +381,9 @@ internal static class PcreWordSequenceCompiler {
 			SourceBranchStarts: sourceBranchStarts, CheckAssertionEnds: checkAssertionEnds,
 			IsolatesPathMarks: HasLexicalControl( root, cancellationToken, localQuitOnly: false ) );
 	}
+
+	private static bool IsRuntimeRepeat( PcreByteRepeat repeat ) => repeat.Maximum == int.MaxValue
+		|| repeat.Child is PcreByteGrapheme && repeat.Minimum != repeat.Maximum;
 
 	// A label write must execute once before finite suffix choices. Replaying it
 	// on every expanded branch would erase a later accepted callee's committed label.
@@ -664,8 +669,9 @@ internal static class PcreWordSequenceCompiler {
 			cancellationToken.ThrowIfCancellationRequested();
 			var node = nodes[index];
 			if ( node is PcreByteRepeat repeat ) {
-				if ( repeat.Maximum == int.MaxValue
-					&& repeat.Minimum is >= 0 and <= MaximumExactRepeat && IsSupportedAtom( repeat.Child )
+				if ( IsRuntimeRepeat( repeat )
+					&& repeat.Minimum is >= 0 and <= MaximumExactRepeat
+					&& ( repeat.Maximum == int.MaxValue || repeat.Maximum <= MaximumExactRepeat ) && IsSupportedAtom( repeat.Child )
 					&& expandedNodes < MaximumExpandedNodes ) {
 					output.Add( repeat );
 					expandedNodes++;
@@ -709,7 +715,7 @@ internal static class PcreWordSequenceCompiler {
 	private static PcreWordAccept BuildAccept( PcreByteAccept accept ) =>
 		new( accept.WordName is { Length: > 0 } name ? VisibleMark( name ) : null );
 
-	private static bool IsSupportedAtom( PcreByteNode node ) => node is PcreByteLiteral or PcreByteAny or PcreByteNewlineSequence
+	private static bool IsSupportedAtom( PcreByteNode node ) => node is PcreByteLiteral or PcreByteAny or PcreByteNewlineSequence or PcreByteGrapheme
 		|| node is PcreByteScalarClass property && IsWordClassPredicate( property.Kind )
 		|| node is PcreByteScalarSet set && IsSupportedSet( set );
 

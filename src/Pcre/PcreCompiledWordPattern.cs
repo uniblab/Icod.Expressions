@@ -1,7 +1,7 @@
 namespace Icod.Expressions.Pcre;
 
 /// <summary>Immutable width-16 sequence; matching reads the original subject view.</summary>
-internal sealed class PcreCompiledWordPattern {
+internal sealed partial class PcreCompiledWordPattern {
 	private const int MaximumBacktrackFrames = 1024;
 	private readonly PcreByteNode[][] branches;
 	private readonly PcreWordOptions options;
@@ -53,13 +53,14 @@ internal sealed class PcreCompiledWordPattern {
 			return new( null, new( PcreWordDiagnosticCode.InvalidStartOffset, startOffset ) );
 		}
 		var work = 0;
-		bool Step() {
-			cancellationToken.ThrowIfCancellationRequested();
-			if ( work >= options.MatchWorkLimit ) { return false; }
-			work++;
-			options.WorkObserver?.Invoke( work );
-			cancellationToken.ThrowIfCancellationRequested();
-			return true;
+		bool Step() => ChargeWork( ref work, cancellationToken );
+		var regionalRun = new RegionalRun();
+		int ConsumeAtom( PcreByteNode node, ReadOnlySpan<char> source, int at, int reverseStart, out int width ) {
+			if ( node is PcreByteGrapheme ) {
+				width = ConsumeGrapheme( source, at, reverseStart, ref regionalRun, ref work, cancellationToken );
+				return width < 0 ? -1 : width > 0 ? 1 : 0;
+			}
+			return TryConsumeAtom( node, source, at, out width ) ? 1 : 0;
 		}
 		PcreWordMatchResult Exhausted() => new( null, new( PcreWordDiagnosticCode.MatchWorkLimitExceeded, 0 ) );
 		var input = subject.Span;
@@ -583,8 +584,10 @@ internal sealed class PcreCompiledWordPattern {
 									reversedCount - reverse.Minimum, continuation, FrameKind.ReverseRetry ) ) ) { return -2; }
 							}
 							break;
-						case PcreByteLiteral or PcreByteAny or PcreByteScalarSet or PcreByteScalarClass or PcreByteNewlineSequence:
-							matched = TryConsumeAtom( nodes[index], source[..visibleEnd], position, out var width );
+						case PcreByteLiteral or PcreByteAny or PcreByteScalarSet or PcreByteScalarClass or PcreByteNewlineSequence or PcreByteGrapheme:
+							var atomResult = ConsumeAtom( nodes[index], source[..visibleEnd], position, reverseStart, out var width );
+							if ( atomResult < 0 ) { return -1; }
+							matched = atomResult == 1;
 							if ( matched ) { position += width; }
 							break;
 						case PcreByteAnchor or PcreByteLineAnchor or PcreByteEndBeforeFinalLf:
@@ -608,16 +611,24 @@ internal sealed class PcreCompiledWordPattern {
 						case PcreByteRepeat repeat:
 							var count = 0;
 							var repeatStart = position;
-							while ( repeat.Greedy || count < repeat.Minimum ) {
+							// JIT-style greedy grapheme retries retain complete forward endpoints.
+							var minimumEnd = position;
+							var graphemeEnds = !interpreted && repeat.Greedy && repeat.Child is PcreByteGrapheme
+								&& ( index < nodes.Length - 1 || continuation is not null ) ? new List<int>() : null;
+							while ( count < repeat.Maximum && ( repeat.Greedy || count < repeat.Minimum ) ) {
 								if ( !Step() ) { return -1; }
-								if ( !TryConsumeAtom( repeat.Child, source[..visibleEnd], position, out var repeatWidth ) ) { break; }
+								var repeated = ConsumeAtom( repeat.Child, source[..visibleEnd], position, reverseStart, out var repeatWidth );
+								if ( repeated < 0 ) { return -1; }
+								if ( repeated == 0 ) { break; }
 								position += repeatWidth;
+								graphemeEnds?.Add( position );
 								count++;
+								if ( count == repeat.Minimum ) { minimumEnd = position; }
 							}
 							matched = count >= repeat.Minimum;
-							if ( matched && ( !repeat.Greedy || count > repeat.Minimum
+							if ( matched && ( !repeat.Greedy && count < repeat.Maximum || repeat.Greedy && count > repeat.Minimum
 								&& ( index < nodes.Length - 1 || continuation is not null ) ) ) {
-								if ( !PushFrame( new( nodes, index, position, repeatStart, count, continuation ) ) ) { return -2; }
+								if ( !PushFrame( new( nodes, index, position, interpreted && repeat.Child is PcreByteGrapheme ? minimumEnd : repeatStart, count, continuation, GraphemeEnds: graphemeEnds ) ) ) { return -2; }
 							}
 							break;
 						default: throw new InvalidOperationException( "Unsupported node reached the word sequence executor." );
@@ -735,14 +746,21 @@ internal sealed class PcreCompiledWordPattern {
 						if ( !Step() ) { return -1; } // Grow lazily or rewind one complete atom.
 						var count = frame.Count;
 						if ( repeat.Greedy ) {
-							position -= RepeatRewindWidth( repeat.Child, source, position, frame.RepeatStart );
+							if ( interpreted && repeat.Child is PcreByteGrapheme ) {
+								position = RewindGrapheme( source, position, frame.RepeatStart, ref work, cancellationToken );
+								if ( position < 0 ) { return -1; }
+							} else if ( frame.GraphemeEnds is { } ends ) { position = count > 1 ? ends[count - 2] : frame.RepeatStart; }
+							else { position -= RepeatRewindWidth( repeat.Child, source, position, frame.RepeatStart ); }
 							count--;
 						} else {
-							if ( !TryConsumeAtom( repeat.Child, source[..visibleEnd], position, out var width ) ) { continue; }
+							var grown = ConsumeAtom( repeat.Child, source[..visibleEnd], position, reverseStart, out var width );
+							if ( grown < 0 ) { return -1; }
+							if ( grown == 0 ) { continue; }
 							position += width;
 							count++;
 						}
-						if ( !repeat.Greedy || count > repeat.Minimum ) {
+						if ( !repeat.Greedy && count < repeat.Maximum
+							|| repeat.Greedy && ( interpreted && repeat.Child is PcreByteGrapheme ? position > frame.RepeatStart : count > repeat.Minimum ) ) {
 							if ( !PushFrame( frame with { Position = position, Count = count } ) ) { return -2; }
 						}
 						index++;
@@ -837,7 +855,8 @@ internal sealed class PcreCompiledWordPattern {
 	private readonly record struct BacktrackFrame(
 		PcreByteNode[] Nodes, int Index, int Position, int RepeatStart, int Count, Continuation? Continuation,
 		FrameKind Kind = FrameKind.Retry, int ChangeCount = 0, int VisibleEnd = 0, int ActiveCall = -1,
-		string? Mark = null, int MarkVersion = 0, Continuation? CutScope = null, string? HistoryName = null
+		string? Mark = null, int MarkVersion = 0, Continuation? CutScope = null, string? HistoryName = null,
+		IReadOnlyList<int>? GraphemeEnds = null
 	);
 
 	private enum FrameKind { Retry, RepeatExit, RepeatGrow, PositiveAssertion, NegativeAssertion, PositiveCondition, NegativeCondition, AtomicGroup, Subroutine, ReverseRetry, Prune, Commit, ThenAlternative, Skip, SkipReplay, PathMark }
