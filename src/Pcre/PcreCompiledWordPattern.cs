@@ -131,6 +131,7 @@ internal sealed class PcreCompiledWordPattern {
 			markVersion = version;
 			mark = acceptedMarks is not null && acceptedMarks.TryGetValue( version, out var committed ) ? committed : value;
 		}
+		// Slot zero journals the reported start until a match supplies its end.
 		var captures = new PcreWordCapture?[CaptureInfo.CaptureCount + 1];
 		Dictionary<int, PcreWordCapture?>? cutCaptures = null;
 		var pruneLiteralEnd = -1;
@@ -202,7 +203,7 @@ internal sealed class PcreCompiledWordPattern {
 			for ( var entry = checkpoint; entry < originalEnd; entry++ ) {
 				if ( !Step() ) { return false; }
 				var change = changes[entry];
-				if ( selected.Span.BinarySearch( change.Number ) >= 0
+				if ( change.Number == 0 || selected.Span.BinarySearch( change.Number ) >= 0
 					|| restoredCaptures[change.Number] == generation ) { continue; }
 				restoredCaptures[change.Number] = generation;
 				changes.Add( new( change.Number, captures[change.Number] ) );
@@ -228,6 +229,8 @@ internal sealed class PcreCompiledWordPattern {
 			var index = 0;
 			var position = candidate;
 			end = candidate;
+			bool RejectEmpty( int at ) => at == ( captures[0]?.CodeUnitIndex ?? candidate )
+				&& ( notEmpty || notEmptyAtStart && at == startOffset );
 			bool PushPathMark( string name ) {
 				if ( hasNamedSkip && !PushFrame( new( nodes, index, position, 0, 0, continuation,
 					FrameKind.PathMark, HistoryName: name ) ) ) { return false; }
@@ -283,7 +286,8 @@ internal sealed class PcreCompiledWordPattern {
 							if ( guard.Kind != FrameKind.AtomicGroup ) { position = guard.Position; }
 							if ( guard.Kind is FrameKind.PositiveCondition or FrameKind.NegativeCondition ) {
 								// Both signs keep captures when the condition body matches.
-								// Its sign chooses the arm after committing the body's choices.
+								// The interpreter restores the start before entering either arm.
+								if ( interpreted ) { captures[0] = parent.EntryMatchStart; }
 								if ( guardFrames.Count == 0 ) { changes?.Clear(); }
 								activeCall = guard.ActiveCall;
 								EnterConditionalArm( (PcreWordConditional)nodes[index], guard.Kind == FrameKind.PositiveCondition );
@@ -311,9 +315,7 @@ internal sealed class PcreCompiledWordPattern {
 						}
 					} else {
 						if ( !Step() ) { return -1; } // Completion, including policy rejection.
-						var empty = position == candidate;
-						if ( ( !endAnchored || position == source.Length )
-							&& !( empty && ( notEmpty || notEmptyAtStart && candidate == startOffset ) ) ) {
+						if ( ( !endAnchored || position == source.Length ) && !RejectEmpty( position ) ) {
 							end = position; return 1;
 						}
 					}
@@ -325,7 +327,7 @@ internal sealed class PcreCompiledWordPattern {
 							test.IsPositive ? FrameKind.PositiveCondition : FrameKind.NegativeCondition ) ) ) { return -2; }
 						continuation = new( nodes, index, continuation, Start: position, GuardBoundary: boundary,
 							AssertionEnd: test.IsBehind ? position : -1, SavedEnd: visibleEnd, CheckAssertionEnd: false, CatchesCut: true,
-						IsolatePathMarks: hasNamedSkip && test.Group.IsolatesPathMarks );
+						IsolatePathMarks: hasNamedSkip && test.Group.IsolatesPathMarks, EntryMatchStart: captures[0] );
 					if ( test.VariableBehind && !interpreted ) { visibleEnd = position; }
 						nodes = test.Body;
 						index = 0;
@@ -354,7 +356,8 @@ internal sealed class PcreCompiledWordPattern {
 						AssertionEnd: assertion.IsBehind ? position : -1, NonAtomicAssertion: assertion.NonAtomic,
 						SavedEnd: visibleEnd, CheckAssertionEnd: assertion.IsBehind && assertion.NonAtomic
 							&& !interpreted, CatchesCut: !assertion.IsPositive,
-						IsolatePathMarks: hasNamedSkip && !assertion.NonAtomic && assertion.Group.IsolatesPathMarks );
+						IsolatePathMarks: hasNamedSkip && !assertion.NonAtomic && assertion.Group.IsolatesPathMarks,
+						EntryMatchStart: captures[0] );
 					// Native JIT caps nested reads at a variable lookbehind's endpoint.
 					if ( assertion.VariableBehind && !interpreted ) { visibleEnd = position; }
 					nodes = assertion.Body;
@@ -537,8 +540,12 @@ internal sealed class PcreCompiledWordPattern {
 										acceptedMarks[guard.MarkVersion] = mark;
 										markVersion = guard.MarkVersion;
 									}
-								} else if ( interpreted && guard.Kind is FrameKind.PositiveCondition or FrameKind.NegativeCondition ) {
-									RestoreMark( guard.MarkVersion, guard.Mark! );
+								} else if ( interpreted && target.CallCheckpoint < 0 ) {
+									// Interpreted assertion ACCEPT keeps the caller's reported start.
+									captures[0] = target.EntryMatchStart;
+									if ( guard.Kind is FrameKind.PositiveCondition or FrameKind.NegativeCondition ) {
+										RestoreMark( guard.MarkVersion, guard.Mark! );
+									}
 								}
 								// Reuse ordinary scope return, bypassing remaining instructions,
 								// repeats and lookbehind endpoint checks; ACCEPT commits non-atomic assertions too.
@@ -546,7 +553,7 @@ internal sealed class PcreCompiledWordPattern {
 								nodes = []; index = 0;
 								continue;
 							}
-							var rejectedEmpty = position == candidate && ( notEmpty || notEmptyAtStart && candidate == startOffset );
+							var rejectedEmpty = RejectEmpty( position );
 							var rejectedEnd = endAnchored && position != source.Length;
 							if ( !rejectedEmpty && !rejectedEnd ) { end = position; return 1; }
 							if ( rejectedEnd && ( !interpreted || !rejectedEmpty ) ) { return 2; }
@@ -577,6 +584,9 @@ internal sealed class PcreCompiledWordPattern {
 							matched = MatchAnchor( nodes[index], source[..visibleEnd], position );
 							break;
 						case PcreByteSearchStart: matched = position == startOffset; break;
+						case PcreByteMatchStartReset:
+							SaveCapture( 0, position, position );
+							break;
 						case PcreByteWordBoundary boundary:
 							var boundaryResult = MatchBoundary( boundary, source[..visibleEnd], position );
 							if ( boundaryResult < 0 ) { return -1; }
@@ -758,9 +768,11 @@ internal sealed class PcreCompiledWordPattern {
 				if ( outcome == 4 ) { replayNamedSkip = true; break; }
 				if ( outcome == 3 ) { return new( null, null ); }
 				if ( outcome > 0 ) {
-					captures[0] = new( candidate, end - candidate );
+					var reportedStart = captures[0]?.CodeUnitIndex ?? candidate;
+					var length = end - reportedStart;
+					captures[0] = new( reportedStart, length );
 					// Transfer this call's capture array; no runner or subject memory escapes.
-					return new( new( candidate, end - candidate, Array.AsReadOnly( captures ), CaptureInfo ) { MarkName = mark }, null );
+					return new( new( reportedStart, length, Array.AsReadOnly( captures ), CaptureInfo ) { MarkName = mark }, null );
 				}
 			}
 			if ( !interpreted ) {
@@ -808,7 +820,7 @@ internal sealed class PcreCompiledWordPattern {
 		int CallCheckpoint = -1, ReadOnlyMemory<int> ReturnedCaptures = default, int Caller = -1, bool CheckAssertionEnd = true,
 		bool AtomicGroup = false, int CallBoundary = -1, bool CatchesCut = false, bool IsolatePathMarks = false,
 		int ThenBoundary = -1, int ThenNext = -1, PcreWordGroup? ThenGroup = null,
-		string? ThenEntryMark = null, int ThenEntryMarkVersion = 0 );
+		string? ThenEntryMark = null, int ThenEntryMarkVersion = 0, PcreWordCapture? EntryMatchStart = null );
 
 	private bool TryConsumeAtom( PcreByteNode node, ReadOnlySpan<char> input, int position, out int width ) {
 		if ( !PcreUtf16.TryRead( input, position, options.Utf16, out var value, out width ) ) { return false; }

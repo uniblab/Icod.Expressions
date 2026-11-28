@@ -182,7 +182,7 @@ internal sealed class PcreByteProgramCompiler {
 			utfCrLfLeadingStarAtom = null;
 			skipUtfCrLfLeadingStar = false;
 		}
-		pruneLiteralCacheRepeat = noStartOptimize ? null : FindPruneLiteralCache( root );
+		pruneLiteralCacheRepeat = noStartOptimize ? null : PcrePruneLiteralScan.Find( root, cancellationToken )?.Repeat;
 		CompileAlternatives( root );
 		while ( compileWork.TryPop( out var next ) ) {
 			cancellationToken.ThrowIfCancellationRequested();
@@ -2500,35 +2500,6 @@ internal sealed class PcreByteProgramCompiler {
 			var bytes = PcreByteSet.Singleton( first );
 			return caseless ? bytes.AsciiCaseClosure() : bytes;
 		}
-	}
-
-	private PcreByteRepeat? FindPruneLiteralCache( PcreByteAlternatives root ) {
-		cancellationToken.ThrowIfCancellationRequested();
-		// Native detect_early_fail reuses this leading literal-PLUS scan after
-		// a PRUNE cut. Bound the proof to two root branches and a single suffix
-		// and same-literal fallback; an immediately preceding COMMIT, THEN or SKIP is
-		// discarded by that PRUNE. Only sole ordinary root wrappers are traversed.
-		for ( var depth = 0; depth < 4 && root.Branches.Count == 1 && root.Branches[0].Count == 1; depth++ ) {
-			var nested = root.Branches[0][0] switch {
-				PcreByteGroup wrapper => wrapper.Body,
-				PcreByteNoncapturingGroup wrapper => wrapper.Body,
-				_ => null
-			};
-			if ( nested is null ) { break; }
-			root = nested;
-		}
-		if ( root.Branches.Count != 2 || root.Branches[0].Count is not ( 3 or 4 )
-			|| root.Branches[0][0] is not PcreByteRepeat { Minimum: 1, Maximum: int.MaxValue,
-				Greedy: true, Offset: -1, Child: PcreByteLiteral { Caseless: false } literal } repeat
-			|| root.Branches[0].Count == 4 && root.Branches[0][1] is not ( PcreByteCommit or PcreByteThen or PcreByteSkip or PcreByteNamedSkip )
-			|| root.Branches[0][root.Branches[0].Count - 2] is not PcreBytePrune
-			|| root.Branches[0][root.Branches[0].Count - 1] is not ( PcreByteFailure or PcreByteLiteral { Caseless: false } )
-			|| root.Branches[1].Count != 1 ) { return null; }
-		var fallback = root.Branches[1][0];
-		if ( fallback is PcreByteGroup { Body.Branches.Count: 1 } group && group.Body.Branches[0].Count == 1 ) {
-			fallback = group.Body.Branches[0][0];
-		}
-		return fallback is PcreByteLiteral { Caseless: false } other && other.Value == literal.Value ? repeat : null;
 	}
 
 	private void CompileAccept() {

@@ -1010,6 +1010,10 @@ internal static partial class PcreByteMatcher {
 							position = completedGuard.Position;
 							pc = ( instruction.Second & 8 ) != 0 ? instruction.First : completedGuard.Pc;
 							if ( completedGuard.Kind is FrameKind.PositiveAssertion or FrameKind.ConditionalAssertion ) {
+								if ( interpreted && completedGuard.Kind == FrameKind.ConditionalAssertion ) {
+									// A condition commits captures while retaining its entry match start.
+									captureStarts[0] = scope.ReportedStart;
+								}
 								// First body success is atomic. Keep captures, including those beyond G0,
 								// journaled until any enclosing retry/guard can no longer restore them.
 								if ( backtrack.Count == 0 ) { changes.Clear(); }

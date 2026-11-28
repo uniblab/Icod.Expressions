@@ -1220,7 +1220,7 @@ public sealed class PcreWordNamedSkipTests {
 			Assert.Equal( PcreWordDiagnosticCode.InvalidSyntax,
 				PcreWordSequenceCompiler.CompileSequence( String.Concat( "(*SKIP:N)", suffix ).AsMemory() ).Diagnostic?.Code );
 		}
-		foreach ( var suffix in new[] { "\\K", "\\X", "(?:a){65}", "(?=(*sr:a)){0}" } ) {
+		foreach ( var suffix in new[] { "\\X", "(?:a){65}", "(?=(*sr:a)){0}" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( String.Concat( "(*SKIP:N)", suffix ).AsMemory() ).Diagnostic?.Code );
 		}

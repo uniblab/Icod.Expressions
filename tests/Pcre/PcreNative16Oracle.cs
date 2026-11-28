@@ -26,9 +26,10 @@ internal static class PcreNative16Oracle {
 		( utf ? 1 : 0 ) | ( ucp ? 2 : 0 ), offset, false, defaults, mask );
 
 	internal static PcreNative16Protocol[] ExecuteSequencePolicies( ushort[] pattern, ushort[] subject, bool utf,
-		uint offset, int defaults = 0, bool ucp = false ) {
+		uint offset, int defaults = 0, bool ucp = false, bool allowLookaroundBackslashK = false ) {
 		var results = new PcreNative16Protocol[64];
-		ExecuteCore( pattern, subject, ( utf ? 1 : 0 ) | ( ucp ? 2 : 0 ), offset, false, defaults, 0, results );
+		ExecuteCore( pattern, subject, ( utf ? 1 : 0 ) | ( ucp ? 2 : 0 ) | ( allowLookaroundBackslashK ? 4 : 0 ),
+			offset, false, defaults, 0, results );
 		return results;
 	}
 

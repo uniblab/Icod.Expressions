@@ -10,6 +10,7 @@ internal sealed record PcreWordOptions {
 	public bool AsciiBsW { get; init; }
 	public bool AsciiPosix { get; init; }
 	public bool AsciiDigit { get; init; }
+	public bool AllowLookaroundBackslashK { get; init; }
 	public PcreMatchPolicy Policy { get; init; }
 	public int MatchWorkLimit { get; init; } = 1_000_000;
 	public uint MaxPatternLength { get; init; } = 4096;
