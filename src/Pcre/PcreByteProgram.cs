@@ -230,7 +230,7 @@ internal sealed class PcreByteProgramCompiler {
 			UtfXdigitFragmentBarrier = utf8 && matchInvalidUtf && !noStartOptimize && !turkishCasing
 				&& !hasSurrogateLiterals && targets.Count == 0 && HasUtfXdigitFragmentBarrier( root ),
 			DotStarAnchored = !noDotStarAnchor && dotStarEntry,
-			LeadingStartAnchor = HasLeadingStartAnchor() || hasNamedSkip && HasAlternativeStartAnchor( root ),
+			LeadingStartAnchor = HasLeadingStartAnchor() || hasNamedSkip && PcreSourceStartAnchor.HasAlternativeStartAnchor( root, cancellationToken ),
 			ScalarExpressionStackDepth = scalarExpressionStackDepth, CommitStartBytes = commitBytes, TurkishCasing = turkishCasing,
 			FirstLineSkipBypassesWindow = instructions.Any( item => item.Opcode is PcreByteOpcode.Skip or PcreByteOpcode.SkipNamed )
 				&& ( noStartOptimize || HasUnfilteredFirstLineSkipEntry( root ) ),
@@ -248,66 +248,6 @@ internal sealed class PcreByteProgramCompiler {
 		return false;
 	}
 
-	private bool HasAlternativeStartAnchor( PcreByteAlternatives root ) {
-		cancellationToken.ThrowIfCancellationRequested();
-		var entries = new Stack<(PcreByteAlternatives Body, int First, int Count)>();
-		entries.Push( (root, 0, root.Branches.Count) );
-		var visits = 0;
-		while ( entries.TryPop( out var entry ) ) {
-			cancellationToken.ThrowIfCancellationRequested();
-			// Each leading node already consumes a visit during compilation.
-			if ( entry.Count == 0 || entry.Count > MaximumInstructions - visits - entries.Count ) { return false; }
-			for ( var index = entry.First; index < entry.First + entry.Count; index++ ) {
-				var branch = entry.Body.Branches[index];
-				var first = 0;
-				PcreByteNode leading;
-				// Native advances past these prefixes to find the first significant opcode.
-				do {
-					cancellationToken.ThrowIfCancellationRequested();
-					if ( first == branch.Count || visits >= MaximumInstructions - entries.Count ) { return false; }
-					visits++;
-					leading = branch[first++];
-				} while ( leading is PcreByteRepeat { Maximum: 0 }
-					or PcreByteAtomic { Child: PcreByteRepeat { Maximum: 0 } }
-					or PcreByteStaticConditional { Value: false, Body.Branches.Count: 1 }
-					or PcreByteRepeat { Child: PcreByteStaticConditional { Value: false, Body.Branches.Count: 1 } }
-					or PcreBytePathMark or PcreByteNamedSkip
-					or PcreByteCommit { Name.IsEmpty: false }
-					or PcreBytePrune { Name.IsEmpty: false }
-					or PcreByteThen { Name.IsEmpty: false } );
-				if ( leading is PcreByteAtomic { Child: PcreByteRepeat { Minimum: > 0 } possessive } ) { leading = possessive; }
-				if ( leading is PcreByteRepeat { Minimum: > 0 } repeat ) { leading = repeat.Child; }
-				if ( leading is PcreByteAssertionConditional {
-					Body.Branches.Count: 2,
-					Assertion: PcreByteLookahead { IsPositive: true, NonAtomic: false } guard
-				} assertionCondition ) {
-					if ( entries.Count > MaximumInstructions - visits - 2 ) { return false; }
-					// Native analyzes the guard and else; the then body does not establish this evidence.
-					entries.Push( (assertionCondition.Body, 1, 1) );
-					entries.Push( (guard.Body, 0, guard.Body.Branches.Count) );
-					continue;
-				}
-				var nested = leading switch {
-					PcreByteGroup { Number: > 0 } capture => capture.Body,
-					PcreByteNoncapturingGroup group => group.Body,
-					PcreByteAtomic { Child: PcreByteNoncapturingGroup group } => group.Body,
-					PcreByteLookahead { IsPositive: true } assertion => assertion.Body,
-					PcreByteCaptureConditional { Body.Branches.Count: 2 } condition => condition.Body,
-					PcreByteRecursionConditional { Body.Branches.Count: 2 } condition => condition.Body,
-					PcreByteStaticConditional { IsDefinition: false, Body.Branches.Count: 2 } condition => condition.Body,
-					_ => null
-				};
-				if ( nested is not null ) {
-					if ( entries.Count >= MaximumInstructions - visits ) { return false; }
-					entries.Push( (nested, 0, nested.Branches.Count) );
-					continue;
-				}
-				// NotBol affects execution. Native retains caret's source anchoring.
-				if ( leading is not PcreByteAnchor { IsStart: true } && leading is not PcreByteSearchStart ) { return false; }
-			}
-		}
-		return true;
-	}
 
 	private bool HasUtfXdigitFragmentBarrier( PcreByteAlternatives root ) {
 		if ( root.Branches.Count != 1 || root.Branches[0].Count < 2 ) { return false; }
@@ -2167,7 +2107,6 @@ internal sealed class PcreByteProgramCompiler {
 		var thenMark = -1;
 		if ( hasThen && alternatives.Branches.Count > 1 ) {
 			thenMark = AllocateMark();
-			Emit( PcreByteOpcode.ThenMark, thenMark );
 			var priorTarget = thenTarget;
 			compileWork.Push( () => thenTarget = priorTarget );
 		}
@@ -2178,7 +2117,11 @@ internal sealed class PcreByteProgramCompiler {
 		ReadOnlyMemory<int> reverseLengths, int reverseMinimum, int thenMark ) {
 		// Only actual alternative branches own a target. Repeat Splits and
 		// conditional yes/no sequences keep their exterior lexical owner.
-		if ( thenMark >= 0 ) { thenTarget = new( thenMark, index + 1 < alternatives.Branches.Count ); }
+		if ( thenMark >= 0 ) {
+			thenTarget = new( thenMark, index + 1 < alternatives.Branches.Count );
+			// Each source branch has its own entry label after ordinary retries.
+			Emit( PcreByteOpcode.ThenMark, thenMark );
+		}
 		var split = index + 1 < alternatives.Branches.Count ? Emit( PcreByteOpcode.Split ) : -1;
 		var first = instructions.Count;
 		var ranged = !reverseLengths.IsEmpty && reverseMinimum >= 0 && reverseLengths.Span[index] > reverseMinimum;
@@ -2577,7 +2520,7 @@ internal sealed class PcreByteProgramCompiler {
 		if ( root.Branches.Count != 2 || root.Branches[0].Count is not ( 3 or 4 )
 			|| root.Branches[0][0] is not PcreByteRepeat { Minimum: 1, Maximum: int.MaxValue,
 				Greedy: true, Offset: -1, Child: PcreByteLiteral { Caseless: false } literal } repeat
-			|| root.Branches[0].Count == 4 && root.Branches[0][1] is not ( PcreByteCommit or PcreByteThen or PcreByteSkip )
+			|| root.Branches[0].Count == 4 && root.Branches[0][1] is not ( PcreByteCommit or PcreByteThen or PcreByteSkip or PcreByteNamedSkip )
 			|| root.Branches[0][root.Branches[0].Count - 2] is not PcreBytePrune
 			|| root.Branches[0][root.Branches[0].Count - 1] is not ( PcreByteFailure or PcreByteLiteral { Caseless: false } )
 			|| root.Branches[1].Count != 1 ) { return null; }

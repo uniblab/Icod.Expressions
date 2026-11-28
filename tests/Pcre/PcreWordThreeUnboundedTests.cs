@@ -133,7 +133,7 @@ public sealed class PcreWordThreeUnboundedTests {
 	[Fact]
 	public void ThirdDepthKeepsBoundsAndUnsupportedWrappers() {
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( "x?a{64,}bc{64,}de{64,}f".AsMemory() ).IsSuccess );
-		foreach ( var source in new[] { "a{65,}b*c*d", "a*b{65,}c*d", "a*b*c{65,}d", "(?>(*SKIP:N)a*)b*c*d", "a{65,}+b*c*d" } ) {
+		foreach ( var source in new[] { "a{65,}b*c*d", "a*b{65,}c*d", "a*b*c{65,}d", "(?>(*sr:a)a*)b*c*d", "a{65,}+b*c*d" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

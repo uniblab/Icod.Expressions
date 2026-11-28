@@ -409,8 +409,8 @@ public sealed class PcreWordAssertionRepeatTests {
 		}
 		foreach ( var source in new[] { "(?=a){65}", "(?=a){64,}", "(?=a){64,}+",
 			"(?*a){0,65}", "(?<*a){65535}", "(?=a){65535,}", "(?<=a?b?c?d?e?f?){0}g?",
-			String.Concat( Enumerable.Repeat( "(?=a*){0}", 65 ) ), "(?=(?>(*SKIP:N)a)){0}",
-			"(?=a(*SKIP:N)){0}", "(?:(?=a)){65}+", "(?>(*SKIP:N)a)", "a{65,}+" } ) {
+			String.Concat( Enumerable.Repeat( "(?=a*){0}", 65 ) ), "(?=(?>(*sr:a)a)){0}",
+			"(?=a(*sr:a)){0}", "(?:(?=a)){65}+", "(?>(*sr:a)a)", "a{65,}+" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

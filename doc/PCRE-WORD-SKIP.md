@@ -2,8 +2,7 @@
 
 This increment adds `(*SKIP)` and its empty-argument alias `(*SKIP:)` to the
 internal bounded raw16 and strict UTF16 sequence profile, following #369's THEN.
-Nonempty named SKIP remains explicitly unsupported pending retained MARK history
-and native interpreter replay.
+Named SKIP follows in [the named-SKIP record](PCRE-WORD-NAMED-SKIP.md).
 
 ## Execution contract
 
@@ -58,6 +57,6 @@ Protocol SHA-256:
 Managed build, test and package qualification is tracked by this increment's PR.
 
 Named-SKIP MARK history, assertion/call history isolation and unmatched-name
-interpreter replay remain the next increment. ACCEPT with selected returns and
+interpreter replay are covered by the named-SKIP record. ACCEPT with selected returns and
 asserted-only COMMIT start proofs retain their existing explicit qualification
 gates. Public width-16 API integration remains separate roadmap work.

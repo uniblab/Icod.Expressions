@@ -54,6 +54,6 @@ Protocol SHA-256:
 Managed build, test and package qualification is tracked by this increment's PR.
 
 Bare SKIP follows in [the SKIP record](PCRE-WORD-SKIP.md); named-SKIP history/replay
-is next. ACCEPT with selected returns and
+follows in [the named-SKIP record](PCRE-WORD-NAMED-SKIP.md). ACCEPT with selected returns and
 asserted-only COMMIT start proofs retain their existing explicit qualification
 gates. Public width-16 API integration remains separate roadmap work.

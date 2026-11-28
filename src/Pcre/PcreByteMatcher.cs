@@ -183,6 +183,7 @@ internal static partial class PcreByteMatcher {
 			var captures = new PcreByteCapture?[groupCount + 1];
 			var captureStarts = new int[groupCount + 1];
 			var marks = new int[program.MarkCount];
+			int[]? thenLabels = null;
 			var backtrack = new Stack<Frame>();
 			var changes = new List<StateChange>();
 			var atomicDepths = new List<int>();
@@ -198,6 +199,7 @@ internal static partial class PcreByteMatcher {
 			var firstLinePosition = startOffset;
 			var forcedSkipStart = -1;
 			var ignoredNamedSkips = 0;
+			var candidateLabel = 0;
 			var xdigitFragmentEnd = startOffset;
 			for ( var fragmentIndex = 0; fragmentIndex < fragments.Count; ) {
 				var fragment = fragments[fragmentIndex];
@@ -263,12 +265,14 @@ internal static partial class PcreByteMatcher {
 					var skipRestart = -1;
 					var namedSkipCount = 0;
 					var replayNamedSkip = false;
+					var resetCandidateLabel = false;
 					var committedFragment = false;
 					var pc = 0;
 					Array.Clear( captures );
 					Array.Clear( captureStarts );
 					captureStarts[0] = start; // Reported start; backtracked resets use the capture journal.
 					Array.Clear( marks );
+					if ( !interpreted && program.PathMarkSlot >= 0 ) { marks[program.PathMarkSlot] = candidateLabel; }
 					backtrack.Clear();
 					changes.Clear();
 					atomicDepths.Clear();
@@ -311,7 +315,7 @@ internal static partial class PcreByteMatcher {
 								Step();
 								var catchingScope = assertionScopes![pruneScope];
 								if ( catchingScope.Boundary + 1 <= pruneBoundary ) { break; }
-								if ( catchingScope.IsolatePathMarks ) {
+								if ( !interpreted && catchingScope.IsolatePathMarks ) {
 									historyBoundary = Math.Max( historyBoundary, catchingScope.Boundary + 1 );
 								}
 								// Interpreted matching catches THEN at this assertion.
@@ -392,7 +396,8 @@ internal static partial class PcreByteMatcher {
 									PcreByteOpcode.Commit => FrameKind.Commit,
 									PcreByteOpcode.SkipNamed when unmatchedNamedSkip => FrameKind.SkipReplay,
 									PcreByteOpcode.Skip or PcreByteOpcode.SkipNamed => FrameKind.Skip, _ => FrameKind.Prune
-								}, CallScope: activeCall ) );
+								}, CallScope: activeCall, ThenEntryLabel: !interpreted && instruction.Opcode == PcreByteOpcode.Then
+									&& instruction.First >= 0 && program.PathMarkSlot >= 0 ? thenLabels![instruction.First] : -1 ) );
 							if ( instruction.PropertyValue > 0 ) {
 								// Named PRUNE/COMMIT/THEN share the label journal and their
 								// cut checkpoint. They do not create named-SKIP history.
@@ -876,20 +881,21 @@ internal static partial class PcreByteMatcher {
 							// Original entries remain available to interior retry checkpoints.
 							// Restore each field's oldest value once, appending inverse writes.
 							// Generation tags contain no capture values and bound nested history.
-							restoredFields ??= new int[captures.Length * 2 + marks.Length];
+							restoredFields ??= new int[captures.Length * 2 + marks.Length * 2];
 							var generation = ++returnGeneration; // Each return spends a VM step.
 							var originalEnd = changes.Count;
 							for ( var entry = caller.ChangeCount; entry < originalEnd; entry++ ) {
 								Step();
 								var change = changes[entry];
-								if ( change.Kind != StateKind.Mark && change.Index == 0 ) { continue; } // Keep K/G0.
+								if ( change.Kind is StateKind.Capture or StateKind.CaptureStart && change.Index == 0 ) { continue; } // Keep K/G0.
 								// A successful callee contributes its winning path label; positional
 								// marks still restore. Original entries remain for failed-call rollback.
 								if ( change.Kind == StateKind.Mark && change.Index == program.PathMarkSlot ) { continue; }
 								// Keep only selected values, not their temporary starts. Original
 								// journal entries still restore values on callee/caller retry.
 								if ( change.Kind == StateKind.Capture && returnedCaptures.Span.BinarySearch( change.Index ) >= 0 ) { continue; }
-								var field = change.Kind == StateKind.Mark ? captures.Length * 2 + change.Index
+								var field = change.Kind == StateKind.ThenLabel ? captures.Length * 2 + marks.Length + change.Index
+									: change.Kind == StateKind.Mark ? captures.Length * 2 + change.Index
 									: change.Index * 2 + ( change.Kind == StateKind.CaptureStart ? 1 : 0 );
 								if ( restoredFields[field] == generation ) { continue; }
 								restoredFields[field] = generation;
@@ -901,6 +907,10 @@ internal static partial class PcreByteMatcher {
 									case StateKind.CaptureStart:
 										changes.Add( new( StateKind.CaptureStart, change.Index, captureStarts[change.Index], null ) );
 										captureStarts[change.Index] = change.PriorValue;
+										break;
+									case StateKind.ThenLabel:
+										changes.Add( new( StateKind.ThenLabel, change.Index, thenLabels![change.Index], null ) );
+										thenLabels[change.Index] = change.PriorValue;
 										break;
 									case StateKind.Mark:
 										changes.Add( new( StateKind.Mark, change.Index, marks[change.Index], null ) );
@@ -928,6 +938,13 @@ internal static partial class PcreByteMatcher {
 							}
 							if ( backtrack.Count > 0 ) {
 								changes.Add( new( StateKind.Mark, instruction.First, marks[instruction.First], null ) );
+							}
+							if ( !interpreted && instruction.Opcode == PcreByteOpcode.ThenMark && program.PathMarkSlot >= 0 ) {
+								thenLabels ??= new int[marks.Length];
+								if ( backtrack.Count > 0 ) {
+									changes.Add( new( StateKind.ThenLabel, instruction.First, thenLabels[instruction.First], null ) );
+								}
+								thenLabels[instruction.First] = marks[program.PathMarkSlot];
 							}
 							marks[instruction.First] = instruction.Opcode switch {
 								PcreByteOpcode.PathMark => pc + 1, PcreByteOpcode.ThenMark => backtrack.Count, _ => position
@@ -997,7 +1014,7 @@ internal static partial class PcreByteMatcher {
 								// journaled until any enclosing retry/guard can no longer restore them.
 								if ( backtrack.Count == 0 ) { changes.Clear(); }
 							} else {
-								RestoreFrameState( completedGuard, changes, captures, captureStarts, marks, atomicDepths );
+								RestoreFrameState( completedGuard, changes, captures, captureStarts, marks, thenLabels, atomicDepths );
 								failed = true; // A matching negative body makes the assertion fail.
 							}
 							break;
@@ -1011,7 +1028,7 @@ internal static partial class PcreByteMatcher {
 								// A short root ACCEPT abandons this candidate. The interpreter
 								// backtracks first when the empty-match check rejects it.
 								if ( rejectedEnd && instruction.Opcode == PcreByteOpcode.EarlyAccept
-									&& ( !interpreted || !rejectedEmpty ) ) { backtrack.Clear(); }
+									&& ( !interpreted || !rejectedEmpty ) ) { backtrack.Clear(); resetCandidateLabel = true; }
 								failed = true;
 								break;
 							}
@@ -1027,7 +1044,7 @@ internal static partial class PcreByteMatcher {
 					while ( failed && backtrack.Count > 0 ) {
 						var frame = PopFrame( backtrack, assertionScopes, callScopes );
 						if ( frame.Kind != FrameKind.Branch ) { Step(); } // Resolve a guard or retry another reverse start.
-						RestoreFrameState( frame, changes, captures, captureStarts, marks, atomicDepths );
+						RestoreFrameState( frame, changes, captures, captureStarts, marks, thenLabels, atomicDepths );
 						activeScope = frame.AssertionScope;
 						activeCall = frame.CallScope;
 						pc = frame.Pc;
@@ -1052,6 +1069,12 @@ internal static partial class PcreByteMatcher {
 									changes.RemoveRange( kept, changes.Count - kept );
 								}
 							}
+							if ( frame.ThenEntryLabel >= 0 ) {
+								// The owning alternative restores its entry even after ACCEPT
+								// discarded the callee's label journal. Ordinary failure does not.
+								marks[program.PathMarkSlot] = frame.ThenEntryLabel;
+							}
+							if ( frame.Pc == 0 && frame.Kind != FrameKind.ThenAlternative ) { resetCandidateLabel = true; }
 							if ( frame.Kind == FrameKind.Skip && frame.Pc == 0 && frame.Position > start ) {
 								skipRestart = frame.Position;
 							}
@@ -1085,6 +1108,8 @@ internal static partial class PcreByteMatcher {
 					}
 					if ( failed ) { break; }
 				}
+				// Native JIT keeps committed callee labels on ordinary bumpalong.
+				candidateLabel = !interpreted && !resetCandidateLabel && program.PathMarkSlot >= 0 ? marks[program.PathMarkSlot] : 0;
 				if ( replayNamedSkip ) {
 					// PCRE2 ignores every named SKIP visited so far, including earlier resolved names.
 					ignoredNamedSkips = namedSkipCount;
@@ -1182,7 +1207,7 @@ internal static partial class PcreByteMatcher {
 	}
 
 	private static void RestoreFrameState( Frame frame, List<StateChange> changes,
-		PcreByteCapture?[] captures, int[] captureStarts, int[] marks,
+		PcreByteCapture?[] captures, int[] captureStarts, int[] marks, int[]? thenLabels,
 		List<int> atomicDepths ) {
 		for ( var changeIndex = changes.Count - 1; changeIndex >= frame.ChangeCount; changeIndex-- ) {
 			var change = changes[changeIndex];
@@ -1190,6 +1215,7 @@ internal static partial class PcreByteMatcher {
 				case StateKind.Capture: captures[change.Index] = change.PriorCapture; break;
 				case StateKind.CaptureStart: captureStarts[change.Index] = change.PriorValue; break;
 				case StateKind.Mark: marks[change.Index] = change.PriorValue; break;
+				case StateKind.ThenLabel: thenLabels![change.Index] = change.PriorValue; break;
 				default: throw new InvalidOperationException( "Unknown PCRE journal entry." );
 			}
 		}
@@ -1248,7 +1274,7 @@ internal static partial class PcreByteMatcher {
 	}
 
 
-	private enum StateKind : byte { Capture, CaptureStart, Mark }
+	private enum StateKind : byte { Capture, CaptureStart, Mark, ThenLabel }
 
 	private readonly record struct StateChange(
 		StateKind Kind, int Index, int PriorValue, PcreByteCapture? PriorCapture
@@ -1265,7 +1291,7 @@ internal static partial class PcreByteMatcher {
 
 	private readonly record struct Frame(
 		int Pc, int Position, int ChangeCount, int AtomicDepth, int AssertionScope,
-		FrameKind Kind = FrameKind.Branch, byte ReverseRemaining = 0, int CallScope = -1
+		FrameKind Kind = FrameKind.Branch, byte ReverseRemaining = 0, int CallScope = -1, int ThenEntryLabel = -1
 	);
 
 	private sealed class MatchLimitException( PcreByteDiagnosticCode code, string message ) : Exception( message ) {
