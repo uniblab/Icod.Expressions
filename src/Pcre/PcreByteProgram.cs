@@ -2517,7 +2517,7 @@ internal sealed class PcreByteProgramCompiler {
 		if ( root.Branches.Count != 2 || root.Branches[0].Count is not ( 3 or 4 )
 			|| root.Branches[0][0] is not PcreByteRepeat { Minimum: 1, Maximum: int.MaxValue,
 				Greedy: true, Offset: -1, Child: PcreByteLiteral { Caseless: false } literal } repeat
-			|| root.Branches[0].Count == 4 && root.Branches[0][1] is not ( PcreByteCommit or PcreByteThen or PcreByteSkip )
+			|| root.Branches[0].Count == 4 && root.Branches[0][1] is not ( PcreByteCommit or PcreByteThen or PcreByteSkip or PcreByteNamedSkip )
 			|| root.Branches[0][root.Branches[0].Count - 2] is not PcreBytePrune
 			|| root.Branches[0][root.Branches[0].Count - 1] is not ( PcreByteFailure or PcreByteLiteral { Caseless: false } )
 			|| root.Branches[1].Count != 1 ) { return null; }

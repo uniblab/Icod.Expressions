@@ -33,7 +33,9 @@ Interpreted assertion-condition ACCEPT restores the condition's entry label.
 Native JIT accepted calls instead commit the callee's label across checkpoints
 that share the entry write. Write identities and match-local committed values
 preserve that distinction without extra retry frames. Earlier distinct writes
-still roll back, and committed values reset at the next candidate. MARK is a
+still roll back. The [named-SKIP record](PCRE-WORD-NAMED-SKIP.md) qualifies
+committed entry labels across ordinary JIT candidate advancement; root cuts and
+rejected root ACCEPT reset them. MARK is a
 continuation boundary so finite suffix retries do not replay an earlier write.
 
 ## Bounds and qualification limits

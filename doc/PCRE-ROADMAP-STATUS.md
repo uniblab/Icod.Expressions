@@ -5,8 +5,10 @@
 The [named-SKIP record](PCRE-WORD-NAMED-SKIP.md) adds original-word name lookup,
 bounded MARK history, assertion/call visibility and ordered interpreter replay.
 The byte and word engines share the source-anchor proof used to stop replay.
-1,022 fixtures add 523,264 full-vector and label policy comparisons, with exact
+1,108 fixtures add 567,296 full-vector and label policy comparisons, with exact
 budget, cancellation, frame-limit, ownership and concurrent-reuse checks.
+Both widths also correct interpreted positive-assertion history and JIT accepted
+labels across ordinary candidate advancement, with 33,792 added byte comparisons.
 Next is match-start reset (`\K`). Graphemes, script runs, broader newline/options,
 public word API/package consumers and cross-width resource/performance work remain
 open, alongside the explicit ACCEPT/COMMIT qualification gates. Grep remains last.

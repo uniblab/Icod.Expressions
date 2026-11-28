@@ -198,6 +198,7 @@ internal static partial class PcreByteMatcher {
 			var firstLinePosition = startOffset;
 			var forcedSkipStart = -1;
 			var ignoredNamedSkips = 0;
+			var candidateLabel = 0;
 			var xdigitFragmentEnd = startOffset;
 			for ( var fragmentIndex = 0; fragmentIndex < fragments.Count; ) {
 				var fragment = fragments[fragmentIndex];
@@ -263,12 +264,14 @@ internal static partial class PcreByteMatcher {
 					var skipRestart = -1;
 					var namedSkipCount = 0;
 					var replayNamedSkip = false;
+					var resetCandidateLabel = false;
 					var committedFragment = false;
 					var pc = 0;
 					Array.Clear( captures );
 					Array.Clear( captureStarts );
 					captureStarts[0] = start; // Reported start; backtracked resets use the capture journal.
 					Array.Clear( marks );
+					if ( !interpreted && program.PathMarkSlot >= 0 ) { marks[program.PathMarkSlot] = candidateLabel; }
 					backtrack.Clear();
 					changes.Clear();
 					atomicDepths.Clear();
@@ -311,7 +314,7 @@ internal static partial class PcreByteMatcher {
 								Step();
 								var catchingScope = assertionScopes![pruneScope];
 								if ( catchingScope.Boundary + 1 <= pruneBoundary ) { break; }
-								if ( catchingScope.IsolatePathMarks ) {
+								if ( !interpreted && catchingScope.IsolatePathMarks ) {
 									historyBoundary = Math.Max( historyBoundary, catchingScope.Boundary + 1 );
 								}
 								// Interpreted matching catches THEN at this assertion.
@@ -1011,7 +1014,7 @@ internal static partial class PcreByteMatcher {
 								// A short root ACCEPT abandons this candidate. The interpreter
 								// backtracks first when the empty-match check rejects it.
 								if ( rejectedEnd && instruction.Opcode == PcreByteOpcode.EarlyAccept
-									&& ( !interpreted || !rejectedEmpty ) ) { backtrack.Clear(); }
+									&& ( !interpreted || !rejectedEmpty ) ) { backtrack.Clear(); resetCandidateLabel = true; }
 								failed = true;
 								break;
 							}
@@ -1052,6 +1055,7 @@ internal static partial class PcreByteMatcher {
 									changes.RemoveRange( kept, changes.Count - kept );
 								}
 							}
+							if ( frame.Pc == 0 ) { resetCandidateLabel = true; }
 							if ( frame.Kind == FrameKind.Skip && frame.Pc == 0 && frame.Position > start ) {
 								skipRestart = frame.Position;
 							}
@@ -1085,6 +1089,8 @@ internal static partial class PcreByteMatcher {
 					}
 					if ( failed ) { break; }
 				}
+				// Native JIT keeps committed callee labels on ordinary bumpalong.
+				candidateLabel = !interpreted && !resetCandidateLabel && program.PathMarkSlot >= 0 ? marks[program.PathMarkSlot] : 0;
 				if ( replayNamedSkip ) {
 					// PCRE2 ignores every named SKIP visited so far, including earlier resolved names.
 					ignoredNamedSkips = namedSkipCount;

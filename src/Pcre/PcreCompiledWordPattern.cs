@@ -137,6 +137,7 @@ internal sealed class PcreCompiledWordPattern {
 		var skipRestart = -1;
 		var namedSkipCount = 0;
 		var ignoredNamedSkips = 0;
+		var candidateMark = String.Empty;
 		int MatchReference( PcreByteBackreference reference, ReadOnlySpan<char> source, int position, out int end ) {
 			end = position;
 			var capture = captures[reference.Number];
@@ -222,7 +223,7 @@ internal sealed class PcreCompiledWordPattern {
 			}
 			visibleEnd = source.Length;
 			activeCall = -1;
-			RestoreMark( 0, String.Empty );
+			RestoreMark( 0, candidateMark );
 			Continuation? continuation = null;
 			var index = 0;
 			var position = candidate;
@@ -428,7 +429,7 @@ internal sealed class PcreCompiledWordPattern {
 							var historyBoundary = 0;
 							while ( cutScope is not null ) {
 								if ( !Step() ) { return -1; } // Only active scopes catch a cut.
-								if ( cutScope.IsolatePathMarks ) { historyBoundary = Math.Max( historyBoundary, cutScope.GuardBoundary + 1 ); }
+								if ( !interpreted && cutScope.IsolatePathMarks ) { historyBoundary = Math.Max( historyBoundary, cutScope.GuardBoundary + 1 ); }
 								if ( cutScope.CallCheckpoint >= 0 || cutScope.CatchesCut
 									|| cut.Kind == PcreWordCutKind.Then && cutScope.GuardBoundary >= 0 && !cutScope.AtomicGroup
 										&& ( interpreted || thenOwner is not null || activeCall < 0 || cutScope.NonAtomicAssertion ) ) { break; }
@@ -468,7 +469,7 @@ internal sealed class PcreCompiledWordPattern {
 											if ( resolveAssertion ) {
 												for ( var scope = history.Continuation; scope is not null; scope = scope.Parent ) {
 													if ( !Step() ) { return -1; }
-													if ( scope.CallCheckpoint >= 0 || scope.GuardBoundary >= 0 && scope.GuardBoundary + 1 <= cutBoundary ) { break; }
+													if ( scope.GuardBoundary >= 0 && scope.GuardBoundary + 1 <= cutBoundary ) { break; }
 													if ( scope.CatchesCut ) { cutScope = scope; cutBoundary = scope.GuardBoundary + 1; break; }
 												}
 											}
@@ -730,6 +731,7 @@ internal sealed class PcreCompiledWordPattern {
 		for ( var candidate = startOffset; ; ) {
 			skipRestart = -1;
 			var replayNamedSkip = false;
+			var resetCandidateMark = false;
 			namedSkipCount = 0;
 			acceptedMarks?.Clear();
 			cutCaptures?.Clear();
@@ -744,7 +746,7 @@ internal sealed class PcreCompiledWordPattern {
 				var outcome = TrySequence( branches[branch], input, candidate, out var end );
 				if ( outcome == -2 ) { return new( null, new( PcreWordDiagnosticCode.MatchDepthLimitExceeded, 0 ) ); }
 				if ( outcome < 0 ) { return Exhausted(); }
-				if ( outcome == 2 ) { break; }
+				if ( outcome == 2 ) { resetCandidateMark = true; break; }
 				if ( outcome == 4 ) { replayNamedSkip = true; break; }
 				if ( outcome == 3 ) { return new( null, null ); }
 				if ( outcome > 0 ) {
@@ -752,6 +754,12 @@ internal sealed class PcreCompiledWordPattern {
 					// Transfer this call's capture array; no runner or subject memory escapes.
 					return new( new( candidate, end - candidate, Array.AsReadOnly( captures ), CaptureInfo ) { MarkName = mark }, null );
 				}
+			}
+			if ( !interpreted ) {
+				// JIT ordinary bumpalong preserves an accepted call's committed entry
+				// label. Root cuts/reset paths clear it before the next candidate.
+				if ( resetCandidateMark ) { candidateMark = String.Empty; }
+				else if ( acceptedMarks is not null && acceptedMarks.TryGetValue( 0, out var committedEntry ) ) { candidateMark = committedEntry; }
 			}
 			if ( replayNamedSkip ) {
 				// Suppress every named visit so far, including earlier resolved names.
