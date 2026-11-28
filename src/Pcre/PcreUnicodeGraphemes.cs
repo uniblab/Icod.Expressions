@@ -20,4 +20,21 @@ internal static partial class PcreUnicodeGraphemes {
 		}
 		return (PcreGraphemeBreak)( ranges[low] & 15 );
 	}
+
+	internal static bool Joins( PcreGraphemeBreak left, PcreGraphemeBreak right, bool pictographBeforeZwj ) {
+		if ( left == PcreGraphemeBreak.Cr ) { return right == PcreGraphemeBreak.Lf; }
+		if ( left is PcreGraphemeBreak.Lf or PcreGraphemeBreak.Control ) { return false; }
+		// Native RI does not take Extend/SpacingMark/ZWJ; preserve that table exception.
+		if ( left == PcreGraphemeBreak.RegionalIndicator ) { return right == PcreGraphemeBreak.RegionalIndicator; }
+		if ( right is PcreGraphemeBreak.Extend or PcreGraphemeBreak.SpacingMark or PcreGraphemeBreak.Zwj ) { return true; }
+		return left switch {
+			PcreGraphemeBreak.Prepend => right is not ( PcreGraphemeBreak.Cr or PcreGraphemeBreak.Lf
+				or PcreGraphemeBreak.Control or PcreGraphemeBreak.ExtendedPictographic ),
+			PcreGraphemeBreak.L => right is PcreGraphemeBreak.L or PcreGraphemeBreak.V or PcreGraphemeBreak.Lv or PcreGraphemeBreak.Lvt,
+			PcreGraphemeBreak.V or PcreGraphemeBreak.Lv => right is PcreGraphemeBreak.V or PcreGraphemeBreak.T,
+			PcreGraphemeBreak.T or PcreGraphemeBreak.Lvt => right == PcreGraphemeBreak.T,
+			PcreGraphemeBreak.Zwj => pictographBeforeZwj && right == PcreGraphemeBreak.ExtendedPictographic,
+			_ => false
+		};
+	}
 }
