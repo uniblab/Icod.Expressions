@@ -58,15 +58,6 @@ internal static class PcreWordSequenceCompiler {
 			return Error( PcreWordDiagnosticCode.PatternLengthLimitExceeded, 0 );
 		}
 		var source = pattern.ToArray();
-		if ( options.Utf16 ) {
-			for ( var offset = 0; offset < source.Length; ) {
-				cancellationToken.ThrowIfCancellationRequested();
-				if ( !PcreUtf16.TryRead( source, offset, true, out _, out var width ) ) {
-					return Error( PcreWordDiagnosticCode.InvalidUtf16Pattern, offset );
-				}
-				offset += width;
-			}
-		}
 		// ASCII grammar tokens keep their original indices. Non-ASCII units are
 		// placeholders read directly from the owned word source by the parser.
 		var grammarSource = new byte[source.Length];
@@ -82,7 +73,21 @@ internal static class PcreWordSequenceCompiler {
 			AsciiPosix = options.AsciiPosix, AsciiDigit = options.AsciiDigit,
 			AllowLookaroundBackslashK = options.AllowLookaroundBackslashK
 		};
-		var settings = PcreByteStartSettings.Parse( grammarSource, grammarOptions, cancellationToken, newlineOnly: true );
+		var settings = PcreByteStartSettings.Parse( grammarSource, grammarOptions, cancellationToken, codeUnitWidth: 16 );
+		// The ASCII prefix selects the mode of the complete owned source.
+		// Preserve every original code-unit index, including the prefix itself.
+		if ( options.Utf16 != settings.Utf8 || options.Ucp != settings.Ucp ) {
+			options = options with { Utf16 = settings.Utf8, Ucp = settings.Ucp };
+		}
+		if ( options.Utf16 ) {
+			for ( var offset = 0; offset < source.Length; ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				if ( !PcreUtf16.TryRead( source, offset, true, out _, out var width ) ) {
+					return Error( PcreWordDiagnosticCode.InvalidUtf16Pattern, offset );
+				}
+				offset += width;
+			}
+		}
 		try {
 			var parser = new PcreByteParser( grammarSource, grammarOptions, settings, cancellationToken,
 				codeUnitWidth: 16, wordSource: source );

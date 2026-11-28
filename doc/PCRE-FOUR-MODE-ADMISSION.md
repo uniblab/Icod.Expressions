@@ -1,10 +1,10 @@
 # PCRE four-mode admission inventory
 
-This inventory audits the internal engines after [#378](https://github.com/uniblab/Icod.Expressions/pull/378), at merge `ef5c5e0`. It covers the existing parser's construct families, every current caller-option member, and the retained qualification gates. It does not freeze the public API or claim parity for every combination of admitted constructs. The [roadmap](PCRE-ROADMAP-STATUS.md) schedules implementation from these decisions.
+This inventory began with [#379](https://github.com/uniblab/Icod.Expressions/pull/379), at merge `cd9ec2a`. The current decisions include [native word UTF/UCP directives](PCRE-WORD-MODE-DIRECTIVES.md). It covers the existing parser's construct families, every current caller-option member, and the retained qualification gates. It does not freeze the public API or claim parity for every combination of admitted constructs. The [roadmap](PCRE-ROADMAP-STATUS.md) schedules implementation from these decisions.
 
 ## Reading the decisions
 
-The columns initialize raw bytes, strict UTF-8, raw 16-bit units, or strict UTF-16. A byte source directive can select UTF or UCP after that initialization. Source mode changes are a separate decision from caller option exposure.
+The columns initialize raw bytes, strict UTF-8, raw 16-bit units, or strict UTF-16. Recognized source directives can select UTF or UCP after that initialization, using width-appropriate aliases. Source mode changes are a separate decision from caller option exposure.
 
 | Entry | Meaning |
 |---|---|
@@ -27,8 +27,8 @@ These counts describe the named representatives, not a percentage of PCRE comple
 |---|---:|---:|---:|
 | Raw8 | 138 | 5 | 9 |
 | UTF8 | 140 | 6 | 6 |
-| Raw16 | 119 | 25 | 8 |
-| UTF16 | 120 | 26 | 6 |
+| Raw16 | 122 | 22 | 8 |
+| UTF16 | 123 | 23 | 6 |
 
 ## Atoms
 
@@ -224,8 +224,8 @@ These counts describe the named representatives, not a percentage of PCRE comple
 | `prefix-ANY` | `(*ANY)(a)` | S | S | S | S |
 | `prefix-BSR_UNICODE` | `(*BSR_UNICODE)(a)` | S | S | S | S |
 | `prefix-BSR_ANYCRLF` | `(*BSR_ANYCRLF)(a)` | S | S | S | S |
-| `prefix-UTF` | `(*UTF)(a)` | S | S | D/U0 | D/U0 |
-| `prefix-UCP` | `(*UCP)(a)` | S | S | D/U0 | D/U0 |
+| `prefix-UTF` | `(*UTF)(a)` | S | S | S | S |
+| `prefix-UCP` | `(*UCP)(a)` | S | S | S | S |
 | `prefix-CASELESS_RESTRICT` | `(*CASELESS_RESTRICT)(a)` | S | S | D/U0 | D/U0 |
 | `prefix-NO_JIT` | `(*NO_JIT)(a)` | S | S | D/U0 | D/U0 |
 | `prefix-NO_AUTO_POSSESS` | `(*NO_AUTO_POSSESS)(a)` | S | S | D/U0 | D/U0 |
@@ -234,7 +234,7 @@ These counts describe the named representatives, not a percentage of PCRE comple
 | `prefix-NOTEMPTY` | `(*NOTEMPTY)(a)` | S | S | D/U0 | D/U0 |
 | `prefix-NOTEMPTY_ATSTART` | `(*NOTEMPTY_ATSTART)(a)` | S | S | D/U0 | D/U0 |
 | `prefix-UTF8` | `(*UTF8)(a)` | S | S | R/U0 | R/U0 |
-| `prefix-UTF16` | `(*UTF16)(a)` | R/U0 | R/U0 | D/U0 | D/U0 |
+| `prefix-UTF16` | `(*UTF16)(a)` | R/U0 | R/U0 | S | S |
 | `prefix-UTF32` | `(*UTF32)(a)` | R/U0 | R/U0 | R/U0 | R/U0 |
 | `prefix-TURKISH_CASING` | `(*TURKISH_CASING)(?i)(i)` | R/I17 | S | R/U0 | D/U0 |
 | `limit-MATCH` | `(*LIMIT_MATCH=10000)a` | D/U0 | D/U0 | D/U0 | D/U0 |
@@ -354,10 +354,10 @@ The following 55 rows reconcile every settable member of PcreByteOptions, includ
 
 ## Implementation sequence from this audit
 
-1. **Resolve word global mode directives before validation.** Add an owned-source prefix resolution stage for native width-16 UTF/UTF16 and UCP selection. Keep width-inappropriate aliases rejected, retain original offsets, and validate the complete original pattern under the effective mode before parsing. Literal compilation keeps its explicit data-only entry. Qualify caller versus source policy and invalid-source priority.
-2. **Add remaining word global policies in bounded groups.** CASELESS_RESTRICT and NOTEMPTY/ATSTART can use existing comparisons and acceptance policy. Treat NO_JIT and optimizer directives as separate dispatch/search qualification, with the existing JIT/interpreter capture, label and restart distinctions. Turkish casing needs its own scalar-comparison work.
-3. **Close caller exposure and small primitive gaps.** Start with ordinary Any/Xuc and raw16 code-unit matching, then expose the relevant source-supported caller flags and newline/BSR context choices. Preserve literal option-combination distinctions until their contract is qualified.
-4. **Reconcile admission and deferred execution.** Address selected-return ACCEPT, asserted COMMIT, resource counters, broader lowering and UTF code-unit behavior with reduced native fixtures. Tolerant UTF16, NO_UTF_CHECK and callback execution remain independent decisions.
-5. **Freeze a supported profile and public delivery.** Expand cross-width/native fixtures and controlled-host measurements; finish partial/iteration/substitution; freeze the public API and ordinary package consumers. Grep remains the last migration.
+**Completed: word global mode resolution before validation.** Native UTF/UTF16 and UCP prefixes now select the effective word mode using the owned original source. Width-inappropriate aliases remain rejected; validation, literal-entry independence, original offsets and caller/source behavior have native fixtures. [Implementation evidence](PCRE-WORD-MODE-DIRECTIVES.md)
+1. **Add remaining word global policies in bounded groups.** CASELESS_RESTRICT and NOTEMPTY/ATSTART can use existing comparisons and acceptance policy. Treat NO_JIT and optimizer directives as separate dispatch/search qualification, with the existing JIT/interpreter capture, label and restart distinctions. Turkish casing needs its own scalar-comparison work.
+2. **Close caller exposure and small primitive gaps.** Start with ordinary Any/Xuc and raw16 code-unit matching, then expose the relevant source-supported caller flags and newline/BSR context choices. Preserve literal option-combination distinctions until their contract is qualified.
+3. **Reconcile admission and deferred execution.** Address selected-return ACCEPT, asserted COMMIT, resource counters, broader lowering and UTF code-unit behavior with reduced native fixtures. Tolerant UTF16, NO_UTF_CHECK and callback execution remain independent decisions.
+4. **Freeze a supported profile and public delivery.** Expand cross-width/native fixtures and controlled-host measurements; finish partial/iteration/substitution; freeze the public API and ordinary package consumers. Grep remains the last migration.
 
-The next implementation PR is step 1. This inventory changes tests and documentation only. It preserves every existing runtime admission rule and the 74-case word package gate.
+The next implementation PR adds word CASELESS_RESTRICT and NOTEMPTY/ATSTART. The required word package gate is now 82 protocols.

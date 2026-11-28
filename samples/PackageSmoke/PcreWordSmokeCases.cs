@@ -82,5 +82,13 @@ internal static class PcreWordSmokeCases {
 		new( 72, @"\A([\p{Any}~~\p{L}])\z", "😀", new() { Utf16 = true, AltExtendedClass = true }, 0, new( "M", "0:2,0:2" ) ),
 		new( 73, @"(?i)\A[\x{100}-\x{2ff}&&[\x{100}]]\z", "ā", new() { Ucp = true, AltExtendedClass = true }, 0, new( "M", "0:1" ) ),
 		new( 74, @"(*ANYCRLF)[\x09-\x0c&&\s]X", "\r\nX", new() { Utf16 = true, AltExtendedClass = true }, 0, new( "M", "1:2" ) ),
+		new( 75, @"(*UTF)\G(.)", "😀", new(), 0, new( "M", "0:2,0:2" ) ),
+		new( 76, @"(*UTF16)(*UCP)\A(\w+)\z", "𐐀é", new(), 0, new( "M", "0:3,0:3" ) ),
+		new( 77, @"(*UCP)(?i)\A(k)\z", "K", new(), 0, new( "M", "0:1,0:1" ) ),
+		new( 78, @"(*UCP)\A(.)\z", "\ud800", new(), 0, new( "M", "0:1,0:1" ) ),
+		new( 79, @"(*CRLF)(*UTF16)(?m)^(.)$", "\r\n😀\r\n", new(), 0, new( "M", "2:2,2:2" ) ),
+		new( 80, @"(*UTF)\A(a)\z", "\ud800", new(), 0, new( "X", Diagnostic: "InvalidUtf16Subject" ) ),
+		new( 81, "(*UTF16)\ud800", "", new(), 0, new( "C", Diagnostic: "InvalidUtf16Pattern", DiagnosticOffset: 8 ) ),
+		new( 82, "(*UTF16)(a)", "😀a", new(), 1, new( "X", Diagnostic: "InvalidStartOffset", DiagnosticOffset: 1 ) ),
 	};
 }

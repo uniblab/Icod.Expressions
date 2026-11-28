@@ -159,7 +159,7 @@ public sealed class PcreWordGraphemeTests {
 				Assert.Equal( expected[mask].Captures, Spans( actual.Match ) );
 			}
 		}
-		foreach ( var source in new[] { @"\X{65}", @"\X{0,65}", @"\X{65,}", @"(*UTF)\X" } ) {
+		foreach ( var source in new[] { @"\X{65}", @"\X{0,65}", @"\X{65,}", @"(*UTF)(*NO_JIT)\X" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}
