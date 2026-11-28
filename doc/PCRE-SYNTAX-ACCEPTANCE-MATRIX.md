@@ -1,5 +1,9 @@
 # PCRE syntax acceptance matrix
 
+The current [four-mode admission inventory](PCRE-FOUR-MODE-ADMISSION.md) audits
+raw8, UTF8, raw16 and UTF16, including caller option exposure and retained gates.
+The records below retain the detailed byte feature history and qualification.
+
 ## PR313 — interpreted FIRSTLINE restart boundaries
 
 The [first-line record](PCRE-INTERPRETED-FIRST-LINE-STATUS.md) starts an

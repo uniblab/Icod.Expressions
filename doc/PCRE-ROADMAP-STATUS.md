@@ -3,7 +3,7 @@
 ## Current implementation plan
 
 The Revision 4 stocktake used `deddee7`, the merge of [#371](https://github.com/uniblab/Icod.Expressions/pull/371). The plan below includes subsequent native 16-bit match-start reset, package delivery, newline conventions, graphemes, script runs and extended-class algebra.
-Revision 4 calls for one library with distinct match selection rules and two native PCRE widths. The public GNU providers already search strings and bytes and select the leftmost-longest match. The internal PCRE engines search in alternative order and return the first successful path. The next PCRE change is **an explicit four-mode syntax and option admission matrix**. The larger milestone is that a package consumer can run the same supported expression on bytes and on a .NET string and get the right captures in each input’s own coordinates.
+Revision 4 calls for one library with distinct match selection rules and two native PCRE widths. The public GNU providers already search strings and bytes and select the leftmost-longest match. The internal PCRE engines search in alternative order and return the first successful path. The next PCRE change is **word global UTF/UCP directive resolution before validation**. The larger milestone is that a package consumer can run the same supported expression on bytes and on a .NET string and get the right captures in each input’s own coordinates.
 
 ### What works at this revision
 
@@ -19,8 +19,8 @@ The #371 word corpus exercised 1,128 fixtures under eight compiled defaults and 
 
 ### Next PCRE pull requests
 
-1. **Inventory directives, options and syntax against an explicit four-mode matrix.** Classify every parser construct as supported, rejected or deferred for raw bytes, UTF-8, raw words and UTF-16. Link each decision to outcome or diagnostic fixtures, including word admission limits and the retained ACCEPT/COMMIT exclusions. [Extended-class evidence](PCRE-WORD-CLASS-ALGEBRA.md)
-2. **Implement source directives and option parity in bounded increments.** Use that inventory to select the next gaps. Qualify original-source ownership, diagnostic priority, mode changes, caller versus source policy, and package behavior. Keep separate decisions for tolerant UTF-16, UTF `\C` and executable callouts.
+1. **Resolve word global UTF/UCP directives before validation.** Use an owned-source prefix stage to select effective width-16 mode and UCP, retain original offsets and reject width-inappropriate aliases. Qualify complete-source UTF validation, caller/source priority and literal entry independence. [Four-mode inventory](PCRE-FOUR-MODE-ADMISSION.md)
+2. **Add global policy and caller parity in bounded groups.** Follow with CASELESS_RESTRICT and NOTEMPTY/ATSTART, then separately qualify NO_JIT and optimizer dispatch/search behavior. Ordinary Any/Xuc properties, raw16 code-unit execution, missing caller flags and newline/BSR contexts are explicit subsequent gaps. Keep Turkish casing, tolerant UTF-16, UTF `\C`, native resource directives and executable callouts independent.
 
 Two admission decisions can proceed independently of those changes. Keep word `ACCEPT` with selected-capture returns explicitly rejected until a fixture and contract address the native interpreter error and JIT result. For `COMMIT` whose first-unit proof comes only from a positive assertion, qualify the interactions with required-unit and start-bitmap searches before admitting the shape. Test each retained rejection as well as each newly accepted form. [ACCEPT evidence](PCRE-WORD-ACCEPT.md) · [COMMIT evidence](PCRE-WORD-CUTS.md)
 
@@ -37,6 +37,15 @@ Two admission decisions can proceed independently of those changes. Keep word `A
 ## Implementation history
 
 The records below describe the scope and next steps at the time of each change. Use the current implementation plan above for scheduling.
+
+## Four-mode admission inventory
+
+The [inventory](PCRE-FOUR-MODE-ADMISSION.md) classifies 152 source representatives
+across raw8, UTF8, raw16 and UTF16, and reconciles all 55 byte-option members
+with the word surface. Native admission, managed diagnostics, captures and labels
+are executable decisions. Reflection guards require a decision for every current
+option. The audit retains ACCEPT/COMMIT exclusions and separates source support,
+caller exposure and bounded admission. Word global UTF/UCP resolution is next.
 
 ## Native 16-bit extended-class algebra
 
