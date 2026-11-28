@@ -315,8 +315,8 @@ public sealed class PcreWordLookbehindTests {
 		Assert.Equal( "0:0", Spans( PcreWordSequenceCompiler.CompileSequence( nested.AsMemory() ).Pattern!.Match( ReadOnlyMemory<char>.Empty ).Match ) );
 		foreach ( var source in new[] { String.Concat( "(?<=", nested, ")" ), "(?<=a{0,64})",
 			"(?<=(?:a{64}){3}a{62}a{0,2})", "(?<=(?:(?:a{64}){64}){16})",
-			"(?<=a?b?c?d?e?f?)g?", "(?<=a*)", "(?<=a){65}", "(?<=a){64,}", "(?<=(?>(*sr:a)a)){0}",
-			"(?<*a){65}", "(?<!a(*asr:a))", "(a)(?<=a)(?1)(*sr:a)" } ) {
+			"(?<=a?b?c?d?e?f?)g?", "(?<=a*)", "(?<=a){65}", "(?<=a){64,}", "(?<=(?>(*sr:(?:a){65}a)a)){0}",
+			"(?<*a){65}", "(?<!a(*asr:(?:a){65}a))", "(a)(?<=a)(?1)(*sr:(?:a){65}a)" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

@@ -109,7 +109,7 @@ public sealed class PcreWordThreeRepeatChoicesTests {
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( "a*b{0,63}c*d*".AsMemory() ).IsSuccess );
 		Assert.True( PcreWordSequenceCompiler.CompileSequence( "a?b*c{0,3}d*e{0,3}f*g?".AsMemory() ).IsSuccess );
 		foreach ( var source in new[] { "a*b{0,64}c*d*", "a?b*c{0,3}d*e{0,3}f*g?|x",
-			"a*b?c?d?e*f?g?h?i*j?", "(?>(*sr:a)a*)b?c*d*" } ) {
+			"a*b?c?d?e*f?g?h?i*j?", "(?>(*sr:(?:a){65}a)a*)b?c*d*" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}

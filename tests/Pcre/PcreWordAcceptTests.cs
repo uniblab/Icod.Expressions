@@ -782,7 +782,7 @@ public sealed class PcreWordAcceptTests {
 
 	[Fact]
 	public void AcceptanceRetainsSourceAdmissionAndStrictValidation() {
-		foreach ( var source in new[] { "(*ACCEPT)\\X(*sr:a)", "(*asr:a(*ACCEPT:N))X", "(*ACCEPT)(*sr:a)", "(*ACCEPT)(?:a){65}", "(?<=(a(*ACCEPT)(?<=b*)))x" } ) {
+		foreach ( var source in new[] { "(*ACCEPT)\\X(*sr:(?:a){65}a)", "(*asr:(?:a){65}a(*ACCEPT:N))X", "(*ACCEPT)(*sr:(?:a){65}a)", "(*ACCEPT)(?:a){65}", "(?<=(a(*ACCEPT)(?<=b*)))x" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax, PcreWordSequenceCompiler.CompileSequence( source.AsMemory() ).Diagnostic?.Code );
 		}
 		var sourceAtLimit = String.Concat( "(*ACCEPT:", new string( 'é', 4086 ), ")" );

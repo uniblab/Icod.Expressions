@@ -1197,7 +1197,7 @@ public sealed class PcreWordThenTests {
 			Assert.Equal( PcreWordDiagnosticCode.InvalidSyntax,
 				PcreWordSequenceCompiler.CompileSequence( String.Concat( "(*", verb, ")", suffix ).AsMemory() ).Diagnostic?.Code );
 		}
-		foreach ( var suffix in new[] { "(*sr:a)", "(*asr:a)", "\\X(*sr:a)", "(?:a){65}" } ) {
+		foreach ( var suffix in new[] { "(*sr:(?:a){65}a)", "(*asr:(?:a){65}a)", "\\X(*sr:(?:a){65}a)", "(?:a){65}" } ) {
 			Assert.Equal( PcreWordDiagnosticCode.UnsupportedSyntax,
 				PcreWordSequenceCompiler.CompileSequence( String.Concat( "(*", verb, ")", suffix ).AsMemory() ).Diagnostic?.Code );
 		}

@@ -51,7 +51,7 @@ internal static class PcreWordSmokeCases {
 		new( 41, ".", "a\udfff", new() { Utf16 = true }, 0, new( "X", Diagnostic: "InvalidUtf16Subject", DiagnosticOffset: 1 ) ),
 		new( 42, "a", "a", new() { MatchWorkLimit = 1 }, 0, new( "X", Diagnostic: "MatchWorkLimitExceeded" ) ),
 		new( 43, @"(?=a\K)", "a", new(), 0, new( "C", Diagnostic: "InvalidSyntax" ) ),
-		new( 44, @"(*sr:a)", "a", new() { Utf16 = true }, 0, new( "C", Diagnostic: "UnsupportedSyntax" ) ),
+		new( 44, @"\C", "a", new() { Utf16 = true }, 0, new( "C", Diagnostic: "UnsupportedSyntax" ) ),
 		new( 45, "(*CRLF)(?m)^(😀+)$", "x\r\n😀😀\r\n", new() { Utf16 = true }, 0, new( "M", "3:4,3:4" ) ),
 		new( 46, "(*ANYCRLF)(?s).X", "\r\nX", new(), 0, new( "M", "1:2" ) ),
 		new( 47, @"(*ANY)\R$", "😀\u2028", new() { Utf16 = true }, 0, new( "M", "2:1" ) ),
@@ -66,5 +66,13 @@ internal static class PcreWordSmokeCases {
 		new( 56, @"\A(\X)\x{301}\z", "a\u0301", new(), 0, new( "N" ) ),
 		new( 57, @"\G(\X)\n", "\r\n", new() { Utf16 = true }, 0, new( "N" ) ),
 		new( 58, @"(\X{1,2})\X", "a\u0301b\u0308c", new() { Utf16 = true }, 0, new( "M", "0:5,0:4" ) ),
+		new( 59, @"\A(*sr:([\s\S]*))\z", "𐐀𐐁", new() { Utf16 = true }, 0, new( "M", "0:4,0:4" ) ),
+		new( 60, @"\A(*sr:.*)β\z", "aβ", new() { Utf16 = true }, 0, new( "M", "0:2" ) ),
+		new( 61, @"\A(*asr:.*)β\z", "aβ", new() { Utf16 = true }, 0, new( "N" ) ),
+		new( 62, @"\A(*sr:(.*))\z", "0０", new() { Utf16 = true }, 0, new( "N" ) ),
+		new( 63, @"\A(*sr:(...))\z", "漢あ가", new() { Utf16 = true }, 0, new( "M", "0:3,0:3" ) ),
+		new( 64, @"\A(*sr:(...))\z", "あ漢가", new() { Utf16 = true }, 0, new( "N" ) ),
+		new( 65, @"\A(*sr:([\s\S]*))\z", "\ud800", new(), 0, new( "M", "0:1,0:1" ) ),
+		new( 66, @"\A(*sr:(aβ)(*ACCEPT:done))\z", "aβ", new() { Utf16 = true }, 0, new( "M", "0:2,0:2", "0064006F006E0065" ) ),
 	};
 }
