@@ -143,12 +143,12 @@ public sealed class PcreWordNewlineProfileTests {
 	}
 
 	[Theory]
-	[InlineData( "(*CRLF)(*UTF)^a$" )]
-	[InlineData( "(*ANYCRLF)(*UTF)^a$" )]
-	[InlineData( "(*ANY)(*UTF)^a$" )]
-	[InlineData( "(*CR)(*UTF)a" )]
-	[InlineData( "(*UTF)(*CR)a" )]
-	[InlineData( "(*NUL)(*UCP)a" )]
+	[InlineData( "(*CRLF)(*UTF)(*NO_JIT)^a$" )]
+	[InlineData( "(*ANYCRLF)(*UTF)(*NO_JIT)^a$" )]
+	[InlineData( "(*ANY)(*UTF)(*NO_JIT)^a$" )]
+	[InlineData( "(*CR)(*UTF)(*NO_JIT)a" )]
+	[InlineData( "(*UTF)(*CR)(*NO_JIT)a" )]
+	[InlineData( "(*NUL)(*UCP)(*NO_JIT)a" )]
 	[InlineData( "(*BSR_ANYCRLF)(*NOTEMPTY)a" )]
 	[InlineData( "(*LF)(*NO_START_OPT)a" )]
 	[InlineData( "(*BSR_UNICODE)(*CASELESS_RESTRICT)a" )]

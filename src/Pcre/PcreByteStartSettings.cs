@@ -8,7 +8,8 @@ internal readonly record struct PcreByteStartSettings(
 	internal bool NoJit { get; init; }
 
 	internal static PcreByteStartSettings Parse( ReadOnlySpan<byte> source, PcreByteOptions options,
-		CancellationToken cancellationToken, bool newlineOnly = false ) {
+		CancellationToken cancellationToken, int codeUnitWidth = 8 ) {
+		if ( codeUnitWidth is not 8 and not 16 ) { throw new ArgumentOutOfRangeException( nameof( codeUnitWidth ) ); }
 		var utf8 = options.Utf8 || options.MatchInvalidUtf;
 		var ucp = options.Ucp;
 		var newline = options.AnyCrLfNewline ? PcreByteNewline.AnyCrLf : PcreByteNewline.Lf;
@@ -34,7 +35,14 @@ internal readonly record struct PcreByteStartSettings(
 			else if ( TryConsume( source, ref offset, "(*ANY)"u8 ) ) { newline = PcreByteNewline.Any; }
 			else if ( TryConsume( source, ref offset, "(*BSR_UNICODE)"u8 ) ) { bsrAnyCrLf = false; }
 			else if ( TryConsume( source, ref offset, "(*BSR_ANYCRLF)"u8 ) ) { bsrAnyCrLf = true; }
-			else if ( newlineOnly ) { break; }
+			else if ( codeUnitWidth == 16 ) {
+				// Word execution admits mode selection alongside newline/BSR.
+				// Other global policies retain their explicit admission gates.
+				if ( TryConsume( source, ref offset, "(*UTF)"u8 )
+					|| TryConsume( source, ref offset, "(*UTF16)"u8 ) ) { utf8 = true; }
+				else if ( TryConsume( source, ref offset, "(*UCP)"u8 ) ) { ucp = true; }
+				else { break; }
+			}
 			else if ( TryConsume( source, ref offset, "(*UTF)"u8 )
 				|| TryConsume( source, ref offset, "(*UTF8)"u8 ) ) { utf8 = true; }
 			else if ( TryConsume( source, ref offset, "(*UCP)"u8 ) ) { ucp = true; }
