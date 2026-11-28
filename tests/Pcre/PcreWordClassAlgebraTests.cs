@@ -43,11 +43,13 @@ public sealed class PcreWordClassAlgebraTests {
 				(@"(?[[a]])(*SKIP:missing)X|(?[[a] | [b]])", "ab", false),
 				(@"(*CRLF)(?[[\r] | [\n]])X", "\r\nX", false),
 				(@"(*ANYCRLF)(?[[\x09-\x0c] & \s])X", "\r\nX", false),
+				(@"(*ANYCRLF)(?i)(?[[z\x09-\x0c] & \s])X", "\r\nX", false),
 				(@"\A([a-z--[aeiou]]+)\1\z", "bcbc", true),
 				(@"\A(*sr:([\p{L}||[0-9]]+))\z", "ab1", true),
 				(@"\A[a||[^a]]\z", "😀", true), (@"(?xx)\A[ a - z && [ ^ b - y ] ]\z", "a", true),
 				(@"(*CRLF)[\r||\n]X", "\r\nX", true),
 				(@"(*ANYCRLF)[\x09-\x0c&&\s]X", "\r\nX", true),
+				(@"(*ANYCRLF)(?i)[z\x09-\x0c&&\s]X", "\r\nX", true),
 				(@"\A(?[[a&&b] & [b]])\z", "b", true),
 				(@"\A(?[[a||b] & [|]])\z", "|", true)
 			};
@@ -88,7 +90,7 @@ public sealed class PcreWordClassAlgebraTests {
 			var fields = row.Split( ';' );
 			if ( int.Parse( fields[0], CultureInfo.InvariantCulture ) != profile ) { continue; }
 			var expression = expressions[int.Parse( fields[1], CultureInfo.InvariantCulture )];
-			var pattern = String.Concat( @"\A(", alt ? String.Concat( "[", expression, "]" ) : String.Concat( "(?[", expression, "])" ), @")\z" );
+			var pattern = String.Concat( @"\A(", alt ? WrapUtsExpression( expression ) : String.Concat( "(?[", expression, "])" ), @")\z" );
 			var compiled = Compile( pattern, new() { Utf16 = true, Ucp = ( profile & 1 ) != 0,
 				Caseless = ( profile & 2 ) != 0, AltExtendedClass = alt } );
 			var mask = Convert.FromHexString( fields[2] );
@@ -120,7 +122,7 @@ public sealed class PcreWordClassAlgebraTests {
 			var fields = row.Split( ';' );
 			if ( int.Parse( fields[0], CultureInfo.InvariantCulture ) != profile ) { continue; }
 			var expression = expressions[int.Parse( fields[1], CultureInfo.InvariantCulture )];
-			var pattern = String.Concat( @"\A(", alt ? String.Concat( "[", expression, "]" ) : String.Concat( "(?[", expression, "])" ), @")\z" );
+			var pattern = String.Concat( @"\A(", alt ? WrapUtsExpression( expression ) : String.Concat( "(?[", expression, "])" ), @")\z" );
 			var compiled = Compile( pattern, new() { Utf16 = true, Ucp = ( profile & 2 ) != 0,
 				Caseless = ( profile & 4 ) != 0, AltExtendedClass = alt } );
 			var mask = Convert.FromHexString( fields[2] );
@@ -269,6 +271,13 @@ public sealed class PcreWordClassAlgebraTests {
 			? FormattableString.Invariant( $"{value.ByteIndex}:{value.ByteLength}" ) : "-" ) );
 		var map = new PcreDualWidthCoordinates( bytes, subject );
 		Assert.Equal( map.ByteCaptures( byteSpans ), map.WordCaptures( Spans( wordResult.Match ) ) );
+	}
+
+	private static string WrapUtsExpression( string expression ) {
+		// The frozen UTS corpus includes leading x/xx scopes. They remain
+		// grammar outside the nested class used to exercise expression lowering.
+		var prefix = expression.StartsWith( "(?", StringComparison.Ordinal ) ? expression.IndexOf( ')' ) + 1 : 0;
+		return String.Concat( expression[..prefix], "[", expression[prefix..], "]" );
 	}
 
 	private static PcreCompiledWordPattern Compile( string source, PcreWordOptions options ) {

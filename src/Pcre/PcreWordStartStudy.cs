@@ -55,9 +55,11 @@ internal static class PcreWordStartStudy {
 
 		First FirstExpression( PcreByteScalarExpression expression ) {
 			var stack = new bool[expression.StackDepth];
-			var cr = PcreScalarClassExpression.Evaluate( expression.Terms, '\r', stack, true, false,
+			// CR/LF have no case partners. Do not assume raw operands have the
+			// sorted range closure used by Unicode caseless evaluation.
+			var cr = PcreScalarClassExpression.Evaluate( expression.Terms, '\r', stack, false, false,
 				ref visits, MaximumVisits, null, cancellationToken );
-			var lf = PcreScalarClassExpression.Evaluate( expression.Terms, '\n', stack, true, false,
+			var lf = PcreScalarClassExpression.Evaluate( expression.Terms, '\n', stack, false, false,
 				ref visits, MaximumVisits, null, cancellationToken );
 			return cr < 0 || lf < 0 ? default : new( true, false, cr > 0, lf > 0 );
 		}
