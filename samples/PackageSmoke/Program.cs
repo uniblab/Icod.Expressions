@@ -48,6 +48,33 @@ foreach ( var compile in new[] { true, false } ) {
 }
 Console.WriteLine( JsonSerializer.Serialize( new { kind = "pcre-package-smoke", cases = pcreCases, view = 1, cancellation = pcreCancellations, failed = 0 } ) );
 
+var pcreWordCases = 0;
+foreach ( var item in PcreWordSmokeCases.All ) {
+	var actual = PcreWordSmoke.Run( item );
+	if ( actual != item.Expected ) {
+		throw new InvalidOperationException( $"PCRE word package case {item.Id}: expected {item.Expected}, actual {actual}." );
+	}
+	pcreWordCases++;
+}
+var pcreWordCancellations = 0;
+foreach ( var utf in new[] { false, true } ) {
+	PcreWordSmoke.VerifyObservedView( utf );
+	PcreWordSmoke.VerifyReuse( utf );
+	foreach ( var compile in new[] { false, true } ) {
+		try {
+			PcreWordSmoke.VerifyCancellation( utf, compile );
+			throw new InvalidOperationException( "Word cancellation did not propagate." );
+		} catch ( OperationCanceledException ) {
+			pcreWordCancellations++;
+		}
+	}
+	PcreWordSmoke.VerifyInterruptedMatch( utf );
+	pcreWordCancellations++;
+}
+Console.WriteLine( JsonSerializer.Serialize( new {
+	kind = "pcre-word-package-smoke", cases = pcreWordCases, view = 2, cancellation = pcreWordCancellations, reuse = 2, failed = 0
+} ) );
+
 var pcreAllocationProfiles = PcreAllocationCases.All.Select( PcreAllocationConsumer.Run ).ToArray();
 Console.WriteLine( JsonSerializer.Serialize( new {
 	kind = "pcre-allocation-smoke", passed = pcreAllocationProfiles.Length, failed = 0,

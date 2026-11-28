@@ -2,8 +2,8 @@
 
 ## Current implementation plan
 
-The Revision 4 stocktake used `deddee7`, the merge of [#371](https://github.com/uniblab/Icod.Expressions/pull/371). The plan below includes the subsequent native 16-bit match-start reset.
-Revision 4 calls for one library with distinct match selection rules and two native PCRE widths. The public GNU providers already search strings and bytes and select the leftmost-longest match. The internal PCRE engines search in alternative order and return the first successful path. The next PCRE change is **a package-only probe for raw 16-bit and UTF-16 matching**. The larger milestone is that a package consumer can run the same supported expression on bytes and on a .NET string and get the right captures in each input’s own coordinates.
+The Revision 4 stocktake used `deddee7`, the merge of [#371](https://github.com/uniblab/Icod.Expressions/pull/371). The plan below includes the subsequent native 16-bit match-start reset and word package consumer.
+Revision 4 calls for one library with distinct match selection rules and two native PCRE widths. The public GNU providers already search strings and bytes and select the leftmost-longest match. The internal PCRE engines search in alternative order and return the first successful path. The next PCRE change is **pair-aware newline handling for raw 16-bit and UTF-16 matching**. The larger milestone is that a package consumer can run the same supported expression on bytes and on a .NET string and get the right captures in each input’s own coordinates.
 
 ### What works at this revision
 
@@ -13,15 +13,14 @@ Revision 4 calls for one library with distinct match selection rules and two nat
 | Strict BRE/ERE and GNU configuration (N00–N05) | The three inherited GNU-style providers and their string/byte contracts are public. The audit maps 26 Gnulib syntax bits and 13 named macros and records two ERE middle-anchor differences from the POSIX reference. | Deliver strict BRE and ERE facades, composable GNU profiles, and an independently tested foundation that preserves existing callers. [Extraction and standards audit](EXTRACTION-READINESS.md) |
 | Raw bytes and UTF-8 (P00–P09) | ASCII, NUL and high bytes run directly on byte input. The engine supports journaled captures, calls, lookarounds, verbs and `\K`. UTF-8 adds strict validation or valid-fragment matching, Unicode 17 properties, UCP classes, folding, graphemes and script runs. Byte offsets survive matching and capture rollback. | Freeze the supported syntax, options, deviations, resource behavior and performance. PCRE2 10.48 supplies both width references. Perl 5.40.1 covers a declared overlap. [Syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md) · [Byte contract](PCRE-INTERNAL-CONTRACT.md) · [Perl overlap](../tests/Pcre/Native/perl-overlap.md) |
 | Raw 16-bit and strict UTF-16 (P10/P11) | The shared parser and bounded word executor read original units. Raw mode can match an isolated surrogate. UTF-16 consumes supplementary scalars and reports code-unit offsets. Both support nested repetition, capture rollback, references, assertions, calls/recursion, conditions, atomic groups, scoped `ACCEPT`, `PRUNE`, `COMMIT`, `THEN` and bare/named `SKIP`. Named `SKIP` resolves `MARK` history and implements interpreter replay. `\K` resets the reported match start. | Graphemes, script runs, pair-aware newline search and wider option coverage are open. Word lowering caps pattern length at 4,096 units and bounds expansion. Matching shares 1,024 frames among retries, calls and history. General admission and malformed-input policy still need qualification. [Compiler](../src/Pcre/PcreWordSequenceCompiler.cs) · [Matcher](../src/Pcre/PcreCompiledWordPattern.cs) · [Named SKIP evidence](PCRE-WORD-NAMED-SKIP.md) |
-| Cross-width and delivery (P12–P18) | Selected managed cross-width fixtures, an independent coordinate mapper, byte package probes, deterministic resource tests and seven Grep component workloads exist. | Both PCRE surfaces are internal. General cross-width equivalence, public package consumers, partial matches, iteration, substitution and release qualification remain open. [Coordinate fixtures](../tests/Pcre/PcreDualWidthCoordinateTests.cs) · [Package probe](../samples/PackageSmoke/README.md) · [Workload protocol](../tools/PcreWorkloadComparison/README.md) |
+| Cross-width and delivery (P12–P18) | Selected managed cross-width fixtures, an independent coordinate mapper, byte and word package probes, deterministic resource tests and seven Grep component workloads exist. | Both PCRE surfaces are internal. General cross-width equivalence, public package consumers, partial matches, iteration, substitution and release qualification remain open. [Coordinate fixtures](../tests/Pcre/PcreDualWidthCoordinateTests.cs) · [Package probe](../samples/PackageSmoke/README.md) · [Workload protocol](../tools/PcreWorkloadComparison/README.md) |
 
 The #371 word corpus exercised 1,128 fixtures under eight compiled defaults and 64 call masks, yielding 577,536 comparisons of capture vectors and successful labels. Its six-host PR run passed 175,087 .NET 10 tests per host while building for .NET 8, 9 and 10. These counts describe different units of evidence for the named-SKIP increment. [PR qualification](https://github.com/uniblab/Icod.Expressions/actions/runs/46087992367)
 
 ### Next PCRE pull requests
 
-1. **Put the word path through the packaged DLL.** Extend the existing internal package probe with raw16 and UTF-16 patterns on sliced memory, including a raw surrogate, a supplementary capture, a failed match and a controlled diagnostic. Exercise the same cases on Windows, Linux and macOS across x64 and ARM64. Keep the public API decision for P18. [Package sample](../samples/PackageSmoke/README.md)
-2. **Complete line handling before extending start optimizations.** LF, CR and NUL line modes work today. `\R` already consumes CRLF atomically and has its own BSR setting. Implement CRLF, ANYCRLF and ANY as line conventions. Check dot, anchors, final newline, every start around a pair, and `SKIP` restarts against PCRE2-16. Preserve the distinction between passing over a pair and an eligible native search starting at LF. [Word newline evidence](PCRE-WORD-NEWLINE-PROFILES.md)
-3. **Add `\X`, then script runs, in separate changes.** Use the existing pinned Unicode tables and native word navigation. For `\X`, cover combining sequences, emoji ZWJ sequences and regional-indicator pairs. For script runs, cover mixed scripts and digit sets. Compare capture endpoints, retry behavior and work limits for each width. Then close the remaining source directives, classes and options against an explicit four-mode matrix. Record separate decisions for tolerant UTF-16, UTF `\C` and executable callouts. [Grapheme fixtures](../tests/Pcre/PcreGraphemeReferenceTests.cs) · [Script-run fixtures](../tests/Pcre/PcreScriptRunReferenceTests.cs)
+1. **Complete line handling before extending start optimizations.** LF, CR and NUL line modes work today. `\R` already consumes CRLF atomically and has its own BSR setting. Implement CRLF, ANYCRLF and ANY as line conventions. Check dot, anchors, final newline, every start around a pair, and `SKIP` restarts against PCRE2-16. Preserve the distinction between passing over a pair and an eligible native search starting at LF. [Word newline evidence](PCRE-WORD-NEWLINE-PROFILES.md)
+2. **Add `\X`, then script runs, in separate changes.** Use the existing pinned Unicode tables and native word navigation. For `\X`, cover combining sequences, emoji ZWJ sequences and regional-indicator pairs. For script runs, cover mixed scripts and digit sets. Compare capture endpoints, retry behavior and work limits for each width. Then close the remaining source directives, classes and options against an explicit four-mode matrix. Record separate decisions for tolerant UTF-16, UTF `\C` and executable callouts. [Grapheme fixtures](../tests/Pcre/PcreGraphemeReferenceTests.cs) · [Script-run fixtures](../tests/Pcre/PcreScriptRunReferenceTests.cs)
 
 Two admission decisions can proceed independently of those changes. Keep word `ACCEPT` with selected-capture returns explicitly rejected until a fixture and contract address the native interpreter error and JIT result. For `COMMIT` whose first-unit proof comes only from a positive assertion, qualify the interactions with required-unit and start-bitmap searches before admitting the shape. Test each retained rejection as well as each newly accepted form. [ACCEPT evidence](PCRE-WORD-ACCEPT.md) · [COMMIT evidence](PCRE-WORD-CUTS.md)
 
@@ -38,6 +37,20 @@ Two admission decisions can proceed independently of those changes. Keep word `A
 ## Implementation history
 
 The records below describe the scope and next steps at the time of each change. Use the current implementation plan above for scheduling.
+
+## Native 16-bit package consumer
+
+The existing package-only executable now runs 44 word protocols using the
+candidate DLL. Raw and strict UTF-16 checks include sliced input, supplementary
+captures, isolated raw surrogates, branch/call rollback, labels, reset endpoints,
+no-match results and controlled diagnostics. Tests compare the 32 matching
+protocols with PCRE2-16 and pin the 12 managed diagnostic outcomes.
+
+The consumer overwrites original pattern storage and verifies subject views,
+cancellation and durable capture/label metadata across reuse. PR and main
+package jobs require its complete structured result after a fresh isolated
+restore on each of the six native hosts. Pair-aware newline execution is next.
+[Package evidence](../samples/PackageSmoke/README.md#raw-16-bit-and-utf-16-package-consumer)
 
 ## Native 16-bit match-start reset
 
