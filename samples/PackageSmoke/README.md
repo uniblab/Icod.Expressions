@@ -1,15 +1,15 @@
 # Package-only GNU/POSIX and internal PCRE consumer
 
-This executable references only the Icod.Expressions NuGet package. It keeps
-its existing GNU/POSIX checks and adds 42 PCRE protocols, one observed byte-view
-control and two cancellation controls. There is no project reference, native
-PCRE.NET runtime dependency, copied matcher or reflection in this consumer.
+This executable references only the Icod.Expressions NuGet package. It runs
+GNU/POSIX checks, 42 byte PCRE protocols and 44 native word PCRE protocols.
+It also checks observed input views, cancellation and reuse. The executable
+uses managed package entry points directly.
 
 PCRE remains experimental and internal. The explicitly named
 Icod.Expressions.PackageSmoke friend is for this repository's package gate;
 it is not an exported or stable PCRE API. See the
 [bounded candidate contract](../../doc/PCRE-PACKAGE-CONSUMER-DESIGN.md).
-The two exercise/data source files are also linked into tests; the packaged
+The exercise and data files are also linked into tests. The packaged
 executable compiles them against the candidate package itself.
 
 The cases check raw NUL/high bytes, UTF-8/supplementary values, UCP, original
@@ -149,3 +149,32 @@ one compiled pattern per definition and the original entry interleaved after
 every policy. Preserve all six earlier records, isolated candidate feeds/caches,
 all target builds and net10-only execution. This remains an internal bounded
 contract; broader hostile-input/release conformance stays open.
+
+## Raw 16-bit and UTF-16 package consumer
+
+The same executable compiles literal and regex patterns from original word
+memory and searches sliced subjects. The 44 word protocols include isolated
+surrogates in raw mode, supplementary UTF-16 captures, NUL and high units,
+unset groups, call and branch rollback, named marks, signed `\K` endpoints,
+successful empty matches, no-match results and controlled compile/match errors.
+Invalid surrogate sentinels sit outside each visible pattern and subject view.
+
+The compiler's owned source survives overwriting the original pattern buffer.
+Two observed-view controls change the subject during matching. Two reuse
+controls retain capture ranges, names and labels across caller buffer mutation
+and subsequent matches. Six cancellation controls cover pre-cancelled compile
+and match calls and interruption during matching, followed by reuse.
+
+The word result is emitted once, after every check passes.
+
+```json
+{"kind":"pcre-word-package-smoke","cases":44,"view":2,"cancellation":6,"reuse":2,"failed":0}
+```
+
+Tests link the same consumer code and compare all 32 matching/no-match
+protocols with the pinned PCRE2-16 reference. The 12 diagnostic protocols pin
+the managed error codes and original-unit offsets. PR and main jobs require
+the complete word result on all six native hosts after an isolated package
+restore. The package friend assembly remains the entry point for these internal
+PCRE checks. Public PCRE APIs and general cross-width release qualification
+remain scheduled work.

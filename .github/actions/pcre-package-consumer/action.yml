@@ -1,5 +1,5 @@
 name: Verify fresh PCRE package consumer
-description: Pack the built library, restore only that candidate in an isolated cache, and verify the internal byte consumer.
+description: Pack the built library, restore only that candidate in an isolated cache, and verify the internal byte and word consumers.
 inputs:
   configuration:
     required: true
@@ -34,6 +34,11 @@ runs:
           throw 'Expected one complete 42-protocol/one-view/two-cancellation PCRE package result.'
         }
         Write-Host 'PASS: fresh PCRE package consumer: 42 protocols, one view, two cancellation controls'
+        $pcreWordRecords = @($pcreSmokeOutput | Where-Object { $_ -match '^\{"kind":"pcre-word-package-smoke",' } | ForEach-Object { $_ | ConvertFrom-Json })
+        if ($pcreWordRecords.Count -ne 1 -or $pcreWordRecords[0].cases -ne 44 -or $pcreWordRecords[0].view -ne 2 -or $pcreWordRecords[0].cancellation -ne 6 -or $pcreWordRecords[0].reuse -ne 2 -or $pcreWordRecords[0].failed -ne 0) {
+          throw 'Expected one complete 44-protocol/two-view/six-cancellation/two-reuse PCRE word package result.'
+        }
+        Write-Host 'PASS: fresh PCRE word package consumer: 44 protocols, two views, six cancellation and two reuse controls'
         $pcreAllocationRecords = @($pcreSmokeOutput | Where-Object { $_ -match '^\{"kind":"pcre-allocation-smoke",' } | ForEach-Object { $_ | ConvertFrom-Json })
         if ($pcreAllocationRecords.Count -ne 1 -or $pcreAllocationRecords[0].passed -ne 4 -or $pcreAllocationRecords[0].failed -ne 0 -or @($pcreAllocationRecords[0].profiles).Count -ne 4) {
           throw 'Expected one complete four-profile PCRE allocation result.'
