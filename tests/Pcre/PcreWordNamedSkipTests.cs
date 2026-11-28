@@ -1095,12 +1095,12 @@ public sealed class PcreWordNamedSkipTests {
 	public void OrderedReplayResetsCapturesAndLabelsAndAnchoringStopsIt( bool utf ) {
 		const string source = "(a)(*MARK:A)(*SKIP:A)c(*SKIP:missing)x|(ac)(*MARK:tail)";
 		var compiled = Compile( source, new() { Utf16 = utf } );
-		var replayed = compiled.Match( "ac".AsMemory(), new() { EndAnchored = true } );
+		var replayed = compiled.Match( "ac".AsMemory(), new PcreMatchPolicy { EndAnchored = true } );
 		Assert.True( replayed.IsSuccess ); Assert.Equal( "0:2,-,0:2", Spans( replayed.Match ) );
 		Assert.Equal( "tail", replayed.Match!.MarkName );
-		Assert.Null( compiled.Match( "ac".AsMemory(), new() { Anchored = true } ).Match );
+		Assert.Null( compiled.Match( "ac".AsMemory(), new PcreMatchPolicy { Anchored = true } ).Match );
 		Assert.Null( compiled.Match( "ac".AsMemory() ).Match );
-		Assert.Equal( "0:2,-,0:2", Spans( compiled.Match( "ac".AsMemory(), new() { EndAnchored = true } ).Match ) );
+		Assert.Equal( "0:2,-,0:2", Spans( compiled.Match( "ac".AsMemory(), new PcreMatchPolicy { EndAnchored = true } ).Match ) );
 	}
 
 	[Fact]
@@ -1132,7 +1132,7 @@ public sealed class PcreWordNamedSkipTests {
 	[Fact]
 	public async Task NamedSkipOwnsSourceAndResultsAcrossSubjectSlicesAndConcurrentReuse() {
 		var source = "(😀)(*MARK:é😀)b(*SKIP:é😀)X|(b)(*MARK:成功)".ToCharArray();
-		var owned = PcreWordSequenceCompiler.CompileSequence( source.AsMemory(), new() { Utf16 = true, Policy = new() { Anchored = true } } );
+		var owned = PcreWordSequenceCompiler.CompileSequence( source.AsMemory(), new() { Utf16 = true, Policy = new PcreMatchPolicy { Anchored = true } } );
 		Assert.True( owned.IsSuccess ); Array.Fill( source, 'z' );
 		var input = "__😀bb__".ToCharArray();
 		var saved = owned.Pattern!.Match( input.AsMemory( 2, 4 ) );
