@@ -47,9 +47,21 @@ internal static class PcreWordStartStudy {
 				PcreByteGroup group => known[group.Body],
 				PcreByteNoncapturingGroup group => known[group.Body],
 				PcreByteScalarSet { Negated: false, Predicates.IsEmpty: true } set => FirstSet( set ),
+				PcreByteScalarExpression expression => FirstExpression( expression ),
 				_ => default
 			};
 			return first with { Empty = first.Empty || optional };
+		}
+
+		First FirstExpression( PcreByteScalarExpression expression ) {
+			var stack = new bool[expression.StackDepth];
+			// CR/LF have no case partners. Do not assume raw operands have the
+			// sorted range closure used by Unicode caseless evaluation.
+			var cr = PcreScalarClassExpression.Evaluate( expression.Terms, '\r', stack, false, false,
+				ref visits, MaximumVisits, null, cancellationToken );
+			var lf = PcreScalarClassExpression.Evaluate( expression.Terms, '\n', stack, false, false,
+				ref visits, MaximumVisits, null, cancellationToken );
+			return cr < 0 || lf < 0 ? default : new( true, false, cr > 0, lf > 0 );
 		}
 
 		First FirstSet( PcreByteScalarSet set ) {

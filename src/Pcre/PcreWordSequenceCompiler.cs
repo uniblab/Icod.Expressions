@@ -76,6 +76,7 @@ internal static class PcreWordSequenceCompiler {
 		}
 		var grammarOptions = new PcreByteOptions {
 			Utf8 = options.Utf16, Ucp = options.Ucp, Caseless = options.Caseless,
+			AltExtendedClass = options.AltExtendedClass,
 			CaselessRestricted = options.CaselessRestricted,
 			AsciiBsD = options.AsciiBsD, AsciiBsS = options.AsciiBsS, AsciiBsW = options.AsciiBsW,
 			AsciiPosix = options.AsciiPosix, AsciiDigit = options.AsciiDigit,
@@ -97,6 +98,9 @@ internal static class PcreWordSequenceCompiler {
 			var hasAccept = false;
 			var hasCommit = false;
 			var hasSelectedReturns = false;
+			var expressionTerms = 0;
+			var expressionMembers = 0;
+			var expressionStack = 0;
 			pending.Push( (root, 0, false, null) );
 			while ( pending.TryPop( out var item ) ) {
 				cancellationToken.ThrowIfCancellationRequested();
@@ -111,6 +115,12 @@ internal static class PcreWordSequenceCompiler {
 							var nested = node;
 							while ( nested is PcreByteRepeat or PcreByteAtomic or PcreByteScriptRun ) {
 								nested = nested switch { PcreByteRepeat repeat => repeat.Child, PcreByteAtomic atomic => atomic.Child, _ => ( (PcreByteScriptRun)nested ).Child };
+							}
+							if ( nested is PcreByteScalarExpression expression ) {
+								if ( expression.Terms.Length > MaximumExpandedNodes - expressionTerms
+									|| !IsSupportedExpression( expression, ref expressionMembers, cancellationToken ) ) { return Error( PcreWordDiagnosticCode.UnsupportedSyntax, expression.OpeningOffset ); }
+								expressionTerms += expression.Terms.Length;
+								expressionStack = Math.Max( expressionStack, expression.StackDepth );
 							}
 							hasAccept |= nested is PcreByteAccept;
 							hasCommit |= nested is PcreByteCommit;
@@ -168,7 +178,7 @@ internal static class PcreWordSequenceCompiler {
 				parser.HasNamedSkip && PcreSourceStartAnchor.HasAlternativeStartAnchor( root, cancellationToken ),
 				pairNewline && PcreByteProgramCompiler.HasExplicitNewline( root ),
 				pairNewline && PcreWordStartStudy.HasLfStartClass( root, compiled.Keys, cancellationToken ),
-				pairNewline ? PcreWordStartStudy.FindFixedPrefix( root, options.Utf16, cancellationToken ) : null ), null );
+				pairNewline ? PcreWordStartStudy.FindFixedPrefix( root, options.Utf16, cancellationToken ) : null, expressionStack ), null );
 		} catch ( PcreByteParseException error ) {
 			return Error( error.Diagnostic.Code == PcreByteDiagnosticCode.UnsupportedSyntax
 				? PcreWordDiagnosticCode.UnsupportedSyntax : PcreWordDiagnosticCode.InvalidSyntax, error.Diagnostic.ByteOffset );
@@ -734,7 +744,7 @@ internal static class PcreWordSequenceCompiler {
 	private static PcreWordAccept BuildAccept( PcreByteAccept accept ) =>
 		new( accept.WordName is { Length: > 0 } name ? VisibleMark( name ) : null );
 
-	private static bool IsSupportedAtom( PcreByteNode node ) => node is PcreByteLiteral or PcreByteAny or PcreByteNewlineSequence or PcreByteGrapheme
+	private static bool IsSupportedAtom( PcreByteNode node ) => node is PcreByteLiteral or PcreByteAny or PcreByteNewlineSequence or PcreByteGrapheme or PcreByteScalarExpression
 		|| node is PcreByteScalarClass property && IsWordClassPredicate( property.Kind )
 		|| node is PcreByteScalarSet set && IsSupportedSet( set );
 
@@ -744,6 +754,33 @@ internal static class PcreWordSequenceCompiler {
 			if ( !IsWordClassPredicate( predicate.Kind ) ) { return false; }
 		}
 		return true;
+	}
+
+	private static bool IsSupportedExpression( PcreByteScalarExpression expression, ref int members, CancellationToken cancellationToken ) {
+		if ( expression.Terms.Length is < 1 or > MaximumExpandedNodes
+			|| expression.StackDepth < 1 || expression.StackDepth > expression.Terms.Length ) { return false; }
+		var depth = 0;
+		var maximum = 0;
+		foreach ( var term in expression.Terms.Span ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( term.Operand is { } operand ) {
+				if ( term.Operation != PcreScalarSetOperation.Operand || operand.SourceMemberCount > 64
+					|| operand.Ranges.Length + operand.Predicates.Length > MaximumExpandedNodes - members ) { return false; }
+				members += operand.Ranges.Length + operand.Predicates.Length;
+				foreach ( var predicate in operand.Predicates.Span ) {
+					cancellationToken.ThrowIfCancellationRequested();
+					if ( predicate.Kind is not ( PcreByteScalarClassKind.AnyScalar or PcreByteScalarClassKind.UniversalCharacterName ) && !IsWordClassPredicate( predicate.Kind ) ) { return false; }
+				}
+				maximum = Math.Max( maximum, ++depth );
+			} else if ( term.Operation == PcreScalarSetOperation.Not ) {
+				if ( depth < 1 ) { return false; }
+			} else if ( term.Operation is PcreScalarSetOperation.And or PcreScalarSetOperation.Or
+				or PcreScalarSetOperation.Subtract or PcreScalarSetOperation.Xor ) {
+				if ( depth < 2 ) { return false; }
+				depth--;
+			} else { return false; }
+		}
+		return depth == 1 && maximum == expression.StackDepth;
 	}
 
 	private static bool IsWordClassPredicate( PcreByteScalarClassKind kind ) => kind is

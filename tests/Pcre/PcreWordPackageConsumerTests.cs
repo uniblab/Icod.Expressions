@@ -17,7 +17,7 @@ public sealed class PcreWordPackageConsumerTests {
 				? PcreNative16Oracle.ExecuteLiteral( source, subject, item.Options.Utf16, (uint)item.Start )
 				: PcreNative16Oracle.ExecuteSequencePolicies( source, subject, item.Options.Utf16, (uint)item.Start,
 					item.Options.Policy.EndAnchored ? 2 : item.Options.Policy.NotEmpty ? 4 : 0,
-					item.Options.Ucp, item.Options.AllowLookaroundBackslashK )[0];
+					item.Options.Ucp, item.Options.AllowLookaroundBackslashK, item.Options.AltExtendedClass )[0];
 			Assert.Equal( item.Expected.Kind, native.Kind );
 			Assert.Equal( item.Expected.Captures, native.Captures );
 			Assert.Equal( item.Expected.Mark, native.Mark );

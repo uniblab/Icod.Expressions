@@ -3,6 +3,7 @@ namespace Icod.Expressions.Pcre;
 internal sealed record PcreWordOptions {
 	public bool Utf16 { get; init; }
 	public bool Ucp { get; init; }
+	public bool AltExtendedClass { get; init; }
 	public bool Caseless { get; init; }
 	public bool CaselessRestricted { get; init; }
 	public bool AsciiBsD { get; init; }

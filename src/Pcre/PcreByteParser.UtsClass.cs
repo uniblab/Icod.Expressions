@@ -36,7 +36,7 @@ internal sealed partial class PcreByteParser {
 						// The existing readers own ordinary source/optimizer metadata.
 						classAlgebra = savedAlgebra;
 						index = openingOffset + 1;
-						return utf8 ? ParseUtf8Bracket( openingOffset ) : ParseBracket( openingOffset );
+						return utf8 || wordSource is not null ? ParseUtf8Bracket( openingOffset ) : ParseBracket( openingOffset );
 					}
 					FlushUtsRun( frame, terms, openingOffset, !frame.Extended && frame.Negated );
 					if ( !frame.HasSequence ) { throw Invalid( openingOffset, "extended class has a trailing operator" ); }
@@ -108,9 +108,9 @@ internal sealed partial class PcreByteParser {
 		if ( frame.Items == 0 ) { return; }
 		var sole = frame.Items == 1 && frame.SoleLiteral;
 		var operand = new PcreByteScalarSet(
-		caseless && utf8 ? PcreUtf8CaseFold.CloseRanges( frame.Ranges, cancellationToken, caselessRestricted, turkishCasing ) : frame.Ranges.ToArray(),
+		caseless && ( utf8 || wordSource is not null && ucp ) ? PcreUtf8CaseFold.CloseRanges( frame.Ranges, cancellationToken, caselessRestricted, turkishCasing, wordSource is not null && !utf8 ) : frame.Ranges.ToArray(),
 			frame.Predicates.ToArray(), negated, frame.ExplicitNewline && !( negated && sole )
-		) { Caseless = caseless, CaselessRestricted = caselessRestricted };
+		) { Caseless = caseless, CaselessRestricted = caselessRestricted, SourceMemberCount = wordSource is null ? 0 : frame.Items };
 		AddUtsTerm( terms, new( PcreScalarSetOperation.Operand, operand ), offset );
 		JoinUtsSequence( frame, terms, offset );
 		frame.Ranges.Clear(); frame.Predicates.Clear(); frame.Items = 0;
@@ -164,6 +164,6 @@ internal sealed partial class PcreByteParser {
 			else if ( term.Operation != PcreScalarSetOperation.Not ) { depth--; }
 		}
 		var expression = new PcreByteScalarExpression( terms.ToArray(), maximum, explicitNewline, offset );
-		return utf8 ? expression : expression with { ByteProjection = ProjectByteExpression( expression ) };
+		return utf8 || wordSource is not null ? expression : expression with { ByteProjection = ProjectByteExpression( expression ) };
 	}
 }
