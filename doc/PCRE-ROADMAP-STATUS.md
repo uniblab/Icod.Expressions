@@ -1,5 +1,45 @@
 # PCRE roadmap status
 
+## Current implementation plan
+
+Reviewed at `deddee7`, the merge of [#371](https://github.com/uniblab/Icod.Expressions/pull/371).
+Revision 4 calls for one library with distinct match selection rules and two native PCRE widths. The public GNU providers already search strings and bytes and select the leftmost-longest match. The internal PCRE engines search in alternative order and return the first successful path. The next PCRE change is **16-bit `\K` match-start reset**. The larger milestone is that a package consumer can run the same supported expression on bytes and on a .NET string and get the right captures in each input’s own coordinates.
+
+### What works at this revision
+
+| Area | Verified on the merged baseline | What still needs a decision or implementation |
+|---|---|---|
+| Extraction and public providers (A00–E04) | E02 reproduced 35 source blobs, 214 focused cases and a 44-case result corpus. A scratch bridge exercised 26 forwarded type identities and 725 consumer cases. | The accepted freeze covers the audited cases. Production migration of the five consumers and retirement of the CommandFramework copy are separate milestones. [E02 review](E02-Final-Parity-Review.md) · [E03 bridge](E03-Compatibility-Bridge.md) |
+| Strict BRE/ERE and GNU configuration (N00–N05) | The three inherited GNU-style providers and their string/byte contracts are public. The audit maps 26 Gnulib syntax bits and 13 named macros and records two ERE middle-anchor differences from the POSIX reference. | Deliver strict BRE and ERE facades, composable GNU profiles, and an independently tested foundation that preserves existing callers. [Extraction and standards audit](EXTRACTION-READINESS.md) |
+| Raw bytes and UTF-8 (P00–P09) | ASCII, NUL and high bytes run directly on byte input. The engine supports journaled captures, calls, lookarounds, verbs and `\K`. UTF-8 adds strict validation or valid-fragment matching, Unicode 17 properties, UCP classes, folding, graphemes and script runs. Byte offsets survive matching and capture rollback. | Freeze the supported syntax, options, deviations, resource behavior and performance. PCRE2 10.48 supplies both width references. Perl 5.40.1 covers a declared overlap. [Syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md) · [Byte contract](PCRE-INTERNAL-CONTRACT.md) · [Perl overlap](../tests/Pcre/Native/perl-overlap.md) |
+| Raw 16-bit and strict UTF-16 (P10/P11) | The shared parser and bounded word executor read original units. Raw mode can match an isolated surrogate. UTF-16 consumes supplementary scalars and reports code-unit offsets. Both support nested repetition, capture rollback, references, assertions, calls/recursion, conditions, atomic groups, scoped `ACCEPT`, `PRUNE`, `COMMIT`, `THEN` and bare/named `SKIP`. Named `SKIP` now resolves `MARK` history and implements interpreter replay. | `\K`, graphemes, script runs, pair-aware newline search and wider option coverage are open. Word lowering caps pattern length at 4,096 units and bounds expansion. Matching shares 1,024 frames among retries, calls and history. General admission and malformed-input policy still need qualification. [Compiler](../src/Pcre/PcreWordSequenceCompiler.cs) · [Matcher](../src/Pcre/PcreCompiledWordPattern.cs) · [Named SKIP evidence](PCRE-WORD-NAMED-SKIP.md) |
+| Cross-width and delivery (P12–P18) | Selected managed cross-width fixtures, an independent coordinate mapper, byte package probes, deterministic resource tests and seven Grep component workloads exist. | Both PCRE surfaces are internal. General cross-width equivalence, public package consumers, partial matches, iteration, substitution and release qualification remain open. [Coordinate fixtures](../tests/Pcre/PcreDualWidthCoordinateTests.cs) · [Package probe](../samples/PackageSmoke/README.md) · [Workload protocol](../tools/PcreWorkloadComparison/README.md) |
+
+The #371 word corpus exercised 1,128 fixtures under eight compiled defaults and 64 call masks, yielding 577,536 comparisons of capture vectors and successful labels. Its six-host PR run passed 175,087 .NET 10 tests per host while building for .NET 8, 9 and 10. These counts describe different units of evidence for the named-SKIP increment. [PR qualification](https://github.com/uniblab/Icod.Expressions/actions/runs/46087992367)
+
+### Next PCRE pull requests
+
+1. **Implement word `\K`.** Reuse the parsed reset node and journal the reported start of group zero independently of the search candidate. `ab\Kc` on `abc` must report `c`. If the reset branch of `(?:ab\KX|ab)c` fails, the winning branch must report `abc`. Cover captures before the reset, empty matches, calls, cuts and retries. On `😀\Kx`, the start of `x` is byte 4 in UTF-8 and unit 2 in UTF-16. Pin default assertion rejection separately from optional lookaround resets, where the reported endpoints can be reversed. Compare native16 capture vectors under the applicable compile/call policies and check work exhaustion, cancellation and reuse. [Byte reset fixtures](../tests/Pcre/PcreLookaroundResetReferenceTests.cs)
+2. **Put the word path through the packaged DLL.** Extend the existing internal package probe with raw16 and UTF-16 patterns on sliced memory, including a raw surrogate, a supplementary capture, a failed match and a controlled diagnostic. Exercise the same cases on Windows, Linux and macOS across x64 and ARM64. Keep the public API decision for P18. [Package sample](../samples/PackageSmoke/README.md)
+3. **Complete line handling before extending start optimizations.** LF, CR and NUL line modes work today. `\R` already consumes CRLF atomically and has its own BSR setting. Implement CRLF, ANYCRLF and ANY as line conventions. Check dot, anchors, final newline, every start around a pair, and `SKIP` restarts against PCRE2-16. Preserve the distinction between passing over a pair and an eligible native search starting at LF. [Word newline evidence](PCRE-WORD-NEWLINE-PROFILES.md)
+4. **Add `\X`, then script runs, in separate changes.** Use the existing pinned Unicode tables and native word navigation. For `\X`, cover combining sequences, emoji ZWJ sequences and regional-indicator pairs. For script runs, cover mixed scripts and digit sets. Compare capture endpoints, retry behavior and work limits for each width. Then close the remaining source directives, classes and options against an explicit four-mode matrix. Record separate decisions for tolerant UTF-16, UTF `\C` and executable callouts. [Grapheme fixtures](../tests/Pcre/PcreGraphemeReferenceTests.cs) · [Script-run fixtures](../tests/Pcre/PcreScriptRunReferenceTests.cs)
+
+Two admission decisions can proceed independently of those changes. Keep word `ACCEPT` with selected-capture returns explicitly rejected until a fixture and contract address the native interpreter error and JIT result. For `COMMIT` whose first-unit proof comes only from a positive assertion, qualify the interactions with required-unit and start-bitmap searches before admitting the shape. Test each retained rejection as well as each newly accepted form. [ACCEPT evidence](PCRE-WORD-ACCEPT.md) · [COMMIT evidence](PCRE-WORD-CUTS.md)
+
+### From internal engines to a release
+
+| Order and dependency | Implementation and exit criteria |
+|---|---|
+| **Start the byte freeze now (P00/P01/P09).** This can run alongside word execution. | Classify features by mode as supported, rejected or deferred, with a fixture and diagnostic or outcome for each decision. Keep Grep’s ASCII `\d` and `(?-aD)` behavior in its consumer fixtures. Reconcile the remaining UTF start-search differences in #102. Retain #100’s in-bounds valid-fragment contract for malformed `Xuc` matches and revisit it when the reference changes. Qualify strict and tolerant starts, package behavior, allocations and controlled-host timings for ASCII, high bytes and UTF-8. [#102](https://github.com/uniblab/Icod.Expressions/issues/102) · [#100](https://github.com/uniblab/Icod.Expressions/issues/100) |
+| **Grow the cross-width corpus with every word feature (P10–P12).** Freeze it after both profiles are specified. | Run shared valid fixtures on both managed engines and both pinned native references. Compare status, every capture including unset/empty groups, names, labels and diagnostic positions using an independent scalar map. Keep original offsets in failure records. Give malformed bytes, isolated surrogates and raw units width-specific expectations. Check the strict word validation window around lookbehind and nonzero starts. Document each admission limit or replace it with bounded lowering and parity tests. Both subject paths must operate on their original input. [Dual-width tests](../tests/Pcre/PcreDualWidthReferenceTests.cs) |
+| **Normalize the public foundation alongside PCRE (N00–N05).** Begin with strict syntax and GNU profile contracts. | Give strict BRE/ERE their own standards fixtures, including the middle-anchor cases. Verify each supported GNU syntax bit and named profile against pinned Gnulib. Share source coordinates, set algebra and internal analysis where the dialects agree. Keep POSIX locale rules and PCRE UCP rules explicit. Freeze public signatures after package-only strict and GNU clients pass and the frozen extraction corpus still agrees. [A05 baseline](Icod.Expressions-A05-Final-Candidate.md) |
+| **Finish match operations and hardening (P13–P17).** Start bounded differential testing now. | Implement soft/hard partial results, empty-match retry and iteration, then numbered/named substitution with bounded native-width output. Test truncated input and zero-length progress. Verify compile, frame, journal and memory limits, cancellation and reuse on each path. Compare optimized and reference matching on both widths, retain reduced failing seeds, and measure byte, string and BRE/ERE workloads on controlled hosts before enabling new optimizations. [Resource contract](PCRE-RESOURCE-ERROR-CONTRACT.md) · [Existing reducer](../tests/Pcre/Native/policy-differential-reduction.md) |
+| **Freeze the API and qualify consumers (P18, E03/E04).** | Run ordinary package-only byte and string clients through public APIs, record the compatibility matrix and deviations, and pass the six-host build/test/package checks. The distributable bridge needs old-client type identity and real consumer results. Stage ProcPs and DiffUtils, then CoreUtils and LineEditor. Migrate Grep last, after command-level `-P` behavior, performance and six-RID archives pass. Retire CommandFramework’s production copy once every known migration is validated. [Bridge record](E03-Compatibility-Bridge.md) · [Grep migration criteria](https://github.com/uniblab/Icod.Expressions/issues/7) |
+
+## Implementation history
+
+The records below describe the scope and next steps at the time of each change. Use the current implementation plan above for scheduling.
+
 ## Native 16-bit named SKIP
 
 The [named-SKIP record](PCRE-WORD-NAMED-SKIP.md) adds original-word name lookup,
@@ -438,112 +478,7 @@ classes, branches, captures and the P10–P12 release gates remain open.
 
 ## ASCII and UTF inventory (16-bit assertion update)
 
-Revision 4 of *Icod.Expressions Architecture Critique and Production Development Roadmap*
-(2026-09-03, pp. 8–9, 24–25 and 35–42) calls for one PCRE language with two native
-code-unit widths. ASCII data can already be searched directly as bytes. The largest
-remaining implementation gap is general regex execution on .NET strings. The byte
-engine is substantially further along, with its compatibility and release review
-still open. This inventory was first recorded after #326 and now includes merged
-[PR #366](https://github.com/uniblab/Icod.Expressions/pull/366) and the
-scoped-ACCEPT increment above. Qualification evidence for earlier
-milestones remains dated below.
-
-### What callers can exercise today
-
-PCRE entry points are internal. The public, extracted GNU Basic, Extended and Emacs
-providers already accept string and byte subjects, preserve source coordinates and
-select the leftmost-longest match. PCRE selects the first successful ordered path.
-The two families need separate compatibility evidence. [Public provider contract](../README.md#description)
-
-| PCRE mode | Implemented behavior | Outstanding work |
-|---|---|---|
-| Raw 8-bit, including ASCII | The parser and bounded, iterative matcher operate on original bytes, including NUL and 0x80–0xFF. They implement ordered alternatives, repetition, captures with rollback, backreferences, lookarounds and control verbs. Results use byte offsets. | Freeze the accepted syntax, options, diagnostics and resource behavior against PCRE2-8. Qualify both ASCII-heavy searches and raw high-byte cases. |
-| UTF-8 | Forward and reverse scalar reads preserve byte offsets. The engine supports strict validation, tolerant matching across valid fragments, Unicode properties, UCP classes, case folding, word boundaries, graphemes and newline conventions within the tested profile. | Close strict and tolerant error/start-offset coverage, remaining optimizer differences and the byte performance baseline. Decide the UTF code-unit escape and callout contracts. |
-| Raw 16-bit | Literal and bounded sequence entry points read original units, including isolated surrogates. The shared parser admits native non-ASCII spelling, dot, bounded scalar classes, absolute and LF/CR/NUL line assertions, word boundaries, newline sequences with independent BSR selectors, ordered paths, nested and repeated groups, finite atom counts and up to 64 retained unbounded repeats, using explicit retry, return and iteration frames. Numbered/named captures have journaled rollback and immutable results; numbered/relative/named backreferences support repetition. Atomic positive/negative lookahead and fixed/bounded-variable lookbehind preserve captures and original positions. Non-atomic positive assertions can resume retained body choices. Direct greedy/lazy/possessive assertion repeats preserve finite count and capture semantics. Consuming atomic groups and possessive atom/group/reference repeats commit inner choices while retaining outer capture rollback. Numbered/relative/named calls, DEFINE blocks, selected returned captures and recursion reuse retained bodies and caller capture checkpoints. Capture, recursion, VERSION and atomic assertion conditions select committed arms, including repetition and quantified DEFINE blocks. FAIL/F use ordinary backtracking; MARK and named failure preserve original word labels with transactional rollback. Scoped ACCEPT, its direct quantifiers and native dispatch retain capture closure and labels. Caseless and UCP predicates use pinned Unicode tables. | Add remaining cut verbs; qualify ACCEPT with selected returns; qualify the broader grammar and package consumer. |
-| Strict UTF-16 | The same two entry points read original `char` memory directly and match supplementary scalars. The admitted sequence grammar includes classes, caseless predicates, word boundaries, LF/CR/NUL line assertions, atomic newline sequences with BSR selectors, ordered paths, nested and repeated groups, finite atom counts and explicit retry/return/iteration frames with empty-progress guards. Numbered/named captures use journaled rollback and immutable results; names read original UTF-16. Backreferences compare captured scalars with reference-local casing and support repetition. Atomic and non-atomic lookahead and fixed/bounded-variable lookbehind share scalar-aware bodies and the capture journal, including native endpoint visibility. Direct greedy/lazy/possessive assertion repeats retain finite count and capture behavior. Consuming atomic groups and possessive repeats keep scalar/unit consumption, capture state and bounded commitment. Calls, DEFINE blocks, selected returned captures and recursion share scalar-aware bodies and the capture journal. Capture, recursion, VERSION and atomic assertion conditions share the same scalar-aware bodies and rollback state, including repeated conditions and quantified DEFINE blocks. FAIL/F and MARK share the original-unit label parser and retry-frame restoration. Scoped ACCEPT shares original-unit captures, labels and native dispatch. Starts, diagnostics and all capture spans use 16-bit code units. | Add graphemes, CRLF/ANYCRLF/ANY newline search behavior and remaining cut verbs; qualify ACCEPT with selected returns. Freeze invalid-surrogate behavior, including the disposition of tolerant mode. |
-
-Three choices matter for interpreting these rows. First, raw bytes and UTF-8 both
-represent ASCII directly, while UCP and its ASCII restrictions separately control
-what expressions such as `\d` match. Keeping Grep's ASCII-digit default and its `(?-aD)`
-override is part of its consumer contract. Second, the bounded 16-bit regex
-entry accepts native non-ASCII pattern spelling and preserves code-unit offsets.
-Third, strict byte matching validates the whole subject, while the
-current strict word sequence validates from the requested start, extended by
-the largest retained lookbehind width or at least one character when a word
-boundary or `\A` needs it. Preserve the native validation window as grammar
-and call targets expand.
-[Byte syntax matrix](PCRE-SYNTAX-ACCEPTANCE-MATRIX.md) ·
-[Word literals](PCRE-WORD-LITERAL.md) · [Word sequences](PCRE-WORD-SEQUENCES.md)
-
-### What the evidence establishes
-
-- **Extraction and foundation (A00–N05).** The accepted A05/E02 comparison preserves
-  35 source blobs, 214 focused cases and a 44-case parity corpus. E03 has a
-  package-only probe and 725 scratch bridge cases across five consumers. E03/E04
-  still need actual migrations and ownership closure. N00–N05 still need distinct
-  strict BRE/ERE contracts, a composable Gnulib syntax/profile API, shared
-  text/set/analysis infrastructure and a foundation freeze. Experimental PCRE work
-  has advanced ahead of those gates. [Extraction ledger](EXTRACTION-READINESS.md)
-- **Byte engine (P00–P09).** PCRE2 10.48 provides native 8- and 16-bit references,
-  with Perl 5.40.1 used for declared overlap. The byte engine has pinned Unicode 17
-  data, a compiled internal API snapshot, package checks, allocation probes and
-  seven Grep component workloads. PRs #321–#323 added 49,152 bounded policy
-  comparisons with reduction, 393,216 malformed UTF-8 comparisons and 131,072
-  seeded grammar comparisons. Each count describes its own corpus. The 8-bit
-  freeze still needs an explicit profile and deviation review, broader hostile
-  input coverage and representative performance evidence.
-  [Internal contract](PCRE-INTERNAL-CONTRACT.md) ·
-  [Policy sweep](../tests/Pcre/Native/policy-differential-reduction.md) ·
-  [Malformed inputs](../tests/Pcre/Native/malformed-policy-differential.md) ·
-  [Seeded grammar](../tests/Pcre/Native/generated-policy-differential.md)
-- **Word engine (P10–P12).** PRs #324–#326 established bidirectional native
-  navigation, literal matching and the first reuse of the regex parser.
-  The literal and sequence suites each compare 7,680 outcomes against PCRE2-16.
-  Managed cross-width checks cover selected valid literals and sequences. The
-  #326 run passed 108,406 .NET 10 tests on each of six OS/architecture hosts,
-  built the library for .NET 8/9/10 and passed 37 existing PCRE package checks.
-  A production-facing word package consumer and general cross-width parity are
-  still outstanding. [Navigation evidence](PCRE-UTF16-NAVIGATION.md) ·
-  [Qualified #326 run](https://github.com/uniblab/Icod.Expressions/actions/runs/45110631402)
-
-### Recommended delivery order and completion criteria
-
-1. **Broaden word execution (P10/P11).** Extend the capture/reference-aware
-   nested branch/repeat executor from atomic/possessive groups, quantified
-   lookarounds, calls, conditions, failure, labels and scoped ACCEPT to cut verbs. Qualify
-   ACCEPT with selected returns before admitting that combination. Verify
-   empty retries, CRLF, unset captures and original code-unit coordinates at
-   each step. Expand the admitted newline and grapheme grammar and preserve
-   cancellation and budget exhaustion across each new path.
-3. **Finish the byte freeze alongside the word work (P00/P01/P09).** Record
-   supported, rejected and deferred forms with native fixtures, including
-   callouts and UTF `\C`. Expand the pinned corpus and Perl overlap with provenance.
-   Resolve or document the remaining UTF optimizer and malformed-span
-   differences. Recheck package behavior, allocations and controlled-host timings
-   on ASCII, Unicode and high-byte workloads. [Optimizer issue #102](https://github.com/uniblab/Icod.Expressions/issues/102) ·
-   [Malformed-span issue #100](https://github.com/uniblab/Icod.Expressions/issues/100) ·
-   [Workload protocol](../tools/PcreWorkloadComparison/README.md)
-4. **Prove semantic parity (P12).** Run equivalent valid patterns and subjects
-   through both managed widths and both pinned native oracles. Map offsets to
-   scalar positions independently in tests. Compare status, all capture spans
-   and values, unset groups, names, marks, lookbehind, calls and resource
-   classifications. Retain native offsets in failure records. Give malformed
-   bytes and unpaired surrogates separate native-width expectations.
-   [Coordinate fixtures](../tests/Pcre/PcreDualWidthCoordinateTests.cs)
-5. **Qualify the full profile and deliver it (P13–P18).** Implement the agreed
-   soft/hard partial, empty-match iteration and budgeted substitution behavior.
-   Check partial offsets at truncated input, advancement after an empty match,
-   and output limits for named and numbered substitutions. Test the agreed callout
-   behavior. Exercise compile, frame, journal and heap limits, cancellation,
-   optimized/reference parity and bounded fuzzing with minimized regressions.
-   Measure native byte and string workloads separately and rerun BRE/ERE benchmarks
-   when changing shared code. Freeze the public
-   APIs and validate package-only byte and string consumers alongside BRE/ERE.
-   Keep application behavior in its owning projects. Migrate Grep last after its
-   command-level, performance and six-RID package/archive gates pass. Retire the
-   CommandFramework copy only after publication and validation of every known
-   migration. [Bridge record](E03-Compatibility-Bridge.md) ·
-   [Grep acceptance inventory](PCRE-GREP-CONSUMER-FIXTURES.md)
+The [current implementation plan](#current-implementation-plan) incorporates this inventory and the subsequent native 16-bit work through #371.
 
 ## Native width-16 shared-parser sequences
 
